@@ -1,0 +1,29 @@
+@import "./styles/tokens.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  background: var(--bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+  font-family: "DM Sans", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+}
+
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary { color: var(--text-tertiary); }
+.bg-surface { background: var(--surface); }
+.border-token { border-color: var(--border); }
+.border-token-hover:hover { border-color: var(--border-hover); }
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+.skeleton {
+  background: rgba(255,255,255,0.05);
+  border-radius: 6px;
+  animation: pulse-soft 1.6s ease-in-out infinite;
+}

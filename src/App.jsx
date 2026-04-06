@@ -1,61 +1,77 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import AmbientBackground from "./components/AmbientBackground";
+import Header from "./components/Header";
+import HeroBand from "./components/HeroBand";
 import FinancialHealth from "./screens/FinancialHealth";
 
-function useNow() {
-  const [now, setNow] = useState(new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000 * 30);
-    return () => clearInterval(id);
-  }, []);
-  return now;
-}
-
-function TopBar() {
-  const now = useNow();
-  const date = now.toLocaleDateString("en-GB", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-  const time = now.toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+function ComingNext({ label }) {
   return (
-    <header className="border-b border-token bg-bg">
-      <div className="max-w-7xl mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div
-            className="text-primary uppercase"
-            style={{
-              fontFamily: '"Bebas Neue", "DM Sans", sans-serif',
-              letterSpacing: "0.18em",
-              fontSize: "1.25rem",
-              lineHeight: 1,
-            }}
-          >
-            Al Manara Trading Co.
-          </div>
-          <span className="text-[9px] uppercase tracking-widest text-tertiary border border-token rounded px-2 py-0.5">
-            Owner View
-          </span>
+    <div
+      style={{
+        flex: 1,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "relative",
+        zIndex: 1,
+      }}
+    >
+      <div style={{ textAlign: "center" }}>
+        <div
+          className="section-label"
+          style={{ marginBottom: 8 }}
+        >
+          {label}
         </div>
-        <div className="text-xs text-secondary font-mono tabular-nums">
-          {date} · {time}
+        <div
+          style={{
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: 48,
+            color: "#E6EDF3",
+            letterSpacing: "-1px",
+          }}
+        >
+          COMING NEXT.
         </div>
       </div>
-    </header>
+    </div>
   );
 }
 
 export default function App() {
+  const [role, setRole] = useState("Owner");
+  const [tab, setTab] = useState("owner");
+
+  const isOwner = role === "Owner" && tab === "owner";
+
   return (
-    <div className="min-h-screen bg-bg">
-      <TopBar />
-      <main>
-        <FinancialHealth />
-      </main>
-    </div>
+    <>
+      <AmbientBackground />
+      <Header role={role} setRole={setRole} tab={tab} setTab={setTab} />
+      {isOwner ? (
+        <div
+          className="view-enter"
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            position: "relative",
+            zIndex: 1,
+            overflow: "hidden",
+          }}
+        >
+          <HeroBand />
+          <FinancialHealth />
+        </div>
+      ) : (
+        <ComingNext
+          label={
+            tab === "bookkeeping"
+              ? "BOOKKEEPING"
+              : `${role.toUpperCase()} VIEW`
+          }
+        />
+      )}
+    </>
   );
 }

@@ -51,6 +51,57 @@ export async function getCategorizationCoverage(period = "month") {
   return { period, percentage: 97, categorized: 412, pending: 23, total: 435 };
 }
 
+export async function getExpenseSummary(period = "month") {
+  await delay();
+  return {
+    period,
+    thisMonth: 312400.0,
+    lastMonth: 295800.0,
+    ytd: 1842300.0,
+  };
+}
+
+export async function getHealthScore() {
+  await delay();
+  return {
+    score: 75,
+    status: "Good standing",
+    message: "Cash reserves healthy. 2 items need attention.",
+  };
+}
+
+export async function getRecentTransactions(limit = 8) {
+  await delay();
+  const all = [
+    { id: "tx-001", merchant: "Alghanim Industries — payment in", timestamp: "Today, 3:12 PM",    amount: 12450.0,  direction:  1, isToday: true  },
+    { id: "tx-002", merchant: "KNPC fuel cards",                   timestamp: "Today, 1:48 PM",    amount:  1820.5,  direction: -1, isToday: true  },
+    { id: "tx-003", merchant: "Al Shaya Trading",                  timestamp: "Today, 11:05 AM",   amount:  8740.0,  direction:  1, isToday: true  },
+    { id: "tx-004", merchant: "Office rent — Sharq",               timestamp: "Yesterday, 4:30 PM", amount:  4200.0,  direction: -1, isToday: false },
+    { id: "tx-005", merchant: "Zain Kuwait — corporate lines",     timestamp: "Yesterday, 2:15 PM", amount:   624.75, direction: -1, isToday: false },
+    { id: "tx-006", merchant: "Deliveroo payout",                  timestamp: "Apr 5, 6:00 PM",    amount:  2310.0,  direction:  1, isToday: false },
+    { id: "tx-007", merchant: "KIB transfer — payroll",            timestamp: "Apr 5, 9:00 AM",    amount: 18500.0,  direction: -1, isToday: false },
+    { id: "tx-008", merchant: "Ooredoo fiber",                     timestamp: "Apr 4, 11:20 AM",   amount:   135.0,  direction: -1, isToday: false },
+    { id: "tx-009", merchant: "MyFatoorah settlement",             timestamp: "Apr 3, 8:45 PM",    amount:  5612.25, direction:  1, isToday: false },
+  ];
+  return all.slice(0, limit);
+}
+
+export async function getAminahNotes() {
+  await delay();
+  return [
+    { id: "note-1", severity: "high",   text: "[3 overdue invoices] — Gulf Logistics WLL, [14,200.000 KWD] unpaid >30 days" },
+    { id: "note-2", severity: "medium", text: "PIFSS contribution due in [5 days] — estimated [4,862.500 KWD]" },
+    { id: "note-3", severity: "medium", text: "Marketing budget at [+91%] of monthly cap — third month trending over" },
+  ];
+}
+
+export async function getMonthlyInsights() {
+  await delay();
+  return {
+    text: "Revenue up [+10.5%] from last month. Margins holding at [42%]. Marketing trending [+23% over budget] for the third month.",
+  };
+}
+
 export async function getEngineAlerts() {
   await delay();
   return [

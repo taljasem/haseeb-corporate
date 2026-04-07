@@ -3422,3 +3422,133 @@ export async function getOwnerTopInsightDynamic() {
     `Want me to draft a board-level summary?`;
   return _brandObj({ id: "TOP-1", text, action: "draft-summary" });
 }
+
+// ─────────────────────────────────────────
+// FY 2028 — DRAFT (for delegate modal demo)
+// ─────────────────────────────────────────
+
+const _FY2028_DEPARTMENTS = (() => {
+  const depts = [
+    {
+      id: "DEPT-sales-28",
+      name: "Sales",
+      category: "revenue",
+      ownerUserId: "cfo",
+      workflowStatus: "unassigned",
+      lineItems: [
+        _fy2027Line("4100", "Sales Revenue",   1200000, 0.166),
+        _fy2027Line("4200", "Service Revenue", 0, 0),
+      ],
+    },
+    {
+      id: "DEPT-operations-28",
+      name: "Operations",
+      category: "expense",
+      ownerUserId: "cfo",
+      workflowStatus: "unassigned",
+      lineItems: [
+        _fy2027Line("5110", "Cost of Goods Sold",   480000, 0.12),
+        _fy2027Line("5120", "Direct Labor",          90000, 0.12),
+        _fy2027Line("5130", "Inventory adjustments", 18000, 0.12),
+      ],
+    },
+    {
+      id: "DEPT-sales-ops-28",
+      name: "Sales (Ops)",
+      category: "expense",
+      ownerUserId: "cfo",
+      workflowStatus: "unassigned",
+      lineItems: [
+        _fy2027Line("5200", "Sales Commissions", 36000, 0.12),
+        _fy2027Line("5240", "Sales Travel",      15000, 0.12),
+      ],
+    },
+    {
+      id: "DEPT-marketing-28",
+      name: "Marketing",
+      category: "expense",
+      ownerUserId: "cfo",
+      workflowStatus: "unassigned",
+      lineItems: [
+        _fy2027Line("6320", "Marketing & Advertising", 38000, 0.12),
+        _fy2027Line("6310", "Trade Shows",             25000, 0.12),
+        _fy2027Line("6330", "Agency Retainer",         28000, 0.12),
+      ],
+    },
+    {
+      id: "DEPT-tech-28",
+      name: "Tech & Infra",
+      category: "expense",
+      ownerUserId: "cfo",
+      workflowStatus: "unassigned",
+      lineItems: [
+        _fy2027Line("6220", "Internet & Phone",        9000, 0.12),
+        _fy2027Line("6230", "Software Subscriptions", 24000, 0.18),
+        _fy2027Line("6240", "Cloud Infra",            18000, 0.12),
+      ],
+    },
+    {
+      id: "DEPT-admin-28",
+      name: "Admin",
+      category: "expense",
+      ownerUserId: "cfo",
+      workflowStatus: "unassigned",
+      lineItems: [
+        _fy2027Line("6100", "Salaries & Wages",    168000, 0.12),
+        _fy2027Line("6110", "PIFSS Contributions",  19200, 0.12),
+        _fy2027Line("6200", "Office Rent",          50400, 0.12),
+        _fy2027Line("6210", "Utilities",            12000, 0.12),
+        _fy2027Line("6260", "Office Supplies",       5000, 0.12),
+        _fy2027Line("6270", "Professional Fees",    10200, 0.12),
+        _fy2027Line("6280", "Insurance",             4000, 0.12),
+        _fy2027Line("6290", "Bank Charges",            900, 0.12),
+      ],
+    },
+  ];
+  depts.forEach((d) => {
+    d.totalAnnual = Number(d.lineItems.reduce((s, l) => s + l.annual, 0).toFixed(3));
+    d.monthlyDistribution = Array(12)
+      .fill(0)
+      .map((_, m) =>
+        Number(d.lineItems.reduce((s, l) => s + l.monthlyDistribution[m], 0).toFixed(3))
+      );
+    d.submittedAt = null;
+    d.reviewedAt = null;
+    d.assignedTaskId = null;
+  });
+  return depts;
+})();
+
+const _FY2028_BUDGET = (() => {
+  const totalRevenue = _FY2028_DEPARTMENTS
+    .filter((d) => d.category === "revenue")
+    .reduce((s, d) => s + d.totalAnnual, 0);
+  const totalExpenses = _FY2028_DEPARTMENTS
+    .filter((d) => d.category === "expense")
+    .reduce((s, d) => s + d.totalAnnual, 0);
+  return {
+    id: "BUD-2028-FY",
+    period: {
+      type: "annual",
+      label: "FY 2028",
+      fiscalYear: 2028,
+      startDate: new Date("2028-01-01").toISOString(),
+      endDate: new Date("2028-12-31").toISOString(),
+    },
+    status: "draft",
+    approvedBy: null,
+    approvedAt: null,
+    createdBy: "cfo",
+    createdAt: _hoursAgo(6),
+    totalRevenue: Number(totalRevenue.toFixed(3)),
+    totalExpenses: Number(totalExpenses.toFixed(3)),
+    netIncome: Number((totalRevenue - totalExpenses).toFixed(3)),
+    departments: _FY2028_DEPARTMENTS,
+    workflowHistory: [
+      { timestamp: _hoursAgo(6), fromState: null, toState: "draft", byUserId: "cfo", note: "Created FY 2028 draft from FY 2027 baseline" },
+    ],
+    aminahNarration: "",
+  };
+})();
+
+_BUDGETS_DB[_FY2028_BUDGET.id] = _FY2028_BUDGET;

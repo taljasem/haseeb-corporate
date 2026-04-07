@@ -19,6 +19,7 @@ import BudgetStatusPill from "./BudgetStatusPill";
 import BudgetSummaryStrip from "./BudgetSummaryStrip";
 import DepartmentRow from "./DepartmentRow";
 import BudgetWorkflowStatusStrip from "./BudgetWorkflowStatusStrip";
+import DelegateBudgetModal from "./DelegateBudgetModal";
 
 const COLS_HEADER = "minmax(160px, 1.4fr) minmax(140px, 1fr) 130px 130px 130px 130px 180px 110px 18px";
 
@@ -48,6 +49,12 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
   const [expandedId, setExpandedId] = useState(null);
   const [periodOpen, setPeriodOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [delegateOpen, setDelegateOpen] = useState(false);
+  const [toast, setToast] = useState(null);
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2600);
+  };
   const periodRef = useRef(null);
   const refresh = () => setRefreshKey((k) => k + 1);
 
@@ -371,7 +378,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                 refresh();
               }
             }}
-            onDelegate={() => alert("Delegate to team — modal coming in a follow-up pass")}
+            onDelegate={() => setDelegateOpen(true)}
           />
         )}
 
@@ -417,15 +424,32 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
             <HeaderCell align="center">STATUS</HeaderCell>
             <HeaderCell> </HeaderCell>
           </div>
-          {displayedRows.map((row) => (
-            <DepartmentRow
-              key={row.id}
-              row={row}
-              expanded={expandedId === row.id}
-              onToggle={(r) => setExpandedId(expandedId === r.id ? null : r.id)}
-              ownerName={ownerName(row.ownerUserId)}
-            />
-          ))}
+          {displayedRows.map((row) => {
+            const dept = budget?.departments?.find((d) => d.id === row.id);
+            const wf = dept?.workflowStatus;
+            let rowMode = "view";
+            if (role === "Junior" && (wf === "assigned" || wf === "in-progress" || wf === "needs-revision")) {
+              rowMode = "edit";
+            } else if (role === "CFO" && budget?.status !== "active" && budget?.status !== "closed" && wf === "submitted") {
+              rowMode = "review";
+            }
+            const juniorMap = { Junior: "sara", CFO: "cfo", Owner: "owner" };
+            return (
+              <DepartmentRow
+                key={row.id}
+                row={row}
+                expanded={expandedId === row.id}
+                onToggle={(r) => setExpandedId(expandedId === r.id ? null : r.id)}
+                ownerName={ownerName(row.ownerUserId)}
+                mode={rowMode}
+                budget={budget}
+                department={dept}
+                currentUserId={juniorMap[role] || "cfo"}
+                onRefresh={refresh}
+                onToast={showToast}
+              />
+            );
+          })}
         </div>
 
         {/* Junior: collapsed read-only summary of others */}
@@ -485,6 +509,35 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
           </div>
         )}
       </div>
+      {toast && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 20,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "rgba(0,196,140,0.10)",
+            border: "1px solid rgba(0,196,140,0.30)",
+            color: "#00C48C",
+            padding: "10px 18px",
+            borderRadius: 8,
+            fontSize: 12,
+            fontWeight: 500,
+            zIndex: 400,
+          }}
+        >
+          {toast}
+        </div>
+      )}
+      <DelegateBudgetModal
+        open={delegateOpen}
+        budgetId={budget?.id}
+        onClose={() => setDelegateOpen(false)}
+        onDelegated={(count) => {
+          refresh();
+          showToast(`Delegated to ${count} team members`);
+        }}
+      />
     </div>
   );
 }

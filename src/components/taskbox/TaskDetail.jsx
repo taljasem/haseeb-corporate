@@ -44,7 +44,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
   if (!task) return null;
   const status = STATUS_STYLE[task.status] || STATUS_STYLE.open;
   const isCompleted = task.status === "completed" || task.status === "rejected" || task.status === "cancelled";
-  const isApproval = task.type === "request-approval";
+  const isApproval = task.type === "request-approval" || task.type === "approve-budget";
   const isSender = isApproval && task.sender.id === currentUserId;
   const hasJELinked = task.linkedItem && task.linkedItem.type === "journal-entry" && task.linkedItem.entry;
 

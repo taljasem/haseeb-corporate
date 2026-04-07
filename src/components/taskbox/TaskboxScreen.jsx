@@ -5,6 +5,8 @@ import {
   getTaskboxCounts,
   completeTask as engineCompleteTask,
   replyToTask as engineReplyToTask,
+  approveBudget as engineApproveBudget,
+  requestBudgetChanges as engineRequestBudgetChanges,
   cancelTask as engineCancelTask,
 } from "../../engine/mockEngine";
 
@@ -78,10 +80,26 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
         }}
         onApprovalAction={async (t, action, note) => {
           const author = role === "CFO" ? "cfo" : role === "Owner" ? "owner" : "sara";
+          const isBudgetApproval = t.type === "approve-budget";
+          const budgetId = t.linkedItem?.budgetId;
           if (action === "approve") {
-            await engineCompleteTask(t.id, "Approved.", author);
+            if (isBudgetApproval && budgetId) {
+              await engineApproveBudget(budgetId, author);
+              await engineCompleteTask(t.id, `Budget approved.`, author);
+              setToast(`Budget approved and activated`);
+              setTimeout(() => setToast(null), 2600);
+            } else {
+              await engineCompleteTask(t.id, "Approved.", author);
+            }
           } else if (action === "request-changes") {
-            await engineReplyToTask(t.id, `[Requested changes] ${note}`, author);
+            if (isBudgetApproval && budgetId) {
+              await engineRequestBudgetChanges(budgetId, note);
+              await engineCompleteTask(t.id, `Change request sent.`, author);
+              setToast(`Sent change request to CFO`);
+              setTimeout(() => setToast(null), 2600);
+            } else {
+              await engineReplyToTask(t.id, `[Requested changes] ${note}`, author);
+            }
           } else if (action === "reject") {
             await engineReplyToTask(t.id, `[Rejected] ${note}`, author);
           } else if (action === "escalate") {

@@ -1,24 +1,25 @@
 import { useEffect, useRef, useState } from "react";
+import { useNav } from "./shared/NavContext";
 
 // DEMO ONLY — production roles come from auth
 const ROLES = ["Owner", "CFO", "Junior"];
 
 const NOTIFICATIONS_BY_ROLE = {
   Owner: [
-    { id: "n1", title: "Q1 P&L draft ready for review",        body: "From CFO · TSK-120",            time: "18h ago" },
-    { id: "n2", title: "March close 60% complete",             body: "9 of 15 tasks done",            time: "45m ago" },
-    { id: "n3", title: "March close ready for your sign-off",  body: "From CFO · TSK-107",            time: "3h ago" },
+    { id: "n1", title: "Q1 P&L draft ready for review",        body: "From CFO · TSK-120",          time: "18h ago", destination: { screen: "taskbox", taskId: "TSK-120" } },
+    { id: "n2", title: "March close 60% complete",             body: "9 of 15 tasks done",          time: "45m ago", destination: { screen: "month-end-close" } },
+    { id: "n3", title: "Marketing budget +23% over target",    body: "Third consecutive month",     time: "3h ago",  destination: { screen: "financial-statements" } },
   ],
   CFO: [
-    { id: "n1", title: "Sara submitted PIFSS approval request",  body: "TSK-113 · 9,500.000 KWD",     time: "2h ago" },
-    { id: "n2", title: "1 audit check failing",                  body: "JE-0413 missing reference",   time: "2h ago" },
-    { id: "n3", title: "Bank feed updated",                      body: "All KIB accounts current",    time: "5m ago" },
-    { id: "n4", title: "Sara escalated unidentified transfer",   body: "TSK-104 · 2,462.500 KWD",     time: "4h ago" },
+    { id: "n1", title: "Sara submitted PIFSS approval request", body: "TSK-113 · 9,500.000 KWD",   time: "2h ago", destination: { screen: "taskbox", taskId: "TSK-113" } },
+    { id: "n2", title: "1 audit check failing",                 body: "JE-0413 missing reference", time: "2h ago", destination: { screen: "audit-bridge" } },
+    { id: "n3", title: "Bank feed updated",                     body: "All KIB accounts current",  time: "5m ago", destination: { screen: "bank-accounts" } },
+    { id: "n4", title: "March close 60% complete",              body: "9 of 15 tasks done",        time: "45m ago",destination: { screen: "month-end-close" } },
   ],
   Junior: [
-    { id: "n1", title: "New transaction needs categorization",  body: "Boubyan transfer in",         time: "12m ago" },
-    { id: "n2", title: "CFO assigned: Investigate Gulf Logistics", body: "TSK-111 · due tomorrow",  time: "9h ago" },
-    { id: "n3", title: "PIFSS accrual approval pending",        body: "Awaiting CFO response",       time: "2h ago" },
+    { id: "n1", title: "8 new transactions to categorize",     body: "Engine queued for your review", time: "12m ago", destination: { screen: "bank-transactions" } },
+    { id: "n2", title: "CFO approved your PIFSS accrual",      body: "TSK-113 · JE-0415 posted",      time: "1h ago",  destination: { screen: "taskbox", taskId: "TSK-113" } },
+    { id: "n3", title: "Boubyan reconciliation overdue",       body: "TSK-102",                       time: "9h ago",  destination: { screen: "taskbox", taskId: "TSK-102" } },
   ],
 };
 // Canonical role accent colors (match team member avatar colors)
@@ -73,6 +74,7 @@ export default function Header({ role, setRole }) {
   const [arabicTip, setArabicTip] = useState(false);
   const [themeTip, setThemeTip] = useState(false);
   const bellRef = useRef(null);
+  const nav = useNav();
 
   useEffect(() => {
     if (!bellOpen) return;
@@ -252,6 +254,15 @@ export default function Header({ role, setRole }) {
                 {notifications.map((n) => (
                   <div
                     key={n.id}
+                    onClick={() => {
+                      setBellOpen(false);
+                      const dest = n.destination || {};
+                      if (dest.taskId && nav.openTask) {
+                        nav.openTask(dest.taskId);
+                      } else if (dest.screen && nav.setActiveScreen) {
+                        nav.setActiveScreen(dest.screen);
+                      }
+                    }}
                     onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
                     onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     style={{

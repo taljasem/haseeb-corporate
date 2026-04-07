@@ -50,7 +50,7 @@ function Placeholder({ label }) {
   );
 }
 
-export default function OwnerView() {
+export default function OwnerView({ registerNav }) {
   const [activeScreen, setActiveScreen] = useState("today");
   const [aminahOpen, setAminahOpen] = useState(false);
   const [aminahContext, setAminahContext] = useState(null);
@@ -95,6 +95,10 @@ export default function OwnerView() {
     if (activeScreen !== "taskbox") setInitialTaskId(null);
     if (activeScreen !== "bank-accounts") setInitialAccountId(null);
   }, [activeScreen]);
+
+  useEffect(() => {
+    if (registerNav) registerNav({ setActiveScreen: setActive, openTask: navigateToTask });
+  }, [registerNav]);
 
   const renderScreen = () => {
     switch (activeScreen) {

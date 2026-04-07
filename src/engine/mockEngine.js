@@ -326,6 +326,7 @@ export async function getChartOfAccounts() {
     { code: "2200", name: "PIFSS Payable",               category: "Liabilities",        type: "credit" },
     { code: "2210", name: "Salaries Payable",            category: "Liabilities",        type: "credit" },
     { code: "2300", name: "Tax Payable",                 category: "Liabilities",        type: "credit" },
+    { code: "2400", name: "Accrued Expenses",            category: "Liabilities",        type: "credit" },
     { code: "3000", name: "Owner Equity",                category: "Equity",             type: "credit" },
     { code: "3100", name: "Retained Earnings",           category: "Equity",             type: "credit" },
     { code: "4100", name: "Sales Revenue",               category: "Revenue",            type: "credit" },

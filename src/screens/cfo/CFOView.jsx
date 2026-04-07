@@ -24,7 +24,7 @@ const SCREEN_TITLES = {
   setup:                 "SETUP",
 };
 
-export default function CFOView() {
+export default function CFOView({ registerNav }) {
   const [activeScreen, setActiveScreen] = useState("today");
   const [aminahOpen, setAminahOpen] = useState(false);
   const [aminahContext, setAminahContext] = useState(null);
@@ -106,6 +106,10 @@ export default function CFOView() {
   useEffect(() => {
     if (activeScreen !== "taskbox") setInitialTaskId(null);
   }, [activeScreen]);
+
+  useEffect(() => {
+    if (registerNav) registerNav({ setActiveScreen: setActive, openTask: navigateToTask });
+  }, [registerNav]);
 
   return (
     <div

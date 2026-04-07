@@ -34,6 +34,17 @@ const STATE_STYLES = {
     cardBg: "rgba(255,255,255,0.04)",
     opacity: 1,
   },
+  "pending-approval": {
+    accent: "#D4A84B",
+    pillFg: "#D4A84B",
+    pillBg: "rgba(212,168,75,0.10)",
+    pillBorder: "rgba(212,168,75,0.30)",
+    pillLabel: "PENDING CFO APPROVAL",
+    headerLabel: "JOURNAL ENTRY",
+    hashSuffix: "not committed",
+    cardBg: "rgba(255,255,255,0.04)",
+    opacity: 0.95,
+  },
   posted: {
     accent: "#5B6570",
     pillFg: "#8B98A5",
@@ -79,6 +90,7 @@ export default function JournalEntryCard({
   const s = STATE_STYLES[state] || STATE_STYLES["draft-validated"];
   const isPosted = state === "posted";
   const isSuggested = state === "suggested";
+  const isLocked = state === "posted" || state === "pending-approval";
   const balanced = live.lines.every((l) => l.account != null) && live.balanced !== false;
 
   const pillLabel = s.pillLabelTemplate ? s.pillLabelTemplate(live.id) : s.pillLabel;
@@ -367,7 +379,7 @@ export default function JournalEntryCard({
       )}
 
       {/* Actions */}
-      {!isPosted && (
+      {!isLocked && (
         <div
           style={{
             display: "flex",

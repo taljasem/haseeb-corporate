@@ -162,14 +162,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
         {/* 1. NEEDS YOUR REVIEW */}
         <TodaySection
           label="NEEDS YOUR REVIEW"
-          extra={totalQueue > 0 ? (
-            <span
-              className="tension-dot"
-              style={{ background: "rgba(212,168,75,0.18)", color: "#D4A84B" }}
-            >
-              {totalQueue}
-            </span>
-          ) : null}
+          extra={totalQueue > 0 ? <span className="tension-dot tension-dot--warning">{totalQueue}</span> : null}
           aminah
         >
           {queue && (
@@ -322,7 +315,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
         {/* 3. AMINAH'S NOTES */}
         <TodaySection
           label="AMINAH'S NOTES"
-          extra={notes ? <span className="tension-dot">{notes.length}</span> : null}
+          extra={notes ? <span className="tension-dot tension-dot--info">{notes.length}</span> : null}
           aminah
         >
           {notes &&

@@ -233,17 +233,7 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
         {/* 2. NEEDS YOUR ATTENTION */}
         <SectionCard
           label="NEEDS YOUR ATTENTION"
-          extra={
-            <span
-              className="tension-dot"
-              style={{
-                background: "rgba(212,168,75,0.18)",
-                color: "#D4A84B",
-              }}
-            >
-              {attentionCount}
-            </span>
-          }
+          extra={<span className="tension-dot tension-dot--warning">{attentionCount}</span>}
         >
           {approvals > 0 && (
             <AttentionRow

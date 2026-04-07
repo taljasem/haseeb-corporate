@@ -36,7 +36,7 @@ export default function AminahNotes() {
   return (
     <SectionCard
       label="AMINAH'S NOTES"
-      extra={notes ? <span className="tension-dot">{notes.length}</span> : null}
+      extra={notes ? <span className="tension-dot tension-dot--info">{notes.length}</span> : null}
       delay={0.3}
     >
       {notes

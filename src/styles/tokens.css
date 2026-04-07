@@ -147,14 +147,19 @@
 .tension-dot {
   display: inline-flex;
   align-items: center; justify-content: center;
-  width: 18px; height: 18px;
-  border-radius: 50%;
-  background: rgba(255, 90, 95, 0.18);
-  color: var(--red);
+  min-width: 18px; height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.10);
+  color: var(--text-secondary);
   font-family: var(--font-mono);
   font-size: 9px; font-weight: 600;
   margin-left: 8px;
   vertical-align: middle;
 }
+.tension-dot--critical { background: var(--red);   color: #fff; }
+.tension-dot--warning  { background: var(--amber); color: #fff; }
+.tension-dot--info     { background: rgba(255,255,255,0.10); color: var(--text-secondary); }
+.tension-dot--positive { background: var(--teal);  color: #fff; }
 
 .view-enter { animation: viewEnter 0.2s ease-out both; }

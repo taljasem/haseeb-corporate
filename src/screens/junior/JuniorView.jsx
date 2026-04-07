@@ -56,7 +56,7 @@ function Placeholder({ label, sub }) {
   );
 }
 
-export default function JuniorView() {
+export default function JuniorView({ registerNav }) {
   const [activeScreen, setActiveScreen] = useState("today");
   const [aminahOpen, setAminahOpen] = useState(false);
   const [aminahContext, setAminahContext] = useState(null);
@@ -71,6 +71,10 @@ export default function JuniorView() {
   useEffect(() => {
     if (activeScreen !== "taskbox") setInitialTaskId(null);
   }, [activeScreen]);
+
+  useEffect(() => {
+    if (registerNav) registerNav({ setActiveScreen, openTask: navigateToTask });
+  }, [registerNav]);
 
   const openAminah = (context = null) => {
     setAminahContext(context);
@@ -102,7 +106,7 @@ export default function JuniorView() {
           />
         );
       case "conversational-je":
-        return <ConversationalJEScreen role="Junior" />;
+        return <ConversationalJEScreen role="Junior" onNavigate={setActiveScreen} />;
       case "reconciliation":
         return (
           <Placeholder

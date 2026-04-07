@@ -1900,3 +1900,310 @@ export async function getTransactionJournalEntry(transactionId) {
     hashChainStatus: "extended",
   };
 }
+
+// ─────────────────────────────────────────
+// OWNER VIEW — financial statements, close, audit, team
+// ─────────────────────────────────────────
+
+function _line(account, current, prior) {
+  const change = Number((current - prior).toFixed(3));
+  const percentChange = prior === 0 ? null : Number(((change / Math.abs(prior)) * 100).toFixed(1));
+  return { account, current, prior, change, percentChange };
+}
+function _sum(lines, field = "current") {
+  return Number(lines.reduce((s, l) => s + (l[field] || 0), 0).toFixed(3));
+}
+
+export async function getIncomeStatement(period = "month") {
+  await delay();
+  const revenue = [
+    _line("Sales Revenue",   87420.0, 79100.0),
+    _line("Service Revenue", 0.0,     0.0),
+  ];
+  const totalRevenueCurrent = _sum(revenue, "current");
+  const totalRevenuePrior   = _sum(revenue, "prior");
+
+  const cogs = [
+    _line("Cost of Goods Sold", 35200.0, 32100.0),
+    _line("Direct Labor",       7800.0,  7500.0),
+  ];
+  const totalCogsCurrent = _sum(cogs, "current");
+  const totalCogsPrior   = _sum(cogs, "prior");
+
+  const grossCurrent = Number((totalRevenueCurrent - totalCogsCurrent).toFixed(3));
+  const grossPrior   = Number((totalRevenuePrior   - totalCogsPrior  ).toFixed(3));
+
+  const opex = [
+    _line("Salaries & Wages",        7200.0, 7000.0),
+    _line("PIFSS Contributions",     820.0,  800.0),
+    _line("Office Rent",             4200.0, 4200.0),
+    _line("Utilities",               890.0,  1100.0),
+    _line("Internet & Phone",        760.0,  745.0),
+    _line("Marketing & Advertising", 1800.0, 1450.0),
+    _line("Trade Shows",             3100.0, 2520.0),
+    _line("Travel & Transport",      420.0,  380.0),
+    _line("Fuel & Vehicle",          320.0,  295.0),
+    _line("Office Supplies",         180.0,  170.0),
+    _line("Professional Fees",       350.0,  350.0),
+    _line("Insurance",               0.0,    0.0),
+    _line("Bank Charges",            80.0,   82.0),
+  ];
+  const totalOpexCurrent = _sum(opex, "current");
+  const totalOpexPrior   = _sum(opex, "prior");
+
+  const opIncomeCurrent = Number((grossCurrent - totalOpexCurrent).toFixed(3));
+  const opIncomePrior   = Number((grossPrior   - totalOpexPrior  ).toFixed(3));
+
+  const other = [
+    _line("Interest Income",    0.0, 0.0),
+    _line("Interest Expense",   0.0, 0.0),
+    _line("FX Gain/(Loss)",     0.0, 0.0),
+  ];
+  const totalOtherCurrent = 0;
+  const totalOtherPrior   = 0;
+
+  const nibtCurrent = Number((opIncomeCurrent + totalOtherCurrent).toFixed(3));
+  const nibtPrior   = Number((opIncomePrior   + totalOtherPrior  ).toFixed(3));
+  const netIncomeCurrent = nibtCurrent; // Kuwait 0% tax
+  const netIncomePrior   = nibtPrior;
+
+  return {
+    period: "March 2026",
+    aminahNarration:
+      "Revenue grew [+10.5%] month-over-month, driven primarily by Alghanim Industries orders and the Avenues branch. Gross margins held at [50.8%]. Operating expenses ran [+23.4%] with marketing flagged [+23% over budget] for the third consecutive month. Net income of [24,300.000 KWD] is still up [+6.3%] versus prior period and on track to exceed Q1 target.",
+    sections: [
+      { name: "REVENUE",             lines: revenue, subtotal: { label: "Total Revenue", current: totalRevenueCurrent, prior: totalRevenuePrior } },
+      { name: "COST OF GOODS SOLD",  lines: cogs,    subtotal: { label: "Total COGS",    current: totalCogsCurrent,    prior: totalCogsPrior, negative: true } },
+      { name: "GROSS PROFIT",        highlight: "teal", current: grossCurrent, prior: grossPrior },
+      { name: "OPERATING EXPENSES",  lines: opex,    subtotal: { label: "Total OpEx",    current: totalOpexCurrent,    prior: totalOpexPrior, negative: true } },
+      { name: "OPERATING INCOME",    highlight: "amber", current: opIncomeCurrent, prior: opIncomePrior },
+      { name: "OTHER INCOME/(EXPENSE)", lines: other, subtotal: { label: "Total Other", current: totalOtherCurrent, prior: totalOtherPrior } },
+      { name: "NET INCOME BEFORE TAX", highlight: "teal", current: nibtCurrent, prior: nibtPrior },
+      { name: "TAX EXPENSE",         lines: [_line("Corporate tax (Kuwait 0%)", 0, 0)], subtotal: { label: "Total Tax", current: 0, prior: 0, negative: true } },
+      { name: "NET INCOME",          highlight: "teal", final: true, current: netIncomeCurrent, prior: netIncomePrior },
+    ],
+  };
+}
+
+export async function getBalanceSheet(period = "month") {
+  await delay();
+  const currentAssets = [
+    _line("Cash (KIB Accounts)",   210896.5, 182496.5),
+    _line("Accounts Receivable",   56200.0,  52000.0),
+    _line("Inventory",             42300.0,  43800.0),
+    _line("Prepaid Expenses",      3200.0,   3200.0),
+  ];
+  const totalCurrentAssets = _sum(currentAssets);
+  const totalCurrentAssetsPrior = _sum(currentAssets, "prior");
+
+  const fixedAssets = [
+    _line("Equipment",                  45000.0, 45000.0),
+    _line("Furniture",                  12000.0, 12000.0),
+    _line("Accumulated Depreciation",  -18400.0, -16600.0),
+  ];
+  const totalFixedAssets = _sum(fixedAssets);
+  const totalFixedAssetsPrior = _sum(fixedAssets, "prior");
+
+  const totalAssets = Number((totalCurrentAssets + totalFixedAssets).toFixed(3));
+  const totalAssetsPrior = Number((totalCurrentAssetsPrior + totalFixedAssetsPrior).toFixed(3));
+
+  const currentLiab = [
+    _line("Accounts Payable",   38900.0, 33900.0),
+    _line("PIFSS Payable",      9500.0,  9100.0),
+    _line("Salaries Payable",   14200.0, 13800.0),
+  ];
+  const totalCurrentLiab = _sum(currentLiab);
+  const totalCurrentLiabPrior = _sum(currentLiab, "prior");
+  const totalLiab = totalCurrentLiab;
+  const totalLiabPrior = totalCurrentLiabPrior;
+
+  // Equity must close the books.
+  const equityLines = [
+    _line("Owner Equity",            252000.0, 252000.0),
+    _line("Retained Earnings",       12296.5,  12296.5),
+    _line("Current Period Net Income", 24300.0, 22850.0),
+  ];
+  // Force balance
+  const neededEquity = Number((totalAssets - totalLiab).toFixed(3));
+  const summed = _sum(equityLines);
+  if (summed !== neededEquity) {
+    equityLines[0].current = Number((equityLines[0].current + (neededEquity - summed)).toFixed(3));
+  }
+  const totalEquity = _sum(equityLines);
+  const totalEquityPrior = _sum(equityLines, "prior");
+
+  return {
+    period: "March 2026",
+    aminahNarration:
+      "Total assets of [351,196.500 KWD] are up [+5.2%] from prior period, with cash accounting for [60%] of the total. Accounts receivable of [56,200.000 KWD] has [14,200.000 KWD overdue] — worth reviewing with Sara. No long-term debt. Owner equity continues to grow in line with profitability.",
+    sections: [
+      { name: "ASSETS", isParent: true },
+      { name: "Current Assets",  lines: currentAssets, subtotal: { label: "Total Current Assets", current: totalCurrentAssets, prior: totalCurrentAssetsPrior } },
+      { name: "Fixed Assets",    lines: fixedAssets,   subtotal: { label: "Total Fixed Assets",   current: totalFixedAssets,   prior: totalFixedAssetsPrior } },
+      { name: "TOTAL ASSETS",    highlight: "teal", current: totalAssets, prior: totalAssetsPrior },
+
+      { name: "LIABILITIES", isParent: true },
+      { name: "Current Liabilities", lines: currentLiab, subtotal: { label: "Total Current Liabilities", current: totalCurrentLiab, prior: totalCurrentLiabPrior } },
+      { name: "Long-term Liabilities", lines: [_line("None", 0, 0)], subtotal: { label: "Total Long-term", current: 0, prior: 0 } },
+      { name: "TOTAL LIABILITIES", highlight: "amber", current: totalLiab, prior: totalLiabPrior },
+
+      { name: "EQUITY", isParent: true },
+      { name: "Equity Lines", lines: equityLines, subtotal: { label: "Total Equity", current: totalEquity, prior: totalEquityPrior } },
+
+      { name: "TOTAL LIABILITIES + EQUITY", highlight: "teal", final: true, current: Number((totalLiab + totalEquity).toFixed(3)), prior: Number((totalLiabPrior + totalEquityPrior).toFixed(3)) },
+    ],
+  };
+}
+
+export async function getCashFlowStatement(period = "month") {
+  await delay();
+  const operating = [
+    _line("Net Income",              24300.0, 22850.0),
+    _line("Depreciation",            1800.0,  1800.0),
+    _line("Accounts Receivable",    -4200.0, -3100.0),
+    _line("Inventory",               1500.0,  -800.0),
+    _line("Accounts Payable",        5000.0,  2100.0),
+  ];
+  const totalOperating = _sum(operating);
+  const totalOperatingPrior = _sum(operating, "prior");
+
+  const investing = [
+    _line("Purchase of Equipment",   0.0, 0.0),
+  ];
+  const totalInvesting = _sum(investing);
+  const totalInvestingPrior = _sum(investing, "prior");
+
+  const financing = [
+    _line("Owner Contributions",     0.0, 0.0),
+    _line("Owner Distributions",     0.0, 0.0),
+  ];
+  const totalFinancing = _sum(financing);
+  const totalFinancingPrior = _sum(financing, "prior");
+
+  const netChange = Number((totalOperating + totalInvesting + totalFinancing).toFixed(3));
+  const beginningCash = 182496.5;
+  const endingCash = Number((beginningCash + netChange).toFixed(3));
+
+  return {
+    period: "March 2026",
+    aminahNarration:
+      "Operating cash flow of [28,400.000 KWD] is healthy, driven by strong collections and lower-than-expected OpEx. No investing activities this period. Net cash increased [28,400.000 KWD], taking total cash to [210,896.500 KWD] across the 4 KIB accounts.",
+    sections: [
+      { name: "OPERATING ACTIVITIES", lines: operating, subtotal: { label: "Total Operating", current: totalOperating, prior: totalOperatingPrior } },
+      { name: "INVESTING ACTIVITIES", lines: investing, subtotal: { label: "Total Investing", current: totalInvesting, prior: totalInvestingPrior } },
+      { name: "FINANCING ACTIVITIES", lines: financing, subtotal: { label: "Total Financing", current: totalFinancing, prior: totalFinancingPrior } },
+      { name: "NET CHANGE IN CASH",   highlight: "teal", current: netChange, prior: 0 },
+      { name: "Beginning Cash",       lines: [_line("Beginning Cash", beginningCash, 0)], subtotal: { label: "Beginning Cash", current: beginningCash, prior: 0 } },
+      { name: "ENDING CASH",          highlight: "teal", final: true, current: endingCash, prior: 0 },
+    ],
+  };
+}
+
+export async function getMonthEndCloseTasks() {
+  await delay();
+  const tasks = [
+    { id: "CT-1",  name: "Import bank feeds (all 4 KIB accounts)",     assignee: P.sara,  status: "complete",    completedAt: _daysAgo(3), dueDate: null },
+    { id: "CT-2",  name: "Categorize all bank transactions",           assignee: P.sara,  status: "complete",    completedAt: _daysAgo(2), dueDate: null },
+    { id: "CT-3",  name: "Reconcile KIB Operating",                    assignee: P.sara,  status: "complete",    completedAt: _daysAgo(2), dueDate: null },
+    { id: "CT-4",  name: "Reconcile KIB Reserve",                      assignee: P.sara,  status: "complete",    completedAt: _daysAgo(1), dueDate: null },
+    { id: "CT-5",  name: "Reconcile KIB USD Account",                  assignee: P.noor,  status: "complete",    completedAt: _daysAgo(1), dueDate: null },
+    { id: "CT-6",  name: "Post payroll accrual",                       assignee: P.noor,  status: "complete",    completedAt: _hoursAgo(18), dueDate: null },
+    { id: "CT-7",  name: "Post PIFSS accrual (JE-0415)",               assignee: P.noor,  status: "complete",    completedAt: _hoursAgo(6),  dueDate: null },
+    { id: "CT-8",  name: "Post depreciation entry",                    assignee: P.noor,  status: "complete",    completedAt: _hoursAgo(5),  dueDate: null },
+    { id: "CT-9",  name: "Review uncategorized transactions",          assignee: P.sara,  status: "complete",    completedAt: _hoursAgo(3),  dueDate: null },
+    { id: "CT-10", name: "Reconcile KIB Settlement",                   assignee: P.sara,  status: "in-progress", completedAt: null, dueDate: _daysFromNow(1) },
+    { id: "CT-11", name: "Resolve Boubyan unidentified transfer",      assignee: P.sara,  status: "in-progress", completedAt: null, dueDate: _daysFromNow(1) },
+    { id: "CT-12", name: "Post adjusting entries",                     assignee: P.cfo,   status: "pending",     completedAt: null, dueDate: _daysFromNow(2) },
+    { id: "CT-13", name: "Resolve audit check JE-0413",                assignee: P.sara,  status: "pending",     completedAt: null, dueDate: _daysFromNow(1) },
+    { id: "CT-14", name: "CFO sign-off",                               assignee: P.cfo,   status: "pending",     completedAt: null, dueDate: _daysFromNow(2) },
+    { id: "CT-15", name: "Owner approval + lock period",               assignee: P.owner, status: "pending",     completedAt: null, dueDate: _daysFromNow(3) },
+  ];
+  return {
+    period: "March 2026",
+    status: "in-progress",
+    tasks,
+    validations: [
+      { name: "Trial balance balances",            passing: true,  detail: "0.000 KWD variance" },
+      { name: "No unposted transactions",          passing: true,  detail: "All entries committed" },
+      { name: "All reconciliations complete",      passing: false, detail: "4 of 5 done — KIB Settlement in progress", resolveScreen: "bank-accounts" },
+      { name: "Audit checks passing",              passing: false, detail: "1 check failing — JE-0413 missing reference", resolveScreen: "audit-bridge" },
+      { name: "No pending approvals blocking",     passing: true,  detail: "All approvals cleared" },
+    ],
+    aminahSummary:
+      "March close is [60% complete] with 6 tasks remaining. Three reconciliations done (KIB Operating, KIB Reserve, KIB USD). Sara is working on KIB Settlement. Post-close estimate: [April 3]. Two items will need your sign-off when complete: the adjusting entries and the final period lock.",
+  };
+}
+
+export async function getAuditChecks() {
+  await delay();
+  const now = _hoursAgo(0);
+  const ok = (name, detail) => ({ id: `AC-${name.replace(/\s/g, "").slice(0,6)}`, name, status: "passing", lastVerified: now, detail });
+  const bad = (name, detail) => ({ id: `AC-${name.replace(/\s/g, "").slice(0,6)}`, name, status: "failing", lastVerified: now, detail });
+  const checks = [
+    ok("Double-Entry Balance",       "Every entry balances to zero"),
+    ok("Hash Chain Integrity",       "Chain intact across 2,847 blocks"),
+    bad("Sequential Numbering",      "JE-0413 missing reference number"),
+    ok("Reconciliation Status",      "4 of 5 accounts reconciled"),
+    ok("Period Locking",             "Prior period March 2025 locked"),
+    ok("JE Approval Trail",          "All JEs have approval chain"),
+    ok("Bank Feed Freshness",        "All feeds < 1h old"),
+    ok("Trial Balance Balances",     "TB = 0.000 KWD"),
+    ok("Rule Audit Trail",           "All rule applications logged"),
+    ok("User Access Controls",       "RBAC enforced per role"),
+    ok("Segregation of Duties",      "No prohibited combinations"),
+    ok("Retention Policy",           "7-year retention enforced"),
+    ok("GL-to-Subledger Tie-Out",    "AR/AP tied to GL"),
+    ok("FX Rate Audit",              "Rates sourced from CBK daily"),
+    ok("Statement Recomputation",    "Statements reproducible from ledger"),
+  ];
+  return {
+    total: checks.length,
+    passing: checks.filter((c) => c.status === "passing").length,
+    failing: checks.filter((c) => c.status === "failing").length,
+    checks,
+    hashChain: {
+      totalEntries: 2847,
+      chainLength: 2847,
+      lastHash: "a4f2…9c1b",
+      status: "INTACT",
+      lastVerified: _hoursAgo(0),
+    },
+    aminahNarration:
+      "Audit bridge is [14 of 15 checks passing]. The one failing check is [Sequential numbering] — JE-0413 is missing a reference number. This is a Sara-level fix and has been in her Taskbox for 2 hours. No other integrity issues. Hash chain is intact across [2,847 posted entries]. Period is currently audit-ready except for this one item.",
+  };
+}
+
+export async function getTeamMembersWithResponsibilities() {
+  await delay();
+  const all = [
+    { ...P.owner, accessLevel: "Full access",          isOnline: true,  lastActive: _hoursAgo(0) },
+    { ...P.cfo,   accessLevel: "Full accounting",      isOnline: true,  lastActive: _hoursAgo(0) },
+    { ...P.sara,  accessLevel: "Bookkeeping + Approvals", isOnline: true,  lastActive: _hoursAgo(0) },
+    { ...P.noor,  accessLevel: "Bookkeeping",          isOnline: false, lastActive: _hoursAgo(2) },
+    { ...P.jasem, accessLevel: "Bookkeeping",          isOnline: true,  lastActive: _hoursAgo(0) },
+    { ...P.layla, accessLevel: "AP only",              isOnline: false, lastActive: _daysAgo(1) },
+  ];
+  // Derive responsibilities from routing rules
+  const rules = ROUTING_RULES_DB.filter((r) => r.status === "active");
+  const byAssignee = {};
+  for (const rule of rules) {
+    const aid = rule.action.assignTo?.id;
+    if (!aid) continue;
+    if (!byAssignee[aid]) byAssignee[aid] = [];
+    byAssignee[aid].push(rule.name);
+  }
+  for (const m of all) {
+    m.responsibilities = byAssignee[m.id] || [];
+  }
+  return all;
+}
+
+export async function getOwnerTopInsight() {
+  await delay();
+  return {
+    id: "TOP-1",
+    text:
+      "Marketing spend is [+23% over budget] for the third consecutive month. Three large items this month: campaign A ([4,200.000 KWD]), tradeshow B ([3,100.000 KWD]), agency retainer ([2,800.000 KWD]). Want me to draft a board-level summary?",
+    action: "draft-summary",
+  };
+}

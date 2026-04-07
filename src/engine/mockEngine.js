@@ -274,7 +274,7 @@ export async function getCFOAminahNotes() {
 export async function getTeamActivity() {
   await delay();
   return [
-    { id: "ta-1", initials: "S", name: "Sara",  action: "Reconciled NBK and KIB",          detail: "78 items matched", timeAgo: "2h ago" },
+    { id: "ta-1", initials: "S", name: "Sara",  action: "Reconciled KIB Operating and Settlement",          detail: "78 items matched", timeAgo: "2h ago" },
     { id: "ta-2", initials: "N", name: "Noor",  action: "Posted 5 journal entries",        detail: "Manual JEs",       timeAgo: "1h ago" },
     { id: "ta-3", initials: "S", name: "Sara",  action: "Categorized 23 bank transactions", detail: "Auto-confirmed",   timeAgo: "45min ago" },
     { id: "ta-4", initials: "N", name: "Noor",  action: "Drafted PIFSS accrual",           detail: "Awaiting approval", timeAgo: "30min ago" },
@@ -315,7 +315,7 @@ export async function getChartOfAccounts() {
     { code: "1110", name: "Petty Cash",                  category: "Assets",             type: "debit"  },
     { code: "1120", name: "KIB Operating Account",       category: "Assets",             type: "debit"  },
     { code: "1130", name: "KIB Reserve Account",         category: "Assets",             type: "debit"  },
-    { code: "1140", name: "NBK Settlement Account",      category: "Assets",             type: "debit"  },
+    { code: "1140", name: "KIB Settlement Account",      category: "Assets",             type: "debit"  },
     { code: "1200", name: "Accounts Receivable",         category: "Assets",             type: "debit"  },
     { code: "1300", name: "Inventory",                   category: "Assets",             type: "debit"  },
     { code: "1400", name: "Prepaid Expenses",            category: "Assets",             type: "debit"  },
@@ -391,7 +391,7 @@ export async function suggestJournalEntryFromBankTransaction(bankTx) {
   const bankMap = {
     "KIB Operating": { name: "KIB Operating Account", code: "1120" },
     "KIB Reserve":   { name: "KIB Reserve Account",   code: "1130" },
-    "NBK Settlement":{ name: "NBK Settlement Account", code: "1140" },
+    "KIB Settlement":{ name: "KIB Settlement Account", code: "1140" },
   };
   const bank = bankMap[bankTx.source] || { name: bankTx.source || "Bank Account", code: "1120" };
   const sug = bankTx.engineSuggestion || {};
@@ -618,8 +618,8 @@ const TASKBOX_DB = [
   // 5 — Sara → CFO, submit-work, completed (multi-turn with reopen)
   {
     id: "TSK-105",
-    subject: "Completed: NBK and KIB reconciliations",
-    body: "Both NBK and KIB reconciliations are complete. 78 items matched, 0 exceptions. Summary attached.",
+    subject: "Completed: KIB Operating and KIB Settlement reconciliations",
+    body: "Both KIB Operating and KIB Settlement reconciliations are complete. 78 items matched, 0 exceptions. Summary attached.",
     type: "submit-work",
     direction: "upward",
     status: "completed",
@@ -632,11 +632,11 @@ const TASKBOX_DB = [
     unread: false,
     thread: [
       _sysEvent("created", "Sara created this task", _daysAgo(1)),
-      _msgEvent(P.sara, "Both NBK and KIB reconciliations are complete. **78 items matched**, **0 exceptions**. Summary attached.", _daysAgo(1), [{ name: "reconciliation-summary-mar26.pdf", size: "142 KB", type: "pdf" }]),
+      _msgEvent(P.sara, "Both KIB Operating and KIB Settlement reconciliations are complete. **78 items matched**, **0 exceptions**. Summary attached.", _daysAgo(1), [{ name: "reconciliation-summary-mar26.pdf", size: "142 KB", type: "pdf" }]),
       _sysEvent("completed", "Sara completed this task", _daysAgo(1)),
       _msgEvent(P.cfo, "Thanks Sara, reviewing now.", _hoursAgo(20)),
       _sysEvent("reopened", "You reopened this task", _hoursAgo(20)),
-      _msgEvent(P.cfo, "One question — the NBK closing balance shows 142,100.250 but our GL shows 142,099.750. Can you check?", _hoursAgo(19)),
+      _msgEvent(P.cfo, "One question — the KIB Settlement closing balance shows 142,100.250 but our GL shows 142,099.750. Can you check?", _hoursAgo(19)),
       _msgEvent(P.sara, "Resolved — there was a 0.500 rounding discrepancy on a wire fee. Adjusting JE posted as JE-0418. Closing balances now match.", _hoursAgo(3)),
       _sysEvent("completed", "Sara completed this task", _hoursAgo(2)),
     ],
@@ -850,7 +850,7 @@ const TASKBOX_DB = [
   {
     id: "TSK-116",
     subject: "Bank charges reconciliation — March",
-    body: "Reconciled all bank charges across KIB Operating, KIB Reserve, and NBK Settlement. Found 4 unposted charges totaling 87.500 KWD. Posting JEs now.",
+    body: "Reconciled all bank charges across KIB Operating, KIB Reserve, and KIB Settlement. Found 4 unposted charges totaling 87.500 KWD. Posting JEs now.",
     type: "submit-work",
     direction: "upward",
     status: "open",
@@ -862,7 +862,7 @@ const TASKBOX_DB = [
     unread: true,
     thread: [
       _sysEvent("created", "Sara created this task", _hoursAgo(1)),
-      _msgEvent(P.sara, "Reconciled all bank charges across **KIB Operating**, **KIB Reserve**, and **NBK Settlement**. Found 4 unposted charges totaling **87.500 KWD**. Posting JEs now.", _hoursAgo(1)),
+      _msgEvent(P.sara, "Reconciled all bank charges across **KIB Operating**, **KIB Reserve**, and **KIB Settlement**. Found 4 unposted charges totaling **87.500 KWD**. Posting JEs now.", _hoursAgo(1)),
     ],
   },
   // 17 — CFO → Sara, request-review, open
@@ -1033,7 +1033,7 @@ const TASKBOX_DB = [
   {
     id: "TSK-125",
     subject: "Review JE-0418 — wire fee adjustment",
-    body: "I posted JE-0418 to fix the 0.500 NBK rounding discrepancy. Please double-check the entry before our weekly review.",
+    body: "I posted JE-0418 to fix the 0.500 KIB Settlement rounding discrepancy. Please double-check the entry before our weekly review.",
     type: "request-review",
     direction: "downward",
     status: "open",
@@ -1046,7 +1046,7 @@ const TASKBOX_DB = [
     unread: true,
     thread: [
       _sysEvent("created", "You created this task", _hoursAgo(2)),
-      _msgEvent(P.cfo, "I posted **JE-0418** to fix the 0.500 NBK rounding discrepancy. Please double-check the entry before our weekly review.", _hoursAgo(2)),
+      _msgEvent(P.cfo, "I posted **JE-0418** to fix the 0.500 KIB Settlement rounding discrepancy. Please double-check the entry before our weekly review.", _hoursAgo(2)),
     ],
   },
 ];
@@ -1650,9 +1650,9 @@ const BANK_ACCOUNTS_DB = [
   },
   {
     id: "ACC-3",
-    bankName: "NBK",
-    accountName: "NBK Settlement Account",
-    accountNumberMasked: "NBK •••• 3049",
+    bankName: "KIB",
+    accountName: "KIB Settlement Account",
+    accountNumberMasked: "KWIB •••• 3049",
     accountType: "settlement",
     currency: "KWD",
     currentBalance: 18420.75,
@@ -1766,7 +1766,7 @@ const _acc3Tx = (() => {
   const now = new Date();
   const d = (n, h = 12) => { const x = new Date(now); x.setDate(x.getDate() - n); x.setHours(h, 0, 0, 0); return x.toISOString(); };
   const rows = [];
-  rows.push({ date: d(13, 9), description: "Opening adjustment", reference: "ADJ-NBK", amount: 0, type: "credit", categorization: _cat("MANUAL", "Opening Balance") });
+  rows.push({ date: d(13, 9), description: "Opening adjustment", reference: "ADJ-SET", amount: 0, type: "credit", categorization: _cat("MANUAL", "Opening Balance") });
   for (let i = 12; i >= 0; i--) {
     rows.push({ date: d(i, 15),  description: "POS settlement — batch", reference: `POS-${3000 + i}`, amount: 1420.0 + i * 35,  type: "credit", categorization: _cat("RULE", "Sales Revenue", "CRULE-004") });
     rows.push({ date: d(i, 16),  description: "Acquirer fees",           reference: `ACQ-${3000 + i}`, amount: -(85 + i * 3),   type: "debit",  categorization: _cat("RULE", "Bank Charges") });

@@ -9,7 +9,7 @@ import PlaceholderScreen from "./PlaceholderScreen";
 import TaskboxScreen from "../../components/taskbox/TaskboxScreen";
 import RulesScreen from "./RulesScreen";
 import BankAccountsScreen from "../shared/BankAccountsScreen";
-import { getCFOTodayQueue, getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
+import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 
 const SCREEN_TITLES = {
   approvals:             "APPROVALS",

@@ -2,16 +2,12 @@ import { useEffect, useState } from "react";
 import SectionHeader from "../../components/SectionHeader";
 import TaskboxSummaryCard from "../../components/taskbox/TaskboxSummaryCard";
 import {
-  getRevenueSummary,
-  getExpenseSummary,
-  getProfitability,
-  getCashPosition,
+  getBusinessPulse,
   getOpenApprovalCount,
   getAuditChecks,
   getCloseStatus,
   getOwnerTopInsight,
 } from "../../engine/mockEngine";
-import { formatKWD } from "../../utils/format";
 
 function fmtN(n) {
   return Number(n || 0).toLocaleString("en-US", {
@@ -155,28 +151,21 @@ function renderHighlighted(text) {
 }
 
 export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAminah }) {
-  const [rev, setRev] = useState(null);
-  const [exp, setExp] = useState(null);
-  const [prof, setProf] = useState(null);
-  const [cash, setCash] = useState(null);
+  const [pulse, setPulse] = useState(null);
   const [approvals, setApprovals] = useState(0);
   const [audit, setAudit] = useState(null);
   const [close, setClose] = useState(null);
   const [insight, setInsight] = useState(null);
 
   useEffect(() => {
-    getRevenueSummary().then(setRev);
-    getExpenseSummary().then(setExp);
-    getProfitability().then(setProf);
-    getCashPosition().then(setCash);
+    getBusinessPulse().then(setPulse);
     getOpenApprovalCount("Owner").then(setApprovals);
     getAuditChecks().then(setAudit);
     getCloseStatus().then(setClose);
     getOwnerTopInsight().then(setInsight);
   }, []);
 
-  const revDelta =
-    rev && rev.lastMonth ? ((rev.thisMonth - rev.lastMonth) / rev.lastMonth) * 100 : 0;
+  const revDelta = pulse?.revenue?.percentChange ?? 0;
   const attentionCount =
     (approvals || 0) + (audit ? audit.failing : 0) + 1; // +1 for close sign-off
 
@@ -195,9 +184,9 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
           >
             <KpiBlock
               label="REVENUE THIS MONTH"
-              value={rev ? fmtN(rev.thisMonth) : "—"}
+              value={pulse ? fmtN(pulse.revenue.current) : "—"}
               sub={
-                rev && (
+                pulse && (
                   <span style={{ color: revDelta >= 0 ? "#00C48C" : "#FF5A5F" }}>
                     {revDelta >= 0 ? "▲" : "▼"} {Math.abs(revDelta).toFixed(1)}% vs last month
                   </span>
@@ -207,18 +196,25 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
             />
             <KpiBlock
               label="EXPENSES THIS MONTH"
-              value={exp ? fmtN(exp.thisMonth) : "—"}
+              value={pulse ? fmtN(pulse.expenses.current) : "—"}
+              sub={
+                pulse && (
+                  <span style={{ color: (pulse.expenses.percentChange || 0) >= 0 ? "#FF5A5F" : "#00C48C" }}>
+                    {(pulse.expenses.percentChange || 0) >= 0 ? "▲" : "▼"}{" "}
+                    {Math.abs(pulse.expenses.percentChange || 0).toFixed(1)}% vs last month
+                  </span>
+                )
+              }
               onClick={() => setActiveScreen("financial-statements")}
             />
             <KpiBlock
               label="NET INCOME THIS MONTH"
               accent
-              value={prof ? fmtN(prof.netIncome) : "—"}
+              value={pulse ? fmtN(pulse.netIncome.current) : "—"}
               sub={
-                prof && (
+                pulse && (
                   <span>
-                    Gross {(prof.grossMargin * 100).toFixed(0)}% · Op{" "}
-                    {(prof.operatingMargin * 100).toFixed(0)}%
+                    Gross {pulse.netIncome.grossMargin}% · Op {pulse.netIncome.operatingMargin}%
                   </span>
                 )
               }
@@ -227,8 +223,8 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
             <KpiBlock
               label="CASH POSITION"
               accent
-              value={cash ? fmtN(cash.total) : "—"}
-              sub={<span>across 4 KIB accounts</span>}
+              value={pulse ? fmtN(pulse.cash.total) : "—"}
+              sub={<span>{pulse ? pulse.cash.subtext : "across 4 KIB accounts"}</span>}
               onClick={() => setActiveScreen("bank-accounts")}
             />
           </div>

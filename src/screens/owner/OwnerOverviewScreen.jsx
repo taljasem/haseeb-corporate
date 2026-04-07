@@ -9,7 +9,7 @@ import AuditReadiness from "../../components/sections/AuditReadiness";
 import CloseStatus from "../../components/sections/CloseStatus";
 import BankAccountsCompact from "../../components/sections/BankAccountsCompact";
 
-export default function OwnerOverviewScreen() {
+export default function OwnerOverviewScreen({ setActiveScreen }) {
   const [wide, setWide] = useState(
     typeof window !== "undefined" ? window.innerWidth > 1400 : false
   );
@@ -53,10 +53,13 @@ export default function OwnerOverviewScreen() {
             gap: 16,
           }}
         >
-          <BankAccountsCompact />
+          <BankAccountsCompact
+            onViewAll={() => setActiveScreen && setActiveScreen("bank-accounts")}
+            onAccountClick={() => setActiveScreen && setActiveScreen("bank-accounts")}
+          />
           <MonthlyInsights />
           <FinancialHealthSection />
-          <PendingApprovals />
+          <PendingApprovals onViewAll={() => setActiveScreen && setActiveScreen("approvals")} />
           <BudgetPerformance />
           <AminahNotes />
           <CloseStatus />

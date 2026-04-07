@@ -108,7 +108,7 @@ export default function OwnerView() {
           />
         );
       case "overview":
-        return <OwnerOverviewScreen />;
+        return <OwnerOverviewScreen setActiveScreen={setActive} />;
       case "bank-accounts":
         return <BankAccountsScreen role="Owner" />;
       case "financial-statements":

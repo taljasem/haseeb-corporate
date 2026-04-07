@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import {
   createRoutingRule,
+  updateRoutingRule,
   getRecipientsForRole,
   getTaskTypesForDirection,
 } from "../../engine/mockEngine";
@@ -57,7 +58,7 @@ function FieldLabel({ filled, children }) {
 
 const PRIORITIES = ["normal", "high", "urgent"];
 
-export default function NewRoutingRuleModal({ open, onClose, onCreated }) {
+export default function NewRoutingRuleModal({ open, onClose, onCreated, editingRule = null }) {
   const [name, setName] = useState("");
   const [types, setTypes] = useState([]);
   const [selectedTypes, setSelectedTypes] = useState(["all"]);
@@ -74,6 +75,25 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated }) {
     getRecipientsForRole("CFO").then(setRecipients);
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    if (editingRule) {
+      setName(editingRule.name || "");
+      setSelectedTypes(editingRule.trigger?.taskTypes?.length ? editingRule.trigger.taskTypes : ["all"]);
+      setAssignee(editingRule.action?.assignTo || null);
+      setPriority(editingRule.action?.priority || "normal");
+      setAmountMin(editingRule.trigger?.conditions?.amountMin != null ? String(editingRule.trigger.conditions.amountMin) : "");
+      setMerchantPattern(editingRule.trigger?.conditions?.merchantPattern || "");
+    } else {
+      setName("");
+      setSelectedTypes(["all"]);
+      setAssignee(null);
+      setPriority("normal");
+      setAmountMin("");
+      setMerchantPattern("");
+    }
+  }, [open, editingRule]);
+
   if (!open) return null;
 
   const toggleType = (id) => {
@@ -89,7 +109,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated }) {
 
   const handleCreate = async () => {
     setSending(true);
-    const rule = await createRoutingRule({
+    const params = {
       name,
       trigger: {
         taskTypes: selectedTypes,
@@ -100,7 +120,10 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated }) {
         },
       },
       action: { assignTo: assignee, alsoNotify: null, priority },
-    });
+    };
+    const rule = editingRule
+      ? await updateRoutingRule(editingRule.id, params)
+      : await createRoutingRule(params);
     setSending(false);
     onCreated && onCreated(rule);
     onClose && onClose();
@@ -148,7 +171,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated }) {
         >
           <div>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570" }}>
-              NEW ROUTING RULE
+              {editingRule ? "EDIT ROUTING RULE" : "NEW ROUTING RULE"}
             </div>
             <div
               style={{
@@ -159,7 +182,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated }) {
                 marginTop: 2,
               }}
             >
-              CREATE RULE
+              {editingRule ? "UPDATE RULE" : "CREATE RULE"}
             </div>
           </div>
           <button
@@ -358,7 +381,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated }) {
               fontFamily: "inherit",
             }}
           >
-            {sending ? "Creating..." : "Create Rule"}
+            {sending ? "Saving..." : editingRule ? "Save Changes" : "Create Rule"}
           </button>
         </div>
       </div>

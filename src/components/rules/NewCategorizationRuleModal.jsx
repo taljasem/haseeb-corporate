@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import AccountPicker from "../cfo/AccountPicker";
-import { createCategorizationRule } from "../../engine/mockEngine";
+import { createCategorizationRule, updateCategorizationRule } from "../../engine/mockEngine";
 
 const inputStyle = {
   width: "100%",
@@ -79,10 +79,10 @@ const MODES = [
   { id: "ask-each-time", label: "Ask each time",  desc: "Always prompt the user; never apply silently." },
 ];
 
-export default function NewCategorizationRuleModal({ open, onClose, onCreated, prefill = null }) {
-  const [name, setName] = useState(prefill?.name || "");
+export default function NewCategorizationRuleModal({ open, onClose, onCreated, prefill = null, editingRule = null }) {
+  const [name, setName] = useState("");
   const [patternType, setPatternType] = useState("contains");
-  const [patternValue, setPatternValue] = useState(prefill?.merchant || "");
+  const [patternValue, setPatternValue] = useState("");
   const [debitAccount, setDebitAccount] = useState(null);
   const [creditAccount, setCreditAccount] = useState(null);
   const [mode, setMode] = useState("auto-apply");
@@ -91,13 +91,41 @@ export default function NewCategorizationRuleModal({ open, onClose, onCreated, p
   const [approvalThreshold, setApprovalThreshold] = useState("");
   const [sending, setSending] = useState(false);
 
+  useEffect(() => {
+    if (!open) return;
+    if (editingRule) {
+      setName(editingRule.name || "");
+      setPatternType(editingRule.merchantPattern?.type || "contains");
+      setPatternValue(editingRule.merchantPattern?.value || "");
+      setDebitAccount(editingRule.debitAccount || null);
+      setCreditAccount(editingRule.creditAccount || null);
+      setMode(editingRule.mode || "auto-apply");
+      setAmountMin(editingRule.conditions?.amountMin != null ? String(editingRule.conditions.amountMin) : "");
+      setAmountMax(editingRule.conditions?.amountMax != null ? String(editingRule.conditions.amountMax) : "");
+      setApprovalThreshold(editingRule.approvalThreshold != null ? String(editingRule.approvalThreshold) : "");
+    } else if (prefill) {
+      setName(prefill.name || "");
+      setPatternValue(prefill.merchant || "");
+    } else {
+      setName("");
+      setPatternType("contains");
+      setPatternValue("");
+      setDebitAccount(null);
+      setCreditAccount(null);
+      setMode("auto-apply");
+      setAmountMin("");
+      setAmountMax("");
+      setApprovalThreshold("");
+    }
+  }, [open, editingRule, prefill]);
+
   if (!open) return null;
 
   const canCreate = name.trim() && patternValue.trim() && debitAccount && creditAccount;
 
   const handleCreate = async () => {
     setSending(true);
-    const rule = await createCategorizationRule({
+    const params = {
       name,
       merchantPattern: { type: patternType, value: patternValue },
       debitAccount: { code: debitAccount.code, name: debitAccount.name },
@@ -109,7 +137,10 @@ export default function NewCategorizationRuleModal({ open, onClose, onCreated, p
         sourceAccount: null,
       },
       approvalThreshold: approvalThreshold ? Number(approvalThreshold) : null,
-    });
+    };
+    const rule = editingRule
+      ? await updateCategorizationRule(editingRule.id, params)
+      : await createCategorizationRule(params);
     setSending(false);
     onCreated && onCreated(rule);
     onClose && onClose();
@@ -157,7 +188,7 @@ export default function NewCategorizationRuleModal({ open, onClose, onCreated, p
         >
           <div>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570" }}>
-              NEW CATEGORIZATION RULE
+              {editingRule ? "EDIT CATEGORIZATION RULE" : "NEW CATEGORIZATION RULE"}
             </div>
             <div
               style={{
@@ -168,7 +199,7 @@ export default function NewCategorizationRuleModal({ open, onClose, onCreated, p
                 marginTop: 2,
               }}
             >
-              CREATE RULE
+              {editingRule ? "UPDATE RULE" : "CREATE RULE"}
             </div>
           </div>
           <button
@@ -343,7 +374,7 @@ export default function NewCategorizationRuleModal({ open, onClose, onCreated, p
               fontFamily: "inherit",
             }}
           >
-            {sending ? "Creating..." : "Create Rule"}
+            {sending ? "Saving..." : editingRule ? "Save Changes" : "Create Rule"}
           </button>
         </div>
       </div>

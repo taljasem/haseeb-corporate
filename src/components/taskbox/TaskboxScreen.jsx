@@ -4,7 +4,10 @@ import {
   getTaskbox,
   completeTask as engineCompleteTask,
   replyToTask as engineReplyToTask,
+  cancelTask as engineCancelTask,
 } from "../../engine/mockEngine";
+
+const ROLE_TO_USER_ID = { CFO: "cfo", Owner: "owner", Junior: "sara" };
 import TaskRow from "./TaskRow";
 import TaskDetail from "./TaskDetail";
 import NewTaskModal from "./NewTaskModal";
@@ -60,6 +63,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
     return (
       <TaskDetail
         task={openTask}
+        currentUserId={ROLE_TO_USER_ID[role] || "cfo"}
         onBack={() => setOpenTaskId(null)}
         onComplete={async (t) => {
           await engineCompleteTask(t.id, null, role === "CFO" ? "cfo" : role === "Owner" ? "owner" : "sara");
@@ -79,6 +83,8 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
             await engineReplyToTask(t.id, `[Rejected] ${note}`, author);
           } else if (action === "escalate") {
             await engineReplyToTask(t.id, "[Escalated]", author);
+          } else if (action === "cancel") {
+            await engineCancelTask(t.id, author);
           }
           refresh();
         }}

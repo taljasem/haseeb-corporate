@@ -1,5 +1,11 @@
 // DEMO ONLY — production roles come from auth
 const ROLES = ["Owner", "CFO", "Junior"];
+// Canonical role accent colors (match team member avatar colors)
+const ROLE_COLOR = {
+  Owner:  "#8B5CF6", // Tarek purple
+  CFO:    "#00C48C", // You teal
+  Junior: "#3B82F6", // Sara blue
+};
 
 function BellIcon() {
   return (
@@ -18,7 +24,7 @@ function MoonIcon() {
   );
 }
 
-export default function Header({ role, setRole, tab, setTab }) {
+export default function Header({ role, setRole }) {
   return (
     <header
       style={{
@@ -77,44 +83,6 @@ export default function Header({ role, setRole, tab, setTab }) {
         </span>
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: "flex", height: "100%" }}>
-        <button
-          className={`tab-b ${tab === "owner" ? "on" : ""}`}
-          onClick={() => setTab("owner")}
-          style={{
-            padding: "0 20px",
-            fontSize: 13,
-            fontWeight: 600,
-            letterSpacing: "0.08em",
-            color: tab === "owner" ? "#00C48C" : "#5B6570",
-            cursor: "pointer",
-            border: "none",
-            background: "none",
-            fontFamily: "inherit",
-          }}
-        >
-          OWNER VIEW
-        </button>
-        <button
-          className={`tab-b ${tab === "bookkeeping" ? "on" : ""}`}
-          onClick={() => setTab("bookkeeping")}
-          style={{
-            padding: "0 20px",
-            fontSize: 13,
-            fontWeight: 600,
-            letterSpacing: "0.08em",
-            color: tab === "bookkeeping" ? "#00C48C" : "#5B6570",
-            cursor: "pointer",
-            border: "none",
-            background: "none",
-            fontFamily: "inherit",
-          }}
-        >
-          BOOKKEEPING
-        </button>
-      </div>
-
       {/* Right cluster */}
       <div
         style={{
@@ -126,15 +94,31 @@ export default function Header({ role, setRole, tab, setTab }) {
       >
         {/* Role switcher — DEMO ONLY */}
         <div style={{ display: "flex", gap: 4 }}>
-          {ROLES.map((r) => (
-            <button
-              key={r}
-              className={`role-pill ${role === r ? "on" : ""}`}
-              onClick={() => setRole(r)}
-            >
-              {r}
-            </button>
-          ))}
+          {ROLES.map((r) => {
+            const on = role === r;
+            const color = ROLE_COLOR[r];
+            return (
+              <button
+                key={r}
+                onClick={() => setRole(r)}
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  letterSpacing: "0.06em",
+                  padding: "4px 10px",
+                  borderRadius: 4,
+                  background: on ? `${color}14` : "rgba(255,255,255,0.02)",
+                  border: on ? `1px solid ${color}66` : "1px solid rgba(255,255,255,0.08)",
+                  color: on ? color : "#5B6570",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                {r}
+              </button>
+            );
+          })}
         </div>
 
         {/* Bell with red dot */}

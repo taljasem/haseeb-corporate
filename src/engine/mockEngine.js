@@ -2308,3 +2308,88 @@ export async function draftJournalEntryForJunior({ amount, debitAccount, creditA
   };
   return { entry, needsApproval };
 }
+
+// ─────────────────────────────────────────
+// POLISH — reconciled Business Pulse
+// ─────────────────────────────────────────
+
+export async function getBusinessPulse() {
+  await delay();
+  // Source of truth:
+  //   revenue    → getIncomeStatement totals
+  //   expenses   → getIncomeStatement COGS + OpEx
+  //   netIncome  → getIncomeStatement NET INCOME
+  //   cash       → getBankAccounts (USD converted at 3.28 KWD/USD)
+  const is = await getIncomeStatement();
+  const accounts = await getBankAccounts();
+  const FX_USD_KWD = 3.28;
+
+  const sec = (name) => is.sections.find((s) => s.name === name);
+  const revenue = sec("REVENUE");
+  const cogs = sec("COST OF GOODS SOLD");
+  const opex = sec("OPERATING EXPENSES");
+  const netIncome = sec("NET INCOME");
+
+  const revCurr = revenue?.subtotal?.current || 0;
+  const revPrior = revenue?.subtotal?.prior || 0;
+  const cogsCurr = cogs?.subtotal?.current || 0;
+  const cogsPrior = cogs?.subtotal?.prior || 0;
+  const opexCurr = opex?.subtotal?.current || 0;
+  const opexPrior = opex?.subtotal?.prior || 0;
+  const expCurr = Number((cogsCurr + opexCurr).toFixed(3));
+  const expPrior = Number((cogsPrior + opexPrior).toFixed(3));
+  const niCurr = netIncome?.current || 0;
+  const niPrior = netIncome?.prior || 0;
+
+  const pct = (curr, prior) =>
+    prior === 0 ? null : Number((((curr - prior) / Math.abs(prior)) * 100).toFixed(1));
+
+  const grossMargin = revCurr ? Number((((revCurr - cogsCurr) / revCurr) * 100).toFixed(1)) : 0;
+  const operatingMargin = revCurr
+    ? Number((((revCurr - cogsCurr - opexCurr) / revCurr) * 100).toFixed(1))
+    : 0;
+
+  const cashTotal = accounts.reduce((sum, a) => {
+    const rate = a.currency === "USD" ? FX_USD_KWD : 1;
+    return sum + a.currentBalance * rate;
+  }, 0);
+
+  return {
+    revenue:   { current: revCurr, prior: revPrior, percentChange: pct(revCurr, revPrior) },
+    expenses:  { current: expCurr, prior: expPrior, percentChange: pct(expCurr, expPrior) },
+    netIncome: { current: niCurr,  prior: niPrior,  percentChange: pct(niCurr, niPrior), grossMargin, operatingMargin },
+    cash: {
+      total: Number(cashTotal.toFixed(3)),
+      accountCount: accounts.length,
+      subtext: `across ${accounts.length} KIB accounts`,
+    },
+  };
+}
+
+export async function cancelTask(taskId, byId = "cfo") {
+  await delay();
+  const t = TASKBOX_DB.find((x) => x.id === taskId);
+  if (!t) return null;
+  const by = P[byId] || P.cfo;
+  t.thread.push(_sysEvent("cancelled", `${by.name} cancelled this request`));
+  t.status = "cancelled";
+  t.updatedAt = new Date().toISOString();
+  return t;
+}
+
+export async function updateCategorizationRule(id, changes) {
+  await delay();
+  const r = CAT_RULES_DB.find((x) => x.id === id);
+  if (!r) return null;
+  Object.assign(r, changes);
+  r.auditTrail.push(_rAudit("edited", P.cfo, "You edited this rule"));
+  return r;
+}
+export async function updateRoutingRule(id, changes) {
+  await delay();
+  const r = ROUTING_RULES_DB.find((x) => x.id === id);
+  if (!r) return null;
+  Object.assign(r, changes);
+  r.auditTrail.push(_rAudit("edited", P.cfo, "You edited this rule"));
+  return r;
+}

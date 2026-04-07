@@ -36,7 +36,9 @@ export default function RulesScreen({ initialTab = "categorization" }) {
   const [expandedId, setExpandedId] = useState(null);
   const [catModalOpen, setCatModalOpen] = useState(false);
   const [catModalPrefill, setCatModalPrefill] = useState(null);
+  const [catEditingRule, setCatEditingRule] = useState(null);
   const [routeModalOpen, setRouteModalOpen] = useState(false);
+  const [routeEditingRule, setRouteEditingRule] = useState(null);
   const [toast, setToast] = useState(null);
   const [tick, setTick] = useState(0);
   const refresh = useCallback(() => setTick((t) => t + 1), []);
@@ -296,7 +298,7 @@ export default function RulesScreen({ initialTab = "categorization" }) {
               rule={r}
               expanded={expandedId === r.id}
               onToggle={(rr) => setExpandedId(expandedId === rr.id ? null : rr.id)}
-              onEdit={() => setCatModalOpen(true)}
+              onEdit={(rule) => { setCatEditingRule(rule); setCatModalOpen(true); }}
               onMute={handleMute}
               onDelete={handleDelete}
             />
@@ -308,7 +310,7 @@ export default function RulesScreen({ initialTab = "categorization" }) {
               rule={r}
               expanded={expandedId === r.id}
               onToggle={(rr) => setExpandedId(expandedId === rr.id ? null : rr.id)}
-              onEdit={() => setRouteModalOpen(true)}
+              onEdit={(rule) => { setRouteEditingRule(rule); setRouteModalOpen(true); }}
               onMute={handleMute}
               onDelete={handleDelete}
             />
@@ -326,19 +328,23 @@ export default function RulesScreen({ initialTab = "categorization" }) {
 
       <NewCategorizationRuleModal
         open={catModalOpen}
-        onClose={() => setCatModalOpen(false)}
+        onClose={() => { setCatModalOpen(false); setCatEditingRule(null); setCatModalPrefill(null); }}
         prefill={catModalPrefill}
+        editingRule={catEditingRule}
         onCreated={(r) => {
           refresh();
-          toast2(`Rule created: ${r.name}`);
+          toast2(catEditingRule ? `Rule updated: ${r.name}` : `Rule created: ${r.name}`);
+          setCatEditingRule(null);
         }}
       />
       <NewRoutingRuleModal
         open={routeModalOpen}
-        onClose={() => setRouteModalOpen(false)}
+        onClose={() => { setRouteModalOpen(false); setRouteEditingRule(null); }}
+        editingRule={routeEditingRule}
         onCreated={(r) => {
           refresh();
-          toast2(`Rule created: ${r.name}`);
+          toast2(routeEditingRule ? `Rule updated: ${r.name}` : `Rule created: ${r.name}`);
+          setRouteEditingRule(null);
         }}
       />
     </div>

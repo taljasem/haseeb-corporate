@@ -10,7 +10,7 @@ const STATUS_STYLE = {
   open:             { bg: "rgba(0,196,140,0.10)",  fg: "#00C48C", label: "OPEN" },
   "in-progress":    { bg: "rgba(59,130,246,0.10)", fg: "#3B82F6", label: "IN PROGRESS" },
   completed:        { bg: "rgba(91,101,112,0.14)", fg: "#8B98A5", label: "COMPLETED" },
-  cancelled:        { bg: "rgba(255,90,95,0.10)",  fg: "#FF5A5F", label: "CANCELLED" },
+  cancelled:        { bg: "rgba(91,101,112,0.14)", fg: "#8B98A5", label: "CANCELLED" },
   "needs-revision": { bg: "rgba(212,168,75,0.10)", fg: "#D4A84B", label: "NEEDS REVISION" },
   rejected:         { bg: "rgba(255,90,95,0.10)",  fg: "#FF5A5F", label: "REJECTED" },
 };
@@ -36,15 +36,16 @@ function MetaItem({ label, children }) {
   );
 }
 
-export default function TaskDetail({ task, onBack, onComplete, onReply, onApprovalAction }) {
+export default function TaskDetail({ task, onBack, onComplete, onReply, onApprovalAction, currentUserId = "cfo" }) {
   const [reply, setReply] = useState("");
   const [approvalMode, setApprovalMode] = useState(null); // "request-changes" | "reject" | null
   const [approvalNote, setApprovalNote] = useState("");
   const [jePosted, setJePosted] = useState(false);
   if (!task) return null;
   const status = STATUS_STYLE[task.status] || STATUS_STYLE.open;
-  const isCompleted = task.status === "completed" || task.status === "rejected";
+  const isCompleted = task.status === "completed" || task.status === "rejected" || task.status === "cancelled";
   const isApproval = task.type === "request-approval";
+  const isSender = isApproval && task.sender.id === currentUserId;
   const hasJELinked = task.linkedItem && task.linkedItem.type === "journal-entry" && task.linkedItem.entry;
 
   return (
@@ -98,7 +99,47 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
               Complete task
             </button>
           )}
-          {!isCompleted && isApproval && (
+          {!isCompleted && isSender && (
+            <>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: "0.12em",
+                  color: "#D4A84B",
+                  background: "rgba(212,168,75,0.08)",
+                  border: "1px solid rgba(212,168,75,0.30)",
+                  padding: "5px 10px",
+                  borderRadius: 4,
+                }}
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                AWAITING APPROVAL
+              </span>
+              <button
+                onClick={() => onApprovalAction && onApprovalAction(task, "cancel")}
+                style={{
+                  background: "transparent",
+                  color: "#8B98A5",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  padding: "8px 14px",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontFamily: "inherit",
+                }}
+              >
+                Cancel request
+              </button>
+            </>
+          )}
+          {!isCompleted && isApproval && !isSender && (
             <>
               <button
                 onClick={() => {
@@ -260,6 +301,19 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
             )}
             <MetaItem label="CREATED">{formatRelativeTime(task.createdAt)}</MetaItem>
           </div>
+
+          {isSender && !isCompleted && (
+            <div
+              style={{
+                fontSize: 12,
+                color: "#5B6570",
+                marginBottom: 14,
+                fontStyle: "italic",
+              }}
+            >
+              Waiting for <span style={{ color: "#8B98A5" }}>{task.recipient.name}</span> to respond.
+            </div>
+          )}
 
           {/* Approval inline reason composer */}
           {isApproval && !isCompleted && approvalMode && (

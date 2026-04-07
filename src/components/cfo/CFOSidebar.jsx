@@ -6,7 +6,6 @@ const I = (path) => (props) => (
 );
 
 const HomeIcon = I(<><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></>);
-const CheckIcon = I(<><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></>);
 const BankIcon = I(<><line x1="3" y1="21" x2="21" y2="21" /><polyline points="3 10 12 3 21 10" /><line x1="6" y1="21" x2="6" y2="10" /><line x1="10" y1="21" x2="10" y2="10" /><line x1="14" y1="21" x2="14" y2="10" /><line x1="18" y1="21" x2="18" y2="10" /></>);
 const ChatIcon = I(<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />);
 const PencilIcon = I(<><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4z" /></>);

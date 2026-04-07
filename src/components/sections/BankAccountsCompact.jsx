@@ -3,7 +3,7 @@ import SectionCard from "./SectionCard";
 import { getBankAccounts } from "../../engine/mockEngine";
 import { formatMoney } from "../../utils/formatCurrency";
 
-export default function BankAccountsCompact() {
+export default function BankAccountsCompact({ onViewAll, onAccountClick }) {
   const [accounts, setAccounts] = useState(null);
   useEffect(() => {
     getBankAccounts().then(setAccounts);
@@ -15,7 +15,7 @@ export default function BankAccountsCompact() {
         {(accounts || []).map((a) => (
           <div
             key={a.id}
-            onClick={() => console.log("[owner] bank account click — full screen in Step 4b", a.id)}
+            onClick={() => onAccountClick && onAccountClick(a)}
             onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             style={{
@@ -78,7 +78,7 @@ export default function BankAccountsCompact() {
       </div>
       <div style={{ marginTop: 12 }}>
         <a
-          onClick={() => console.log("[owner] full Bank Accounts screen comes in Step 4b")}
+          onClick={onViewAll}
           style={{
             fontSize: 12,
             color: "#00C48C",

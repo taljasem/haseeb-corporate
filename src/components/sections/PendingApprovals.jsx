@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import SectionCard from "./SectionCard";
 import { getTaskbox } from "../../engine/mockEngine";
 
-export default function PendingApprovals() {
+export default function PendingApprovals({ onViewAll }) {
   const [tasks, setTasks] = useState(null);
   useEffect(() => {
     getTaskbox("Owner", "approvals").then(setTasks);
@@ -51,7 +51,7 @@ export default function PendingApprovals() {
       )}
       <div style={{ marginTop: 14 }}>
         <a
-          onClick={() => console.log("[owner] full Taskbox coming in owner view restructure")}
+          onClick={onViewAll}
           style={{
             fontSize: 12,
             color: "#00C48C",

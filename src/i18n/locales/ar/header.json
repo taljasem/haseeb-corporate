@@ -1,0 +1,11 @@
+{
+  "logo": "حسيب.",
+  "tenant_label": "المستأجر",
+  "tenant_dev_only": "مستأجر تجريبي · للتطوير فقط",
+  "role_owner": "المالك",
+  "role_cfo": "المدير المالي",
+  "role_junior": "محاسب مبتدئ",
+  "aminah_button": "أمينة",
+  "tooltip_theme_coming": "الوضع الفاتح — قريباً",
+  "tooltip_theme_subtext": "الوضع الفاتح قيد التطوير"
+}

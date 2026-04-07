@@ -163,3 +163,15 @@
 .tension-dot--positive { background: var(--teal);  color: #fff; }
 
 .view-enter { animation: viewEnter 0.2s ease-out both; }
+
+/* ── RTL / i18n base support ─────────────────────────── */
+[dir="rtl"], [lang="ar"] {
+  font-family: "Noto Sans Arabic", "DM Sans", system-ui, sans-serif;
+}
+
+/* Keep DM Mono numbers in LTR even inside RTL containers */
+.dm-mono,
+[style*="DM Mono"] {
+  direction: ltr;
+  unicode-bidi: embed;
+}

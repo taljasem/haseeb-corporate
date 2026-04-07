@@ -6,6 +6,8 @@ import CFOView from "./screens/cfo/CFOView";
 import JuniorView from "./screens/junior/JuniorView";
 import { NavContext } from "./components/shared/NavContext";
 import { TenantProvider, useTenant } from "./components/shared/TenantContext";
+import "./i18n";
+import { LanguageProvider } from "./i18n/LanguageContext";
 
 function AppInner() {
   const [role, setRole] = useState("Owner");
@@ -36,7 +38,9 @@ function AppInner() {
 export default function App() {
   return (
     <TenantProvider>
-      <AppInner />
+      <LanguageProvider>
+        <AppInner />
+      </LanguageProvider>
     </TenantProvider>
   );
 }

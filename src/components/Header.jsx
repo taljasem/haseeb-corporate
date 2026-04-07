@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNav } from "./shared/NavContext";
 import { useTenant } from "./shared/TenantContext";
+import { useLanguage } from "../i18n/LanguageContext";
 
 // DEMO ONLY — production roles come from auth
 const ROLES = ["Owner", "CFO", "Junior"];
@@ -70,9 +72,10 @@ function Tooltip({ title, sub }) {
 }
 
 export default function Header({ role, setRole }) {
+  const { t } = useTranslation("header");
+  const { language, toggleLanguage } = useLanguage();
   const [bellOpen, setBellOpen] = useState(false);
   const [unread, setUnread] = useState(true);
-  const [arabicTip, setArabicTip] = useState(false);
   const [themeTip, setThemeTip] = useState(false);
   const bellRef = useRef(null);
   const nav = useNav();
@@ -153,7 +156,7 @@ export default function Header({ role, setRole }) {
             letterSpacing: "0.02em",
           }}
         >
-          HASEEB.
+          {t("logo")}
         </span>
       </div>
 
@@ -181,7 +184,7 @@ export default function Header({ role, setRole }) {
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
           </svg>
-          TENANT · {tenant.company.shortName.toUpperCase()}
+          {t("tenant_label")} · {tenant.company.shortName.toUpperCase()}
         </button>
         {tenantOpen && (
           <div
@@ -208,7 +211,7 @@ export default function Header({ role, setRole }) {
                 borderBottom: "1px solid rgba(255,255,255,0.06)",
               }}
             >
-              DEMO TENANT · DEV ONLY
+              {t("tenant_dev_only")}
             </div>
             {allTenants.map((t) => {
               const on = t.id === tenantId;
@@ -296,7 +299,7 @@ export default function Header({ role, setRole }) {
                   transition: "all 0.15s ease",
                 }}
               >
-                {r}
+                {t(`role_${r.toLowerCase()}`)}
               </button>
             );
           })}
@@ -455,23 +458,21 @@ export default function Header({ role, setRole }) {
           >
             <MoonIcon />
           </button>
-          {themeTip && <Tooltip title="Light mode — coming soon" sub="Light theme in development" />}
+          {themeTip && <Tooltip title={t("tooltip_theme_coming")} sub={t("tooltip_theme_subtext")} />}
         </div>
 
         {/* Language toggle */}
         <div style={{ position: "relative" }}>
           <button
-            onClick={() => {
-              setArabicTip(true);
-              setTimeout(() => setArabicTip(false), 3000);
-            }}
+            onClick={toggleLanguage}
+            aria-label="Toggle language"
             style={{
               fontFamily: "'Noto Sans Arabic', sans-serif",
               fontSize: 12,
               fontWeight: 600,
-              color: "#5B6570",
-              background: "rgba(255,255,255,0.03)",
-              border: "1px solid rgba(255,255,255,0.10)",
+              color: language === "ar" ? "#00C48C" : "#5B6570",
+              background: language === "ar" ? "rgba(0,196,140,0.10)" : "rgba(255,255,255,0.03)",
+              border: language === "ar" ? "1px solid rgba(0,196,140,0.40)" : "1px solid rgba(255,255,255,0.10)",
               borderRadius: 4,
               padding: "4px 10px",
               cursor: "pointer",
@@ -479,12 +480,6 @@ export default function Header({ role, setRole }) {
           >
             عربي
           </button>
-          {arabicTip && (
-            <Tooltip
-              title="Arabic interface — coming soon"
-              sub="Right-to-left support and full Arabic translation in development"
-            />
-          )}
         </div>
 
         {/* Avatar */}

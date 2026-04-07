@@ -5,10 +5,14 @@ import BudgetVarianceBar from "./BudgetVarianceBar";
 import { getBudgetVarianceByLineItem } from "../../engine/mockEngine";
 
 const STATUS_PILL = {
-  under:    { fg: "#00C48C", bg: "rgba(0,196,140,0.10)", label: "UNDER" },
-  "on-track": { fg: "#00C48C", bg: "rgba(0,196,140,0.10)", label: "ON TRACK" },
-  over:     { fg: "#D4A84B", bg: "rgba(212,168,75,0.10)", label: "APPROACHING" },
-  critical: { fg: "#FF5A5F", bg: "rgba(255,90,95,0.10)", label: "OVER" },
+  // expense
+  under:      { fg: "#00C48C", bg: "rgba(0,196,140,0.10)",  label: "UNDER" },
+  "on-track": { fg: "#00C48C", bg: "rgba(0,196,140,0.10)",  label: "ON TRACK" },
+  over:       { fg: "#D4A84B", bg: "rgba(212,168,75,0.10)", label: "APPROACHING" },
+  critical:   { fg: "#FF5A5F", bg: "rgba(255,90,95,0.10)",  label: "OVER" },
+  // revenue
+  behind:     { fg: "#FF5A5F", bg: "rgba(255,90,95,0.10)",  label: "BEHIND" },
+  ahead:      { fg: "#00C48C", bg: "rgba(0,196,140,0.10)",  label: "AHEAD" },
 };
 
 const COLS = "minmax(160px, 1.4fr) minmax(140px, 1fr) 130px 130px 130px 130px 180px 110px 18px";
@@ -87,7 +91,9 @@ export default function DepartmentRow({ row, expanded, onToggle, ownerName }) {
           style={{
             fontFamily: "'DM Mono', monospace",
             fontSize: 12,
-            color: row.varianceAmount > 0 ? "#FF5A5F" : "#00C48C",
+            color: row.category === "revenue"
+              ? (row.varianceAmount < 0 ? "#FF5A5F" : "#00C48C")
+              : (row.varianceAmount > 0 ? "#FF5A5F" : "#00C48C"),
             textAlign: "right",
             fontVariantNumeric: "tabular-nums",
           }}

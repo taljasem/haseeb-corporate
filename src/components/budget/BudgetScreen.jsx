@@ -56,7 +56,9 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
     otherRows = variance.filter((r) => r.ownerUserId !== juniorOnlyId);
   }
 
-  const totalVariance = (variance || []).reduce((s, r) => s + r.varianceAmount, 0);
+  const expenseVarianceTotal = (variance || [])
+    .filter((r) => r.category === "expense")
+    .reduce((s, r) => s + r.varianceAmount, 0);
   const summaryWithVariance = summary;
 
   return (
@@ -212,7 +214,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
 
         {/* Summary strip */}
         {role !== "Junior" && (
-          <BudgetSummaryStrip summary={summaryWithVariance} varianceTotal={totalVariance} />
+          <BudgetSummaryStrip summary={summaryWithVariance} expenseVarianceTotal={expenseVarianceTotal} />
         )}
 
         {/* Departments table */}

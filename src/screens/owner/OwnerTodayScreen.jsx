@@ -7,6 +7,7 @@ import {
   getAuditChecks,
   getCloseStatus,
   getOwnerTopInsight,
+  getBudgetVarianceByDepartment,
 } from "../../engine/mockEngine";
 
 function fmtN(n) {
@@ -156,6 +157,7 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
   const [audit, setAudit] = useState(null);
   const [close, setClose] = useState(null);
   const [insight, setInsight] = useState(null);
+  const [budgetVariance, setBudgetVariance] = useState(null);
 
   useEffect(() => {
     getBusinessPulse().then(setPulse);
@@ -163,6 +165,17 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
     getAuditChecks().then(setAudit);
     getCloseStatus().then(setClose);
     getOwnerTopInsight().then(setInsight);
+    getBudgetVarianceByDepartment().then((rows) => {
+      const expenses = rows.filter((r) => r.category === "expense");
+      const totalBudget = expenses.reduce((s, r) => s + r.budgetYtd, 0);
+      const totalActual = expenses.reduce((s, r) => s + r.actualYtd, 0);
+      const ratio = totalBudget === 0 ? 1 : totalActual / totalBudget;
+      let label, color;
+      if (ratio <= 1.0) { label = "vs budget: on track"; color = "#00C48C"; }
+      else if (ratio <= 1.05) { label = "vs budget: approaching plan"; color = "#D4A84B"; }
+      else { label = `vs budget: ${Math.round((ratio - 1) * 100)}% over plan`; color = "#FF5A5F"; }
+      setBudgetVariance({ label, color });
+    });
   }, []);
 
   const revDelta = pulse?.revenue?.percentChange ?? 0;
@@ -213,9 +226,25 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
               value={pulse ? fmtN(pulse.netIncome.current) : "—"}
               sub={
                 pulse && (
-                  <span>
-                    Gross {pulse.netIncome.grossMargin}% · Op {pulse.netIncome.operatingMargin}%
-                  </span>
+                  <>
+                    <span>
+                      Gross {pulse.netIncome.grossMargin}% · Op {pulse.netIncome.operatingMargin}%
+                    </span>
+                    {budgetVariance && (
+                      <div
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 600,
+                          letterSpacing: "0.10em",
+                          color: budgetVariance.color,
+                          marginTop: 3,
+                          textTransform: "lowercase",
+                        }}
+                      >
+                        {budgetVariance.label}
+                      </div>
+                    )}
+                  </>
                 )
               }
               onClick={() => setActiveScreen("financial-statements")}

@@ -2630,16 +2630,54 @@ const _DEPT_YTD_ACTUALS = {
   "DEPT-admin":      67425,    // 25.0% of 269,700
 };
 
-function _statusForPercent(pct) {
-  if (pct < 90)  return "under";
+function _statusForPercent(pct, category = "expense") {
+  if (category === "revenue") {
+    if (pct < 90)   return "behind";
+    if (pct <= 100) return "on-track";
+    return "ahead";
+  }
+  if (pct < 90)   return "under";
   if (pct <= 100) return "on-track";
   if (pct <= 110) return "over";
   return "critical";
 }
 
+function _budgetNarration() {
+  const totalRev = _ACTIVE_BUDGET.totalRevenue;
+  const totalExp = _ACTIVE_BUDGET.totalExpenses;
+  const netInc = _ACTIVE_BUDGET.netIncome;
+  const margin = totalRev > 0 ? (netInc / totalRev) * 100 : 0;
+  const ytdFraction = 3 / 12;
+  const marketing = _ACTIVE_BUDGET.departments.find((d) => d.name === "Marketing");
+  let marketingPct = 0;
+  let overage = 0;
+  if (marketing) {
+    const ytdBudget = marketing.totalAnnual * ytdFraction;
+    const ytdActual = _DEPT_YTD_ACTUALS[marketing.id] || 0;
+    marketingPct = ytdBudget === 0 ? 0 : (ytdActual / ytdBudget) * 100;
+    // Project: if pace continues, what's the annual overage?
+    const projectedAnnual = (ytdActual / ytdFraction);
+    overage = Math.max(0, projectedAnnual - marketing.totalAnnual);
+  }
+  const fmt = (n) =>
+    n.toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+  return (
+    `FY 2026 budget is [active] with total revenue target of [${fmt(totalRev)} KWD] ` +
+    `and expenses budget of [${fmt(totalExp)} KWD], leaving projected net income of ` +
+    `[${fmt(netInc)} KWD] (margin [${margin.toFixed(1)}%]). Through Q1 we're tracking ` +
+    `on plan for revenue but [Marketing is at ${marketingPct.toFixed(0)}% of YTD allocation] — ` +
+    `at this pace we'll exceed annual budget by approximately [+${fmt(overage)} KWD]. ` +
+    `Operations and Tech & Infra are running below pace which offsets the marketing variance.`
+  );
+}
+
 export async function getActiveBudget(_period) {
   await delay();
-  return _brandObj({ ..._ACTIVE_BUDGET, departments: _ACTIVE_BUDGET.departments.map((d) => ({ ...d })) });
+  return _brandObj({
+    ..._ACTIVE_BUDGET,
+    aminahNarration: _budgetNarration(),
+    departments: _ACTIVE_BUDGET.departments.map((d) => ({ ...d })),
+  });
 }
 
 export async function getBudgetById(id) {
@@ -2693,7 +2731,7 @@ export async function getBudgetVarianceByDepartment() {
       actualYtd,
       varianceAmount,
       variancePercent,
-      status: _statusForPercent(variancePercent),
+      status: _statusForPercent(variancePercent, d.category),
     };
   });
   return _brandObj(rows);
@@ -2721,7 +2759,7 @@ export async function getBudgetVarianceByLineItem(departmentId) {
       actualYtd,
       varianceAmount,
       variancePercent,
-      status: _statusForPercent(variancePercent),
+      status: _statusForPercent(variancePercent, d.category),
     };
   });
   return _brandObj(rows);

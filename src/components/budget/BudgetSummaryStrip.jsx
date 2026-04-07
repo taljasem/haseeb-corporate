@@ -44,18 +44,31 @@ function Stat({ label, value, sub, accent = false, varianceColor = null }) {
   );
 }
 
-export default function BudgetSummaryStrip({ summary, varianceTotal = null }) {
+export default function BudgetSummaryStrip({ summary, expenseVarianceTotal = null }) {
   if (!summary) return null;
-  const varianceColor =
-    varianceTotal == null
-      ? null
-      : varianceTotal > 0
-        ? "#FF5A5F"
-        : "#00C48C";
-  const varianceLabel =
-    varianceTotal == null
-      ? "—"
-      : (varianceTotal > 0 ? "+" : "") + formatKWD(varianceTotal).replace("KWD ", "");
+
+  // expenseVarianceTotal: positive = over budget (bad), negative = under budget (good)
+  let varianceColor = null;
+  let varianceValue = "—";
+  let varianceSub = "vs YTD plan";
+  if (expenseVarianceTotal != null) {
+    const abs = Math.abs(expenseVarianceTotal);
+    const fmt = formatKWD(abs).replace("KWD ", "");
+    if (Math.abs(expenseVarianceTotal) < 1) {
+      varianceColor = "#8B98A5";
+      varianceValue = `KWD 0.000`;
+      varianceSub = "tracking exactly to plan";
+    } else if (expenseVarianceTotal < 0) {
+      varianceColor = "#00C48C";
+      varianceValue = `−KWD ${fmt}`;
+      varianceSub = `KWD ${fmt} ahead of plan`;
+    } else {
+      varianceColor = "#FF5A5F";
+      varianceValue = `+KWD ${fmt}`;
+      varianceSub = `KWD ${fmt} over plan`;
+    }
+  }
+
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 18 }}>
       <Stat label="TOTAL REVENUE BUDGET" value={formatKWD(summary.totalRevenue)} sub={summary.label} />
@@ -71,9 +84,9 @@ export default function BudgetSummaryStrip({ summary, varianceTotal = null }) {
         accent
       />
       <Stat
-        label="YTD VARIANCE"
-        value={varianceLabel === "—" ? "—" : `KWD ${varianceLabel}`}
-        sub="vs YTD budget"
+        label="VS PLAN YTD"
+        value={varianceValue}
+        sub={varianceSub}
         varianceColor={varianceColor}
       />
     </div>

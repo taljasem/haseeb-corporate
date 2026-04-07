@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import BankTransactionRow from "../../components/cfo/BankTransactionRow";
 import BankTransactionDetail from "../../components/cfo/BankTransactionDetail";
-import { getBankTransactionsPending } from "../../engine/mockEngine";
+import SuggestionBanner from "../../components/shared/SuggestionBanner";
+import NewCategorizationRuleModal from "../../components/rules/NewCategorizationRuleModal";
+import { getBankTransactionsPending, getSuggestedCategorizationRules } from "../../engine/mockEngine";
 
 const FILTERS = ["All", "Today", "This week", "Suggestions", "Needs review"];
 
@@ -9,12 +11,16 @@ export default function BankTransactionsScreen({ onOpenAminah }) {
   const [txs, setTxs] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [filter, setFilter] = useState("All");
+  const [suggestion, setSuggestion] = useState(null);
+  const [catModalOpen, setCatModalOpen] = useState(false);
+  const [catModalPrefill, setCatModalPrefill] = useState(null);
 
   useEffect(() => {
     getBankTransactionsPending().then((rows) => {
       setTxs(rows);
       if (rows.length > 0) setSelectedId(rows[0].id);
     });
+    getSuggestedCategorizationRules().then((s) => setSuggestion(s[0] || null));
   }, []);
 
   const filtered = (txs || []).filter((t) => {
@@ -56,6 +62,16 @@ export default function BankTransactionsScreen({ onOpenAminah }) {
           overflow: "hidden",
         }}
       >
+        {suggestion && (
+          <SuggestionBanner
+            suggestion={suggestion}
+            onApply={(s) => {
+              setCatModalPrefill({ name: `${s.merchant} auto-categorization`, merchant: s.merchant });
+              setCatModalOpen(true);
+            }}
+            onDismiss={() => setSuggestion(null)}
+          />
+        )}
         <div
           style={{
             padding: "20px 24px 14px",
@@ -120,6 +136,12 @@ export default function BankTransactionsScreen({ onOpenAminah }) {
           onConfirmed={handleConfirmed}
         />
       </div>
+      <NewCategorizationRuleModal
+        open={catModalOpen}
+        onClose={() => setCatModalOpen(false)}
+        prefill={catModalPrefill}
+        onCreated={() => setSuggestion(null)}
+      />
     </div>
   );
 }

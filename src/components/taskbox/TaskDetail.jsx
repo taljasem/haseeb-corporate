@@ -4,12 +4,15 @@ import Avatar from "./Avatar";
 import TaskTypePill from "./TaskTypePill";
 import TaskThread from "./TaskThread";
 import { formatRelativeTime } from "../../utils/relativeTime";
+import JournalEntryCard from "../cfo/JournalEntryCard";
 
 const STATUS_STYLE = {
-  open:        { bg: "rgba(0,196,140,0.10)", fg: "#00C48C", label: "OPEN" },
-  "in-progress":{bg: "rgba(59,130,246,0.10)",fg: "#3B82F6", label: "IN PROGRESS" },
-  completed:   { bg: "rgba(91,101,112,0.14)",fg: "#8B98A5", label: "COMPLETED" },
-  cancelled:   { bg: "rgba(255,90,95,0.10)", fg: "#FF5A5F", label: "CANCELLED" },
+  open:             { bg: "rgba(0,196,140,0.10)",  fg: "#00C48C", label: "OPEN" },
+  "in-progress":    { bg: "rgba(59,130,246,0.10)", fg: "#3B82F6", label: "IN PROGRESS" },
+  completed:        { bg: "rgba(91,101,112,0.14)", fg: "#8B98A5", label: "COMPLETED" },
+  cancelled:        { bg: "rgba(255,90,95,0.10)",  fg: "#FF5A5F", label: "CANCELLED" },
+  "needs-revision": { bg: "rgba(212,168,75,0.10)", fg: "#D4A84B", label: "NEEDS REVISION" },
+  rejected:         { bg: "rgba(255,90,95,0.10)",  fg: "#FF5A5F", label: "REJECTED" },
 };
 
 function MetaItem({ label, children }) {
@@ -33,11 +36,16 @@ function MetaItem({ label, children }) {
   );
 }
 
-export default function TaskDetail({ task, onBack, onComplete, onReply }) {
+export default function TaskDetail({ task, onBack, onComplete, onReply, onApprovalAction }) {
   const [reply, setReply] = useState("");
+  const [approvalMode, setApprovalMode] = useState(null); // "request-changes" | "reject" | null
+  const [approvalNote, setApprovalNote] = useState("");
+  const [jePosted, setJePosted] = useState(false);
   if (!task) return null;
   const status = STATUS_STYLE[task.status] || STATUS_STYLE.open;
-  const isCompleted = task.status === "completed";
+  const isCompleted = task.status === "completed" || task.status === "rejected";
+  const isApproval = task.type === "request-approval";
+  const hasJELinked = task.linkedItem && task.linkedItem.type === "journal-entry" && task.linkedItem.entry;
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -71,8 +79,8 @@ export default function TaskDetail({ task, onBack, onComplete, onReply }) {
           <ArrowLeft size={13} strokeWidth={2.4} />
           Back to Taskbox
         </button>
-        <div style={{ display: "flex", gap: 8 }}>
-          {!isCompleted && (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {!isCompleted && !isApproval && (
             <button
               onClick={() => onComplete && onComplete(task)}
               style={{
@@ -89,6 +97,75 @@ export default function TaskDetail({ task, onBack, onComplete, onReply }) {
             >
               Complete task
             </button>
+          )}
+          {!isCompleted && isApproval && (
+            <>
+              <button
+                onClick={() => {
+                  setJePosted(true);
+                  onApprovalAction && onApprovalAction(task, "approve");
+                  onComplete && onComplete(task);
+                }}
+                style={{
+                  background: "#00C48C",
+                  color: "#fff",
+                  border: "none",
+                  padding: "8px 16px",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  fontFamily: "inherit",
+                }}
+              >
+                Approve
+              </button>
+              <button
+                onClick={() => setApprovalMode(approvalMode === "request-changes" ? null : "request-changes")}
+                style={{
+                  background: "transparent",
+                  color: "#D4A84B",
+                  border: "1px solid rgba(212,168,75,0.30)",
+                  padding: "8px 14px",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontFamily: "inherit",
+                }}
+              >
+                Request changes
+              </button>
+              <button
+                onClick={() => setApprovalMode(approvalMode === "reject" ? null : "reject")}
+                style={{
+                  background: "transparent",
+                  color: "#FF5A5F",
+                  border: "1px solid rgba(255,90,95,0.30)",
+                  padding: "8px 14px",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontFamily: "inherit",
+                }}
+              >
+                Reject
+              </button>
+              <button
+                onClick={() => onApprovalAction && onApprovalAction(task, "escalate")}
+                style={{
+                  background: "transparent",
+                  color: "#8B5CF6",
+                  border: "1px solid rgba(139,92,246,0.30)",
+                  padding: "8px 14px",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontFamily: "inherit",
+                }}
+              >
+                Escalate
+              </button>
+            </>
           )}
           <button
             aria-label="More"
@@ -184,8 +261,111 @@ export default function TaskDetail({ task, onBack, onComplete, onReply }) {
             <MetaItem label="CREATED">{formatRelativeTime(task.createdAt)}</MetaItem>
           </div>
 
+          {/* Approval inline reason composer */}
+          {isApproval && !isCompleted && approvalMode && (
+            <div
+              style={{
+                background: "rgba(255,255,255,0.02)",
+                border: `1px solid ${approvalMode === "reject" ? "rgba(255,90,95,0.30)" : "rgba(212,168,75,0.30)"}`,
+                borderRadius: 8,
+                padding: "12px 14px",
+                marginBottom: 16,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: "0.15em",
+                  color: approvalMode === "reject" ? "#FF5A5F" : "#D4A84B",
+                  marginBottom: 8,
+                }}
+              >
+                {approvalMode === "reject" ? "REASON FOR REJECTION" : "DESCRIBE WHAT NEEDS TO CHANGE"}
+              </div>
+              <textarea
+                value={approvalNote}
+                onChange={(e) => setApprovalNote(e.target.value)}
+                rows={3}
+                placeholder={approvalMode === "reject" ? "Why are you rejecting?" : "What should the requester change?"}
+                style={{
+                  width: "100%",
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.10)",
+                  borderRadius: 8,
+                  padding: "10px 12px",
+                  color: "#E6EDF3",
+                  fontSize: 13,
+                  fontFamily: "inherit",
+                  outline: "none",
+                  marginBottom: 10,
+                  resize: "vertical",
+                }}
+              />
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                <button
+                  onClick={() => { setApprovalMode(null); setApprovalNote(""); }}
+                  style={{
+                    background: "transparent",
+                    color: "#8B98A5",
+                    border: "1px solid rgba(255,255,255,0.15)",
+                    padding: "7px 14px",
+                    borderRadius: 6,
+                    cursor: "pointer",
+                    fontSize: 12,
+                    fontFamily: "inherit",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    onApprovalAction && onApprovalAction(task, approvalMode, approvalNote);
+                    setApprovalMode(null);
+                    setApprovalNote("");
+                  }}
+                  disabled={!approvalNote.trim()}
+                  style={{
+                    background: approvalNote.trim() ? "#00C48C" : "rgba(0,196,140,0.25)",
+                    color: "#fff",
+                    border: "none",
+                    padding: "7px 14px",
+                    borderRadius: 6,
+                    cursor: approvalNote.trim() ? "pointer" : "not-allowed",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    fontFamily: "inherit",
+                  }}
+                >
+                  Submit
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Rich linked item — JE preview for approval tasks */}
+          {isApproval && hasJELinked && (
+            <div style={{ marginBottom: 16 }}>
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: "0.15em",
+                  color: "#5B6570",
+                  marginBottom: 6,
+                }}
+              >
+                LINKED JOURNAL ENTRY
+              </div>
+              <JournalEntryCard
+                entry={task.linkedItem.entry}
+                state={jePosted ? "posted" : "suggested"}
+              />
+            </div>
+          )}
+
           {/* Linked item */}
-          {task.linkedItem && (
+          {task.linkedItem && !(isApproval && hasJELinked) && (
             <div
               style={{
                 background: "rgba(255,255,255,0.025)",

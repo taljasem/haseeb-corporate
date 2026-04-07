@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import TodaySection from "../../components/cfo/TodaySection";
 import AssignToButton from "../../components/shared/AssignToButton";
 import TaskboxSummaryCard from "../../components/taskbox/TaskboxSummaryCard";
+import SuggestedRuleRow from "../../components/rules/SuggestedRuleRow";
+import { getSuggestedCategorizationRules, getSuggestedRoutingRules } from "../../engine/mockEngine";
 import {
   getCFOTodayQueue,
   getCFOAminahNotes,
@@ -117,6 +119,7 @@ function Avatar({ initials }) {
 }
 
 export default function TodayScreen({ setActiveScreen, onOpenTask }) {
+  const [suggestions, setSuggestions] = useState([]);
   const [queue, setQueue] = useState(null);
   const [notes, setNotes] = useState(null);
   const [team, setTeam] = useState(null);
@@ -137,6 +140,9 @@ export default function TodayScreen({ setActiveScreen, onOpenTask }) {
       setEngine(e);
       setClose(c);
     });
+    Promise.all([getSuggestedCategorizationRules(), getSuggestedRoutingRules()]).then(
+      ([a, b]) => setSuggestions([...a, ...b].slice(0, 3))
+    );
   }, []);
 
   const totalQueue = queue
@@ -188,6 +194,31 @@ export default function TodayScreen({ setActiveScreen, onOpenTask }) {
             </div>
           )}
         </TodaySection>
+
+        {/* 1.5 SUGGESTED RULES */}
+        {suggestions.length > 0 && (
+          <TodaySection label="SUGGESTED RULES" aminah>
+            <div style={{ marginInline: -20 }}>
+              {suggestions.map((s) => (
+                <SuggestedRuleRow
+                  key={s.id}
+                  suggestion={s}
+                  compact
+                  onCreate={() => setActiveScreen("rules")}
+                  onDismiss={() => setSuggestions((prev) => prev.filter((x) => x.id !== s.id))}
+                />
+              ))}
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <a
+                onClick={() => setActiveScreen("rules")}
+                style={{ fontSize: 12, color: "#00C48C", cursor: "pointer" }}
+              >
+                View all suggestions →
+              </a>
+            </div>
+          </TodaySection>
+        )}
 
         {/* 2. CLOSE PROGRESS */}
         <TodaySection label={close ? `${close.period.toUpperCase()} CLOSE` : "MONTH-END CLOSE"}>

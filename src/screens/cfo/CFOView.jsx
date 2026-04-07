@@ -7,7 +7,8 @@ import BankTransactionsScreen from "./BankTransactionsScreen";
 import ConversationalJEScreen from "./ConversationalJEScreen";
 import PlaceholderScreen from "./PlaceholderScreen";
 import TaskboxScreen from "../../components/taskbox/TaskboxScreen";
-import { getCFOTodayQueue, getOpenTaskCount } from "../../engine/mockEngine";
+import RulesScreen from "./RulesScreen";
+import { getCFOTodayQueue, getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 
 const SCREEN_TITLES = {
   approvals:             "APPROVALS",
@@ -28,9 +29,10 @@ export default function CFOView() {
   const [pendingApprovals, setPendingApprovals] = useState(0);
   const [taskboxOpen, setTaskboxOpen] = useState(0);
   const [initialTaskId, setInitialTaskId] = useState(null);
+  const [initialTaskboxFilter, setInitialTaskboxFilter] = useState(null);
 
   useEffect(() => {
-    getCFOTodayQueue().then((q) => setPendingApprovals(q.pendingApprovals));
+    getOpenApprovalCount("CFO").then(setPendingApprovals);
     getOpenTaskCount("CFO").then(setTaskboxOpen);
   }, [activeScreen]);
 
@@ -44,12 +46,23 @@ export default function CFOView() {
     setActiveScreen("taskbox");
   };
 
+  // Wrap setActiveScreen to intercept "approvals" → taskbox with approvals filter
+  const setActive = (key) => {
+    if (key === "approvals") {
+      setInitialTaskboxFilter("approvals");
+      setActiveScreen("taskbox");
+      return;
+    }
+    setInitialTaskboxFilter(null);
+    setActiveScreen(key);
+  };
+
   const renderScreen = () => {
     switch (activeScreen) {
       case "today":
         return (
           <TodayScreen
-            setActiveScreen={setActiveScreen}
+            setActiveScreen={setActive}
             onOpenTask={navigateToTask}
           />
         );
@@ -57,8 +70,16 @@ export default function CFOView() {
         return <BankTransactionsScreen onOpenAminah={openAminah} />;
       case "conversational-je":
         return <ConversationalJEScreen />;
+      case "rules":
+        return <RulesScreen />;
       case "taskbox":
-        return <TaskboxScreen role="CFO" initialTaskId={initialTaskId} />;
+        return (
+          <TaskboxScreen
+            role="CFO"
+            initialTaskId={initialTaskId}
+            initialFilter={initialTaskboxFilter}
+          />
+        );
       default:
         return <PlaceholderScreen title={SCREEN_TITLES[activeScreen] || activeScreen.toUpperCase()} />;
     }
@@ -82,8 +103,8 @@ export default function CFOView() {
       }}
     >
       <CFOSidebar
-        active={activeScreen}
-        setActive={setActiveScreen}
+        active={activeScreen === "taskbox" && initialTaskboxFilter === "approvals" ? "approvals" : activeScreen}
+        setActive={setActive}
         pendingApprovals={pendingApprovals}
         taskboxOpen={taskboxOpen}
       />

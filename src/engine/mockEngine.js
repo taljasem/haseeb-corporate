@@ -1074,6 +1074,9 @@ export async function getTaskbox(role = "CFO", filter = "all") {
     case "unread":
       visible = visible.filter((t) => t.unread && t.status !== "completed");
       break;
+    case "approvals":
+      visible = visible.filter((t) => t.type === "request-approval");
+      break;
     case "received":
       visible = visible.filter((t) => t.recipient.id === me);
       break;
@@ -1187,4 +1190,425 @@ export async function getRecipientsForRole(senderRole) {
   if (senderRole === "CFO") return [P.owner, P.sara, P.noor, P.jasem, P.layla];
   if (senderRole === "Junior") return [P.cfo];
   return [];
+}
+
+// ─────────────────────────────────────────
+// RULES SYSTEM — categorization + routing
+// ─────────────────────────────────────────
+
+const _rAudit = (type, author, detail, iso) => ({
+  id: `EV-${Math.random().toString(36).slice(2, 8)}`,
+  type,
+  timestamp: iso || new Date().toISOString(),
+  author,
+  detail,
+});
+
+const CAT_RULES_DB = [
+  {
+    id: "CRULE-001",
+    name: "KNPC Fuel Station auto-categorization",
+    merchantPattern: { type: "contains", value: "KNPC" },
+    debitAccount:  { code: "6420", name: "Fuel & Vehicle" },
+    creditAccount: { code: "1120", name: "KIB Operating Account" },
+    mode: "auto-apply",
+    conditions: { amountMin: null, amountMax: null, sourceAccount: "KIB Operating" },
+    costCenter: null,
+    approvalThreshold: null,
+    status: "active",
+    appliedCount: 47,
+    createdBy: P.sara,
+    createdAt: _daysAgo(115),
+    lastAppliedAt: _hoursAgo(4),
+    auditTrail: [
+      _rAudit("created", P.sara, "Sara created this rule", _daysAgo(115)),
+      _rAudit("applied-summary", P.cfo, "Applied 47 times since creation", _hoursAgo(4)),
+    ],
+  },
+  {
+    id: "CRULE-002",
+    name: "Ooredoo → Internet & Phone",
+    merchantPattern: { type: "contains", value: "Ooredoo" },
+    debitAccount:  { code: "6220", name: "Internet & Phone" },
+    creditAccount: { code: "1120", name: "KIB Operating Account" },
+    mode: "auto-apply",
+    conditions: { amountMin: null, amountMax: null, sourceAccount: null },
+    costCenter: null, approvalThreshold: null,
+    status: "active", appliedCount: 12,
+    createdBy: P.noor, createdAt: _daysAgo(97), lastAppliedAt: _daysAgo(1),
+    auditTrail: [ _rAudit("created", P.noor, "Noor created this rule", _daysAgo(97)) ],
+  },
+  {
+    id: "CRULE-003",
+    name: "Office rent Sharq → Office Rent",
+    merchantPattern: { type: "contains", value: "Office rent" },
+    debitAccount:  { code: "6200", name: "Office Rent" },
+    creditAccount: { code: "1120", name: "KIB Operating Account" },
+    mode: "auto-apply",
+    conditions: { amountMin: null, amountMax: null, sourceAccount: "KIB Operating" },
+    costCenter: "HQ", approvalThreshold: null,
+    status: "active", appliedCount: 8,
+    createdBy: P.cfo, createdAt: _daysAgo(115), lastAppliedAt: _daysAgo(1),
+    auditTrail: [
+      _rAudit("created", P.cfo, "You created this rule", _daysAgo(115)),
+      _rAudit("edited",  P.cfo, "You added cost center HQ",        _daysAgo(90)),
+    ],
+  },
+  {
+    id: "CRULE-004",
+    name: "Deliveroo payout → Sales Revenue",
+    merchantPattern: { type: "contains", value: "Deliveroo" },
+    debitAccount:  { code: "1120", name: "KIB Operating Account" },
+    creditAccount: { code: "4100", name: "Sales Revenue" },
+    mode: "auto-apply",
+    conditions: { amountMin: null, amountMax: null, sourceAccount: null },
+    costCenter: null, approvalThreshold: null,
+    status: "active", appliedCount: 23,
+    createdBy: P.sara, createdAt: _daysAgo(110), lastAppliedAt: _daysAgo(2),
+    auditTrail: [ _rAudit("created", P.sara, "Sara created this rule", _daysAgo(110)) ],
+  },
+  {
+    id: "CRULE-005",
+    name: "Alghanim Industries → Sales Revenue",
+    merchantPattern: { type: "contains", value: "Alghanim" },
+    debitAccount:  { code: "1120", name: "KIB Operating Account" },
+    creditAccount: { code: "4100", name: "Sales Revenue" },
+    mode: "auto-apply",
+    conditions: { amountMin: null, amountMax: null, sourceAccount: null },
+    costCenter: null, approvalThreshold: null,
+    status: "active", appliedCount: 15,
+    createdBy: P.cfo, createdAt: _daysAgo(99), lastAppliedAt: _hoursAgo(6),
+    auditTrail: [ _rAudit("created", P.cfo, "You created this rule", _daysAgo(99)) ],
+  },
+  {
+    id: "CRULE-006",
+    name: "Avenues Mall booth → Trade Shows",
+    merchantPattern: { type: "contains", value: "Avenues Mall" },
+    debitAccount:  { code: "6310", name: "Trade Shows" },
+    creditAccount: { code: "1120", name: "KIB Operating Account" },
+    mode: "auto-apply",
+    conditions: { amountMin: null, amountMax: null, sourceAccount: null },
+    costCenter: "Marketing", approvalThreshold: null,
+    status: "active", appliedCount: 3,
+    createdBy: P.cfo, createdAt: _daysAgo(1), lastAppliedAt: _hoursAgo(3),
+    auditTrail: [ _rAudit("created", P.cfo, "You created this rule", _daysAgo(1)) ],
+  },
+  {
+    id: "CRULE-007",
+    name: "Staff salary Sara → Salaries & Wages",
+    merchantPattern: { type: "exact", value: "PAYROLL-SARA" },
+    debitAccount:  { code: "6100", name: "Salaries & Wages" },
+    creditAccount: { code: "1120", name: "KIB Operating Account" },
+    mode: "auto-apply",
+    conditions: { amountMin: null, amountMax: null, sourceAccount: "KIB Operating" },
+    costCenter: null, approvalThreshold: 500,
+    status: "active", appliedCount: 6,
+    createdBy: P.cfo, createdAt: _daysAgo(80), lastAppliedAt: _daysAgo(5),
+    auditTrail: [ _rAudit("created", P.cfo, "You created this rule", _daysAgo(80)) ],
+  },
+  {
+    id: "CRULE-008",
+    name: "Zain Kuwait → Internet & Phone",
+    merchantPattern: { type: "contains", value: "Zain" },
+    debitAccount:  { code: "6220", name: "Internet & Phone" },
+    creditAccount: { code: "1120", name: "KIB Operating Account" },
+    mode: "auto-apply",
+    conditions: { amountMin: null, amountMax: null, sourceAccount: null },
+    costCenter: null, approvalThreshold: null,
+    status: "active", appliedCount: 18,
+    createdBy: P.sara, createdAt: _daysAgo(88), lastAppliedAt: _hoursAgo(20),
+    auditTrail: [ _rAudit("created", P.sara, "Sara created this rule", _daysAgo(88)) ],
+  },
+  {
+    id: "CRULE-009",
+    name: "KNPC trade → Fuel & Vehicle (MUTED)",
+    merchantPattern: { type: "contains", value: "KNPC-TRADE" },
+    debitAccount:  { code: "6420", name: "Fuel & Vehicle" },
+    creditAccount: { code: "1120", name: "KIB Operating Account" },
+    mode: "auto-apply",
+    conditions: { amountMin: null, amountMax: null, sourceAccount: null },
+    costCenter: null, approvalThreshold: null,
+    status: "muted", appliedCount: 4,
+    createdBy: P.sara, createdAt: _daysAgo(60), lastAppliedAt: _daysAgo(10),
+    auditTrail: [
+      _rAudit("created", P.sara, "Sara created this rule", _daysAgo(60)),
+      _rAudit("muted",   P.cfo,  "You muted this rule — policy change", _daysAgo(3)),
+    ],
+  },
+  {
+    id: "CRULE-010",
+    name: "PIFSS payment → PIFSS Contributions",
+    merchantPattern: { type: "contains", value: "PIFSS" },
+    debitAccount:  { code: "6110", name: "PIFSS Contributions" },
+    creditAccount: { code: "2200", name: "PIFSS Payable" },
+    mode: "suggest-only",
+    conditions: { amountMin: null, amountMax: null, sourceAccount: null },
+    costCenter: null, approvalThreshold: null,
+    status: "active", appliedCount: 11,
+    createdBy: P.cfo, createdAt: _daysAgo(70), lastAppliedAt: _daysAgo(4),
+    auditTrail: [ _rAudit("created", P.cfo, "You created this rule", _daysAgo(70)) ],
+  },
+  {
+    id: "CRULE-011",
+    name: "Office supplies batch → Office Supplies",
+    merchantPattern: { type: "contains", value: "office supplies" },
+    debitAccount:  { code: "6600", name: "Office Supplies" },
+    creditAccount: { code: "1120", name: "KIB Operating Account" },
+    mode: "auto-apply",
+    conditions: { amountMin: null, amountMax: 200, sourceAccount: null },
+    costCenter: null, approvalThreshold: null,
+    status: "active", appliedCount: 9,
+    createdBy: P.sara, createdAt: _daysAgo(55), lastAppliedAt: _daysAgo(2),
+    auditTrail: [ _rAudit("created", P.sara, "Sara created this rule", _daysAgo(55)) ],
+  },
+  {
+    id: "CRULE-012",
+    name: "Boubyan Logistics → Accounts Payable",
+    merchantPattern: { type: "contains", value: "Boubyan Logistics" },
+    debitAccount:  { code: "2100", name: "Accounts Payable" },
+    creditAccount: { code: "1120", name: "KIB Operating Account" },
+    mode: "ask-each-time",
+    conditions: { amountMin: null, amountMax: null, sourceAccount: null },
+    costCenter: null, approvalThreshold: null,
+    status: "active", appliedCount: 7,
+    createdBy: P.sara, createdAt: _daysAgo(45), lastAppliedAt: _daysAgo(6),
+    auditTrail: [ _rAudit("created", P.sara, "Sara created this rule", _daysAgo(45)) ],
+  },
+];
+
+const ROUTING_RULES_DB = [
+  {
+    id: "RRULE-001",
+    name: "All expense categorization → Sara",
+    trigger: { taskTypes: ["categorize-transactions"], linkedItemTypes: [], conditions: {} },
+    action: { assignTo: P.sara, alsoNotify: null, priority: "normal" },
+    status: "active", appliedCount: 34,
+    createdBy: P.cfo, createdAt: _daysAgo(90), lastAppliedAt: _hoursAgo(5),
+    auditTrail: [ _rAudit("created", P.cfo, "You created this rule", _daysAgo(90)) ],
+  },
+  {
+    id: "RRULE-002",
+    name: "All invoice work → Jasem",
+    trigger: { taskTypes: ["upload-document", "request-work"], linkedItemTypes: ["invoice"], conditions: {} },
+    action: { assignTo: P.jasem, alsoNotify: null, priority: "normal" },
+    status: "active", appliedCount: 19,
+    createdBy: P.cfo, createdAt: _daysAgo(70), lastAppliedAt: _hoursAgo(13),
+    auditTrail: [ _rAudit("created", P.cfo, "You created this rule", _daysAgo(70)) ],
+  },
+  {
+    id: "RRULE-003",
+    name: "Marketing-related tasks → Layla",
+    trigger: {
+      taskTypes: ["all"], linkedItemTypes: [],
+      conditions: { accountCategory: "Operating Expenses", merchantPattern: "marketing|advertising|campaign|trade show" },
+    },
+    action: { assignTo: P.layla, alsoNotify: null, priority: "normal" },
+    status: "active", appliedCount: 11,
+    createdBy: P.cfo, createdAt: _daysAgo(50), lastAppliedAt: _daysAgo(2),
+    auditTrail: [ _rAudit("created", P.cfo, "You created this rule", _daysAgo(50)) ],
+  },
+  {
+    id: "RRULE-004",
+    name: "Bank reconciliations → Noor",
+    trigger: { taskTypes: ["reconcile-account"], linkedItemTypes: ["account"], conditions: { accountCategory: "Assets" } },
+    action: { assignTo: P.noor, alsoNotify: null, priority: "normal" },
+    status: "active", appliedCount: 15,
+    createdBy: P.cfo, createdAt: _daysAgo(65), lastAppliedAt: _daysAgo(3),
+    auditTrail: [ _rAudit("created", P.cfo, "You created this rule", _daysAgo(65)) ],
+  },
+  {
+    id: "RRULE-005",
+    name: "JE drafts > 5,000 KWD → request CFO approval",
+    trigger: { taskTypes: ["draft-je"], linkedItemTypes: ["journal-entry"], conditions: { amountMin: 5000 } },
+    action: { assignTo: P.sara, alsoNotify: [P.cfo.id], priority: "high" },
+    status: "active", appliedCount: 7,
+    createdBy: P.cfo, createdAt: _daysAgo(40), lastAppliedAt: _daysAgo(1),
+    auditTrail: [ _rAudit("created", P.cfo, "You created this rule", _daysAgo(40)) ],
+  },
+  {
+    id: "RRULE-006",
+    name: "PIFSS and payroll related → Noor",
+    trigger: { taskTypes: ["all"], linkedItemTypes: [], conditions: { merchantPattern: "pifss|payroll|salary" } },
+    action: { assignTo: P.noor, alsoNotify: null, priority: "normal" },
+    status: "active", appliedCount: 12,
+    createdBy: P.cfo, createdAt: _daysAgo(55), lastAppliedAt: _daysAgo(2),
+    auditTrail: [ _rAudit("created", P.cfo, "You created this rule", _daysAgo(55)) ],
+  },
+  {
+    id: "RRULE-007",
+    name: "Audit responses → Sara",
+    trigger: { taskTypes: ["request-investigation", "flag-for-review"], linkedItemTypes: [], conditions: {} },
+    action: { assignTo: P.sara, alsoNotify: null, priority: "high" },
+    status: "active", appliedCount: 4,
+    createdBy: P.cfo, createdAt: _daysAgo(30), lastAppliedAt: _daysAgo(4),
+    auditTrail: [ _rAudit("created", P.cfo, "You created this rule", _daysAgo(30)) ],
+  },
+  {
+    id: "RRULE-008",
+    name: "JE approvals above 10,000 KWD → escalate to Owner (MUTED)",
+    trigger: { taskTypes: ["request-approval"], linkedItemTypes: ["journal-entry"], conditions: { amountMin: 10000 } },
+    action: { assignTo: P.cfo, alsoNotify: [P.owner.id], priority: "urgent" },
+    status: "muted", appliedCount: 3,
+    createdBy: P.cfo, createdAt: _daysAgo(50), lastAppliedAt: _daysAgo(9),
+    auditTrail: [
+      _rAudit("created", P.cfo, "You created this rule", _daysAgo(50)),
+      _rAudit("muted",   P.cfo, "You muted this rule last week", _daysAgo(7)),
+    ],
+  },
+];
+
+const _filterRule = (arr, filter) => {
+  if (!filter || filter === "all") return arr.filter((r) => r.status !== "deleted");
+  return arr.filter((r) => r.status === filter);
+};
+
+export async function getCategorizationRules(filter = "all") {
+  await delay();
+  return _filterRule(CAT_RULES_DB, filter).slice();
+}
+export async function getCategorizationRuleById(id) {
+  await delay();
+  return CAT_RULES_DB.find((r) => r.id === id) || null;
+}
+export async function createCategorizationRule(params) {
+  await delay();
+  const id = `CRULE-${String(CAT_RULES_DB.length + 1).padStart(3, "0")}`;
+  const rule = {
+    id,
+    name: params.name || "Untitled rule",
+    merchantPattern: params.merchantPattern || { type: "contains", value: "" },
+    debitAccount: params.debitAccount || { code: "", name: "" },
+    creditAccount: params.creditAccount || { code: "", name: "" },
+    mode: params.mode || "suggest-only",
+    conditions: params.conditions || { amountMin: null, amountMax: null, sourceAccount: null },
+    costCenter: params.costCenter || null,
+    approvalThreshold: params.approvalThreshold || null,
+    status: "active",
+    appliedCount: 0,
+    createdBy: P.cfo,
+    createdAt: new Date().toISOString(),
+    lastAppliedAt: null,
+    auditTrail: [ _rAudit("created", P.cfo, "You created this rule") ],
+  };
+  CAT_RULES_DB.unshift(rule);
+  return rule;
+}
+export async function muteCategorizationRule(id) {
+  await delay();
+  const r = CAT_RULES_DB.find((x) => x.id === id);
+  if (r) { r.status = "muted"; r.auditTrail.push(_rAudit("muted", P.cfo, "You muted this rule")); }
+  return r;
+}
+export async function unmuteCategorizationRule(id) {
+  await delay();
+  const r = CAT_RULES_DB.find((x) => x.id === id);
+  if (r) { r.status = "active"; r.auditTrail.push(_rAudit("unmuted", P.cfo, "You re-activated this rule")); }
+  return r;
+}
+export async function deleteCategorizationRule(id) {
+  await delay();
+  const r = CAT_RULES_DB.find((x) => x.id === id);
+  if (r) { r.status = "deleted"; r.auditTrail.push(_rAudit("deleted", P.cfo, "You deleted this rule")); }
+  return r;
+}
+export async function getCategorizationRuleAuditTrail(id) {
+  await delay();
+  const r = CAT_RULES_DB.find((x) => x.id === id);
+  return r ? r.auditTrail : [];
+}
+export async function getSuggestedCategorizationRules() {
+  await delay();
+  return [
+    { id: "SUG-CAT-1", kind: "categorization", count: 4, merchant: "Al Shaya Trading Co.",    target: "Operating Expense", context: "Based on 4 manual categorizations in the last 7 days" },
+    { id: "SUG-CAT-2", kind: "categorization", count: 3, merchant: "Talabat payouts",          target: "Sales Revenue",      context: "Based on 3 manual categorizations in the last 5 days" },
+    { id: "SUG-CAT-3", kind: "categorization", count: 3, merchant: "STC telecom bills",        target: "Internet & Phone",   context: "Based on 3 manual categorizations in the last 10 days" },
+  ];
+}
+
+export async function getRoutingRules(filter = "all") {
+  await delay();
+  return _filterRule(ROUTING_RULES_DB, filter).slice();
+}
+export async function getRoutingRuleById(id) {
+  await delay();
+  return ROUTING_RULES_DB.find((r) => r.id === id) || null;
+}
+export async function createRoutingRule(params) {
+  await delay();
+  const id = `RRULE-${String(ROUTING_RULES_DB.length + 1).padStart(3, "0")}`;
+  const rule = {
+    id,
+    name: params.name || "Untitled routing rule",
+    trigger: params.trigger || { taskTypes: ["all"], linkedItemTypes: [], conditions: {} },
+    action: params.action || { assignTo: P.sara, alsoNotify: null, priority: "normal" },
+    status: "active",
+    appliedCount: 0,
+    createdBy: P.cfo,
+    createdAt: new Date().toISOString(),
+    lastAppliedAt: null,
+    auditTrail: [ _rAudit("created", P.cfo, "You created this rule") ],
+  };
+  ROUTING_RULES_DB.unshift(rule);
+  return rule;
+}
+export async function muteRoutingRule(id) {
+  await delay();
+  const r = ROUTING_RULES_DB.find((x) => x.id === id);
+  if (r) { r.status = "muted"; r.auditTrail.push(_rAudit("muted", P.cfo, "You muted this rule")); }
+  return r;
+}
+export async function unmuteRoutingRule(id) {
+  await delay();
+  const r = ROUTING_RULES_DB.find((x) => x.id === id);
+  if (r) { r.status = "active"; r.auditTrail.push(_rAudit("unmuted", P.cfo, "You re-activated this rule")); }
+  return r;
+}
+export async function deleteRoutingRule(id) {
+  await delay();
+  const r = ROUTING_RULES_DB.find((x) => x.id === id);
+  if (r) { r.status = "deleted"; r.auditTrail.push(_rAudit("deleted", P.cfo, "You deleted this rule")); }
+  return r;
+}
+export async function getRoutingRuleAuditTrail(id) {
+  await delay();
+  const r = ROUTING_RULES_DB.find((x) => x.id === id);
+  return r ? r.auditTrail : [];
+}
+export async function getSuggestedRoutingRules() {
+  await delay();
+  return [
+    { id: "SUG-RTE-1", kind: "routing", count: 4, description: "Vendor onboarding tasks → Jasem",   context: "You manually assigned the last 4 vendor onboarding tasks to Jasem" },
+    { id: "SUG-RTE-2", kind: "routing", count: 3, description: "Month-end accrual drafts → Noor",   context: "You manually assigned 3 month-end accrual drafts to Noor" },
+  ];
+}
+
+export async function getOpenApprovalCount(role = "CFO") {
+  await delay();
+  const all = await getTaskbox(role, "all");
+  return all.filter((t) => t.type === "request-approval" && t.status !== "completed" && t.status !== "rejected").length;
+}
+
+// Enhance TSK-113 with a full JE linked item so approval preview can render the JournalEntryCard
+const _tsk113 = TASKBOX_DB.find((t) => t.id === "TSK-113");
+if (_tsk113) {
+  _tsk113.linkedItem = {
+    type: "journal-entry",
+    id: "JE-0415",
+    preview: "PIFSS accrual · 9,500.000 KWD · Draft",
+    entry: {
+      id: "JE-0415",
+      description: "PIFSS accrual — March",
+      status: "Draft - Validated",
+      lines: [
+        { account: "PIFSS Contributions", code: "6110", debit: 9500, credit: null },
+        { account: "PIFSS Payable",       code: "2200", debit: null,  credit: 9500 },
+      ],
+      totalDebit: 9500,
+      totalCredit: 9500,
+      balanced: true,
+      mappingVersion: "v1.0",
+      createdAt: new Date().toISOString(),
+      hashChainStatus: "not committed",
+    },
+  };
 }

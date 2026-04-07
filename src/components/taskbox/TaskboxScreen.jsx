@@ -12,15 +12,19 @@ import NewTaskModal from "./NewTaskModal";
 const FILTERS = [
   { id: "all",          label: "All" },
   { id: "unread",       label: "Unread" },
+  { id: "approvals",    label: "Approvals" },
   { id: "received",     label: "Received" },
   { id: "sent",         label: "Sent" },
   { id: "needs-action", label: "Needs action" },
   { id: "completed",    label: "Completed" },
 ];
 
-export default function TaskboxScreen({ role = "CFO", initialTaskId = null }) {
+export default function TaskboxScreen({ role = "CFO", initialTaskId = null, initialFilter = null }) {
   const [tasks, setTasks] = useState(null);
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState(initialFilter || "all");
+  useEffect(() => {
+    if (initialFilter) setFilter(initialFilter);
+  }, [initialFilter]);
   const [query, setQuery] = useState("");
   const [openTaskId, setOpenTaskId] = useState(initialTaskId);
   const [modalOpen, setModalOpen] = useState(false);
@@ -63,6 +67,19 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null }) {
         }}
         onReply={async (t, body) => {
           await engineReplyToTask(t.id, body, role === "CFO" ? "cfo" : role === "Owner" ? "owner" : "sara");
+          refresh();
+        }}
+        onApprovalAction={async (t, action, note) => {
+          const author = role === "CFO" ? "cfo" : role === "Owner" ? "owner" : "sara";
+          if (action === "approve") {
+            await engineCompleteTask(t.id, "Approved.", author);
+          } else if (action === "request-changes") {
+            await engineReplyToTask(t.id, `[Requested changes] ${note}`, author);
+          } else if (action === "reject") {
+            await engineReplyToTask(t.id, `[Rejected] ${note}`, author);
+          } else if (action === "escalate") {
+            await engineReplyToTask(t.id, "[Escalated]", author);
+          }
           refresh();
         }}
       />

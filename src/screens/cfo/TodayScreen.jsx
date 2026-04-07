@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import TodaySection from "../../components/cfo/TodaySection";
+import AssignToButton from "../../components/shared/AssignToButton";
 import {
   getCFOTodayQueue,
   getCFOAminahNotes,
@@ -34,10 +35,19 @@ function renderHighlighted(text) {
   });
 }
 
-function QueueRow({ count, label, onClick }) {
+function QueueRow({ count, label, onClick, itemId }) {
+  const [hover, setHover] = useState(false);
   return (
-    <button
+    <div
       onClick={onClick}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+        setHover(true);
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "transparent";
+        setHover(false);
+      }}
       style={{
         display: "flex",
         alignItems: "center",
@@ -46,7 +56,6 @@ function QueueRow({ count, label, onClick }) {
         padding: "12px 14px",
         margin: "4px -14px",
         background: "transparent",
-        border: "none",
         borderBottom: "1px solid rgba(255,255,255,0.04)",
         cursor: "pointer",
         textAlign: "left",
@@ -54,8 +63,6 @@ function QueueRow({ count, label, onClick }) {
         transition: "background 0.12s ease",
         borderRadius: 4,
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
-      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
     >
       <span
         style={{
@@ -70,8 +77,18 @@ function QueueRow({ count, label, onClick }) {
         {count}
       </span>
       <span style={{ flex: 1, fontSize: 13, color: "#8B98A5" }}>{label}</span>
+      <span
+        style={{
+          opacity: hover ? 1 : 0,
+          transition: "opacity 0.15s ease",
+          pointerEvents: hover ? "auto" : "none",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <AssignToButton itemType="review-queue" itemId={itemId} compact onAssign={() => {}} />
+      </span>
       <span style={{ color: "#5B6570", fontSize: 14 }}>→</span>
-    </button>
+    </div>
   );
 }
 
@@ -140,21 +157,25 @@ export default function TodayScreen({ setActiveScreen }) {
                 count={queue.pendingApprovals}
                 label="pending approvals"
                 onClick={() => setActiveScreen("approvals")}
+                itemId="approvals"
               />
               <QueueRow
                 count={queue.bankTransactionsToReview}
                 label="bank transactions awaiting review"
                 onClick={() => setActiveScreen("bank-transactions")}
+                itemId="bank-tx"
               />
               <QueueRow
                 count={queue.reconciliationExceptions}
                 label="reconciliation exceptions"
                 onClick={() => setActiveScreen("reconciliation")}
+                itemId="recon"
               />
               <QueueRow
                 count={queue.auditFailures}
                 label="audit check failing"
                 onClick={() => setActiveScreen("audit-bridge")}
+                itemId="audit"
               />
             </div>
           )}
@@ -228,7 +249,13 @@ export default function TodayScreen({ setActiveScreen }) {
                       }}
                     />
                     <span style={{ flex: 1 }}>{t.task}</span>
-                    <span style={{ fontSize: 11, color: "#5B6570" }}>assigned to {t.assignee}</span>
+                    <AssignToButton
+                      itemType="close-task"
+                      itemId={`close-${i}`}
+                      currentAssignee={t.assignee.toLowerCase().includes("you") ? "self" : t.assignee.toLowerCase()}
+                      compact
+                      onAssign={() => {}}
+                    />
                   </div>
                 ))}
               </div>

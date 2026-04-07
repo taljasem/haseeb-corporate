@@ -376,3 +376,72 @@ export async function draftJournalEntry({ description, amount, debitAccount, cre
     hashChainStatus: "ready",
   };
 }
+
+// ─────────────────────────────────────────
+// CFO architecture fixes — additive
+// ─────────────────────────────────────────
+
+let _suggSeq = 1;
+
+export async function suggestJournalEntryFromBankTransaction(bankTx) {
+  await delay();
+  if (!bankTx) return null;
+
+  // Bank account name → code map (matches chart of accounts)
+  const bankMap = {
+    "KIB Operating": { name: "KIB Operating Account", code: "1120" },
+    "KIB Reserve":   { name: "KIB Reserve Account",   code: "1130" },
+    "NBK Settlement":{ name: "NBK Settlement Account", code: "1140" },
+  };
+  const bank = bankMap[bankTx.source] || { name: bankTx.source || "Bank Account", code: "1120" };
+  const sug = bankTx.engineSuggestion || {};
+  const abs = Math.abs(bankTx.amount);
+  const isOutflow = bankTx.amount < 0;
+
+  const counterparty = sug.account
+    ? { name: sug.account, code: sug.accountCode }
+    : null;
+
+  // Build lines.
+  // Outflow: debit suggested expense, credit bank
+  // Inflow: debit bank, credit suggested revenue
+  let debitLine, creditLine;
+  if (isOutflow) {
+    debitLine  = counterparty
+      ? { account: counterparty.name, code: counterparty.code, debit: abs, credit: null }
+      : { account: null, code: null, debit: abs, credit: null, placeholder: true };
+    creditLine = { account: bank.name, code: bank.code, debit: null, credit: abs };
+  } else {
+    debitLine  = { account: bank.name, code: bank.code, debit: abs, credit: null };
+    creditLine = counterparty
+      ? { account: counterparty.name, code: counterparty.code, debit: null, credit: abs }
+      : { account: null, code: null, debit: null, credit: abs, placeholder: true };
+  }
+
+  return {
+    id: `JE-SUGG-${String(_suggSeq++).padStart(3, "0")}`,
+    sourceBankTxId: bankTx.id,
+    description: bankTx.merchant,
+    status: "Engine Suggestion",
+    lines: [debitLine, creditLine],
+    totalDebit: abs,
+    totalCredit: abs,
+    balanced: !!counterparty,
+    mappingVersion: "v1.0",
+    createdAt: new Date().toISOString(),
+    hashChainStatus: "not committed",
+    confidence: sug.confidence || "NONE",
+    reasoning: sug.reasoning || "",
+  };
+}
+
+export async function getTeamMembers() {
+  await delay();
+  return [
+    { id: "self",  name: "You (CFO)",        role: "CFO",                initials: "You", color: "#00C48C" },
+    { id: "sara",  name: "Sara Al-Ahmadi",   role: "Senior Accountant",  initials: "SA",  color: "#3B82F6" },
+    { id: "noor",  name: "Noor Kandari",     role: "Junior Accountant",  initials: "NK",  color: "#8B5CF6" },
+    { id: "jasem", name: "Jasem Al-Rashed",  role: "Junior Accountant",  initials: "JA",  color: "#D4A84B" },
+    { id: "layla", name: "Layla Habib",      role: "Accounts Payable",   initials: "LH",  color: "#FF5A5F" },
+  ];
+}

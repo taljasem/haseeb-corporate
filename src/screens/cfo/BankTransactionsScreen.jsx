@@ -28,6 +28,22 @@ export default function BankTransactionsScreen({ onOpenAminah }) {
 
   const selected = (txs || []).find((t) => t.id === selectedId);
 
+  const handleConfirmed = (txId) => {
+    setTxs((prev) => {
+      if (!prev) return prev;
+      const idx = prev.findIndex((t) => t.id === txId);
+      const next = prev.filter((t) => t.id !== txId);
+      // Auto-select next
+      if (next.length > 0) {
+        const newIdx = Math.min(idx, next.length - 1);
+        setSelectedId(next[newIdx].id);
+      } else {
+        setSelectedId(null);
+      }
+      return next;
+    });
+  };
+
   return (
     <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
       {/* List 60% */}
@@ -100,7 +116,8 @@ export default function BankTransactionsScreen({ onOpenAminah }) {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <BankTransactionDetail
           tx={selected}
-          onOpenAminah={(tx) => onOpenAminah && onOpenAminah(`Bank tx ${tx.id} — ${tx.merchant}`)}
+          onOpenAminah={(ctx) => onOpenAminah && onOpenAminah(typeof ctx === "string" ? ctx : `Bank tx ${selected.id} — ${selected.merchant}`)}
+          onConfirmed={handleConfirmed}
         />
       </div>
     </div>

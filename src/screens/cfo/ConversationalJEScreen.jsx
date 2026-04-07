@@ -154,7 +154,7 @@ function ExchangeOne() {
           <div style={{ maxWidth: "100%" }}>
             <JournalEntryCard
               entry={draft}
-              posted={posted}
+              state={posted ? "posted" : "draft-validated"}
               onConfirm={() => setPosted(true)}
               onEdit={() => {}}
               onDiscard={() => {
@@ -162,6 +162,8 @@ function ExchangeOne() {
                 setCredit(null);
                 setPosted(false);
               }}
+              showAssign
+              assignItemType="journal-entry"
             />
           </div>
           {!posted && (

@@ -3552,3 +3552,467 @@ const _FY2028_BUDGET = (() => {
 })();
 
 _BUDGETS_DB[_FY2028_BUDGET.id] = _FY2028_BUDGET;
+
+// ─────────────────────────────────────────
+// RECONCILIATION — bank vs ledger matching
+// ─────────────────────────────────────────
+
+const _RECONS_DB = {};
+
+// Hand-crafted seed so counts match the spec exactly
+function _mkBankItem(id, date, desc, ref, amount) {
+  return { id, date, description: desc, reference: ref, amount };
+}
+function _mkLedgerEntry(id, date, desc, amount, jeId) {
+  return { id, date, description: desc, amount, journalEntryId: jeId };
+}
+function _mkMatch(id, bankItemId, ledgerEntryId, tier, matchedBy = "engine") {
+  return {
+    id,
+    bankItemId,
+    ledgerEntryId,
+    matchTier: tier,
+    matchedAt: new Date().toISOString(),
+    matchedBy,
+    notes: null,
+  };
+}
+function _mkException(id, type, description, suggestedAction, bankItemId = null, ledgerEntryId = null) {
+  return {
+    id,
+    type,
+    bankItemId,
+    ledgerEntryId,
+    description,
+    suggestedAction,
+    resolved: false,
+    resolutionNotes: null,
+  };
+}
+
+// ACC-1 KIB Operating — March 2026 — IN PROGRESS
+// 30 bank + 30 ledger, 25 matched (24 exact + 1 manual), 5 exceptions, 5 unmatched per side
+(function seedOperatingRec() {
+  const matchedItems = [];
+  const unmatchedBankItems = [];
+  const unmatchedLedgerItems = [];
+  const exceptions = [];
+
+  // 25 matched pairs
+  for (let i = 1; i <= 25; i++) {
+    const bid = `OP-B${String(i).padStart(3, "0")}`;
+    const lid = `OP-L${String(i).padStart(3, "0")}`;
+    matchedItems.push(_mkMatch(`MATCH-OP-${i}`, bid, lid, i === 25 ? "manual" : "exact", i === 25 ? "sara" : "engine"));
+  }
+
+  // 5 unmatched bank items + 5 exceptions for the spec'd cases
+  const unmatchedBank = [
+    _mkBankItem("OP-B026", _daysAgo(8),  "Boubyan transfer in — unidentified", "TRF-INT-2847", 2462.5),
+    _mkBankItem("OP-B027", _daysAgo(6),  "KIB wire fee",                        "FEE-0341",     -12.5),
+    _mkBankItem("OP-B028", _daysAgo(4),  "KIB monthly service fee",             "FEE-0342",     -8.0),
+    _mkBankItem("OP-B029", _daysAgo(3),  "Talabat payout (commission adj)",     "TLB-92104",    3800.0),
+    _mkBankItem("OP-B030", _daysAgo(2),  "Alghanim Industries wire",            "ALG-88123",    12450.0),
+  ];
+  unmatchedBankItems.push(...unmatchedBank);
+
+  const unmatchedLedger = [
+    _mkLedgerEntry("OP-L026", _daysAgo(3), "Talabat payout (JE)", 3750.0, "JE-0411"),
+    _mkLedgerEntry("OP-L027", _daysAgo(3), "Alghanim payment (JE)", 12450.0, "JE-0412"),
+  ];
+  unmatchedLedgerItems.push(...unmatchedLedger);
+
+  // 5 exceptions
+  exceptions.push(
+    _mkException("EXC-OP-1", "unidentified",           "Boubyan transfer in for 2,462.500 KWD — no matching ledger entry found",      "investigate",     "OP-B026"),
+    _mkException("EXC-OP-2", "missing-ledger-entry",   "KIB wire fee 12.500 KWD not yet booked to Bank Charges (6800)",               "create-je",       "OP-B027"),
+    _mkException("EXC-OP-3", "missing-ledger-entry",   "KIB monthly service fee 8.000 KWD not yet booked to Bank Charges (6800)",    "create-je",       "OP-B028"),
+    _mkException("EXC-OP-4", "amount-mismatch",         "Talabat bank payout 3,800.000 vs JE posted 3,750.000 — commission rounding", "investigate",     "OP-B029", "OP-L026"),
+    _mkException("EXC-OP-5", "date-mismatch",           "Alghanim payment — bank shows 3 days ago, JE dated 4 days ago (fuzzy match)", "accept",          "OP-B030", "OP-L027"),
+  );
+
+  const openingBalance = 118000.25;
+  const closingBankBalance = 142100.25;
+  // Compute ledger closing as bank closing minus unresolved differences
+  const closingLedgerBalance = closingBankBalance - 2462.5 + 12.5 + 8.0 - 50.0;
+
+  _RECONS_DB["REC-2026-03-ACC-1"] = {
+    id: "REC-2026-03-ACC-1",
+    accountId: "ACC-1",
+    period: { month: 3, year: 2026, label: "March 2026" },
+    status: "in-progress",
+    startedAt: _daysAgo(5),
+    completedAt: null,
+    completedBy: null,
+    openingBalance,
+    closingBalance: closingBankBalance,
+    closingLedgerBalance: Number(closingLedgerBalance.toFixed(3)),
+    matchedItems,
+    unmatchedBankItems,
+    unmatchedLedgerItems,
+    exceptions,
+    totalBankItems: 30,
+    totalLedgerItems: 30,
+    matchedCount: 25,
+    exceptionCount: exceptions.length,
+    reconciliationDifference: Number((closingBankBalance - closingLedgerBalance).toFixed(3)),
+    activityLog: [
+      { id: "ACT-1", timestamp: _daysAgo(5), user: "sara", action: "started",  detail: "Reconciliation started" },
+      { id: "ACT-2", timestamp: _daysAgo(5), user: "engine", action: "auto-matched", detail: "24 items matched by engine (Tier 1)" },
+      { id: "ACT-3", timestamp: _daysAgo(3), user: "sara", action: "manual-match", detail: "Matched 1 item manually" },
+      { id: "ACT-4", timestamp: _daysAgo(2), user: "sara", action: "flagged",  detail: "Flagged 5 exceptions" },
+    ],
+  };
+})();
+
+// ACC-2 KIB Reserve — COMPLETED
+(function seedReserveRec() {
+  const matchedItems = [];
+  for (let i = 1; i <= 12; i++) {
+    matchedItems.push(_mkMatch(`MATCH-RS-${i}`, `RS-B${i}`, `RS-L${i}`, "exact"));
+  }
+  _RECONS_DB["REC-2026-03-ACC-2"] = {
+    id: "REC-2026-03-ACC-2",
+    accountId: "ACC-2",
+    period: { month: 3, year: 2026, label: "March 2026" },
+    status: "completed",
+    startedAt: _daysAgo(4),
+    completedAt: _daysAgo(1),
+    completedBy: "sara",
+    openingBalance: 37000.0,
+    closingBalance: 42135.25,
+    closingLedgerBalance: 42135.25,
+    matchedItems,
+    unmatchedBankItems: [],
+    unmatchedLedgerItems: [],
+    exceptions: [],
+    totalBankItems: 12,
+    totalLedgerItems: 12,
+    matchedCount: 12,
+    exceptionCount: 0,
+    reconciliationDifference: 0,
+    activityLog: [
+      { id: "ACT-R1", timestamp: _daysAgo(4), user: "sara",   action: "started",       detail: "Reconciliation started" },
+      { id: "ACT-R2", timestamp: _daysAgo(4), user: "engine", action: "auto-matched",  detail: "12 items matched by engine (Tier 1)" },
+      { id: "ACT-R3", timestamp: _daysAgo(1), user: "sara",   action: "completed",     detail: "Reconciliation completed" },
+    ],
+  };
+})();
+
+// ACC-3 KIB Settlement — IN PROGRESS — 18/20 + 2 POS timing exceptions
+(function seedSettlementRec() {
+  const matchedItems = [];
+  for (let i = 1; i <= 18; i++) {
+    matchedItems.push(_mkMatch(`MATCH-ST-${i}`, `ST-B${i}`, `ST-L${i}`, "exact"));
+  }
+  const unmatchedBankItems = [
+    _mkBankItem("ST-B019", _daysAgo(2), "POS batch settlement", "POS-3471", 1420.0),
+    _mkBankItem("ST-B020", _daysAgo(1), "POS batch settlement", "POS-3472", 1385.0),
+  ];
+  const unmatchedLedgerItems = [
+    _mkLedgerEntry("ST-L019", _daysAgo(3), "POS receipts batch (pre-settlement)", 1420.0, "JE-0401"),
+    _mkLedgerEntry("ST-L020", _daysAgo(2), "POS receipts batch (pre-settlement)", 1385.0, "JE-0402"),
+  ];
+  const exceptions = [
+    _mkException("EXC-ST-1", "date-mismatch", "POS settlement timing — bank Mar 6, ledger Mar 5",   "accept", "ST-B019", "ST-L019"),
+    _mkException("EXC-ST-2", "date-mismatch", "POS settlement timing — bank Mar 7, ledger Mar 5",   "accept", "ST-B020", "ST-L020"),
+  ];
+  _RECONS_DB["REC-2026-03-ACC-3"] = {
+    id: "REC-2026-03-ACC-3",
+    accountId: "ACC-3",
+    period: { month: 3, year: 2026, label: "March 2026" },
+    status: "in-progress",
+    startedAt: _daysAgo(3),
+    completedAt: null,
+    completedBy: null,
+    openingBalance: 15015.75,
+    closingBalance: 18420.75,
+    closingLedgerBalance: 18420.75,
+    matchedItems,
+    unmatchedBankItems,
+    unmatchedLedgerItems,
+    exceptions,
+    totalBankItems: 20,
+    totalLedgerItems: 20,
+    matchedCount: 18,
+    exceptionCount: 2,
+    reconciliationDifference: 0,
+    activityLog: [
+      { id: "ACT-S1", timestamp: _daysAgo(3), user: "sara",   action: "started",      detail: "Reconciliation started" },
+      { id: "ACT-S2", timestamp: _daysAgo(3), user: "engine", action: "auto-matched", detail: "18 items matched (Tier 1)" },
+      { id: "ACT-S3", timestamp: _daysAgo(2), user: "sara",   action: "flagged",      detail: "Flagged 2 POS timing exceptions" },
+    ],
+  };
+})();
+
+// ACC-4 KIB USD — NOT STARTED
+(function seedUsdRec() {
+  _RECONS_DB["REC-2026-03-ACC-4"] = {
+    id: "REC-2026-03-ACC-4",
+    accountId: "ACC-4",
+    period: { month: 3, year: 2026, label: "March 2026" },
+    status: "not-started",
+    startedAt: null,
+    completedAt: null,
+    completedBy: null,
+    openingBalance: 5816.5,
+    closingBalance: 8240.5,
+    closingLedgerBalance: 8240.5,
+    matchedItems: [],
+    unmatchedBankItems: [],
+    unmatchedLedgerItems: [],
+    exceptions: [],
+    totalBankItems: 8,
+    totalLedgerItems: 8,
+    matchedCount: 0,
+    exceptionCount: 0,
+    reconciliationDifference: 0,
+    activityLog: [],
+  };
+})();
+
+// ─── Matching engine (3-tier) ───
+function _normalizeTokens(s) {
+  return (s || "").toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter((t) => t.length > 3);
+}
+function _tokenOverlap(a, b) {
+  const ta = _normalizeTokens(a);
+  const tb = _normalizeTokens(b);
+  if (!ta.length || !tb.length) return 0;
+  const setB = new Set(tb);
+  const hit = ta.filter((t) => setB.has(t)).length;
+  return hit / Math.max(ta.length, tb.length);
+}
+function _runMatchingEngine(bankItems, ledgerEntries) {
+  const tier1Matches = [];
+  const tier2Suggestions = [];
+  const usedBank = new Set();
+  const usedLedger = new Set();
+
+  // Tier 1 — exact
+  bankItems.forEach((b) => {
+    if (usedBank.has(b.id)) return;
+    const match = ledgerEntries.find(
+      (l) =>
+        !usedLedger.has(l.id) &&
+        Math.abs(l.amount - b.amount) < 0.001 &&
+        new Date(l.date).toDateString() === new Date(b.date).toDateString() &&
+        _tokenOverlap(b.description, l.description) > 0.3
+    );
+    if (match) {
+      tier1Matches.push({ bankItem: b, ledgerEntry: match, tier: "exact", confidence: 100 });
+      usedBank.add(b.id);
+      usedLedger.add(match.id);
+    }
+  });
+
+  // Tier 2 — fuzzy (amount match, date within ±2 days)
+  bankItems.forEach((b) => {
+    if (usedBank.has(b.id)) return;
+    const candidates = ledgerEntries
+      .filter((l) => !usedLedger.has(l.id) && Math.abs(l.amount - b.amount) < 0.001)
+      .map((l) => {
+        const dayDiff = Math.abs(
+          (new Date(l.date) - new Date(b.date)) / (1000 * 60 * 60 * 24)
+        );
+        const overlap = _tokenOverlap(b.description, l.description);
+        const confidence = Math.round(100 - dayDiff * 15 + overlap * 20);
+        return { ledgerEntry: l, dayDiff, overlap, confidence };
+      })
+      .filter((c) => c.dayDiff <= 2)
+      .sort((a, b) => b.confidence - a.confidence);
+    if (candidates.length) {
+      const best = candidates[0];
+      tier2Suggestions.push({
+        bankItem: b,
+        ledgerEntry: best.ledgerEntry,
+        tier: "fuzzy",
+        confidence: best.confidence,
+      });
+      usedBank.add(b.id);
+      usedLedger.add(best.ledgerEntry.id);
+    }
+  });
+
+  const unmatchedBank = bankItems.filter((b) => !usedBank.has(b.id));
+  const unmatchedLedger = ledgerEntries.filter((l) => !usedLedger.has(l.id));
+  return { tier1Matches, tier2Suggestions, unmatchedBank, unmatchedLedger };
+}
+
+// Read functions
+export async function getReconciliationDashboard() {
+  await delay();
+  const accounts = await getBankAccounts();
+  const rows = accounts.map((a) => {
+    const rec = Object.values(_RECONS_DB).find((r) => r.accountId === a.id && r.period.year === 2026 && r.period.month === 3);
+    return {
+      accountId: a.id,
+      accountName: a.accountName,
+      accountNumberMasked: a.accountNumberMasked,
+      bankName: a.bankName,
+      accentColor: a.accentColor,
+      currentReconciliationId: rec ? rec.id : null,
+      status: rec ? rec.status : "not-started",
+      matchedCount: rec ? rec.matchedCount : 0,
+      totalCount: rec ? rec.totalBankItems : 0,
+      exceptionCount: rec ? rec.exceptionCount : 0,
+      lastReconciledAt: rec ? (rec.completedAt || rec.startedAt) : null,
+    };
+  });
+  return _brandObj(rows);
+}
+
+export async function getReconciliationsForAccount(accountId) {
+  await delay();
+  const list = Object.values(_RECONS_DB)
+    .filter((r) => r.accountId === accountId)
+    .sort((a, b) => (b.period.year - a.period.year) || (b.period.month - a.period.month));
+  return _brandObj(list);
+}
+
+export async function getReconciliationById(id) {
+  await delay();
+  const r = _RECONS_DB[id];
+  return r ? _brandObj({ ...r, matchedItems: [...r.matchedItems], unmatchedBankItems: [...r.unmatchedBankItems], unmatchedLedgerItems: [...r.unmatchedLedgerItems], exceptions: [...r.exceptions], activityLog: [...r.activityLog] }) : null;
+}
+
+export async function getReconciliationHistory(accountId) {
+  await delay();
+  return []; // Placeholder — February prior period not seeded in this pass
+}
+
+// Action functions
+function _recomputeCounts(rec) {
+  rec.matchedCount = rec.matchedItems.length;
+  rec.exceptionCount = rec.exceptions.filter((e) => !e.resolved).length;
+  rec.totalBankItems = rec.matchedItems.length + rec.unmatchedBankItems.length;
+  rec.totalLedgerItems = rec.matchedItems.length + rec.unmatchedLedgerItems.length;
+}
+function _logActivity(rec, user, action, detail) {
+  rec.activityLog.push({
+    id: `ACT-${Math.random().toString(36).slice(2, 8)}`,
+    timestamp: new Date().toISOString(),
+    user,
+    action,
+    detail,
+  });
+}
+
+export async function manualMatch(reconciliationId, bankItemId, ledgerEntryId, user = "sara") {
+  await delay();
+  const r = _RECONS_DB[reconciliationId];
+  if (!r) return null;
+  const bi = r.unmatchedBankItems.find((x) => x.id === bankItemId);
+  const le = r.unmatchedLedgerItems.find((x) => x.id === ledgerEntryId);
+  if (!bi || !le) return null;
+  r.unmatchedBankItems = r.unmatchedBankItems.filter((x) => x.id !== bankItemId);
+  r.unmatchedLedgerItems = r.unmatchedLedgerItems.filter((x) => x.id !== ledgerEntryId);
+  r.matchedItems.push(_mkMatch(`MATCH-${Math.random().toString(36).slice(2, 6)}`, bankItemId, ledgerEntryId, "manual", user));
+  _logActivity(r, user, "manual-match", `Manually matched ${bankItemId} ↔ ${ledgerEntryId}`);
+  _recomputeCounts(r);
+  return _brandObj({ ...r });
+}
+
+export async function unmatch(reconciliationId, matchId, user = "sara") {
+  await delay();
+  const r = _RECONS_DB[reconciliationId];
+  if (!r) return null;
+  const m = r.matchedItems.find((x) => x.id === matchId);
+  if (!m) return null;
+  r.matchedItems = r.matchedItems.filter((x) => x.id !== matchId);
+  _logActivity(r, user, "unmatch", `Unmatched ${matchId}`);
+  _recomputeCounts(r);
+  return _brandObj({ ...r });
+}
+
+export async function resolveException(reconciliationId, exceptionId, resolution, user = "sara") {
+  await delay();
+  const r = _RECONS_DB[reconciliationId];
+  if (!r) return null;
+  const e = r.exceptions.find((x) => x.id === exceptionId);
+  if (!e) return null;
+  e.resolved = true;
+  e.resolutionNotes = resolution || null;
+  // If the exception was linked to a bank+ledger pair (fuzzy/date mismatch), auto-match them
+  if (e.bankItemId && e.ledgerEntryId) {
+    const bi = r.unmatchedBankItems.find((x) => x.id === e.bankItemId);
+    const le = r.unmatchedLedgerItems.find((x) => x.id === e.ledgerEntryId);
+    if (bi && le) {
+      r.unmatchedBankItems = r.unmatchedBankItems.filter((x) => x.id !== e.bankItemId);
+      r.unmatchedLedgerItems = r.unmatchedLedgerItems.filter((x) => x.id !== e.ledgerEntryId);
+      r.matchedItems.push(_mkMatch(`MATCH-${Math.random().toString(36).slice(2, 6)}`, e.bankItemId, e.ledgerEntryId, "manual", user));
+    }
+  }
+  _logActivity(r, user, "resolved-exception", `Resolved ${exceptionId}: ${resolution || "accepted"}`);
+  _recomputeCounts(r);
+  return _brandObj({ ...r });
+}
+
+export async function createMissingJournalEntry(reconciliationId, bankItemId, debitAccount, creditAccount, amount, user = "sara") {
+  await delay();
+  const r = _RECONS_DB[reconciliationId];
+  if (!r) return null;
+  const bi = r.unmatchedBankItems.find((x) => x.id === bankItemId);
+  if (!bi) return null;
+  const jeId = `JE-${Math.floor(500 + Math.random() * 500)}`;
+  const le = _mkLedgerEntry(`LE-${Math.random().toString(36).slice(2, 6)}`, bi.date, `Auto-created from ${bi.reference}`, bi.amount, jeId);
+  r.unmatchedBankItems = r.unmatchedBankItems.filter((x) => x.id !== bankItemId);
+  r.matchedItems.push(_mkMatch(`MATCH-${Math.random().toString(36).slice(2, 6)}`, bankItemId, le.id, "manual", user));
+  // Remove the related exception
+  r.exceptions = r.exceptions.filter((e) => e.bankItemId !== bankItemId);
+  _logActivity(r, user, "created-je", `Created ${jeId} for ${bi.reference} (${amount})`);
+  _recomputeCounts(r);
+  return _brandObj({ ...r, newJournalEntryId: jeId });
+}
+
+export async function completeReconciliation(reconciliationId, completedBy = "sara") {
+  await delay();
+  const r = _RECONS_DB[reconciliationId];
+  if (!r) return null;
+  if (r.reconciliationDifference !== 0) return null;
+  if (r.exceptions.some((e) => !e.resolved)) return null;
+  r.status = "completed";
+  r.completedAt = new Date().toISOString();
+  r.completedBy = completedBy;
+  _logActivity(r, completedBy, "completed", "Reconciliation completed");
+  return _brandObj({ ...r });
+}
+
+export async function lockReconciliation(reconciliationId) {
+  await delay();
+  const r = _RECONS_DB[reconciliationId];
+  if (!r || r.status !== "completed") return null;
+  r.status = "locked";
+  _logActivity(r, "system", "locked", "Period locked");
+  return _brandObj({ ...r });
+}
+
+export async function createReconciliation(accountId, period) {
+  await delay();
+  const id = `REC-${period.year}-${String(period.month).padStart(2, "0")}-${accountId}`;
+  if (_RECONS_DB[id]) return _brandObj({ ..._RECONS_DB[id] });
+  // Minimal stub — real impl would pull bank statement + ledger for period
+  const r = {
+    id,
+    accountId,
+    period,
+    status: "in-progress",
+    startedAt: new Date().toISOString(),
+    completedAt: null,
+    completedBy: null,
+    openingBalance: 0,
+    closingBalance: 0,
+    closingLedgerBalance: 0,
+    matchedItems: [],
+    unmatchedBankItems: [],
+    unmatchedLedgerItems: [],
+    exceptions: [],
+    totalBankItems: 0,
+    totalLedgerItems: 0,
+    matchedCount: 0,
+    exceptionCount: 0,
+    reconciliationDifference: 0,
+    activityLog: [{ id: "ACT-NEW", timestamp: new Date().toISOString(), user: "sara", action: "started", detail: "Reconciliation started" }],
+  };
+  _RECONS_DB[id] = r;
+  return _brandObj({ ...r });
+}

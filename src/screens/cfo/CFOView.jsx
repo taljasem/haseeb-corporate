@@ -10,6 +10,7 @@ import TaskboxScreen from "../../components/taskbox/TaskboxScreen";
 import RulesScreen from "./RulesScreen";
 import BankAccountsScreen from "../shared/BankAccountsScreen";
 import BudgetScreen from "../../components/budget/BudgetScreen";
+import ReconciliationScreen from "../../components/reconciliation/ReconciliationScreen";
 import NewTaskModal from "../../components/taskbox/NewTaskModal";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 
@@ -92,6 +93,8 @@ export default function CFOView({ registerNav }) {
         return <BudgetScreen role="CFO" onOpenAminah={openAminah} />;
       case "bank-accounts":
         return <BankAccountsScreen role="CFO" />;
+      case "reconciliation":
+        return <ReconciliationScreen role="CFO" />;
       case "taskbox":
         return (
           <TaskboxScreen

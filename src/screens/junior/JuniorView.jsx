@@ -9,6 +9,7 @@ import BankAccountsScreen from "../shared/BankAccountsScreen";
 import BankTransactionsScreen from "../cfo/BankTransactionsScreen";
 import ConversationalJEScreen from "../cfo/ConversationalJEScreen";
 import BudgetScreen from "../../components/budget/BudgetScreen";
+import ReconciliationScreen from "../../components/reconciliation/ReconciliationScreen";
 import NewTaskModal from "../../components/taskbox/NewTaskModal";
 import { getSaraTaskStats } from "../../engine/mockEngine";
 
@@ -111,12 +112,7 @@ export default function JuniorView({ registerNav }) {
       case "budget":
         return <BudgetScreen role="Junior" juniorOnlyId="sara" onOpenAminah={openAminah} />;
       case "reconciliation":
-        return (
-          <Placeholder
-            label="RECONCILIATION"
-            sub="Reconciliation workspace will appear here."
-          />
-        );
+        return <ReconciliationScreen role="Junior" />;
       case "responsibilities":
         return <MyResponsibilitiesScreen onContactCFO={() => setNewTaskOpen(true)} />;
       case "bank-accounts":

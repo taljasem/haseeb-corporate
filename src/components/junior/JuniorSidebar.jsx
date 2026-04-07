@@ -81,6 +81,7 @@ export default function JuniorSidebar({ active, setActive, taskStats = { open: 0
       <SidebarGroup label="MY WORK">
         <NavItem icon={L.Landmark}       label="Bank Transactions" active={is("bank-transactions")} onClick={() => setActive("bank-transactions")} />
         <NavItem icon={L.MessageSquare}  label="Conversational JE" active={is("conversational-je")} onClick={() => setActive("conversational-je")} />
+        <NavItem icon={L.BarChart3}      label="Budget"            active={is("budget")}            onClick={() => setActive("budget")} />
         <NavItem icon={L.CheckCircle}    label="Reconciliation"    active={is("reconciliation")}    onClick={() => setActive("reconciliation")} />
       </SidebarGroup>
 

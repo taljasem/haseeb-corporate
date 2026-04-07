@@ -2505,3 +2505,317 @@ export async function updateRoutingRule(id, changes) {
   r.auditTrail.push(_rAudit("edited", P.cfo, "You edited this rule"));
   return r;
 }
+
+// ─────────────────────────────────────────
+// BUDGET — FY 2026 plan, actuals integration
+// ─────────────────────────────────────────
+
+// Helper: build a 12-month even distribution from an annual total.
+function _monthly12(annual) {
+  const each = Math.round((annual / 12) * 1000) / 1000;
+  const arr = Array(12).fill(each);
+  // Adjust last month so the array sums exactly to annual.
+  const sum = arr.reduce((s, n) => s + n, 0);
+  arr[11] = Number((arr[11] + (annual - sum)).toFixed(3));
+  return arr;
+}
+
+let _lineSeq = 0;
+function _budgetLine(code, name, annual, priorActual = 0, notes = null) {
+  return {
+    id: `LINE-${String(++_lineSeq).padStart(3, "0")}`,
+    glAccountCode: code,
+    glAccountName: name,
+    annual,
+    monthlyDistribution: _monthly12(annual),
+    priorPeriodActual: priorActual,
+    notes,
+  };
+}
+
+function _dept(id, name, category, ownerUserId, lineItems) {
+  const totalAnnual = Number(lineItems.reduce((s, l) => s + l.annual, 0).toFixed(3));
+  const monthlyDistribution = Array(12)
+    .fill(0)
+    .map((_, m) =>
+      Number(lineItems.reduce((s, l) => s + l.monthlyDistribution[m], 0).toFixed(3))
+    );
+  return {
+    id,
+    name,
+    category,
+    ownerUserId,
+    status: "approved",
+    totalAnnual,
+    monthlyDistribution,
+    lineItems,
+    notes: null,
+  };
+}
+
+const _BUDGET_DEPARTMENTS = [
+  _dept("DEPT-sales", "Sales", "revenue", "cfo", [
+    _budgetLine("4100", "Sales Revenue",   1200000, 1080000),
+    _budgetLine("4200", "Service Revenue", 0,       0),
+  ]),
+  _dept("DEPT-operations", "Operations", "expense", "noor", [
+    _budgetLine("5110", "Cost of Goods Sold",     480000, 432000),
+    _budgetLine("5120", "Direct Labor",            90000,  82000),
+    _budgetLine("5130", "Inventory adjustments",   18000,  16500),
+  ]),
+  _dept("DEPT-sales-ops", "Sales (Ops)", "expense", "jasem", [
+    _budgetLine("5200", "Sales Commissions", 36000, 31000),
+    _budgetLine("5240", "Sales Travel",      15000, 13500),
+  ]),
+  _dept("DEPT-marketing", "Marketing", "expense", "layla", [
+    _budgetLine("6320", "Marketing & Advertising", 38000, 31500),
+    _budgetLine("6310", "Trade Shows",             25000, 18000),
+    _budgetLine("6330", "Agency Retainer",         28000, 25200),
+  ]),
+  _dept("DEPT-tech", "Tech & Infra", "expense", "sara", [
+    _budgetLine("6220", "Internet & Phone",         9000,  8400),
+    _budgetLine("6230", "Software Subscriptions",  24000, 21600),
+    _budgetLine("6240", "Cloud Infra",             18000, 15800),
+  ]),
+  _dept("DEPT-admin", "Admin", "expense", "sara", [
+    _budgetLine("6100", "Salaries & Wages",      168000, 156000),
+    _budgetLine("6110", "PIFSS Contributions",    19200,  18000),
+    _budgetLine("6200", "Office Rent",            50400,  50400),
+    _budgetLine("6210", "Utilities",              12000,  11400),
+    _budgetLine("6260", "Office Supplies",         5000,   4500),
+    _budgetLine("6270", "Professional Fees",      10200,   9800),
+    _budgetLine("6280", "Insurance",               4000,   3800),
+    _budgetLine("6290", "Bank Charges",             900,    850),
+  ]),
+];
+
+const _ACTIVE_BUDGET = (() => {
+  const totalRevenue = _BUDGET_DEPARTMENTS
+    .filter((d) => d.category === "revenue")
+    .reduce((s, d) => s + d.totalAnnual, 0);
+  const totalExpenses = _BUDGET_DEPARTMENTS
+    .filter((d) => d.category === "expense")
+    .reduce((s, d) => s + d.totalAnnual, 0);
+  return {
+    id: "BUD-2026-FY",
+    period: {
+      type: "annual",
+      label: "FY 2026",
+      fiscalYear: 2026,
+      startDate: new Date("2026-01-01").toISOString(),
+      endDate: new Date("2026-12-31").toISOString(),
+    },
+    status: "active",
+    approvedBy: "owner",
+    approvedAt: new Date("2025-12-18").toISOString(),
+    createdBy: "cfo",
+    createdAt: new Date("2025-11-20").toISOString(),
+    totalRevenue: Number(totalRevenue.toFixed(3)),
+    totalExpenses: Number(totalExpenses.toFixed(3)),
+    netIncome: Number((totalRevenue - totalExpenses).toFixed(3)),
+    departments: _BUDGET_DEPARTMENTS,
+    aminahNarration:
+      "FY 2026 budget is [active] with total revenue target of [1,200,000.000 KWD] and expenses budget of [1,051,700.000 KWD], leaving projected net income of [148,300.000 KWD] (margin [12.4%]). Through Q1 we're tracking on plan for revenue but [Marketing is at 91% of YTD allocation] — at this pace we'll exceed annual budget by approximately [+18,000.000 KWD]. Operations and Tech & Infra are running below pace which offsets the marketing variance.",
+  };
+})();
+
+// Hand-tuned YTD actuals per department (3 months in = 25% of year baseline)
+// Marketing is intentionally over plan; others on or under track.
+const _DEPT_YTD_ACTUALS = {
+  "DEPT-sales":      300000,   // 25.0% of 1,200,000
+  "DEPT-operations": 138750,   // ~24.0% of 588,000
+  "DEPT-sales-ops":  12200,    // ~23.9% of 51,000
+  "DEPT-marketing":  20985,    // 91% of YTD (22,750) ⇒ ~22.79% of annual 91,000
+  "DEPT-tech":       11475,    // ~22.5% of 51,000
+  "DEPT-admin":      67425,    // 25.0% of 269,700
+};
+
+function _statusForPercent(pct) {
+  if (pct < 90)  return "under";
+  if (pct <= 100) return "on-track";
+  if (pct <= 110) return "over";
+  return "critical";
+}
+
+export async function getActiveBudget(_period) {
+  await delay();
+  return _brandObj({ ..._ACTIVE_BUDGET, departments: _ACTIVE_BUDGET.departments.map((d) => ({ ...d })) });
+}
+
+export async function getBudgetById(id) {
+  await delay();
+  if (id !== _ACTIVE_BUDGET.id) return null;
+  return _brandObj({ ..._ACTIVE_BUDGET });
+}
+
+export async function getActiveBudgetSummary() {
+  await delay();
+  return _brandObj({
+    id: _ACTIVE_BUDGET.id,
+    label: _ACTIVE_BUDGET.period.label,
+    status: _ACTIVE_BUDGET.status,
+    totalRevenue: _ACTIVE_BUDGET.totalRevenue,
+    totalExpenses: _ACTIVE_BUDGET.totalExpenses,
+    netIncome: _ACTIVE_BUDGET.netIncome,
+    departmentCount: _ACTIVE_BUDGET.departments.length,
+    expenseDepartmentCount: _ACTIVE_BUDGET.departments.filter((d) => d.category === "expense").length,
+    margin: Number(((_ACTIVE_BUDGET.netIncome / _ACTIVE_BUDGET.totalRevenue) * 100).toFixed(1)),
+  });
+}
+
+export async function getBudgetDepartments() {
+  await delay();
+  return _brandObj(_ACTIVE_BUDGET.departments.map((d) => ({ ...d })));
+}
+
+export async function getBudgetDepartmentById(id) {
+  await delay();
+  const d = _ACTIVE_BUDGET.departments.find((x) => x.id === id);
+  return d ? _brandObj({ ...d }) : null;
+}
+
+export async function getBudgetVarianceByDepartment() {
+  await delay();
+  // YTD budget = 3/12 of annual (3 months elapsed)
+  const ytdFraction = 3 / 12;
+  const rows = _ACTIVE_BUDGET.departments.map((d) => {
+    const budgetYtd = Number((d.totalAnnual * ytdFraction).toFixed(3));
+    const actualYtd = Number((_DEPT_YTD_ACTUALS[d.id] || 0).toFixed(3));
+    const varianceAmount = Number((actualYtd - budgetYtd).toFixed(3));
+    const variancePercent = budgetYtd === 0 ? 0 : Number(((actualYtd / budgetYtd) * 100).toFixed(1));
+    return {
+      id: d.id,
+      name: d.name,
+      category: d.category,
+      ownerUserId: d.ownerUserId,
+      budgetAnnual: d.totalAnnual,
+      budgetYtd,
+      actualYtd,
+      varianceAmount,
+      variancePercent,
+      status: _statusForPercent(variancePercent),
+    };
+  });
+  return _brandObj(rows);
+}
+
+export async function getBudgetVarianceByLineItem(departmentId) {
+  await delay();
+  const d = _ACTIVE_BUDGET.departments.find((x) => x.id === departmentId);
+  if (!d) return [];
+  const ytdFraction = 3 / 12;
+  // For demo: distribute the dept-level YTD actual across line items proportionally to annual.
+  const deptActual = _DEPT_YTD_ACTUALS[departmentId] || 0;
+  const rows = d.lineItems.map((l) => {
+    const proportion = d.totalAnnual > 0 ? l.annual / d.totalAnnual : 0;
+    const actualYtd = Number((deptActual * proportion).toFixed(3));
+    const budgetYtd = Number((l.annual * ytdFraction).toFixed(3));
+    const varianceAmount = Number((actualYtd - budgetYtd).toFixed(3));
+    const variancePercent = budgetYtd === 0 ? 0 : Number(((actualYtd / budgetYtd) * 100).toFixed(1));
+    return {
+      id: l.id,
+      glAccountCode: l.glAccountCode,
+      glAccountName: l.glAccountName,
+      budgetAnnual: l.annual,
+      budgetYtd,
+      actualYtd,
+      varianceAmount,
+      variancePercent,
+      status: _statusForPercent(variancePercent),
+    };
+  });
+  return _brandObj(rows);
+}
+
+export async function getBudgetMonthlyComparison(departmentId, lineItemId) {
+  await delay();
+  const d = _ACTIVE_BUDGET.departments.find((x) => x.id === departmentId);
+  if (!d) return [];
+  const li = lineItemId ? d.lineItems.find((x) => x.id === lineItemId) : null;
+  const monthly = li ? li.monthlyDistribution : d.monthlyDistribution;
+  // Mock actuals: months 0-2 use seeded YTD, months 3-11 are projected (shown as 0)
+  const annualActual = li
+    ? Number(((_DEPT_YTD_ACTUALS[departmentId] || 0) * (li.annual / d.totalAnnual)).toFixed(3))
+    : _DEPT_YTD_ACTUALS[departmentId] || 0;
+  const monthlyActuals = [
+    annualActual / 3, annualActual / 3, annualActual / 3,
+    0, 0, 0, 0, 0, 0, 0, 0, 0,
+  ].map((n) => Number(n.toFixed(3)));
+  return _brandObj(
+    monthly.map((b, i) => ({
+      month: i + 1,
+      monthLabel: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i],
+      budget: b,
+      actual: monthlyActuals[i],
+    }))
+  );
+}
+
+export async function getBudgetForJunior(juniorId) {
+  await delay();
+  const owned = _ACTIVE_BUDGET.departments.filter((d) => d.ownerUserId === juniorId);
+  const others = _ACTIVE_BUDGET.departments.filter((d) => d.ownerUserId !== juniorId);
+  return _brandObj({
+    owned: owned.map((d) => ({ ...d })),
+    others: others.map((d) => ({
+      id: d.id,
+      name: d.name,
+      category: d.category,
+      totalAnnual: d.totalAnnual,
+      ownerUserId: d.ownerUserId,
+    })),
+  });
+}
+
+export async function updateBudgetLineItem(_budgetId, departmentId, lineItemId, changes) {
+  await delay();
+  const d = _ACTIVE_BUDGET.departments.find((x) => x.id === departmentId);
+  if (!d) return null;
+  const li = d.lineItems.find((x) => x.id === lineItemId);
+  if (!li) return null;
+  if (changes && typeof changes.annual === "number") {
+    li.annual = changes.annual;
+    li.monthlyDistribution = _monthly12(changes.annual);
+  }
+  if (changes && changes.notes != null) li.notes = changes.notes;
+  d.totalAnnual = Number(d.lineItems.reduce((s, l) => s + l.annual, 0).toFixed(3));
+  d.monthlyDistribution = Array(12)
+    .fill(0)
+    .map((_, m) =>
+      Number(d.lineItems.reduce((s, l) => s + l.monthlyDistribution[m], 0).toFixed(3))
+    );
+  // Recompute budget totals
+  _ACTIVE_BUDGET.totalRevenue = Number(
+    _ACTIVE_BUDGET.departments
+      .filter((x) => x.category === "revenue")
+      .reduce((s, x) => s + x.totalAnnual, 0).toFixed(3)
+  );
+  _ACTIVE_BUDGET.totalExpenses = Number(
+    _ACTIVE_BUDGET.departments
+      .filter((x) => x.category === "expense")
+      .reduce((s, x) => s + x.totalAnnual, 0).toFixed(3)
+  );
+  _ACTIVE_BUDGET.netIncome = Number(
+    (_ACTIVE_BUDGET.totalRevenue - _ACTIVE_BUDGET.totalExpenses).toFixed(3)
+  );
+  return _brandObj({ ...li });
+}
+
+export async function updateBudgetMonthlyDistribution(_budgetId, departmentId, lineItemId, monthlyArray) {
+  await delay();
+  const d = _ACTIVE_BUDGET.departments.find((x) => x.id === departmentId);
+  if (!d) return null;
+  const li = d.lineItems.find((x) => x.id === lineItemId);
+  if (!li) return null;
+  if (Array.isArray(monthlyArray) && monthlyArray.length === 12) {
+    li.monthlyDistribution = monthlyArray.map((n) => Number(n.toFixed(3)));
+    li.annual = Number(monthlyArray.reduce((s, n) => s + n, 0).toFixed(3));
+  }
+  d.totalAnnual = Number(d.lineItems.reduce((s, l) => s + l.annual, 0).toFixed(3));
+  d.monthlyDistribution = Array(12)
+    .fill(0)
+    .map((_, m) =>
+      Number(d.lineItems.reduce((s, l) => s + l.monthlyDistribution[m], 0).toFixed(3))
+    );
+  return _brandObj({ ...li });
+}

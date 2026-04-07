@@ -191,6 +191,12 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                 onClick={() => setActiveScreen("audit-bridge")}
                 itemId="audit"
               />
+              <QueueRow
+                count={1}
+                label="budget department over plan"
+                onClick={() => setActiveScreen("budget")}
+                itemId="budget"
+              />
             </div>
           )}
         </TodaySection>

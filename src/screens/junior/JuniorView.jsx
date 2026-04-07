@@ -8,6 +8,7 @@ import TaskboxScreen from "../../components/taskbox/TaskboxScreen";
 import BankAccountsScreen from "../shared/BankAccountsScreen";
 import BankTransactionsScreen from "../cfo/BankTransactionsScreen";
 import ConversationalJEScreen from "../cfo/ConversationalJEScreen";
+import BudgetScreen from "../../components/budget/BudgetScreen";
 import NewTaskModal from "../../components/taskbox/NewTaskModal";
 import { getSaraTaskStats } from "../../engine/mockEngine";
 
@@ -107,6 +108,8 @@ export default function JuniorView({ registerNav }) {
         );
       case "conversational-je":
         return <ConversationalJEScreen role="Junior" onNavigate={setActiveScreen} />;
+      case "budget":
+        return <BudgetScreen role="Junior" juniorOnlyId="sara" onOpenAminah={openAminah} />;
       case "reconciliation":
         return (
           <Placeholder

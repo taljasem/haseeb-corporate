@@ -9,6 +9,7 @@ import MonthEndCloseScreen from "./MonthEndCloseScreen";
 import AuditBridgeScreen from "./AuditBridgeScreen";
 import TeamScreen from "./TeamScreen";
 import BankAccountsScreen from "../shared/BankAccountsScreen";
+import BudgetScreen from "../../components/budget/BudgetScreen";
 import TaskboxScreen from "../../components/taskbox/TaskboxScreen";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 
@@ -135,6 +136,8 @@ export default function OwnerView({ registerNav }) {
         return <AuditBridgeScreen />;
       case "team":
         return <TeamScreen />;
+      case "budget":
+        return <BudgetScreen role="Owner" onOpenAminah={openAminah} />;
       case "settings":
         return <Placeholder label="SETTINGS" />;
       default:

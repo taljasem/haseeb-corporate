@@ -60,7 +60,7 @@ export default function OwnerOverviewScreen({ setActiveScreen, onOpenBankAccount
           <MonthlyInsights />
           <FinancialHealthSection />
           <PendingApprovals onViewAll={() => setActiveScreen && setActiveScreen("approvals")} />
-          <BudgetPerformance />
+          <BudgetPerformance onViewAll={() => setActiveScreen && setActiveScreen("budget")} />
           <AminahNotes />
           <CloseStatus />
           <AuditReadiness />

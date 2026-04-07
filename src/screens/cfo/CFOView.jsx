@@ -9,6 +9,7 @@ import PlaceholderScreen from "./PlaceholderScreen";
 import TaskboxScreen from "../../components/taskbox/TaskboxScreen";
 import RulesScreen from "./RulesScreen";
 import BankAccountsScreen from "../shared/BankAccountsScreen";
+import BudgetScreen from "../../components/budget/BudgetScreen";
 import NewTaskModal from "../../components/taskbox/NewTaskModal";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 
@@ -87,6 +88,8 @@ export default function CFOView({ registerNav }) {
         return <ConversationalJEScreen />;
       case "rules":
         return <RulesScreen />;
+      case "budget":
+        return <BudgetScreen role="CFO" onOpenAminah={openAminah} />;
       case "bank-accounts":
         return <BankAccountsScreen role="CFO" />;
       case "taskbox":

@@ -1,17 +1,21 @@
 import { useEffect, useState } from "react";
 import SectionCard from "./SectionCard";
-import { getBudgetSummary } from "../../engine/mockEngine";
+import { getBudgetVarianceByDepartment } from "../../engine/mockEngine";
 
 const STATUS_COLOR = {
-  good: "#00C48C",
-  warning: "#D4A84B",
-  over: "#FF5A5F",
+  under:      "#00C48C",
+  "on-track": "#00C48C",
+  over:       "#D4A84B",
+  critical:   "#FF5A5F",
 };
 
-export default function BudgetPerformance() {
+export default function BudgetPerformance({ onViewAll }) {
   const [rows, setRows] = useState(null);
   useEffect(() => {
-    getBudgetSummary().then(setRows);
+    getBudgetVarianceByDepartment().then((all) => {
+      // Owner intelligence card focuses on expense departments only
+      setRows(all.filter((d) => d.category === "expense"));
+    });
   }, []);
 
   return (
@@ -20,8 +24,9 @@ export default function BudgetPerformance() {
         {rows
           ? rows.map((r) => {
               const color = STATUS_COLOR[r.status] || "#00C48C";
+              const used = r.variancePercent;
               return (
-                <div key={r.department}>
+                <div key={r.id}>
                   <div
                     style={{
                       display: "flex",
@@ -30,9 +35,7 @@ export default function BudgetPerformance() {
                       marginBottom: 6,
                     }}
                   >
-                    <span style={{ fontSize: 13, color: "#E6EDF3" }}>
-                      {r.department}
-                    </span>
+                    <span style={{ fontSize: 13, color: "#E6EDF3" }}>{r.name}</span>
                     <span
                       style={{
                         fontFamily: "'DM Mono', monospace",
@@ -42,7 +45,7 @@ export default function BudgetPerformance() {
                         fontVariantNumeric: "tabular-nums",
                       }}
                     >
-                      {r.used}% used
+                      {used.toFixed(0)}% used
                     </span>
                   </div>
                   <div
@@ -56,7 +59,7 @@ export default function BudgetPerformance() {
                   >
                     <div
                       style={{
-                        width: `${Math.min(r.used, 100)}%`,
+                        width: `${Math.min(used, 100)}%`,
                         height: "100%",
                         background: color,
                         transition: "width 0.4s ease",
@@ -70,6 +73,7 @@ export default function BudgetPerformance() {
       </div>
       <div style={{ marginTop: 14 }}>
         <a
+          onClick={onViewAll}
           style={{
             fontSize: 12,
             color: "#00C48C",

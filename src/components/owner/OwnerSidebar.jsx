@@ -85,6 +85,10 @@ export default function OwnerSidebar({ active, setActive, taskboxOpen = 0, pendi
         <NavItem icon={L.FileText}  label="Financial Statements" active={is("financial-statements")} onClick={() => setActive("financial-statements")} />
       </SidebarGroup>
 
+      <SidebarGroup label="PLANNING">
+        <NavItem icon={L.BarChart3} label="Budget" active={is("budget")} onClick={() => setActive("budget")} />
+      </SidebarGroup>
+
       <SidebarGroup label="OPERATIONS">
         <NavItem icon={L.Calendar} label="Month-End Close" active={is("month-end-close")} onClick={() => setActive("month-end-close")} />
         <NavItem icon={L.Shield}   label="Audit Bridge"    active={is("audit-bridge")}    onClick={() => setActive("audit-bridge")} />

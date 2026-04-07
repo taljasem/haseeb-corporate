@@ -246,3 +246,133 @@ export async function getEngineAlerts() {
     },
   ];
 }
+
+// ─────────────────────────────────────────
+// CFO VIEW — additive functions
+// ─────────────────────────────────────────
+
+export async function getCFOTodayQueue() {
+  await delay();
+  return {
+    pendingApprovals: 4,
+    bankTransactionsToReview: 12,
+    reconciliationExceptions: 2,
+    auditFailures: 1,
+  };
+}
+
+export async function getCFOAminahNotes() {
+  await delay();
+  return [
+    { id: "cn-1", text: "Trial balance off by [2,462.500 KWD] — likely from Boubyan unmatched items" },
+    { id: "cn-2", text: "Sara's accuracy this week is [94%], up from [91%] last week" },
+    { id: "cn-3", text: "Marketing variance flagged: [+23%] over budget for the third consecutive month" },
+    { id: "cn-4", text: "PIFSS accrual draft ready for your review — JE-0415 ([9,500.000 KWD])" },
+  ];
+}
+
+export async function getTeamActivity() {
+  await delay();
+  return [
+    { id: "ta-1", initials: "S", name: "Sara",  action: "Reconciled NBK and KIB",          detail: "78 items matched", timeAgo: "2h ago" },
+    { id: "ta-2", initials: "N", name: "Noor",  action: "Posted 5 journal entries",        detail: "Manual JEs",       timeAgo: "1h ago" },
+    { id: "ta-3", initials: "S", name: "Sara",  action: "Categorized 23 bank transactions", detail: "Auto-confirmed",   timeAgo: "45min ago" },
+    { id: "ta-4", initials: "N", name: "Noor",  action: "Drafted PIFSS accrual",           detail: "Awaiting approval", timeAgo: "30min ago" },
+    { id: "ta-5", initials: "S", name: "Sara",  action: "Closed 4 reconciliation items",   detail: "Boubyan",          timeAgo: "12min ago" },
+  ];
+}
+
+export async function getEngineStatus() {
+  await delay();
+  return {
+    coverage: 97,
+    autoToday: 412,
+    ruleBased: 78,
+    patternBased: 16,
+    aiSuggested: 6,
+  };
+}
+
+export async function getBankTransactionsPending() {
+  await delay();
+  return [
+    { id: "bt-1", date: "Apr 7", merchant: "KNPC fuel cards",            amount: -1820.5,  currency: "KWD", source: "KIB Operating", terminal: "POS-2241", engineSuggestion: { account: "Fuel & Vehicle",            accountCode: "6420", confidence: "RULE",    reasoning: "Matched rule: KNPC merchants → Fuel & Vehicle (6420)" } },
+    { id: "bt-2", date: "Apr 7", merchant: "Alghanim Industries",        amount: 12450.0,  currency: "KWD", source: "KIB Operating", terminal: "WIRE",     engineSuggestion: { account: "Sales Revenue",            accountCode: "4100", confidence: "PATTERN", reasoning: "Pattern match: customer payments from Alghanim entities" } },
+    { id: "bt-3", date: "Apr 7", merchant: "Al Shaya Trading",           amount: 8740.0,   currency: "KWD", source: "KIB Operating", terminal: "WIRE",     engineSuggestion: { account: "Sales Revenue",            accountCode: "4100", confidence: "RULE",    reasoning: "Recurring customer — rule active since Jan 2025" } },
+    { id: "bt-4", date: "Apr 6", merchant: "Office rent — Sharq",        amount: -4200.0,  currency: "KWD", source: "KIB Operating", terminal: "STO",      engineSuggestion: { account: "Office Rent",              accountCode: "6200", confidence: "RULE",    reasoning: "Standing order — landlord rule" } },
+    { id: "bt-5", date: "Apr 6", merchant: "Zain Kuwait",                amount: -624.75,  currency: "KWD", source: "KIB Operating", terminal: "DD",       engineSuggestion: { account: "Internet & Phone",         accountCode: "6220", confidence: "RULE",    reasoning: "Direct debit — telecom rule" } },
+    { id: "bt-6", date: "Apr 5", merchant: "Avenues Mall — booth fee",   amount: -3100.0,  currency: "KWD", source: "KIB Operating", terminal: "POS",      engineSuggestion: { account: "Trade Shows",              accountCode: "6310", confidence: "AI",      reasoning: "AI inferred from memo: 'tradeshow booth Q2'" } },
+    { id: "bt-7", date: "Apr 5", merchant: "Boubyan transfer in — unidentified", amount: 2462.5, currency: "KWD", source: "KIB Operating", terminal: "WIRE", engineSuggestion: { account: "",                       accountCode: "",     confidence: "NONE",    reasoning: "No matching customer or rule. Manual review required." } },
+    { id: "bt-8", date: "Apr 4", merchant: "Ooredoo fiber",              amount: -135.0,   currency: "KWD", source: "KIB Operating", terminal: "DD",       engineSuggestion: { account: "Internet & Phone",         accountCode: "6220", confidence: "RULE",    reasoning: "Direct debit — telecom rule" } },
+    { id: "bt-9", date: "Apr 4", merchant: "Tradeshow vendor — Dubai",   amount: -1240.0,  currency: "KWD", source: "KIB Operating", terminal: "WIRE",     engineSuggestion: { account: "Trade Shows",              accountCode: "6310", confidence: "PATTERN", reasoning: "Pattern: vendor previously coded to Trade Shows" } },
+    { id: "bt-10", date: "Apr 3", merchant: "Misc deposit — counter",    amount: 380.0,    currency: "KWD", source: "KIB Operating", terminal: "BRANCH",   engineSuggestion: { account: "",                       accountCode: "",     confidence: "NONE",    reasoning: "No description from bank. Needs manual coding." } },
+  ];
+}
+
+export async function getChartOfAccounts() {
+  await delay();
+  return [
+    { code: "1110", name: "Petty Cash",                  category: "Assets",             type: "debit"  },
+    { code: "1120", name: "KIB Operating Account",       category: "Assets",             type: "debit"  },
+    { code: "1130", name: "KIB Reserve Account",         category: "Assets",             type: "debit"  },
+    { code: "1140", name: "NBK Settlement Account",      category: "Assets",             type: "debit"  },
+    { code: "1200", name: "Accounts Receivable",         category: "Assets",             type: "debit"  },
+    { code: "1300", name: "Inventory",                   category: "Assets",             type: "debit"  },
+    { code: "1400", name: "Prepaid Expenses",            category: "Assets",             type: "debit"  },
+    { code: "1500", name: "Fixed Assets — Equipment",    category: "Assets",             type: "debit"  },
+    { code: "1510", name: "Fixed Assets — Furniture",    category: "Assets",             type: "debit"  },
+    { code: "1520", name: "Accumulated Depreciation",    category: "Assets",             type: "credit" },
+    { code: "2100", name: "Accounts Payable",            category: "Liabilities",        type: "credit" },
+    { code: "2200", name: "PIFSS Payable",               category: "Liabilities",        type: "credit" },
+    { code: "2210", name: "Salaries Payable",            category: "Liabilities",        type: "credit" },
+    { code: "2300", name: "Tax Payable",                 category: "Liabilities",        type: "credit" },
+    { code: "3000", name: "Owner Equity",                category: "Equity",             type: "credit" },
+    { code: "3100", name: "Retained Earnings",           category: "Equity",             type: "credit" },
+    { code: "4100", name: "Sales Revenue",               category: "Revenue",            type: "credit" },
+    { code: "4200", name: "Service Revenue",             category: "Revenue",            type: "credit" },
+    { code: "5100", name: "Cost of Goods Sold",          category: "Cost of Goods Sold", type: "debit"  },
+    { code: "5200", name: "Direct Labor",                category: "Cost of Goods Sold", type: "debit"  },
+    { code: "6100", name: "Salaries & Wages",            category: "Operating Expenses", type: "debit"  },
+    { code: "6110", name: "PIFSS Contributions",         category: "Operating Expenses", type: "debit"  },
+    { code: "6120", name: "Bonuses",                     category: "Operating Expenses", type: "debit"  },
+    { code: "6200", name: "Office Rent",                 category: "Operating Expenses", type: "debit"  },
+    { code: "6210", name: "Utilities",                   category: "Operating Expenses", type: "debit"  },
+    { code: "6220", name: "Internet & Phone",            category: "Operating Expenses", type: "debit"  },
+    { code: "6230", name: "Cleaning & Maintenance",      category: "Operating Expenses", type: "debit"  },
+    { code: "6300", name: "Marketing & Advertising",     category: "Operating Expenses", type: "debit"  },
+    { code: "6310", name: "Trade Shows",                 category: "Operating Expenses", type: "debit"  },
+    { code: "6400", name: "Travel & Transport",          category: "Operating Expenses", type: "debit"  },
+    { code: "6420", name: "Fuel & Vehicle",              category: "Operating Expenses", type: "debit"  },
+    { code: "6500", name: "Professional Fees",           category: "Operating Expenses", type: "debit"  },
+    { code: "6510", name: "Audit Fees",                  category: "Operating Expenses", type: "debit"  },
+    { code: "6520", name: "Legal Fees",                  category: "Operating Expenses", type: "debit"  },
+    { code: "6600", name: "Office Supplies",             category: "Operating Expenses", type: "debit"  },
+    { code: "6700", name: "Insurance",                   category: "Operating Expenses", type: "debit"  },
+    { code: "6800", name: "Bank Charges",                category: "Operating Expenses", type: "debit"  },
+    { code: "7100", name: "Interest Income",             category: "Other Income",       type: "credit" },
+    { code: "7200", name: "FX Gain",                     category: "Other Income",       type: "credit" },
+    { code: "8100", name: "Interest Expense",            category: "Other Expense",      type: "debit"  },
+    { code: "8200", name: "FX Loss",                     category: "Other Expense",      type: "debit"  },
+  ];
+}
+
+export async function draftJournalEntry({ description, amount, debitAccount, creditAccount, date }) {
+  await delay();
+  const seq = Math.floor(400 + Math.random() * 100);
+  const num = Number(amount || 0);
+  return {
+    id: `JE-0${seq}`,
+    description: description || "",
+    status: "Draft - Validated",
+    lines: [
+      { account: debitAccount.name,  code: debitAccount.code,  debit: num, credit: null },
+      { account: creditAccount.name, code: creditAccount.code, debit: null, credit: num },
+    ],
+    totalDebit: num,
+    totalCredit: num,
+    balanced: true,
+    mappingVersion: "v1.0",
+    createdAt: (date || new Date()).toISOString ? (date || new Date()).toISOString() : new Date().toISOString(),
+    hashChainStatus: "ready",
+  };
+}

@@ -1,9 +1,14 @@
 import { formatMoney } from "../../utils/formatCurrency";
 import { formatRelativeTime } from "../../utils/relativeTime";
+import BankChip from "./BankChip";
+import { useTenant } from "../shared/TenantContext";
 
 export default function BankAccountCard({ account, selected = false, onSelect }) {
+  const { tenant } = useTenant();
   if (!account) return null;
-  const bankAbbr = account.bankName;
+  const bank = tenant.banks[0] || {};
+  const showBankBranding = tenant.features?.showBankBranding !== false;
+  const bankAbbr = bank.abbreviation || account.bankName;
 
   return (
     <div
@@ -35,25 +40,11 @@ export default function BankAccountCard({ account, selected = false, onSelect })
           marginBottom: 12,
         }}
       >
-        <span
-          style={{
-            width: 30,
-            height: 30,
-            borderRadius: 5,
-            background: `${account.accentColor}22`,
-            border: `1px solid ${account.accentColor}55`,
-            color: account.accentColor,
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: "0.04em",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
-          {bankAbbr}
-        </span>
+        <BankChip
+          abbreviation={bankAbbr}
+          brandColor={bank.brandColor || account.accentColor}
+          show={showBankBranding}
+        />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{

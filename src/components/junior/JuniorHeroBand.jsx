@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { getSaraAccuracy } from "../../engine/mockEngine";
+import { useTenant } from "../shared/TenantContext";
 
 function StatusPill({ dotColor, label, pulse = false }) {
   return (
@@ -135,6 +136,7 @@ function AccuracyPill({ value, previous = 91 }) {
 }
 
 export default function JuniorHeroBand({ onOpenAminah }) {
+  const { tenant } = useTenant();
   const [accuracy, setAccuracy] = useState(null);
   useEffect(() => {
     getSaraAccuracy().then(setAccuracy);
@@ -184,7 +186,7 @@ export default function JuniorHeroBand({ onOpenAminah }) {
             marginTop: 10,
           }}
         >
-          SENIOR ACCOUNTANT · AL MANARA TRADING · MARCH 2026
+          SENIOR ACCOUNTANT · {tenant.company.name.toUpperCase()} · MARCH 2026
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>

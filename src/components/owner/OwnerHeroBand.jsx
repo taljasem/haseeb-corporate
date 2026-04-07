@@ -1,4 +1,5 @@
 import { Sparkles } from "lucide-react";
+import { useTenant } from "../shared/TenantContext";
 
 function StatusPill({ dotColor, label, pulse = false }) {
   return (
@@ -57,6 +58,7 @@ function AuditPill({ pass = 14, total = 15 }) {
 }
 
 export default function OwnerHeroBand({ onOpenAminah }) {
+  const { tenant } = useTenant();
   return (
     <div
       style={{
@@ -82,7 +84,7 @@ export default function OwnerHeroBand({ onOpenAminah }) {
             margin: 0,
           }}
         >
-          AL MANARA TRADING.
+          {tenant.company.name.toUpperCase()}.
         </h1>
         <div
           style={{

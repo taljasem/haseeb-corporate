@@ -1,18 +1,106 @@
 // Deterministic mock engine for Al Manara Trading Co.
 // All functions async, simulate 200ms delay, return KWD with 3 decimals.
 
+import { TENANTS, DEFAULT_TENANT_ID } from "../config/tenants";
+
 const delay = (ms = 200) => new Promise((r) => setTimeout(r, ms));
+
+// ─────────────────────────────────────────
+// TENANT-AWARE BRANDING TRANSFORMER
+// ─────────────────────────────────────────
+// The engine stores seed data authored for the Al Manara / KIB tenant.
+// When the current tenant is different, we transform display strings at
+// read-time by replacing the source tenant's tokens with the current
+// tenant's tokens. This keeps a single authoritative data set while
+// supporting multi-tenant demos.
+
+let _currentTenantId = DEFAULT_TENANT_ID;
+export function setCurrentTenant(id) {
+  if (TENANTS[id]) _currentTenantId = id;
+}
+export function getCurrentTenant() {
+  return TENANTS[_currentTenantId] || TENANTS[DEFAULT_TENANT_ID];
+}
+
+// Source-tenant tokens that exist in the seed data.
+const SOURCE_TOKENS = {
+  companyName: "Al Manara Trading",
+  companyNameUpper: "AL MANARA TRADING",
+  bankAbbrev: "KIB",
+  bankFullName: "Kuwait International Bank",
+  accountPrefix: "KWIB",
+};
+
+// Apply tenant branding to a string. Used for account names, descriptions, narrations.
+function _brand(str) {
+  if (typeof str !== "string") return str;
+  const t = getCurrentTenant();
+  if (_currentTenantId === DEFAULT_TENANT_ID) return str;
+
+  const bank = t.banks[0] || {};
+  const abbrev = bank.abbreviation || "";
+  const bankFull = bank.name || "";
+  const acctPrefix = bank.accountNumberPrefix || "";
+  const hideBankBranding = !t.features?.showBankBranding;
+
+  let out = str;
+
+  // Company name
+  out = out.split(SOURCE_TOKENS.companyName).join(t.company.name);
+  out = out.split(SOURCE_TOKENS.companyNameUpper).join(t.company.name.toUpperCase());
+
+  // Bank full name
+  if (bankFull) out = out.split(SOURCE_TOKENS.bankFullName).join(bankFull);
+
+  // Bank abbreviation: in bank-embedded mode, swap. In standalone, strip.
+  if (hideBankBranding) {
+    // "KIB Operating Account" → "Operating Account"
+    out = out.replace(/\bKIB\s+/g, "");
+    // "4 KIB accounts" → "4 accounts"
+    out = out.replace(/\b(\d+)\s+KIB\s+accounts/g, "$1 accounts");
+    out = out.replace(/\bKIB\b/g, "");
+  } else if (abbrev && abbrev !== "KIB") {
+    out = out.split("KIB").join(abbrev);
+  }
+
+  // Account number prefix "KWIB •••• 8472"
+  if (acctPrefix && acctPrefix !== "KWIB") {
+    out = out.split(SOURCE_TOKENS.accountPrefix).join(acctPrefix);
+  } else if (!acctPrefix) {
+    // Strip the prefix entirely for tenants that don't brand account numbers.
+    out = out.replace(/KWIB\s+/g, "");
+  }
+
+  // Clean up any accidental double spaces from stripping
+  out = out.replace(/\s{2,}/g, " ").trim();
+
+  return out;
+}
+
+// Recursive branding — walks an object and brands any string fields we care about.
+function _brandObj(obj) {
+  if (obj == null) return obj;
+  if (_currentTenantId === DEFAULT_TENANT_ID) return obj;
+  if (Array.isArray(obj)) return obj.map(_brandObj);
+  if (typeof obj === "string") return _brand(obj);
+  if (typeof obj !== "object") return obj;
+  const out = {};
+  for (const k of Object.keys(obj)) {
+    out[k] = _brandObj(obj[k]);
+  }
+  return out;
+}
 
 export async function getCashPosition() {
   await delay();
-  return {
+  return _brandObj({
     total: 184235.5,
     accounts: [
       { name: "KIB Operating", balance: 142100.25, currency: "KWD" },
       { name: "KIB Reserve", balance: 42135.25, currency: "KWD" },
     ],
     asOf: new Date().toISOString(),
-  };
+  });
 }
 
 export async function getRevenueSummary(period = "month") {
@@ -108,7 +196,7 @@ export async function getRecentTransactions(limit = 8) {
     { id: "tx-009", merchant: "MyFatoorah settlement",             when: daysAgo(5, 20, 45), amount: 5612.25, direction:  1, isToday: false },
   ];
 
-  return rows.slice(0, limit).map((r) => {
+  return _brandObj(rows.slice(0, limit).map((r) => {
     let timestamp;
     if (r.isToday) timestamp = `Today, ${fmtTime(r.when)}`;
     else if (r.rel === "Yesterday") timestamp = `Yesterday, ${fmtTime(r.when)}`;
@@ -121,12 +209,12 @@ export async function getRecentTransactions(limit = 8) {
       direction: r.direction,
       isToday: r.isToday,
     };
-  });
+  }));
 }
 
 export async function getMockChatHistory() {
   await delay();
-  return [
+  return _brandObj([
     {
       role: "user",
       text: "What's our cash position right now?",
@@ -151,28 +239,28 @@ export async function getMockChatHistory() {
       role: "aminah",
       text: "I can't record transactions from the owner view — that's your accounting team's job. I've notified **Sara** to log this entry. You'll see it appear in your transaction feed once she records it.",
     },
-  ];
+  ]);
 }
 
 export async function getPendingApprovals() {
   await delay();
-  return [
+  return _brandObj([
     { id: "ap-1", type: "EXPENSE", description: "Q2 marketing campaign — Avenues",   amount:  4200.0, requestedBy: "Layla (Marketing)", timeAgo: "2h ago" },
     { id: "ap-2", type: "PO",      description: "Office equipment — Sharq HQ",       amount: 12800.0, requestedBy: "Operations",        timeAgo: "5h ago" },
     { id: "ap-3", type: "PAYMENT", description: "Al Shaya Trading — invoice #2847",  amount: 24500.0, requestedBy: "CFO",               timeAgo: "yesterday" },
     { id: "ap-4", type: "JOURNAL", description: "PIFSS accrual — March",             amount:  9500.0, requestedBy: "Sara",              timeAgo: "yesterday" },
-  ];
+  ]);
 }
 
 export async function getBudgetSummary() {
   await delay();
-  return [
+  return _brandObj([
     { department: "Operations",   used:  67, status: "good"    },
     { department: "Sales",        used:  78, status: "good"    },
     { department: "Marketing",    used:  91, status: "warning" },
     { department: "Tech & Infra", used:  54, status: "good"    },
     { department: "Admin",        used: 103, status: "over"    },
-  ];
+  ]);
 }
 
 export async function getAuditReadiness() {
@@ -209,23 +297,23 @@ export async function getCloseStatus() {
 
 export async function getAminahNotes() {
   await delay();
-  return [
+  return _brandObj([
     { id: "note-1", severity: "high",   text: "[3 overdue invoices] — Gulf Logistics WLL, [14,200.000 KWD] unpaid >30 days" },
     { id: "note-2", severity: "medium", text: "PIFSS contribution due in [5 days] — estimated [4,862.500 KWD]" },
     { id: "note-3", severity: "medium", text: "Marketing budget at [+91%] of monthly cap — third month trending over" },
-  ];
+  ]);
 }
 
 export async function getMonthlyInsights() {
   await delay();
-  return {
+  return _brandObj({
     text: "Revenue up [+10.5%] from last month. Margins holding at [42%]. Marketing trending [+23% over budget] for the third month.",
-  };
+  });
 }
 
 export async function getEngineAlerts() {
   await delay();
-  return [
+  return _brandObj([
     {
       id: "alert-001",
       severity: "warning",
@@ -244,7 +332,7 @@ export async function getEngineAlerts() {
       message: "KIB Operating balance up 12% vs. trailing 30-day average",
       source: "engine",
     },
-  ];
+  ]);
 }
 
 // ─────────────────────────────────────────
@@ -263,23 +351,23 @@ export async function getCFOTodayQueue() {
 
 export async function getCFOAminahNotes() {
   await delay();
-  return [
+  return _brandObj([
     { id: "cn-1", text: "Trial balance off by [2,462.500 KWD] — likely from Boubyan unmatched items" },
     { id: "cn-2", text: "Sara's accuracy this week is [94%], up from [91%] last week" },
     { id: "cn-3", text: "Marketing variance flagged: [+23%] over budget for the third consecutive month" },
     { id: "cn-4", text: "PIFSS accrual draft ready for your review — JE-0415 ([9,500.000 KWD])" },
-  ];
+  ]);
 }
 
 export async function getTeamActivity() {
   await delay();
-  return [
+  return _brandObj([
     { id: "ta-1", initials: "S", name: "Sara",  action: "Reconciled KIB Operating and Settlement",          detail: "78 items matched", timeAgo: "2h ago" },
     { id: "ta-2", initials: "N", name: "Noor",  action: "Posted 5 journal entries",        detail: "Manual JEs",       timeAgo: "1h ago" },
     { id: "ta-3", initials: "S", name: "Sara",  action: "Categorized 23 bank transactions", detail: "Auto-confirmed",   timeAgo: "45min ago" },
     { id: "ta-4", initials: "N", name: "Noor",  action: "Drafted PIFSS accrual",           detail: "Awaiting approval", timeAgo: "30min ago" },
     { id: "ta-5", initials: "S", name: "Sara",  action: "Closed 4 reconciliation items",   detail: "Boubyan",          timeAgo: "12min ago" },
-  ];
+  ]);
 }
 
 export async function getEngineStatus() {
@@ -295,7 +383,7 @@ export async function getEngineStatus() {
 
 export async function getBankTransactionsPending() {
   await delay();
-  return [
+  return _brandObj([
     { id: "bt-1", date: "Apr 7", merchant: "KNPC fuel cards",            amount: -1820.5,  currency: "KWD", source: "KIB Operating", terminal: "POS-2241", engineSuggestion: { account: "Fuel & Vehicle",            accountCode: "6420", confidence: "RULE",    reasoning: "Matched rule: KNPC merchants → Fuel & Vehicle (6420)" } },
     { id: "bt-2", date: "Apr 7", merchant: "Alghanim Industries",        amount: 12450.0,  currency: "KWD", source: "KIB Operating", terminal: "WIRE",     engineSuggestion: { account: "Sales Revenue",            accountCode: "4100", confidence: "PATTERN", reasoning: "Pattern match: customer payments from Alghanim entities" } },
     { id: "bt-3", date: "Apr 7", merchant: "Al Shaya Trading",           amount: 8740.0,   currency: "KWD", source: "KIB Operating", terminal: "WIRE",     engineSuggestion: { account: "Sales Revenue",            accountCode: "4100", confidence: "RULE",    reasoning: "Recurring customer — rule active since Jan 2025" } },
@@ -306,12 +394,12 @@ export async function getBankTransactionsPending() {
     { id: "bt-8", date: "Apr 4", merchant: "Ooredoo fiber",              amount: -135.0,   currency: "KWD", source: "KIB Operating", terminal: "DD",       engineSuggestion: { account: "Internet & Phone",         accountCode: "6220", confidence: "RULE",    reasoning: "Direct debit — telecom rule" } },
     { id: "bt-9", date: "Apr 4", merchant: "Tradeshow vendor — Dubai",   amount: -1240.0,  currency: "KWD", source: "KIB Operating", terminal: "WIRE",     engineSuggestion: { account: "Trade Shows",              accountCode: "6310", confidence: "PATTERN", reasoning: "Pattern: vendor previously coded to Trade Shows" } },
     { id: "bt-10", date: "Apr 3", merchant: "Misc deposit — counter",    amount: 380.0,    currency: "KWD", source: "KIB Operating", terminal: "BRANCH",   engineSuggestion: { account: "",                       accountCode: "",     confidence: "NONE",    reasoning: "No description from bank. Needs manual coding." } },
-  ];
+  ]);
 }
 
 export async function getChartOfAccounts() {
   await delay();
-  return [
+  return _brandObj([
     { code: "1110", name: "Petty Cash",                  category: "Assets",             type: "debit"  },
     { code: "1120", name: "KIB Operating Account",       category: "Assets",             type: "debit"  },
     { code: "1130", name: "KIB Reserve Account",         category: "Assets",             type: "debit"  },
@@ -354,7 +442,7 @@ export async function getChartOfAccounts() {
     { code: "7200", name: "FX Gain",                     category: "Other Income",       type: "credit" },
     { code: "8100", name: "Interest Expense",            category: "Other Expense",      type: "debit"  },
     { code: "8200", name: "FX Loss",                     category: "Other Expense",      type: "debit"  },
-  ];
+  ]);
 }
 
 export async function draftJournalEntry({ description, amount, debitAccount, creditAccount, date }) {
@@ -1101,7 +1189,7 @@ export async function getTaskbox(role = "CFO", filter = "all") {
       break;
   }
   // Sort: open first by updatedAt desc, completed/cancelled last
-  return visible
+  const sorted = visible
     .slice()
     .sort((a, b) => {
       const rank = (s) => (s === "cancelled" ? 2 : s === "completed" ? 1 : 0);
@@ -1109,6 +1197,7 @@ export async function getTaskbox(role = "CFO", filter = "all") {
       if (r !== 0) return r;
       return new Date(b.updatedAt) - new Date(a.updatedAt);
     });
+  return _brandObj(sorted);
 }
 
 // Counts for each Taskbox filter tab — single-pass, no per-filter delay
@@ -1836,12 +1925,12 @@ const _statements = {
 
 export async function getBankAccounts() {
   await delay();
-  return BANK_ACCOUNTS_DB.slice();
+  return _brandObj(BANK_ACCOUNTS_DB.slice());
 }
 
 export async function getBankAccountById(id) {
   await delay();
-  return BANK_ACCOUNTS_DB.find((a) => a.id === id) || null;
+  return _brandObj(BANK_ACCOUNTS_DB.find((a) => a.id === id) || null);
 }
 
 export async function getBankStatement(accountId, range = "month") {
@@ -1858,10 +1947,8 @@ export async function getBankStatement(accountId, range = "month") {
   } else if (range && range.from) {
     since = new Date(range.from);
   }
-  if (since) {
-    return all.filter((t) => new Date(t.date) >= since);
-  }
-  return all;
+  const filtered = since ? all.filter((t) => new Date(t.date) >= since) : all;
+  return _brandObj(filtered);
 }
 
 export async function getBankAccountSummary(accountId, period = "month") {
@@ -1912,7 +1999,7 @@ export async function getTransactionJournalEntry(transactionId) {
         { account: bankLine.account, code: bankLine.code, debit: abs, credit: null },
         { account: otherLine.account, code: otherLine.code, debit: null, credit: abs },
       ];
-  return {
+  return _brandObj({
     id: cat.journalEntryId || `JE-POST-${transactionId.slice(-3)}`,
     description: tx.description,
     status: "Posted",
@@ -1923,7 +2010,7 @@ export async function getTransactionJournalEntry(transactionId) {
     mappingVersion: "v1.0",
     createdAt: tx.date,
     hashChainStatus: "extended",
-  };
+  });
 }
 
 // ─────────────────────────────────────────
@@ -1992,7 +2079,7 @@ export async function getIncomeStatement(period = "month") {
   const netIncomeCurrent = nibtCurrent; // Kuwait 0% tax
   const netIncomePrior   = nibtPrior;
 
-  return {
+  return _brandObj({
     period: "March 2026",
     aminahNarration:
       "Revenue grew [+10.5%] month-over-month, driven primarily by Alghanim Industries orders and the Avenues branch. Gross margins held at [50.8%]. Operating expenses ran [+23.4%] with marketing flagged [+23% over budget] for the third consecutive month. Net income of [24,300.000 KWD] is still up [+6.3%] versus prior period and on track to exceed Q1 target.",
@@ -2007,7 +2094,7 @@ export async function getIncomeStatement(period = "month") {
       { name: "TAX EXPENSE",         lines: [_line("Corporate tax (Kuwait 0%)", 0, 0)], subtotal: { label: "Total Tax", current: 0, prior: 0, negative: true } },
       { name: "NET INCOME",          highlight: netIncomeCurrent < 0 ? "red" : netIncomeCurrent >= netIncomePrior ? "teal" : "amber", final: true, current: netIncomeCurrent, prior: netIncomePrior },
     ],
-  };
+  });
 }
 
 export async function getBalanceSheet(period = "month") {
@@ -2057,7 +2144,7 @@ export async function getBalanceSheet(period = "month") {
   const totalEquity = _sum(equityLines);
   const totalEquityPrior = _sum(equityLines, "prior");
 
-  return {
+  return _brandObj({
     period: "March 2026",
     aminahNarration:
       "Total assets of [351,196.500 KWD] are up [+5.2%] from prior period, with cash accounting for [60%] of the total. Accounts receivable of [56,200.000 KWD] has [14,200.000 KWD overdue] — worth reviewing with Sara. No long-term debt. Owner equity continues to grow in line with profitability.",
@@ -2077,7 +2164,7 @@ export async function getBalanceSheet(period = "month") {
 
       { name: "TOTAL LIABILITIES + EQUITY", highlight: "teal", final: true, current: Number((totalLiab + totalEquity).toFixed(3)), prior: Number((totalLiabPrior + totalEquityPrior).toFixed(3)) },
     ],
-  };
+  });
 }
 
 export async function getCashFlowStatement(period = "month") {
@@ -2109,7 +2196,7 @@ export async function getCashFlowStatement(period = "month") {
   const beginningCash = 182496.5;
   const endingCash = Number((beginningCash + netChange).toFixed(3));
 
-  return {
+  return _brandObj({
     period: "March 2026",
     aminahNarration:
       "Operating cash flow of [28,400.000 KWD] is healthy, driven by strong collections and lower-than-expected OpEx. No investing activities this period. Net cash increased [28,400.000 KWD], taking total cash to [210,896.500 KWD] across the 4 KIB accounts.",
@@ -2121,7 +2208,7 @@ export async function getCashFlowStatement(period = "month") {
       { name: "Beginning Cash",       lines: [_line("Beginning Cash", beginningCash, 0)], subtotal: { label: "Beginning Cash", current: beginningCash, prior: 0 } },
       { name: "ENDING CASH",          highlight: "teal", final: true, current: endingCash, prior: 0 },
     ],
-  };
+  });
 }
 
 export async function getMonthEndCloseTasks() {
@@ -2143,7 +2230,7 @@ export async function getMonthEndCloseTasks() {
     { id: "CT-14", name: "CFO sign-off",                               assignee: P.cfo,   status: "pending",     completedAt: null, dueDate: _daysFromNow(2) },
     { id: "CT-15", name: "Owner approval + lock period",               assignee: P.owner, status: "pending",     completedAt: null, dueDate: _daysFromNow(3) },
   ];
-  return {
+  return _brandObj({
     period: "March 2026",
     status: "in-progress",
     tasks,
@@ -2156,7 +2243,7 @@ export async function getMonthEndCloseTasks() {
     ],
     aminahSummary:
       "March close is [60% complete] with 6 tasks remaining. Three reconciliations done (KIB Operating, KIB Reserve, KIB USD). Sara is working on KIB Settlement. Post-close estimate: [April 3]. Two items will need your sign-off when complete: the adjusting entries and the final period lock.",
-  };
+  });
 }
 
 export async function getAuditChecks() {
@@ -2181,7 +2268,7 @@ export async function getAuditChecks() {
     ok("FX Rate Audit",              "Rates sourced from CBK daily"),
     ok("Statement Recomputation",    "Statements reproducible from ledger"),
   ];
-  return {
+  return _brandObj({
     total: checks.length,
     passing: checks.filter((c) => c.status === "passing").length,
     failing: checks.filter((c) => c.status === "failing").length,
@@ -2195,7 +2282,7 @@ export async function getAuditChecks() {
     },
     aminahNarration:
       "Audit bridge is [14 of 15 checks passing]. The one failing check is [Sequential numbering] — JE-0413 is missing a reference number. This is a Sara-level fix and has been in her Taskbox for 2 hours. No other integrity issues. Hash chain is intact across [2,847 posted entries]. Period is currently audit-ready except for this one item.",
-  };
+  });
 }
 
 export async function getTeamMembersWithResponsibilities() {
@@ -2225,12 +2312,12 @@ export async function getTeamMembersWithResponsibilities() {
 
 export async function getOwnerTopInsight() {
   await delay();
-  return {
+  return _brandObj({
     id: "TOP-1",
     text:
       "Marketing spend is [+23% over budget] for the third consecutive month. Three large items this month: campaign A ([4,200.000 KWD]), tradeshow B ([3,100.000 KWD]), agency retainer ([2,800.000 KWD]). Want me to draft a board-level summary?",
     action: "draft-summary",
-  };
+  });
 }
 
 // ─────────────────────────────────────────
@@ -2269,22 +2356,22 @@ export async function getSaraWorkQueue() {
 
 export async function getSaraActivityLog() {
   await delay();
-  return [
+  return _brandObj([
     { id: "sa-1", type: "completed",    icon: "check", description: "Reconciled KIB Operating — 78 items matched", timestamp: _hoursAgo(2) },
     { id: "sa-2", type: "completed",    icon: "check", description: "Categorized 23 bank transactions",             timestamp: _hoursAgo(3) },
     { id: "sa-3", type: "completed",    icon: "check", description: "Drafted PIFSS accrual JE-0415 — sent for CFO approval", timestamp: _hoursAgo(4) },
     { id: "sa-4", type: "completed",    icon: "check", description: "Responded to Owner's Al Shaya question",       timestamp: _hoursAgo(5) },
     { id: "sa-5", type: "in-progress",  icon: "pencil", description: "Started KIB Settlement reconciliation",        timestamp: _hoursAgo(1) },
-  ];
+  ]);
 }
 
 export async function getSaraAminahNotes() {
   await delay();
-  return [
+  return _brandObj([
     { id: "sn-1", text: "Your accuracy this week is [94%], up from [91%] last week. Most common correction: cost center allocation." },
     { id: "sn-2", text: "You have [6 open tasks], [2 are due today]. Consider prioritizing the Gulf Logistics follow-up." },
     { id: "sn-3", text: "You've categorized [23 transactions] today. Rule CRULE-001 (KNPC) auto-handled 4 of them, saving ~10 minutes." },
-  ];
+  ]);
 }
 
 export async function getJuniorDomainStats(juniorId = "sara") {
@@ -2379,7 +2466,7 @@ export async function getBusinessPulse() {
     return sum + a.currentBalance * rate;
   }, 0);
 
-  return {
+  return _brandObj({
     revenue:   { current: revCurr, prior: revPrior, percentChange: pct(revCurr, revPrior) },
     expenses:  { current: expCurr, prior: expPrior, percentChange: pct(expCurr, expPrior) },
     netIncome: { current: niCurr,  prior: niPrior,  percentChange: pct(niCurr, niPrior), grossMargin, operatingMargin },
@@ -2388,7 +2475,7 @@ export async function getBusinessPulse() {
       accountCount: accounts.length,
       subtext: `across ${accounts.length} KIB accounts`,
     },
-  };
+  });
 }
 
 export async function cancelTask(taskId, byId = "cfo") {

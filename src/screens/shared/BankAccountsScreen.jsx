@@ -10,6 +10,7 @@ import BankAccountSummaryStrip from "../../components/banking/BankAccountSummary
 import BankStatementTable from "../../components/banking/BankStatementTable";
 import FutureBankOperationsCard from "../../components/banking/FutureBankOperationsCard";
 import { formatRelativeTime } from "../../utils/relativeTime";
+import { useTenant } from "../../components/shared/TenantContext";
 
 const RANGES = [
   { id: "today", label: "Today" },
@@ -20,6 +21,8 @@ const RANGES = [
 const TYPE_FILTERS = ["All", "Inflow", "Outflow"];
 
 export default function BankAccountsScreen({ role = "CFO", readOnly = false, initialAccountId = null }) {
+  const { tenant } = useTenant();
+  const showFutureOps = tenant.features?.showFutureBankOperations !== false;
   const [accounts, setAccounts] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [range, setRange] = useState("month");
@@ -299,7 +302,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
               ))}
             </div>}
 
-            {!readOnly && <FutureBankOperationsCard />}
+            {!readOnly && showFutureOps && <FutureBankOperationsCard />}
           </>
         )}
       </div>

@@ -1,3 +1,5 @@
+import { useTenant } from "../shared/TenantContext";
+
 function StatusPill({ dotColor, label, pulse = false }) {
   return (
     <span
@@ -64,6 +66,7 @@ function SparkleIcon() {
 }
 
 export default function CFOHeroBand({ onOpenAminah }) {
+  const { tenant } = useTenant();
   return (
     <div
       style={{
@@ -89,7 +92,7 @@ export default function CFOHeroBand({ onOpenAminah }) {
             margin: 0,
           }}
         >
-          AL MANARA TRADING.
+          {tenant.company.name.toUpperCase()}.
         </h1>
         <div
           style={{

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNav } from "./shared/NavContext";
+import { useTenant } from "./shared/TenantContext";
 
 // DEMO ONLY — production roles come from auth
 const ROLES = ["Owner", "CFO", "Junior"];
@@ -75,6 +76,17 @@ export default function Header({ role, setRole }) {
   const [themeTip, setThemeTip] = useState(false);
   const bellRef = useRef(null);
   const nav = useNav();
+  const { tenant, tenantId, setTenantId, allTenants } = useTenant();
+  const [tenantOpen, setTenantOpen] = useState(false);
+  const tenantRef = useRef(null);
+  useEffect(() => {
+    if (!tenantOpen) return;
+    const onClick = (e) => {
+      if (tenantRef.current && !tenantRef.current.contains(e.target)) setTenantOpen(false);
+    };
+    window.addEventListener("mousedown", onClick);
+    return () => window.removeEventListener("mousedown", onClick);
+  }, [tenantOpen]);
 
   useEffect(() => {
     if (!bellOpen) return;
@@ -143,6 +155,113 @@ export default function Header({ role, setRole }) {
         >
           HASEEB.
         </span>
+      </div>
+
+      {/* Tenant switcher (demo control) */}
+      <div ref={tenantRef} style={{ position: "relative", marginLeft: 18 }}>
+        <button
+          onClick={() => setTenantOpen((o) => !o)}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: "0.12em",
+            color: "#5B6570",
+            background: "rgba(255,255,255,0.02)",
+            border: "1px dashed rgba(255,255,255,0.12)",
+            borderRadius: 4,
+            padding: "4px 10px",
+            cursor: "pointer",
+            fontFamily: "inherit",
+          }}
+          title="Demo tenant switcher (dev only)"
+        >
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+          </svg>
+          TENANT · {tenant.company.shortName.toUpperCase()}
+        </button>
+        {tenantOpen && (
+          <div
+            style={{
+              position: "absolute",
+              top: "calc(100% + 6px)",
+              left: 0,
+              width: 260,
+              background: "#0C0E12",
+              border: "1px solid rgba(255,255,255,0.10)",
+              borderRadius: 10,
+              boxShadow: "0 12px 32px rgba(0,0,0,0.6)",
+              zIndex: 200,
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 9,
+                fontWeight: 600,
+                letterSpacing: "0.15em",
+                color: "#5B6570",
+                padding: "10px 14px",
+                borderBottom: "1px solid rgba(255,255,255,0.06)",
+              }}
+            >
+              DEMO TENANT · DEV ONLY
+            </div>
+            {allTenants.map((t) => {
+              const on = t.id === tenantId;
+              const bank = t.banks[0] || {};
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => {
+                    setTenantId(t.id);
+                    setTenantOpen(false);
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!on) e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!on) e.currentTarget.style.background = "transparent";
+                  }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    width: "100%",
+                    padding: "10px 14px",
+                    background: on ? "rgba(0,196,140,0.06)" : "transparent",
+                    border: "none",
+                    borderBottom: "1px solid rgba(255,255,255,0.04)",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                    textAlign: "left",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      background: bank.brandColor || "rgba(255,255,255,0.20)",
+                      flexShrink: 0,
+                    }}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, color: on ? "#00C48C" : "#E6EDF3", fontWeight: 500 }}>
+                      {t.company.name}
+                    </div>
+                    <div style={{ fontSize: 10, color: "#5B6570", marginTop: 2 }}>
+                      {bank.name || "Standalone"} · {t.distributionMode}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Right cluster */}

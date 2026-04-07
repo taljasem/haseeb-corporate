@@ -2625,7 +2625,7 @@ const _DEPT_YTD_ACTUALS = {
   "DEPT-sales":      300000,   // 25.0% of 1,200,000
   "DEPT-operations": 138750,   // ~24.0% of 588,000
   "DEPT-sales-ops":  12200,    // ~23.9% of 51,000
-  "DEPT-marketing":  20985,    // 91% of YTD (22,750) ⇒ ~22.79% of annual 91,000
+  "DEPT-marketing":  25025,    // 110% of YTD (22,750) — activates over-budget narrative + overflow bar
   "DEPT-tech":       11475,    // ~22.5% of 51,000
   "DEPT-admin":      67425,    // 25.0% of 269,700
 };

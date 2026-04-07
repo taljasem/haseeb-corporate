@@ -3,6 +3,7 @@ import AmbientBackground from "./components/AmbientBackground";
 import Header from "./components/Header";
 import OwnerView from "./screens/owner/OwnerView";
 import CFOView from "./screens/cfo/CFOView";
+import JuniorView from "./screens/junior/JuniorView";
 
 function ComingNextPlaceholder({ role }) {
   return (
@@ -60,7 +61,7 @@ export default function App() {
       <Header role={role} setRole={setRole} tab={tab} setTab={setTab} />
       {role === "Owner" && <OwnerView />}
       {role === "CFO" && <CFOView />}
-      {role === "Junior" && <ComingNextPlaceholder role="Junior" />}
+      {role === "Junior" && <JuniorView />}
     </>
   );
 }

@@ -3,11 +3,11 @@ import BankTransactionRow from "../../components/cfo/BankTransactionRow";
 import BankTransactionDetail from "../../components/cfo/BankTransactionDetail";
 import SuggestionBanner from "../../components/shared/SuggestionBanner";
 import NewCategorizationRuleModal from "../../components/rules/NewCategorizationRuleModal";
-import { getBankTransactionsPending, getSuggestedCategorizationRules } from "../../engine/mockEngine";
+import { getBankTransactionsPending, getFilteredBankTransactions, getSuggestedCategorizationRules } from "../../engine/mockEngine";
 
 const FILTERS = ["All", "Today", "This week", "Suggestions", "Needs review"];
 
-export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccounts }) {
+export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccounts, role = "CFO", filterByAssignee = null }) {
   const [txs, setTxs] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [filter, setFilter] = useState("All");
@@ -16,12 +16,15 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
   const [catModalPrefill, setCatModalPrefill] = useState(null);
 
   useEffect(() => {
-    getBankTransactionsPending().then((rows) => {
+    const loader = filterByAssignee
+      ? getFilteredBankTransactions(filterByAssignee)
+      : getBankTransactionsPending();
+    loader.then((rows) => {
       setTxs(rows);
       if (rows.length > 0) setSelectedId(rows[0].id);
     });
     getSuggestedCategorizationRules().then((s) => setSuggestion(s[0] || null));
-  }, []);
+  }, [filterByAssignee]);
 
   const filtered = (txs || []).filter((t) => {
     if (filter === "All") return true;
@@ -88,15 +91,22 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
               gap: 12,
             }}
           >
-            <div
-              style={{
-                fontSize: 10,
-                fontWeight: 600,
-                letterSpacing: "0.15em",
-                color: "#5B6570",
-              }}
-            >
-              BANK TRANSACTIONS PENDING REVIEW · {txs ? txs.length : "—"}
+            <div>
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: "0.15em",
+                  color: "#5B6570",
+                }}
+              >
+                BANK TRANSACTIONS PENDING REVIEW · {txs ? txs.length : "—"}
+              </div>
+              {filterByAssignee && (
+                <div style={{ fontSize: 11, color: "#5B6570", marginTop: 4, fontStyle: "italic" }}>
+                  Showing transactions in your domain
+                </div>
+              )}
             </div>
             <a
               onClick={onOpenBankAccounts}

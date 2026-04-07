@@ -214,7 +214,7 @@ function ExchangeThree() {
   );
 }
 
-export default function ConversationalJEScreen() {
+export default function ConversationalJEScreen({ role = "CFO" }) {
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {/* Header */}

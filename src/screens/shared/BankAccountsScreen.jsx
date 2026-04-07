@@ -19,7 +19,7 @@ const RANGES = [
 ];
 const TYPE_FILTERS = ["All", "Inflow", "Outflow"];
 
-export default function BankAccountsScreen() {
+export default function BankAccountsScreen({ role = "CFO", readOnly = false }) {
   const [accounts, setAccounts] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [range, setRange] = useState("month");
@@ -62,6 +62,23 @@ export default function BankAccountsScreen() {
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px 32px" }}>
       <div style={{ maxWidth: 1180, margin: "0 auto" }}>
+        {readOnly && (
+          <div
+            style={{
+              fontSize: 11,
+              color: "#5B6570",
+              background: "rgba(255,255,255,0.02)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderLeft: "2px solid #5B6570",
+              borderRadius: 6,
+              padding: "10px 14px",
+              marginBottom: 16,
+              fontStyle: "italic",
+            }}
+          >
+            READ-ONLY · You can view accounts but cannot initiate transactions.
+          </div>
+        )}
         {/* Header */}
         <div style={{ marginBottom: 18 }}>
           <div
@@ -256,7 +273,7 @@ export default function BankAccountsScreen() {
             </div>
 
             {/* Export */}
-            <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+            {!readOnly && <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
               {["PDF", "CSV", "Excel"].map((fmt) => (
                 <button
                   key={fmt}
@@ -277,9 +294,9 @@ export default function BankAccountsScreen() {
                   Export {fmt}
                 </button>
               ))}
-            </div>
+            </div>}
 
-            <FutureBankOperationsCard />
+            {!readOnly && <FutureBankOperationsCard />}
           </>
         )}
       </div>

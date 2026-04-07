@@ -2207,3 +2207,104 @@ export async function getOwnerTopInsight() {
     action: "draft-summary",
   };
 }
+
+// ─────────────────────────────────────────
+// JUNIOR VIEW — Sara's view
+// ─────────────────────────────────────────
+
+export async function getSaraTaskStats() {
+  await delay();
+  const now = new Date();
+  const sara = TASKBOX_DB.filter(
+    (t) => t.recipient.id === "sara" && t.status !== "completed" && t.status !== "rejected"
+  );
+  const overdue = sara.filter((t) => t.dueDate && new Date(t.dueDate) < now).length;
+  const dueSoon = sara.filter((t) => {
+    if (!t.dueDate) return false;
+    const diff = (new Date(t.dueDate) - now) / (1000 * 60 * 60);
+    return diff > 0 && diff < 24;
+  }).length;
+  return { open: sara.length, overdue, dueSoon };
+}
+
+export async function getSaraAccuracy() {
+  await delay();
+  return { current: 94, previous: 91, trend: "up" };
+}
+
+export async function getSaraWorkQueue() {
+  await delay();
+  return {
+    bankTransactions: 8,
+    reconciliationExceptions: 3,
+    jeAwaitingApproval: 2,
+    escalationsToRespond: 1,
+  };
+}
+
+export async function getSaraActivityLog() {
+  await delay();
+  return [
+    { id: "sa-1", type: "completed",    icon: "check", description: "Reconciled KIB Operating — 78 items matched", timestamp: _hoursAgo(2) },
+    { id: "sa-2", type: "completed",    icon: "check", description: "Categorized 23 bank transactions",             timestamp: _hoursAgo(3) },
+    { id: "sa-3", type: "completed",    icon: "check", description: "Drafted PIFSS accrual JE-0415 — sent for CFO approval", timestamp: _hoursAgo(4) },
+    { id: "sa-4", type: "completed",    icon: "check", description: "Responded to Owner's Al Shaya question",       timestamp: _hoursAgo(5) },
+    { id: "sa-5", type: "in-progress",  icon: "pencil", description: "Started KIB Settlement reconciliation",        timestamp: _hoursAgo(1) },
+  ];
+}
+
+export async function getSaraAminahNotes() {
+  await delay();
+  return [
+    { id: "sn-1", text: "Your accuracy this week is [94%], up from [91%] last week. Most common correction: cost center allocation." },
+    { id: "sn-2", text: "You have [6 open tasks], [2 are due today]. Consider prioritizing the Gulf Logistics follow-up." },
+    { id: "sn-3", text: "You've categorized [23 transactions] today. Rule CRULE-001 (KNPC) auto-handled 4 of them, saving ~10 minutes." },
+  ];
+}
+
+export async function getJuniorDomainStats(juniorId = "sara") {
+  await delay();
+  return {
+    tasksHandled: 34,
+    accuracyRate: 94,
+    avgCompletionMinutes: 42,
+    pendingInQueue: 6,
+  };
+}
+
+export async function getFilteredBankTransactions(juniorId = "sara") {
+  await delay();
+  // Sara's domain: Operating Expenses, Revenue, Fuel, Trade Shows, Sales — NOT payroll/PIFSS/invoicing
+  const SARA_CATEGORIES = [
+    "Fuel & Vehicle", "Sales Revenue", "Office Rent", "Internet & Phone",
+    "Trade Shows", "Cost of Goods Sold", "Office Supplies", "Marketing & Advertising",
+  ];
+  const all = await getBankTransactionsPending();
+  return all.filter((t) => {
+    const cat = t.engineSuggestion?.account || "";
+    return SARA_CATEGORIES.includes(cat) || t.engineSuggestion?.confidence === "NONE";
+  });
+}
+
+export async function draftJournalEntryForJunior({ amount, debitAccount, creditAccount, description }) {
+  await delay();
+  const threshold = 1000;
+  const num = Number(amount || 0);
+  const needsApproval = num >= threshold;
+  const entry = {
+    id: `JE-${Math.floor(500 + Math.random() * 100)}`,
+    description: description || "",
+    status: needsApproval ? "Pending Approval" : "Posted",
+    lines: [
+      { account: debitAccount.name,  code: debitAccount.code,  debit: num, credit: null },
+      { account: creditAccount.name, code: creditAccount.code, debit: null, credit: num },
+    ],
+    totalDebit: num,
+    totalCredit: num,
+    balanced: true,
+    mappingVersion: "v1.0",
+    createdAt: new Date().toISOString(),
+    hashChainStatus: needsApproval ? "pending approval" : "extended",
+  };
+  return { entry, needsApproval };
+}

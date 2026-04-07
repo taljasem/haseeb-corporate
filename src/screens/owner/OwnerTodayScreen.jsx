@@ -6,7 +6,7 @@ import {
   getOpenApprovalCount,
   getAuditChecks,
   getCloseStatus,
-  getOwnerTopInsight,
+  getOwnerTopInsightDynamic as getOwnerTopInsight,
   getBudgetVarianceByDepartment,
 } from "../../engine/mockEngine";
 

@@ -572,13 +572,16 @@ const TASK_TYPES = [
   { id: "request-investigation",   label: "Investigate",      icon: "Search",        color: "#D4A84B", direction: "downward" },
   { id: "draft-je",                label: "Draft JE",         icon: "FileText",      color: "#00C48C", direction: "downward" },
   { id: "draft-report",            label: "Draft Report",     icon: "BarChart2",     color: "#3B82F6", direction: "downward" },
-  { id: "draft-budget",            label: "Draft Budget",     icon: "TrendingUp",    color: "#3B82F6", direction: "downward" },
+  { id: "draft-budget",            label: "Draft Budget",     icon: "BarChart3",     color: "#3B82F6", direction: "downward" },
+  { id: "request-budget-revision", label: "Revise Budget",    icon: "Pencil",        color: "#D4A84B", direction: "downward" },
+  { id: "approve-budget",          label: "Approve Budget",   icon: "ShieldCheck",   color: "#D4A84B", direction: "lateral" },
   { id: "reconcile-account",       label: "Reconcile",        icon: "CheckCircle",   color: "#00C48C", direction: "downward" },
   { id: "categorize-transactions", label: "Categorize",       icon: "Tag",           color: "#00C48C", direction: "downward" },
   { id: "upload-document",         label: "Upload",           icon: "Upload",        color: "#3B82F6", direction: "downward" },
   { id: "request-report",          label: "Request Report",   icon: "BarChart2",     color: "#3B82F6", direction: "downward" },
   // Upward
   { id: "submit-work",             label: "Submit Work",      icon: "CheckSquare",   color: "#00C48C", direction: "upward" },
+  { id: "submit-budget-section",   label: "Submit Budget",    icon: "CheckCircle2",  color: "#00C48C", direction: "upward" },
   { id: "request-approval",        label: "Request Approval", icon: "ShieldCheck",   color: "#D4A84B", direction: "upward" },
   { id: "escalate",                label: "Escalate",         icon: "AlertTriangle", color: "#FF5A5F", direction: "upward" },
   { id: "ask-clarification",       label: "Ask Clarification",icon: "HelpCircle",    color: "#D4A84B", direction: "upward" },
@@ -2682,8 +2685,15 @@ export async function getActiveBudget(_period) {
 
 export async function getBudgetById(id) {
   await delay();
-  if (id !== _ACTIVE_BUDGET.id) return null;
-  return _brandObj({ ..._ACTIVE_BUDGET });
+  const b = (typeof _BUDGETS_DB !== "undefined" && _BUDGETS_DB[id]) || (id === _ACTIVE_BUDGET.id ? _ACTIVE_BUDGET : null);
+  if (!b) return null;
+  const narration =
+    b.id === _ACTIVE_BUDGET.id
+      ? _budgetNarration()
+      : typeof _fy2027Narration === "function"
+        ? _fy2027Narration()
+        : (b.aminahNarration || "");
+  return _brandObj({ ...b, aminahNarration: narration });
 }
 
 export async function getActiveBudgetSummary() {
@@ -2856,4 +2866,559 @@ export async function updateBudgetMonthlyDistribution(_budgetId, departmentId, l
       Number(d.lineItems.reduce((s, l) => s + l.monthlyDistribution[m], 0).toFixed(3))
     );
   return _brandObj({ ...li });
+}
+
+// ─────────────────────────────────────────
+// BUDGET WORKFLOW — FY 2027 in DELEGATED state
+// ─────────────────────────────────────────
+
+// Deep clone of FY 2026 department structure with bumped numbers
+function _fy2027Line(code, name, annual2026, growthPct = 0.06) {
+  const annual = Math.round(annual2026 * (1 + growthPct));
+  return {
+    id: `LINE-27-${String(++_lineSeq).padStart(3, "0")}`,
+    glAccountCode: code,
+    glAccountName: name,
+    annual,
+    monthlyDistribution: _monthly12(annual),
+    priorPeriodActual: annual2026,
+    notes: null,
+  };
+}
+
+function _fy2027Dept(id, name, category, ownerUserId, workflowStatus, extra = {}) {
+  return { id, name, category, ownerUserId, workflowStatus, ...extra };
+}
+
+const _FY2027_DEPARTMENTS = [
+  {
+    ..._fy2027Dept("DEPT-sales-27", "Sales", "revenue", "cfo", "approved"),
+    lineItems: [
+      _fy2027Line("4100", "Sales Revenue",   1200000, 0.083), // → ~1,300,000
+      _fy2027Line("4200", "Service Revenue", 0, 0),
+    ],
+    submittedAt: null,
+    reviewedAt: new Date().toISOString(),
+    assignedTaskId: null,
+  },
+  {
+    ..._fy2027Dept("DEPT-operations-27", "Operations", "expense", "noor", "submitted"),
+    lineItems: [
+      _fy2027Line("5110", "Cost of Goods Sold",   480000, 0.06),
+      _fy2027Line("5120", "Direct Labor",          90000, 0.06),
+      _fy2027Line("5130", "Inventory adjustments", 18000, 0.06),
+    ],
+    submittedAt: _daysAgo(1),
+    reviewedAt: null,
+    assignedTaskId: "TSK-201",
+  },
+  {
+    ..._fy2027Dept("DEPT-sales-ops-27", "Sales (Ops)", "expense", "jasem", "in-progress"),
+    lineItems: [
+      _fy2027Line("5200", "Sales Commissions", 36000, 0.06),
+      _fy2027Line("5240", "Sales Travel",      15000, 0.06),
+    ],
+    submittedAt: null,
+    reviewedAt: null,
+    assignedTaskId: "TSK-202",
+  },
+  {
+    ..._fy2027Dept("DEPT-marketing-27", "Marketing", "expense", "layla", "submitted"),
+    lineItems: [
+      _fy2027Line("6320", "Marketing & Advertising", 38000, 0.06),
+      _fy2027Line("6310", "Trade Shows",             25000, 0.06),
+      _fy2027Line("6330", "Agency Retainer",         28000, 0.06),
+    ],
+    submittedAt: _hoursAgo(3),
+    reviewedAt: null,
+    assignedTaskId: "TSK-203",
+  },
+  {
+    ..._fy2027Dept("DEPT-tech-27", "Tech & Infra", "expense", "sara", "submitted"),
+    lineItems: [
+      _fy2027Line("6220", "Internet & Phone",        9000, 0.06),
+      _fy2027Line("6230", "Software Subscriptions", 24000, 0.12), // Atlassian renewal bump
+      _fy2027Line("6240", "Cloud Infra",            18000, 0.06),
+    ],
+    submittedAt: _daysAgo(1),
+    reviewedAt: null,
+    assignedTaskId: "TSK-204",
+  },
+  {
+    ..._fy2027Dept("DEPT-admin-27", "Admin", "expense", "sara", "needs-revision", {
+      revisionNotes: "Salaries line looks low — please double-check the new hires",
+    }),
+    lineItems: [
+      _fy2027Line("6100", "Salaries & Wages",    168000, 0.06),
+      _fy2027Line("6110", "PIFSS Contributions",  19200, 0.06),
+      _fy2027Line("6200", "Office Rent",          50400, 0.06),
+      _fy2027Line("6210", "Utilities",            12000, 0.06),
+      _fy2027Line("6260", "Office Supplies",       5000, 0.06),
+      _fy2027Line("6270", "Professional Fees",    10200, 0.06),
+      _fy2027Line("6280", "Insurance",             4000, 0.06),
+      _fy2027Line("6290", "Bank Charges",            900, 0.06),
+    ],
+    submittedAt: _daysAgo(2),
+    reviewedAt: _hoursAgo(2),
+    assignedTaskId: "TSK-205",
+  },
+];
+
+// Fill in computed department totals + monthly distribution
+_FY2027_DEPARTMENTS.forEach((d) => {
+  d.totalAnnual = Number(d.lineItems.reduce((s, l) => s + l.annual, 0).toFixed(3));
+  d.monthlyDistribution = Array(12)
+    .fill(0)
+    .map((_, m) =>
+      Number(d.lineItems.reduce((s, l) => s + l.monthlyDistribution[m], 0).toFixed(3))
+    );
+});
+
+const _FY2027_BUDGET = (() => {
+  const totalRevenue = _FY2027_DEPARTMENTS
+    .filter((d) => d.category === "revenue")
+    .reduce((s, d) => s + d.totalAnnual, 0);
+  const totalExpenses = _FY2027_DEPARTMENTS
+    .filter((d) => d.category === "expense")
+    .reduce((s, d) => s + d.totalAnnual, 0);
+  return {
+    id: "BUD-2027-FY",
+    period: {
+      type: "annual",
+      label: "FY 2027",
+      fiscalYear: 2027,
+      startDate: new Date("2027-01-01").toISOString(),
+      endDate: new Date("2027-12-31").toISOString(),
+    },
+    status: "delegated",
+    approvedBy: null,
+    approvedAt: null,
+    createdBy: "cfo",
+    createdAt: _daysAgo(5),
+    totalRevenue: Number(totalRevenue.toFixed(3)),
+    totalExpenses: Number(totalExpenses.toFixed(3)),
+    netIncome: Number((totalRevenue - totalExpenses).toFixed(3)),
+    departments: _FY2027_DEPARTMENTS,
+    workflowHistory: [
+      { timestamp: _daysAgo(5), fromState: null,       toState: "draft",     byUserId: "cfo", note: "Created FY 2027 budget from FY 2026 baseline" },
+      { timestamp: _daysAgo(4), fromState: "draft",    toState: "delegated", byUserId: "cfo", note: "Delegated 5 expense departments to team" },
+    ],
+    aminahNarration: "", // computed per-call
+  };
+})();
+
+// Annotate the FY 2026 active budget with workflow fields so both budgets share shape
+_ACTIVE_BUDGET.workflowHistory = [
+  { timestamp: _daysAgo(140), fromState: null,                 toState: "draft",             byUserId: "cfo",   note: "Created FY 2026 budget" },
+  { timestamp: _daysAgo(130), fromState: "draft",              toState: "delegated",         byUserId: "cfo",   note: "Delegated to team" },
+  { timestamp: _daysAgo(120), fromState: "delegated",          toState: "in-review",         byUserId: "cfo",   note: "All sections submitted" },
+  { timestamp: _daysAgo(115), fromState: "in-review",          toState: "pending-approval",  byUserId: "cfo",   note: "Sent to Owner" },
+  { timestamp: _daysAgo(112), fromState: "pending-approval",   toState: "active",            byUserId: "owner", note: "Owner approved" },
+];
+_ACTIVE_BUDGET.departments.forEach((d) => {
+  d.workflowStatus = "approved";
+  d.submittedAt = _daysAgo(120);
+  d.reviewedAt = _daysAgo(118);
+  d.assignedTaskId = null;
+});
+
+function _fy2027Narration() {
+  const submittedCount = _FY2027_DEPARTMENTS.filter(
+    (d) => d.category === "expense" && d.workflowStatus === "submitted"
+  ).length;
+  const expenseCount = _FY2027_DEPARTMENTS.filter((d) => d.category === "expense").length;
+  return (
+    `FY 2027 budget is currently [DELEGATED] — [${submittedCount} of ${expenseCount}] expense ` +
+    `departments have submitted their drafts. Operations and Marketing came back on plan; ` +
+    `Tech & Infra came back slightly tighter than my model. [Admin needs revision] — I flagged ` +
+    `a salary line that looks low given the new hire announcements. Sales (Ops) is still in ` +
+    `progress with Jasem. Once everything is in, we'll consolidate and send to the Owner for approval.`
+  );
+}
+
+const _BUDGETS_DB = {
+  [_ACTIVE_BUDGET.id]: _ACTIVE_BUDGET,
+  [_FY2027_BUDGET.id]: _FY2027_BUDGET,
+};
+
+export async function getAllBudgets() {
+  await delay();
+  const list = Object.values(_BUDGETS_DB).sort(
+    (a, b) => b.period.fiscalYear - a.period.fiscalYear
+  );
+  return _brandObj(
+    list.map((b) => ({
+      id: b.id,
+      label: b.period.label,
+      fiscalYear: b.period.fiscalYear,
+      status: b.status,
+      totalRevenue: b.totalRevenue,
+      totalExpenses: b.totalExpenses,
+      netIncome: b.netIncome,
+    }))
+  );
+}
+
+// Override getBudgetById to search across all budgets
+export async function getBudgetByIdV2(id) {
+  await delay();
+  const b = _BUDGETS_DB[id];
+  if (!b) return null;
+  const narration =
+    b.id === _ACTIVE_BUDGET.id ? _budgetNarration() : _fy2027Narration();
+  return _brandObj({ ...b, aminahNarration: narration });
+}
+
+export async function getBudgetWorkflowSummary(budgetId) {
+  await delay();
+  const b = _BUDGETS_DB[budgetId];
+  if (!b) return null;
+  const expenseDepts = b.departments.filter((d) => d.category === "expense");
+  const count = (status) => expenseDepts.filter((d) => d.workflowStatus === status).length;
+  const totalDepartments = expenseDepts.length;
+  const approved = count("approved");
+  const submitted = count("submitted");
+  const needsRevision = count("needs-revision");
+  const inProgress = count("in-progress");
+  const assigned = count("assigned");
+  const unassigned = count("unassigned");
+  const percentComplete = totalDepartments === 0
+    ? 0
+    : Math.round(((approved + submitted) / totalDepartments) * 100);
+  return {
+    budgetId,
+    budgetStatus: b.status,
+    totalDepartments,
+    unassigned,
+    assigned,
+    inProgress,
+    submitted,
+    needsRevision,
+    approved,
+    percentComplete,
+    expenseDepartments: expenseDepts.map((d) => ({
+      id: d.id,
+      name: d.name,
+      workflowStatus: d.workflowStatus,
+      ownerUserId: d.ownerUserId,
+    })),
+  };
+}
+
+// State transition functions
+function _addHistory(b, fromState, toState, byUserId, note) {
+  b.workflowHistory = b.workflowHistory || [];
+  b.workflowHistory.push({
+    timestamp: new Date().toISOString(),
+    fromState,
+    toState,
+    byUserId,
+    note: note || null,
+  });
+}
+
+export async function delegateBudget(budgetId, assignments) {
+  await delay();
+  const b = _BUDGETS_DB[budgetId];
+  if (!b || b.status !== "draft") return null;
+  (assignments || []).forEach(({ departmentId, juniorUserId }) => {
+    const d = b.departments.find((x) => x.id === departmentId);
+    if (!d) return;
+    d.ownerUserId = juniorUserId;
+    d.workflowStatus = "assigned";
+    // Seed a draft-budget task
+    const junior = P[juniorUserId];
+    if (!junior) return;
+    const task = {
+      id: _newId(),
+      subject: `Draft your section: ${d.name} ${b.period.label}`,
+      body: `Please draft the ${d.name} section for ${b.period.label}.`,
+      type: "draft-budget",
+      direction: "downward",
+      status: "open",
+      sender: P.cfo,
+      recipient: junior,
+      visibleTo: ["CFO", "Junior"],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      linkedItem: { type: "budget-department", budgetId, departmentId, preview: `${d.name} · ${b.period.label}` },
+      unread: true,
+      thread: [
+        _sysEvent("created", "You created this task"),
+        _msgEvent(P.cfo, `Please draft the ${d.name} section for ${b.period.label}.`),
+      ],
+    };
+    TASKBOX_DB.unshift(task);
+    d.assignedTaskId = task.id;
+  });
+  _addHistory(b, b.status, "delegated", "cfo", "Delegated to team");
+  b.status = "delegated";
+  return _brandObj({ ...b });
+}
+
+export async function submitDepartment(budgetId, departmentId, juniorUserId, note) {
+  await delay();
+  const b = _BUDGETS_DB[budgetId];
+  if (!b) return null;
+  const d = b.departments.find((x) => x.id === departmentId);
+  if (!d) return null;
+  d.workflowStatus = "submitted";
+  d.submittedAt = new Date().toISOString();
+  const junior = P[juniorUserId] || P.sara;
+  const task = {
+    id: _newId(),
+    subject: `Submitted: ${d.name} ${b.period.label} budget`,
+    body: note || `Draft submitted for your review.`,
+    type: "submit-budget-section",
+    direction: "upward",
+    status: "open",
+    sender: junior,
+    recipient: P.cfo,
+    visibleTo: ["CFO", "Junior"],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    linkedItem: { type: "budget-department", budgetId, departmentId, preview: `${d.name} · ${b.period.label}` },
+    unread: true,
+    thread: [
+      _sysEvent("created", `${junior.name} created this task`),
+      _msgEvent(junior, note || `Draft submitted for your review.`),
+    ],
+  };
+  TASKBOX_DB.unshift(task);
+  // If all expense departments now submitted/approved, flip budget to in-review
+  const expenseDepts = b.departments.filter((x) => x.category === "expense");
+  const allDone = expenseDepts.every(
+    (x) => x.workflowStatus === "submitted" || x.workflowStatus === "approved"
+  );
+  if (allDone && b.status === "delegated") {
+    _addHistory(b, "delegated", "in-review", "cfo", "All sections submitted");
+    b.status = "in-review";
+  }
+  return _brandObj({ ...d });
+}
+
+export async function requestDepartmentRevision(budgetId, departmentId, notes) {
+  await delay();
+  const b = _BUDGETS_DB[budgetId];
+  if (!b) return null;
+  const d = b.departments.find((x) => x.id === departmentId);
+  if (!d) return null;
+  d.workflowStatus = "needs-revision";
+  d.revisionNotes = notes || null;
+  d.reviewedAt = new Date().toISOString();
+  const junior = P[d.ownerUserId] || P.sara;
+  const task = {
+    id: _newId(),
+    subject: `Revise: ${d.name} ${b.period.label}`,
+    body: notes || `Please revise and resubmit.`,
+    type: "request-budget-revision",
+    direction: "downward",
+    status: "open",
+    sender: P.cfo,
+    recipient: junior,
+    visibleTo: ["CFO", "Junior"],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    linkedItem: { type: "budget-department", budgetId, departmentId, preview: `${d.name} · ${b.period.label}` },
+    unread: true,
+    thread: [
+      _sysEvent("created", "You created this task"),
+      _msgEvent(P.cfo, notes || `Please revise and resubmit.`),
+    ],
+  };
+  TASKBOX_DB.unshift(task);
+  if (b.status === "in-review") {
+    _addHistory(b, "in-review", "delegated", "cfo", "Revision requested");
+    b.status = "delegated";
+  }
+  return _brandObj({ ...d });
+}
+
+export async function approveDepartment(budgetId, departmentId) {
+  await delay();
+  const b = _BUDGETS_DB[budgetId];
+  if (!b) return null;
+  const d = b.departments.find((x) => x.id === departmentId);
+  if (!d) return null;
+  d.workflowStatus = "approved";
+  d.reviewedAt = new Date().toISOString();
+  return _brandObj({ ...d });
+}
+
+export async function submitBudgetForApproval(budgetId) {
+  await delay();
+  const b = _BUDGETS_DB[budgetId];
+  if (!b) return null;
+  if (b.status !== "in-review" && b.status !== "delegated") return null;
+  _addHistory(b, b.status, "pending-approval", "cfo", "Sent to Owner");
+  b.status = "pending-approval";
+  const task = {
+    id: _newId(),
+    subject: `Approve: ${b.period.label} budget`,
+    body: `${b.period.label} budget ready for your approval. Total revenue ${b.totalRevenue.toLocaleString()}, expenses ${b.totalExpenses.toLocaleString()}, projected net income ${b.netIncome.toLocaleString()}.`,
+    type: "approve-budget",
+    direction: "lateral",
+    status: "open",
+    sender: P.cfo,
+    recipient: P.owner,
+    visibleTo: ["Owner", "CFO"],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    linkedItem: { type: "budget-master", budgetId, preview: `${b.period.label} · ${b.departments.length} departments` },
+    unread: true,
+    thread: [
+      _sysEvent("created", "You created this task"),
+      _msgEvent(P.cfo, `${b.period.label} budget ready for your approval.`),
+    ],
+  };
+  TASKBOX_DB.unshift(task);
+  return _brandObj({ ...b });
+}
+
+export async function approveBudget(budgetId, approverId = "owner") {
+  await delay();
+  const b = _BUDGETS_DB[budgetId];
+  if (!b || b.status !== "pending-approval") return null;
+  _addHistory(b, "pending-approval", "active", approverId, "Approved");
+  b.status = "active";
+  b.approvedBy = approverId;
+  b.approvedAt = new Date().toISOString();
+  return _brandObj({ ...b });
+}
+
+export async function requestBudgetChanges(budgetId, notes) {
+  await delay();
+  const b = _BUDGETS_DB[budgetId];
+  if (!b || b.status !== "pending-approval") return null;
+  _addHistory(b, "pending-approval", "in-review", "owner", notes || "Change request from Owner");
+  b.status = "in-review";
+  return _brandObj({ ...b });
+}
+
+export async function closeBudget(budgetId) {
+  await delay();
+  const b = _BUDGETS_DB[budgetId];
+  if (!b || b.status !== "active") return null;
+  _addHistory(b, "active", "closed", "cfo", "Period closed");
+  b.status = "closed";
+  return _brandObj({ ...b });
+}
+
+// Line item edit for juniors — also triggers status flip
+export async function updateBudgetLineItemValue(budgetId, departmentId, lineItemId, newAnnual) {
+  await delay();
+  const b = _BUDGETS_DB[budgetId];
+  if (!b) return null;
+  const d = b.departments.find((x) => x.id === departmentId);
+  if (!d) return null;
+  const li = d.lineItems.find((x) => x.id === lineItemId);
+  if (!li) return null;
+  li.annual = Number(newAnnual);
+  li.monthlyDistribution = _monthly12(li.annual);
+  d.totalAnnual = Number(d.lineItems.reduce((s, l) => s + l.annual, 0).toFixed(3));
+  d.monthlyDistribution = Array(12)
+    .fill(0)
+    .map((_, m) =>
+      Number(d.lineItems.reduce((s, l) => s + l.monthlyDistribution[m], 0).toFixed(3))
+    );
+  b.totalRevenue = Number(
+    b.departments.filter((x) => x.category === "revenue").reduce((s, x) => s + x.totalAnnual, 0).toFixed(3)
+  );
+  b.totalExpenses = Number(
+    b.departments.filter((x) => x.category === "expense").reduce((s, x) => s + x.totalAnnual, 0).toFixed(3)
+  );
+  b.netIncome = Number((b.totalRevenue - b.totalExpenses).toFixed(3));
+  // Flip department to in-progress if it was assigned
+  if (d.workflowStatus === "assigned") d.workflowStatus = "in-progress";
+  return _brandObj({ ...d });
+}
+
+// ─── FY 2027 seed tasks (hardcoded IDs referenced by department.assignedTaskId) ───
+(function seedFy2027Tasks() {
+  const seedTask = (id, type, sender, recipient, subject, body, deptId, extras) => ({
+    id,
+    subject,
+    body,
+    type,
+    direction: sender.id === "cfo" ? "downward" : "upward",
+    status: "open",
+    sender,
+    recipient,
+    visibleTo: ["CFO", "Junior"],
+    createdAt: extras?.createdAt || new Date().toISOString(),
+    updatedAt: extras?.createdAt || new Date().toISOString(),
+    linkedItem: { type: "budget-department", budgetId: "BUD-2027-FY", departmentId: deptId, preview: `${extras?.deptName} · FY 2027` },
+    unread: true,
+    thread: [
+      _sysEvent("created", `${sender.name} created this task`, extras?.createdAt),
+      _msgEvent(sender, body, extras?.createdAt),
+      ...(extras?.extraMessages || []),
+    ],
+  });
+
+  TASKBOX_DB.unshift(
+    seedTask(
+      "TSK-201", "submit-budget-section", P.noor, P.cfo,
+      "Submitted: Operations FY 2027 budget",
+      "Drafted Operations budget per the +6% guidance. Let me know if you want me to re-baseline COGS based on the latest supplier renegotiations.",
+      "DEPT-operations-27",
+      { createdAt: _daysAgo(1), deptName: "Operations",
+        extraMessages: [_msgEvent(P.noor, "Note: if we can lock in the Alghanim price list for another year, I can shave 2% off COGS.", _hoursAgo(20))] }
+    ),
+    seedTask(
+      "TSK-202", "draft-budget", P.cfo, P.jasem,
+      "Draft your section: Sales Ops FY 2027",
+      "Please draft the Sales Ops section for FY 2027. Targeting 54,000 KWD annual. Use prior year actuals as baseline plus the new commission structure we discussed.",
+      "DEPT-sales-ops-27",
+      { createdAt: _daysAgo(4), deptName: "Sales (Ops)" }
+    ),
+    seedTask(
+      "TSK-203", "submit-budget-section", P.layla, P.cfo,
+      "Submitted: Marketing FY 2027 budget",
+      "FY 2027 Marketing draft attached. I tightened the agency retainer line and front-loaded trade shows to Q2 since we're attending GITEX in Q4.",
+      "DEPT-marketing-27",
+      { createdAt: _hoursAgo(3), deptName: "Marketing" }
+    ),
+    seedTask(
+      "TSK-204", "submit-budget-section", P.sara, P.cfo,
+      "Submitted: Tech & Infra FY 2027 budget",
+      "Tech & Infra draft submitted. Software subscriptions line is up because of the Atlassian renewal you mentioned and the new HR system migration.",
+      "DEPT-tech-27",
+      { createdAt: _daysAgo(1), deptName: "Tech & Infra" }
+    ),
+    seedTask(
+      "TSK-205", "request-budget-revision", P.cfo, P.sara,
+      "Revise: Admin FY 2027 — salaries line",
+      "The Admin budget you submitted has Salaries & Wages at 178,000. Given the 2 new hires we approved last month, I think it should be closer to 192,000. Can you revise and resubmit?",
+      "DEPT-admin-27",
+      { createdAt: _hoursAgo(2), deptName: "Admin",
+        extraMessages: [_msgEvent(P.sara, "Got it — I'll revise and resubmit by end of day.", _hoursAgo(1))] }
+    )
+  );
+})();
+
+// Dynamic getOwnerTopInsight replacing the hardcoded version
+export async function getOwnerTopInsightDynamic() {
+  await delay();
+  const marketing = _ACTIVE_BUDGET.departments.find((d) => d.name === "Marketing");
+  const ytdFraction = 3 / 12;
+  const ytdBudget = marketing ? marketing.totalAnnual * ytdFraction : 0;
+  const ytdActual = _DEPT_YTD_ACTUALS["DEPT-marketing"] || 0;
+  const pct = ytdBudget === 0 ? 0 : (ytdActual / ytdBudget) * 100;
+  const projectedAnnual = ytdActual / ytdFraction;
+  const overage = Math.max(0, projectedAnnual - (marketing?.totalAnnual || 0));
+  const fmt = (n) =>
+    n.toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+  // Pick top 3 marketing line items by annual value
+  const items = marketing
+    ? marketing.lineItems.slice().sort((a, b) => b.annual - a.annual).slice(0, 3)
+    : [];
+  const itemStr = items
+    .map((l) => `${l.glAccountName} ([${fmt(l.annual / 12)} KWD] monthly))`)
+    .join(", ");
+  const text =
+    `Marketing spend is at [${pct.toFixed(0)}% of YTD budget] — at this pace projected annual ` +
+    `overage is [+${fmt(overage)} KWD]. Top contributing lines: ${itemStr}. ` +
+    `Want me to draft a board-level summary?`;
+  return _brandObj({ id: "TOP-1", text, action: "draft-summary" });
 }

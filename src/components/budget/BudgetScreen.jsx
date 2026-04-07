@@ -1,14 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import {
   getActiveBudget,
   getActiveBudgetSummary,
   getBudgetVarianceByDepartment,
+  getBudgetById,
+  getAllBudgets,
   getTeamMembers,
+  submitBudgetForApproval,
+  approveBudget,
+  delegateBudget,
+  approveDepartment,
+  requestDepartmentRevision,
+  requestBudgetChanges,
 } from "../../engine/mockEngine";
 import AminahNarrationCard from "../financial/AminahNarrationCard";
 import BudgetStatusPill from "./BudgetStatusPill";
 import BudgetSummaryStrip from "./BudgetSummaryStrip";
 import DepartmentRow from "./DepartmentRow";
+import BudgetWorkflowStatusStrip from "./BudgetWorkflowStatusStrip";
 
 const COLS_HEADER = "minmax(160px, 1.4fr) minmax(140px, 1fr) 130px 130px 130px 130px 180px 110px 18px";
 
@@ -29,18 +39,77 @@ function HeaderCell({ children, align = "left" }) {
 }
 
 export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId = null }) {
+  const [allBudgets, setAllBudgets] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
   const [budget, setBudget] = useState(null);
   const [summary, setSummary] = useState(null);
   const [variance, setVariance] = useState(null);
   const [team, setTeam] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
+  const [periodOpen, setPeriodOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const periodRef = useRef(null);
+  const refresh = () => setRefreshKey((k) => k + 1);
 
   useEffect(() => {
-    getActiveBudget().then(setBudget);
-    getActiveBudgetSummary().then(setSummary);
-    getBudgetVarianceByDepartment().then(setVariance);
+    getAllBudgets().then((list) => {
+      setAllBudgets(list);
+      // Default: first ACTIVE, else first in list
+      const active = list.find((b) => b.status === "active") || list[0];
+      if (active) setSelectedId(active.id);
+    });
     getTeamMembers().then(setTeam);
   }, []);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    getBudgetById(selectedId).then((b) => {
+      setBudget(b);
+      if (b && b.status === "active") {
+        getActiveBudgetSummary().then(setSummary);
+        getBudgetVarianceByDepartment().then(setVariance);
+      } else if (b) {
+        // Workflow mode: build summary directly from the budget
+        setSummary({
+          id: b.id,
+          label: b.period.label,
+          status: b.status,
+          totalRevenue: b.totalRevenue,
+          totalExpenses: b.totalExpenses,
+          netIncome: b.netIncome,
+          departmentCount: b.departments.length,
+          expenseDepartmentCount: b.departments.filter((d) => d.category === "expense").length,
+          margin: b.totalRevenue > 0 ? Number(((b.netIncome / b.totalRevenue) * 100).toFixed(1)) : 0,
+        });
+        // Fake variance rows from department totals (no actuals yet for future budgets)
+        setVariance(
+          b.departments.map((d) => ({
+            id: d.id,
+            name: d.name,
+            category: d.category,
+            ownerUserId: d.ownerUserId,
+            budgetAnnual: d.totalAnnual,
+            budgetYtd: 0,
+            actualYtd: 0,
+            varianceAmount: 0,
+            variancePercent: 0,
+            status: d.workflowStatus || "on-track",
+            workflowStatus: d.workflowStatus,
+          }))
+        );
+      }
+    });
+  }, [selectedId, refreshKey]);
+
+  // Click outside closes period dropdown
+  useEffect(() => {
+    if (!periodOpen) return;
+    const onClick = (e) => {
+      if (periodRef.current && !periodRef.current.contains(e.target)) setPeriodOpen(false);
+    };
+    window.addEventListener("mousedown", onClick);
+    return () => window.removeEventListener("mousedown", onClick);
+  }, [periodOpen]);
 
   const ownerName = (id) => {
     if (id === "cfo") return "You (CFO)";
@@ -87,21 +156,97 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
             >
               {role === "Junior" ? "MY BUDGET" : "BUDGET"}
             </div>
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: "0.15em",
-                color: "#5B6570",
-                marginTop: 6,
-              }}
-            >
-              {role === "Junior"
-                ? "DEPARTMENTS YOU OWN"
-                : budget
-                  ? budget.period.label.toUpperCase()
-                  : "LOADING"}
-            </div>
+            {role === "Junior" ? (
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  letterSpacing: "0.15em",
+                  color: "#5B6570",
+                  marginTop: 6,
+                }}
+              >
+                DEPARTMENTS YOU OWN
+              </div>
+            ) : (
+              <div ref={periodRef} style={{ position: "relative", marginTop: 6 }}>
+                <button
+                  onClick={() => setPeriodOpen((o) => !o)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    background: "rgba(255,255,255,0.02)",
+                    border: "1px solid rgba(255,255,255,0.10)",
+                    borderRadius: 6,
+                    padding: "6px 12px",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    letterSpacing: "0.12em",
+                    color: "#E6EDF3",
+                  }}
+                >
+                  {budget ? `${budget.period.label.toUpperCase()} · ${(budget.status || "").toUpperCase()}` : "LOADING"}
+                  <ChevronDown size={12} color="#5B6570" />
+                </button>
+                {periodOpen && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "calc(100% + 6px)",
+                      left: 0,
+                      width: 280,
+                      background: "#0C0E12",
+                      border: "1px solid rgba(255,255,255,0.10)",
+                      borderRadius: 10,
+                      boxShadow: "0 12px 32px rgba(0,0,0,0.6)",
+                      zIndex: 200,
+                      overflow: "hidden",
+                    }}
+                  >
+                    {allBudgets.map((b) => {
+                      const on = b.id === selectedId;
+                      return (
+                        <button
+                          key={b.id}
+                          onClick={() => {
+                            setSelectedId(b.id);
+                            setExpandedId(null);
+                            setPeriodOpen(false);
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!on) e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!on) e.currentTarget.style.background = "transparent";
+                          }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            width: "100%",
+                            padding: "10px 14px",
+                            background: on ? "rgba(0,196,140,0.06)" : "transparent",
+                            border: "none",
+                            borderBottom: "1px solid rgba(255,255,255,0.04)",
+                            cursor: "pointer",
+                            fontFamily: "inherit",
+                            textAlign: "left",
+                          }}
+                        >
+                          <span style={{ fontSize: 12, color: on ? "#00C48C" : "#E6EDF3", fontWeight: 500 }}>
+                            {b.label}
+                          </span>
+                          <BudgetStatusPill status={b.status} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             {budget && <BudgetStatusPill status={budget.status} />}
@@ -203,6 +348,32 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
             )}
           </div>
         </div>
+
+        {/* Workflow status strip — shown for non-active budgets or pending approval */}
+        {budget && role !== "Junior" && budget.status !== "active" && budget.status !== "closed" && (
+          <BudgetWorkflowStatusStrip
+            budget={budget}
+            role={role}
+            refreshKey={refreshKey}
+            onSendForApproval={async () => {
+              await submitBudgetForApproval(budget.id);
+              refresh();
+            }}
+            onApprove={async () => {
+              await approveBudget(budget.id, "owner");
+              refresh();
+            }}
+            onRequestChanges={async () => {
+              // Minimal inline prompt for this pass
+              const n = window.prompt("Change request notes for CFO:", "");
+              if (n != null) {
+                await requestBudgetChanges(budget.id, n);
+                refresh();
+              }
+            }}
+            onDelegate={() => alert("Delegate to team — modal coming in a follow-up pass")}
+          />
+        )}
 
         {/* Aminah narration */}
         {budget && (

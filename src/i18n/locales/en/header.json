@@ -7,5 +7,16 @@
   "role_junior": "Junior",
   "aminah_button": "AMINAH",
   "tooltip_theme_coming": "Light mode — coming soon",
-  "tooltip_theme_subtext": "Light theme in development"
+  "tooltip_theme_subtext": "Light theme in development",
+  "notifications": {
+    "title": "NOTIFICATIONS",
+    "mark_all_read": "Mark all read",
+    "view_all_in_taskbox": "View all in Taskbox",
+    "no_notifications": "No notifications"
+  },
+  "distribution_modes": {
+    "bank-embedded": "bank-embedded",
+    "standalone-direct": "standalone-direct",
+    "white-label": "white-label"
+  }
 }

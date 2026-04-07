@@ -1,4 +1,6 @@
 import SidebarGroup from "../shared/SidebarGroup";
+import { useTranslation } from "react-i18next";
+import LtrText from "../shared/LtrText";
 
 // Simple inline SVG icon set — 16px stroke icons
 const I = (path) => (props) => (
@@ -78,13 +80,14 @@ function NavItem({ icon: Icon, label, active, onClick, badge }) {
 
 
 export default function CFOSidebar({ active, setActive, pendingApprovals = 0, taskboxOpen = 0 }) {
+  const { t } = useTranslation("sidebar");
   const isActive = (k) => active === k;
   // Taskbox badge color: red if approvals pending, tertiary if only non-approval tasks, none if empty
   const taskboxBadge =
     pendingApprovals > 0
-      ? { label: taskboxOpen, bg: "#FF5A5F", fg: "#fff" }
+      ? { label: <LtrText>{taskboxOpen}</LtrText>, bg: "#FF5A5F", fg: "#fff" }
       : taskboxOpen > 0
-        ? { label: taskboxOpen, bg: "rgba(255,255,255,0.08)", fg: "#8B98A5", border: "1px solid rgba(255,255,255,0.12)" }
+        ? { label: <LtrText>{taskboxOpen}</LtrText>, bg: "rgba(255,255,255,0.08)", fg: "#8B98A5", border: "1px solid rgba(255,255,255,0.12)" }
         : null;
   return (
     <aside
@@ -99,33 +102,33 @@ export default function CFOSidebar({ active, setActive, pendingApprovals = 0, ta
         zIndex: 1,
       }}
     >
-      <NavItem icon={HomeIcon}  label="Today"   active={isActive("today")}   onClick={() => setActive("today")} />
-      <NavItem icon={InboxIcon} label="Taskbox" active={isActive("taskbox")} onClick={() => setActive("taskbox")} badge={taskboxBadge} />
+      <NavItem icon={HomeIcon}  label={t("items.today")}   active={isActive("today")}   onClick={() => setActive("today")} />
+      <NavItem icon={InboxIcon} label={t("items.taskbox")} active={isActive("taskbox")} onClick={() => setActive("taskbox")} badge={taskboxBadge} />
 
-      <SidebarGroup label="BOOKKEEPING">
-        <NavItem icon={BankIcon}    label="Bank Transactions"   active={isActive("bank-transactions")}   onClick={() => setActive("bank-transactions")} />
-        <NavItem icon={BankIcon}    label="Bank Accounts"       active={isActive("bank-accounts")}       onClick={() => setActive("bank-accounts")} />
-        <NavItem icon={ChatIcon}    label="Conversational JE"   active={isActive("conversational-je")}   onClick={() => setActive("conversational-je")} />
-        <NavItem icon={PencilIcon}  label="Manual JE"           active={isActive("manual-je")}           onClick={() => setActive("manual-je")} />
-        <NavItem icon={FileText}    label="Rules"               active={isActive("rules")}               onClick={() => setActive("rules")} />
-        <NavItem icon={RecIcon}     label="Reconciliation"      active={isActive("reconciliation")}      onClick={() => setActive("reconciliation")} />
+      <SidebarGroup label={t("groups.bookkeeping")}>
+        <NavItem icon={BankIcon}    label={t("items.bank_transactions")} active={isActive("bank-transactions")}   onClick={() => setActive("bank-transactions")} />
+        <NavItem icon={BankIcon}    label={t("items.bank_accounts")}     active={isActive("bank-accounts")}       onClick={() => setActive("bank-accounts")} />
+        <NavItem icon={ChatIcon}    label={t("items.conversational_je")} active={isActive("conversational-je")}   onClick={() => setActive("conversational-je")} />
+        <NavItem icon={PencilIcon}  label={t("items.manual_je")}         active={isActive("manual-je")}           onClick={() => setActive("manual-je")} />
+        <NavItem icon={FileText}    label={t("items.rules")}             active={isActive("rules")}               onClick={() => setActive("rules")} />
+        <NavItem icon={RecIcon}     label={t("items.reconciliation")}    active={isActive("reconciliation")}      onClick={() => setActive("reconciliation")} />
       </SidebarGroup>
 
-      <SidebarGroup label="PLANNING">
-        <NavItem icon={BudgetIcon}   label="Budget"   active={isActive("budget")}   onClick={() => setActive("budget")} />
-        <NavItem icon={ForecastIcon} label="Forecast" active={isActive("forecast")} onClick={() => setActive("forecast")} />
+      <SidebarGroup label={t("groups.planning")}>
+        <NavItem icon={BudgetIcon}   label={t("items.budget")}   active={isActive("budget")}   onClick={() => setActive("budget")} />
+        <NavItem icon={ForecastIcon} label={t("items.forecast")} active={isActive("forecast")} onClick={() => setActive("forecast")} />
       </SidebarGroup>
 
-      <SidebarGroup label="REPORTING">
-        <NavItem icon={DocIcon}   label="Financial Statements" active={isActive("financial-statements")} onClick={() => setActive("financial-statements")} />
-        <NavItem icon={ClockIcon} label="Aging Reports"        active={isActive("aging-reports")}        onClick={() => setActive("aging-reports")} />
-        <NavItem icon={ChartIcon} label="Variance Analysis"    active={isActive("variance-analysis")}    onClick={() => setActive("variance-analysis")} />
+      <SidebarGroup label={t("groups.reporting")}>
+        <NavItem icon={DocIcon}   label={t("items.financial_statements")} active={isActive("financial-statements")} onClick={() => setActive("financial-statements")} />
+        <NavItem icon={ClockIcon} label={t("items.aging_reports")}        active={isActive("aging-reports")}        onClick={() => setActive("aging-reports")} />
+        <NavItem icon={ChartIcon} label={t("items.variance_analysis")}    active={isActive("variance-analysis")}    onClick={() => setActive("variance-analysis")} />
       </SidebarGroup>
 
-      <SidebarGroup label="OPERATIONS">
-        <NavItem icon={CalIcon}    label="Month-End Close" active={isActive("month-end-close")} onClick={() => setActive("month-end-close")} />
-        <NavItem icon={ShieldIcon} label="Audit Bridge"    active={isActive("audit-bridge")}    onClick={() => setActive("audit-bridge")} />
-        <NavItem icon={GearIcon}   label="Setup"           active={isActive("setup")}           onClick={() => setActive("setup")} />
+      <SidebarGroup label={t("groups.operations")}>
+        <NavItem icon={CalIcon}    label={t("items.month_end_close")} active={isActive("month-end-close")} onClick={() => setActive("month-end-close")} />
+        <NavItem icon={ShieldIcon} label={t("items.audit_bridge")}    active={isActive("audit-bridge")}    onClick={() => setActive("audit-bridge")} />
+        <NavItem icon={GearIcon}   label={t("items.setup")}           active={isActive("setup")}           onClick={() => setActive("setup")} />
       </SidebarGroup>
     </aside>
   );

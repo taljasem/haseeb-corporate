@@ -7,5 +7,16 @@
   "role_junior": "محاسب مبتدئ",
   "aminah_button": "أمينة",
   "tooltip_theme_coming": "الوضع الفاتح — قريباً",
-  "tooltip_theme_subtext": "الوضع الفاتح قيد التطوير"
+  "tooltip_theme_subtext": "الوضع الفاتح قيد التطوير",
+  "notifications": {
+    "title": "الإشعارات",
+    "mark_all_read": "تحديد الكل كمقروء",
+    "view_all_in_taskbox": "عرض الكل في صندوق المهام",
+    "no_notifications": "لا توجد إشعارات"
+  },
+  "distribution_modes": {
+    "bank-embedded": "متكامل مع البنك",
+    "standalone-direct": "مستقل مباشر",
+    "white-label": "علامة تجارية مخصصة"
+  }
 }

@@ -1,5 +1,7 @@
 import { Sparkles } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useTenant } from "../shared/TenantContext";
+import LtrText from "../shared/LtrText";
 
 function StatusPill({ dotColor, label, pulse = false }) {
   return (
@@ -32,7 +34,7 @@ function StatusPill({ dotColor, label, pulse = false }) {
     </span>
   );
 }
-function AuditPill({ pass = 14, total = 15 }) {
+function AuditPill({ pass = 14, total = 15, label = "AUDIT" }) {
   const failing = total - pass;
   const color = failing === 0 ? "#00C48C" : failing <= 2 ? "#D4A84B" : "#FF5A5F";
   return (
@@ -49,16 +51,16 @@ function AuditPill({ pass = 14, total = 15 }) {
         border: `1px solid ${color}55`,
         padding: "5px 10px",
         borderRadius: 4,
-        fontFamily: "'DM Mono', monospace",
       }}
     >
-      AUDIT {pass}/{total}
+      {label} <LtrText style={{ fontFamily: "'DM Mono', monospace" }}>{pass}/{total}</LtrText>
     </span>
   );
 }
 
 export default function OwnerHeroBand({ onOpenAminah }) {
   const { tenant } = useTenant();
+  const { t } = useTranslation("hero");
   return (
     <div
       style={{
@@ -84,7 +86,7 @@ export default function OwnerHeroBand({ onOpenAminah }) {
             margin: 0,
           }}
         >
-          {tenant.company.name.toUpperCase()}.
+          <LtrText>{tenant.company.name.toUpperCase()}.</LtrText>
         </h1>
         <div
           style={{
@@ -104,14 +106,14 @@ export default function OwnerHeroBand({ onOpenAminah }) {
             marginTop: 10,
           }}
         >
-          OWNER VIEW · MARCH 2026 · DAY 5 OF 8
+          {t("labels.owner_view")} · {t("labels.march_close")} · {t("labels.day_of", { day: 5, total: 8 })}
         </div>
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-        <StatusPill dotColor="#00C48C" label="AMINAH ONLINE" pulse />
-        <StatusPill dotColor="#3B82F6" label="ENGINE ACTIVE" pulse />
-        <AuditPill pass={14} total={15} />
+        <StatusPill dotColor="#00C48C" label={t("status_pills.aminah_online")} pulse />
+        <StatusPill dotColor="#3B82F6" label={t("status_pills.engine_active")} pulse />
+        <AuditPill pass={14} total={15} label={t("status_pills.audit")} />
         <button
           onClick={onOpenAminah}
           style={{
@@ -131,7 +133,7 @@ export default function OwnerHeroBand({ onOpenAminah }) {
           }}
         >
           <Sparkles size={14} strokeWidth={2.4} />
-          AMINAH
+          {t("buttons.aminah")}
         </button>
       </div>
     </div>

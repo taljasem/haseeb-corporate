@@ -1,1 +1,41 @@
-{}
+{
+  "groups": {
+    "primary": "PRIMARY",
+    "bookkeeping": "BOOKKEEPING",
+    "planning": "PLANNING",
+    "reporting": "REPORTING",
+    "operations": "OPERATIONS",
+    "intelligence": "INTELLIGENCE",
+    "management": "MANAGEMENT",
+    "my_work": "MY WORK",
+    "reference": "REFERENCE",
+    "personal": "PERSONAL",
+    "settings": "SETTINGS"
+  },
+  "items": {
+    "today": "Today",
+    "taskbox": "Taskbox",
+    "approvals": "Approvals",
+    "bank_transactions": "Bank Transactions",
+    "bank_accounts": "Bank Accounts",
+    "conversational_je": "Conversational JE",
+    "manual_je": "Manual JE",
+    "rules": "Rules",
+    "reconciliation": "Reconciliation",
+    "budget": "Budget",
+    "forecast": "Forecast",
+    "financial_statements": "Financial Statements",
+    "aging_reports": "Aging Reports",
+    "variance_analysis": "Variance Analysis",
+    "trial_balance": "Trial Balance",
+    "general_ledger": "General Ledger",
+    "month_end_close": "Month-End Close",
+    "audit_bridge": "Audit Bridge",
+    "team": "Team",
+    "settings": "Settings",
+    "setup": "Setup",
+    "overview": "Overview",
+    "my_responsibilities": "My Responsibilities",
+    "profile": "Profile"
+  }
+}

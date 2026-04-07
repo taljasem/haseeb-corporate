@@ -1,1 +1,21 @@
-{}
+{
+  "labels": {
+    "owner_view": "OWNER VIEW",
+    "cfo_view": "CFO VIEW",
+    "junior_view": "JUNIOR VIEW",
+    "march_close": "MARCH 2026 CLOSE",
+    "march_2026": "MARCH 2026",
+    "day_of": "DAY {{day}} OF {{total}}",
+    "senior_accountant": "SENIOR ACCOUNTANT"
+  },
+  "status_pills": {
+    "aminah_online": "AMINAH ONLINE",
+    "engine_active": "ENGINE ACTIVE",
+    "audit": "AUDIT",
+    "accuracy": "ACCURACY",
+    "online": "ONLINE"
+  },
+  "buttons": {
+    "aminah": "AMINAH"
+  }
+}

@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useNav } from "./shared/NavContext";
 import { useTenant } from "./shared/TenantContext";
 import { useLanguage } from "../i18n/LanguageContext";
+import LtrText from "./shared/LtrText";
 
 // DEMO ONLY — production roles come from auth
 const ROLES = ["Owner", "CFO", "Junior"];
@@ -184,7 +185,7 @@ export default function Header({ role, setRole }) {
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
           </svg>
-          {t("tenant_label")} · {tenant.company.shortName.toUpperCase()}
+          {t("tenant_label")} · <LtrText>{tenant.company.shortName.toUpperCase()}</LtrText>
         </button>
         {tenantOpen && (
           <div
@@ -213,14 +214,14 @@ export default function Header({ role, setRole }) {
             >
               {t("tenant_dev_only")}
             </div>
-            {allTenants.map((t) => {
-              const on = t.id === tenantId;
-              const bank = t.banks[0] || {};
+            {allTenants.map((tn) => {
+              const on = tn.id === tenantId;
+              const bank = tn.banks[0] || {};
               return (
                 <button
-                  key={t.id}
+                  key={tn.id}
                   onClick={() => {
-                    setTenantId(t.id);
+                    setTenantId(tn.id);
                     setTenantOpen(false);
                   }}
                   onMouseEnter={(e) => {
@@ -254,10 +255,10 @@ export default function Header({ role, setRole }) {
                   />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 12, color: on ? "#00C48C" : "#E6EDF3", fontWeight: 500 }}>
-                      {t.company.name}
+                      <LtrText>{tn.company.name}</LtrText>
                     </div>
                     <div style={{ fontSize: 10, color: "#5B6570", marginTop: 2 }}>
-                      {bank.name || "Standalone"} · {t.distributionMode}
+                      <LtrText>{bank.name || "Standalone"}</LtrText> · {t(`distribution_modes.${tn.distributionMode}`, { defaultValue: tn.distributionMode })}
                     </div>
                   </div>
                 </button>
@@ -363,13 +364,13 @@ export default function Header({ role, setRole }) {
                 }}
               >
                 <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570" }}>
-                  NOTIFICATIONS
+                  {t("notifications.title")}
                 </div>
                 <a
                   onClick={() => setUnread(false)}
                   style={{ fontSize: 11, color: "#00C48C", cursor: "pointer" }}
                 >
-                  Mark all read
+                  {t("notifications.mark_all_read")}
                 </a>
               </div>
               <div style={{ overflowY: "auto", flex: 1 }}>
@@ -430,7 +431,7 @@ export default function Header({ role, setRole }) {
                 }}
               >
                 <a style={{ fontSize: 11, color: "#00C48C", cursor: "pointer" }}>
-                  View all in Taskbox →
+                  {t("notifications.view_all_in_taskbox")} →
                 </a>
               </div>
             </div>

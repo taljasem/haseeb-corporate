@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Sparkles } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { getSaraAccuracy } from "../../engine/mockEngine";
 import { useTenant } from "../shared/TenantContext";
+import LtrText from "../shared/LtrText";
 
 function StatusPill({ dotColor, label, pulse = false }) {
   return (
@@ -35,7 +37,7 @@ function StatusPill({ dotColor, label, pulse = false }) {
   );
 }
 
-function AccuracyPill({ value, previous = 91 }) {
+function AccuracyPill({ value, previous = 91, label = "ACCURACY" }) {
   const color = value >= 90 ? "#00C48C" : value >= 80 ? "#D4A84B" : "#FF5A5F";
   const [hover, setHover] = useState(false);
   const [pinned, setPinned] = useState(false);
@@ -73,11 +75,10 @@ function AccuracyPill({ value, previous = 91 }) {
           border: `1px solid ${color}55`,
           padding: "5px 10px",
           borderRadius: 4,
-          fontFamily: "'DM Mono', monospace",
           cursor: "pointer",
         }}
       >
-        ACCURACY {value}%
+        {label} <LtrText style={{ fontFamily: "'DM Mono', monospace" }}>{value}%</LtrText>
       </button>
       {visible && (
         <div
@@ -137,6 +138,7 @@ function AccuracyPill({ value, previous = 91 }) {
 
 export default function JuniorHeroBand({ onOpenAminah }) {
   const { tenant } = useTenant();
+  const { t } = useTranslation("hero");
   const [accuracy, setAccuracy] = useState(null);
   useEffect(() => {
     getSaraAccuracy().then(setAccuracy);
@@ -166,7 +168,7 @@ export default function JuniorHeroBand({ onOpenAminah }) {
             margin: 0,
           }}
         >
-          SARA AL-AHMADI.
+          <LtrText>SARA AL-AHMADI.</LtrText>
         </h1>
         <div
           style={{
@@ -186,12 +188,12 @@ export default function JuniorHeroBand({ onOpenAminah }) {
             marginTop: 10,
           }}
         >
-          SENIOR ACCOUNTANT · {tenant.company.name.toUpperCase()} · MARCH 2026
+          {t("labels.senior_accountant")} · <LtrText>{tenant.company.name.toUpperCase()}</LtrText> · {t("labels.march_2026")}
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-        <StatusPill dotColor="#00C48C" label="ONLINE" pulse />
-        {accuracy && <AccuracyPill value={accuracy.current} previous={accuracy.previous} />}
+        <StatusPill dotColor="#00C48C" label={t("status_pills.online")} pulse />
+        {accuracy && <AccuracyPill value={accuracy.current} previous={accuracy.previous} label={t("status_pills.accuracy")} />}
         <button
           onClick={onOpenAminah}
           style={{
@@ -211,7 +213,7 @@ export default function JuniorHeroBand({ onOpenAminah }) {
           }}
         >
           <Sparkles size={14} strokeWidth={2.4} />
-          AMINAH
+          {t("buttons.aminah")}
         </button>
       </div>
     </div>

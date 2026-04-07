@@ -1,1 +1,41 @@
-{}
+{
+  "groups": {
+    "primary": "أساسي",
+    "bookkeeping": "المحاسبة",
+    "planning": "التخطيط",
+    "reporting": "التقارير",
+    "operations": "العمليات",
+    "intelligence": "الذكاء",
+    "management": "الإدارة",
+    "my_work": "عملي",
+    "reference": "المرجع",
+    "personal": "شخصي",
+    "settings": "الإعدادات"
+  },
+  "items": {
+    "today": "اليوم",
+    "taskbox": "صندوق المهام",
+    "approvals": "الاعتمادات",
+    "bank_transactions": "حركات البنك",
+    "bank_accounts": "الحسابات البنكية",
+    "conversational_je": "القيود الحوارية",
+    "manual_je": "القيود اليدوية",
+    "rules": "القواعد",
+    "reconciliation": "التسويات",
+    "budget": "الميزانية",
+    "forecast": "التوقعات",
+    "financial_statements": "القوائم المالية",
+    "aging_reports": "تقارير الأعمار",
+    "variance_analysis": "تحليل الانحرافات",
+    "trial_balance": "ميزان المراجعة",
+    "general_ledger": "دفتر الأستاذ",
+    "month_end_close": "إقفال نهاية الشهر",
+    "audit_bridge": "جسر التدقيق",
+    "team": "الفريق",
+    "settings": "الإعدادات",
+    "setup": "الإعداد",
+    "overview": "نظرة عامة",
+    "my_responsibilities": "مسؤولياتي",
+    "profile": "الملف الشخصي"
+  }
+}

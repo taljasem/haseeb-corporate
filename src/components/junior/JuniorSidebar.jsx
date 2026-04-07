@@ -1,5 +1,7 @@
 import * as L from "lucide-react";
+import { useTranslation } from "react-i18next";
 import SidebarGroup from "../shared/SidebarGroup";
+import LtrText from "../shared/LtrText";
 
 function NavItem({ icon: Icon, label, active, onClick, badge }) {
   return (
@@ -55,12 +57,13 @@ function NavItem({ icon: Icon, label, active, onClick, badge }) {
 
 
 export default function JuniorSidebar({ active, setActive, taskStats = { open: 0, overdue: 0 } }) {
+  const { t } = useTranslation("sidebar");
   const is = (k) => active === k;
   const taskboxBadge =
     taskStats.overdue > 0
-      ? { label: taskStats.open, bg: "#FF5A5F", fg: "#fff" }
+      ? { label: <LtrText>{taskStats.open}</LtrText>, bg: "#FF5A5F", fg: "#fff" }
       : taskStats.open > 0
-        ? { label: taskStats.open, bg: "rgba(255,255,255,0.08)", fg: "#8B98A5", border: "1px solid rgba(255,255,255,0.12)" }
+        ? { label: <LtrText>{taskStats.open}</LtrText>, bg: "rgba(255,255,255,0.08)", fg: "#8B98A5", border: "1px solid rgba(255,255,255,0.12)" }
         : null;
   return (
     <aside
@@ -75,23 +78,23 @@ export default function JuniorSidebar({ active, setActive, taskStats = { open: 0
         zIndex: 1,
       }}
     >
-      <NavItem icon={L.Home}  label="Today"   active={is("today")}   onClick={() => setActive("today")} />
-      <NavItem icon={L.Inbox} label="Taskbox" active={is("taskbox")} onClick={() => setActive("taskbox")} badge={taskboxBadge} />
+      <NavItem icon={L.Home}  label={t("items.today")}   active={is("today")}   onClick={() => setActive("today")} />
+      <NavItem icon={L.Inbox} label={t("items.taskbox")} active={is("taskbox")} onClick={() => setActive("taskbox")} badge={taskboxBadge} />
 
-      <SidebarGroup label="MY WORK">
-        <NavItem icon={L.Landmark}       label="Bank Transactions" active={is("bank-transactions")} onClick={() => setActive("bank-transactions")} />
-        <NavItem icon={L.MessageSquare}  label="Conversational JE" active={is("conversational-je")} onClick={() => setActive("conversational-je")} />
-        <NavItem icon={L.BarChart3}      label="Budget"            active={is("budget")}            onClick={() => setActive("budget")} />
-        <NavItem icon={L.CheckCircle}    label="Reconciliation"    active={is("reconciliation")}    onClick={() => setActive("reconciliation")} />
+      <SidebarGroup label={t("groups.my_work")}>
+        <NavItem icon={L.Landmark}       label={t("items.bank_transactions")} active={is("bank-transactions")} onClick={() => setActive("bank-transactions")} />
+        <NavItem icon={L.MessageSquare}  label={t("items.conversational_je")} active={is("conversational-je")} onClick={() => setActive("conversational-je")} />
+        <NavItem icon={L.BarChart3}      label={t("items.budget")}            active={is("budget")}            onClick={() => setActive("budget")} />
+        <NavItem icon={L.CheckCircle}    label={t("items.reconciliation")}    active={is("reconciliation")}    onClick={() => setActive("reconciliation")} />
       </SidebarGroup>
 
-      <SidebarGroup label="REFERENCE">
-        <NavItem icon={L.ListChecks} label="My Responsibilities" active={is("responsibilities")} onClick={() => setActive("responsibilities")} />
-        <NavItem icon={L.Building2}  label="Bank Accounts"       active={is("bank-accounts")}    onClick={() => setActive("bank-accounts")} />
+      <SidebarGroup label={t("groups.reference")}>
+        <NavItem icon={L.ListChecks} label={t("items.my_responsibilities")} active={is("responsibilities")} onClick={() => setActive("responsibilities")} />
+        <NavItem icon={L.Building2}  label={t("items.bank_accounts")}       active={is("bank-accounts")}    onClick={() => setActive("bank-accounts")} />
       </SidebarGroup>
 
-      <SidebarGroup label="PERSONAL">
-        <NavItem icon={L.User} label="Profile" active={is("profile")} onClick={() => setActive("profile")} />
+      <SidebarGroup label={t("groups.personal")}>
+        <NavItem icon={L.User} label={t("items.profile")} active={is("profile")} onClick={() => setActive("profile")} />
       </SidebarGroup>
     </aside>
   );

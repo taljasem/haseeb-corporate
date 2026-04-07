@@ -1,10 +1,12 @@
+import { useEffect, useState } from "react";
+import { getMockChatHistory } from "../engine/mockEngine";
+
 const PROMPTS = [
   "How am I doing?",
   "Cash position",
   "Branches",
   "Budget",
   "Who owes me?",
-  "Payroll",
 ];
 
 function MicIcon() {
@@ -18,21 +20,90 @@ function MicIcon() {
   );
 }
 
-export default function AminahChat() {
+/** Renders **bold** segments. Numbers inside bold use DM Mono. */
+function renderBold(text) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      const inner = part.slice(2, -2);
+      const isNumeric = /^[-+]?[\d,.]+(\s*KWD)?$|^\+\d+%/.test(inner) || /\d/.test(inner);
+      return (
+        <span
+          key={i}
+          style={{
+            color: "#E6EDF3",
+            fontWeight: 500,
+            fontFamily: isNumeric ? "'DM Mono', monospace" : "inherit",
+          }}
+        >
+          {inner}
+        </span>
+      );
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
+
+function ChatBubble({ msg }) {
+  const isUser = msg.role === "user";
   return (
     <div
       style={{
-        flex: 1,
-        maxWidth: "calc(100% - 600px)",
         display: "flex",
-        flexDirection: "column",
-        padding: "0 24px",
-        borderRight: "1px solid rgba(255,255,255,0.10)",
-        minWidth: 0,
-        position: "relative",
+        justifyContent: isUser ? "flex-end" : "flex-start",
+        marginBottom: 8,
       }}
     >
-      {/* Arabic watermark */}
+      <div
+        style={{
+          maxWidth: isUser ? "80%" : "90%",
+          background: isUser ? "rgba(0,196,140,0.12)" : "rgba(255,255,255,0.03)",
+          border: isUser
+            ? "1px solid rgba(0,196,140,0.20)"
+            : "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 12,
+          borderBottomRightRadius: isUser ? 4 : 12,
+          borderBottomLeftRadius: isUser ? 12 : 4,
+          padding: "10px 14px",
+          fontSize: 13,
+          lineHeight: 1.55,
+          color: isUser ? "#E6EDF3" : "#8B98A5",
+        }}
+      >
+        {renderBold(msg.text)}
+      </div>
+    </div>
+  );
+}
+
+export default function AminahChat() {
+  const [history, setHistory] = useState(null);
+  useEffect(() => {
+    getMockChatHistory().then(setHistory);
+  }, []);
+
+  // Group messages into exchanges (user → aminah pairs) for spacing.
+  const exchanges = [];
+  if (history) {
+    for (let i = 0; i < history.length; i += 2) {
+      exchanges.push(history.slice(i, i + 2));
+    }
+  }
+
+  return (
+    <div
+      style={{
+        width: 340,
+        flexShrink: 0,
+        display: "flex",
+        flexDirection: "column",
+        padding: "16px 18px 0",
+        borderRight: "1px solid rgba(255,255,255,0.10)",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {/* Arabic watermark — narrower clamp for the 340px column */}
       <div
         style={{
           position: "absolute",
@@ -41,7 +112,7 @@ export default function AminahChat() {
           transform: "translate(-50%, -50%)",
           fontFamily: "'Noto Sans Arabic', sans-serif",
           fontWeight: 700,
-          fontSize: "clamp(100px, 14vw, 220px)",
+          fontSize: "clamp(80px, 9vw, 140px)",
           color: "rgba(255,255,255,0.01)",
           pointerEvents: "none",
           userSelect: "none",
@@ -52,51 +123,36 @@ export default function AminahChat() {
         حسيب
       </div>
 
-      {/* Welcome state */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "flex-end",
-          position: "relative",
-          zIndex: 1,
-          animation: "fadeUp 0.5s ease 0.15s both",
-          paddingBottom: 16,
-        }}
-      >
+      {/* Top: status + intro + prompt chips */}
+      <div style={{ position: "relative", zIndex: 1, flexShrink: 0 }}>
         <div
           style={{
             display: "flex",
             alignItems: "center",
             gap: 6,
-            marginBottom: 12,
+            marginBottom: 10,
           }}
         >
           <span className="aminah-dot" />
           <span className="aminah-label">AMINAH ONLINE</span>
         </div>
-
         <p
           style={{
-            fontSize: 16,
-            fontWeight: 300,
+            fontSize: 14,
             fontStyle: "italic",
-            lineHeight: 1.9,
+            lineHeight: 1.6,
             color: "#5B6570",
-            marginBottom: 28,
-            maxWidth: 460,
+            marginBottom: 12,
           }}
         >
           Ask me anything about your business.
         </p>
-
         <div
           style={{
             display: "flex",
-            gap: 7,
+            gap: 6,
             flexWrap: "wrap",
-            marginBottom: 16,
+            marginBottom: 14,
           }}
         >
           {PROMPTS.map((p) => (
@@ -107,12 +163,12 @@ export default function AminahChat() {
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
-                padding: "9px 16px",
+                padding: "7px 12px",
                 background: "rgba(255,255,255,0.02)",
                 border: "1px solid rgba(255,255,255,0.10)",
-                borderRadius: 16,
+                borderRadius: 14,
                 cursor: "pointer",
-                fontSize: 13,
+                fontSize: 12,
                 color: "#5B6570",
                 fontFamily: "inherit",
               }}
@@ -129,6 +185,30 @@ export default function AminahChat() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Chat history scroll */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          position: "relative",
+          zIndex: 1,
+          paddingTop: 6,
+        }}
+      >
+        {exchanges.map((ex, idx) => (
+          <div
+            key={idx}
+            style={{
+              marginBottom: idx === exchanges.length - 1 ? 8 : 14,
+            }}
+          >
+            {ex.map((m, j) => (
+              <ChatBubble key={j} msg={m} />
+            ))}
+          </div>
+        ))}
       </div>
 
       {/* Input */}
@@ -149,9 +229,9 @@ export default function AminahChat() {
               background: "rgba(255,255,255,0.04)",
               border: "1px solid rgba(255,255,255,0.10)",
               borderRadius: 10,
-              padding: "16px 90px 16px 18px",
+              padding: "14px 86px 14px 16px",
               color: "#E6EDF3",
-              fontSize: 14,
+              fontSize: 13,
               fontFamily: "inherit",
               outline: "none",
               transition: "all 0.15s ease",
@@ -161,11 +241,11 @@ export default function AminahChat() {
             aria-label="Mic"
             style={{
               position: "absolute",
-              right: 48,
+              right: 46,
               top: "50%",
               transform: "translateY(-50%)",
-              width: 34,
-              height: 34,
+              width: 32,
+              height: 32,
               background: "transparent",
               border: "none",
               borderRadius: 8,
@@ -186,8 +266,8 @@ export default function AminahChat() {
               right: 7,
               top: "50%",
               transform: "translateY(-50%)",
-              width: 34,
-              height: 34,
+              width: 32,
+              height: 32,
               background: "#00C48C",
               border: "none",
               borderRadius: 8,

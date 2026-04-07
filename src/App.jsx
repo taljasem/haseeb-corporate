@@ -2,9 +2,12 @@ import { useState } from "react";
 import AmbientBackground from "./components/AmbientBackground";
 import Header from "./components/Header";
 import HeroBand from "./components/HeroBand";
-import FinancialHealth from "./screens/FinancialHealth";
+import AminahChat from "./components/AminahChat";
+import IntelligenceStream from "./components/IntelligenceStream";
+import TransactionFeed from "./components/TransactionFeed";
 
-function ComingNext({ label }) {
+function ComingNextPlaceholder({ role, tab }) {
+  const label = tab === "bookkeeping" ? "BOOKKEEPING" : `${role.toUpperCase()} VIEW`;
   return (
     <div
       style={{
@@ -14,24 +17,42 @@ function ComingNext({ label }) {
         justifyContent: "center",
         position: "relative",
         zIndex: 1,
+        padding: 24,
       }}
     >
-      <div style={{ textAlign: "center" }}>
-        <div
-          className="section-label"
-          style={{ marginBottom: 8 }}
-        >
+      <div
+        style={{
+          maxWidth: 480,
+          padding: "32px 36px",
+          background: "rgba(255,255,255,0.02)",
+          border: "1px solid rgba(255,255,255,0.10)",
+          borderRadius: 10,
+          textAlign: "center",
+        }}
+      >
+        <div className="section-label" style={{ marginBottom: 10 }}>
           {label}
         </div>
         <div
           style={{
             fontFamily: "'Bebas Neue', sans-serif",
-            fontSize: 48,
+            fontSize: 36,
             color: "#E6EDF3",
-            letterSpacing: "-1px",
+            letterSpacing: "-0.5px",
+            marginBottom: 12,
           }}
         >
           COMING NEXT.
+        </div>
+        <div
+          style={{
+            fontSize: 14,
+            color: "#8B98A5",
+            lineHeight: 1.65,
+          }}
+        >
+          The owner view is the foundation — once locked, the CFO and Junior
+          views build on the same architecture.
         </div>
       </div>
     </div>
@@ -61,16 +82,21 @@ export default function App() {
           }}
         >
           <HeroBand />
-          <FinancialHealth />
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              overflow: "hidden",
+              alignItems: "stretch",
+            }}
+          >
+            <AminahChat />
+            <IntelligenceStream />
+            <TransactionFeed />
+          </div>
         </div>
       ) : (
-        <ComingNext
-          label={
-            tab === "bookkeeping"
-              ? "BOOKKEEPING"
-              : `${role.toUpperCase()} VIEW`
-          }
-        />
+        <ComingNextPlaceholder role={role} tab={tab} />
       )}
     </>
   );

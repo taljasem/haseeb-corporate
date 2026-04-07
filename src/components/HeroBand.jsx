@@ -82,39 +82,26 @@ export default function HeroBand() {
         flexWrap: "wrap",
       }}
     >
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 18 }}>
-        <div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              marginBottom: 6,
-            }}
-          >
-            <span className="aminah-dot" />
-            <span className="aminah-label">AMINAH ONLINE</span>
-          </div>
-          <h1
-            style={{
-              fontFamily: "'Bebas Neue', sans-serif",
-              fontSize: 48,
-              color: "#E6EDF3",
-              lineHeight: 0.9,
-              letterSpacing: "-1px",
-              fontWeight: 700,
-              margin: 0,
-            }}
-          >
-            AL MANARA TRADING.
-          </h1>
-        </div>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+        <h1
+          style={{
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: 48,
+            color: "#E6EDF3",
+            lineHeight: 0.9,
+            letterSpacing: "-1px",
+            fontWeight: 700,
+            margin: 0,
+          }}
+        >
+          AL MANARA TRADING.
+        </h1>
         <div
           style={{
             width: 120,
             height: 2,
             background: "linear-gradient(90deg, #00C48C, transparent)",
-            marginBottom: 8,
+            marginTop: 10,
             boxShadow: "0 0 12px rgba(0,196,140,0.35)",
           }}
         />

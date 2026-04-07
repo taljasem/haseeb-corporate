@@ -445,3 +445,746 @@ export async function getTeamMembers() {
     { id: "layla", name: "Layla Habib",      role: "Accounts Payable",   initials: "LH",  color: "#FF5A5F" },
   ];
 }
+
+// ─────────────────────────────────────────
+// TASKBOX — universal work communication layer
+// ─────────────────────────────────────────
+
+const TASKBOX_PEOPLE = {
+  owner: { id: "owner", name: "Tarek Aljasem",   role: "Owner",              initials: "TA",  avatarColor: "#8B5CF6" },
+  cfo:   { id: "cfo",   name: "You (CFO)",       role: "CFO",                initials: "You", avatarColor: "#00C48C" },
+  sara:  { id: "sara",  name: "Sara Al-Ahmadi",  role: "Senior Accountant",  initials: "SA",  avatarColor: "#3B82F6" },
+  noor:  { id: "noor",  name: "Noor Kandari",    role: "Junior Accountant",  initials: "NK",  avatarColor: "#8B5CF6" },
+  jasem: { id: "jasem", name: "Jasem Al-Rashed", role: "Junior Accountant",  initials: "JA",  avatarColor: "#D4A84B" },
+  layla: { id: "layla", name: "Layla Habib",     role: "Accounts Payable",   initials: "LH",  avatarColor: "#FF5A5F" },
+};
+
+// Helpers for timestamps
+function _hoursAgo(h) {
+  const d = new Date();
+  d.setHours(d.getHours() - h);
+  return d.toISOString();
+}
+function _daysAgo(d) {
+  const x = new Date();
+  x.setDate(x.getDate() - d);
+  return x.toISOString();
+}
+function _daysFromNow(d) {
+  const x = new Date();
+  x.setDate(x.getDate() + d);
+  return x.toISOString();
+}
+
+const TASK_TYPES = [
+  // Downward
+  { id: "request-work",            label: "Request Work",     icon: "ClipboardList", color: "#3B82F6", direction: "downward" },
+  { id: "request-review",          label: "Request Review",   icon: "Eye",           color: "#D4A84B", direction: "downward" },
+  { id: "request-investigation",   label: "Investigate",      icon: "Search",        color: "#D4A84B", direction: "downward" },
+  { id: "draft-je",                label: "Draft JE",         icon: "FileText",      color: "#00C48C", direction: "downward" },
+  { id: "draft-report",            label: "Draft Report",     icon: "BarChart2",     color: "#3B82F6", direction: "downward" },
+  { id: "draft-budget",            label: "Draft Budget",     icon: "TrendingUp",    color: "#3B82F6", direction: "downward" },
+  { id: "reconcile-account",       label: "Reconcile",        icon: "CheckCircle",   color: "#00C48C", direction: "downward" },
+  { id: "categorize-transactions", label: "Categorize",       icon: "Tag",           color: "#00C48C", direction: "downward" },
+  { id: "upload-document",         label: "Upload",           icon: "Upload",        color: "#3B82F6", direction: "downward" },
+  { id: "request-report",          label: "Request Report",   icon: "BarChart2",     color: "#3B82F6", direction: "downward" },
+  // Upward
+  { id: "submit-work",             label: "Submit Work",      icon: "CheckSquare",   color: "#00C48C", direction: "upward" },
+  { id: "request-approval",        label: "Request Approval", icon: "ShieldCheck",   color: "#D4A84B", direction: "upward" },
+  { id: "escalate",                label: "Escalate",         icon: "AlertTriangle", color: "#FF5A5F", direction: "upward" },
+  { id: "ask-clarification",       label: "Ask Clarification",icon: "HelpCircle",    color: "#D4A84B", direction: "upward" },
+  // Lateral / any
+  { id: "explain-transaction",     label: "Explain",          icon: "MessageCircle", color: "#8B5CF6", direction: "lateral" },
+  { id: "flag-for-review",         label: "Flag",             icon: "Flag",          color: "#FF5A5F", direction: "lateral" },
+  { id: "request-information",     label: "Info Request",     icon: "Info",          color: "#3B82F6", direction: "lateral" },
+  { id: "general-question",        label: "Question",         icon: "MessageSquare", color: "#5B6570", direction: "lateral" },
+];
+
+export function getTaskTypeMeta(typeId) {
+  return TASK_TYPES.find((t) => t.id === typeId) || TASK_TYPES[TASK_TYPES.length - 1];
+}
+
+let _taskSeq = 100;
+const _newId = () => `TSK-${++_taskSeq}`;
+
+// Build a system event
+function _sysEvent(type, detail, isoTimestamp) {
+  return {
+    id: `EV-${Math.random().toString(36).slice(2, 8)}`,
+    type: "system",
+    systemEventType: type,
+    systemEventDetail: detail,
+    timestamp: isoTimestamp || new Date().toISOString(),
+  };
+}
+function _msgEvent(author, body, isoTimestamp, attachments) {
+  return {
+    id: `EV-${Math.random().toString(36).slice(2, 8)}`,
+    type: "message",
+    author,
+    body,
+    timestamp: isoTimestamp || new Date().toISOString(),
+    attachments: attachments || [],
+  };
+}
+
+const P = TASKBOX_PEOPLE;
+
+// 25 mock tasks
+const TASKBOX_DB = [
+  // 1 — Owner → CFO, request-report, open
+  {
+    id: "TSK-101",
+    subject: "Q1 marketing spend breakdown",
+    body: "Can you pull the full Q1 marketing spend by campaign? I want to understand the variance before the board meeting next week.",
+    type: "request-report",
+    direction: "lateral",
+    status: "open",
+    sender: P.owner,
+    recipient: P.cfo,
+    visibleTo: ["Owner", "CFO"],
+    createdAt: _hoursAgo(5),
+    updatedAt: _hoursAgo(5),
+    dueDate: _daysFromNow(3),
+    unread: true,
+    thread: [
+      _sysEvent("created", "Tarek created this task", _hoursAgo(5)),
+      _msgEvent(P.owner, "Can you pull the full Q1 marketing spend by campaign? I want to understand the variance before the board meeting next week.", _hoursAgo(5)),
+    ],
+  },
+  // 2 — CFO → Sara, reconcile, in-progress
+  {
+    id: "TSK-102",
+    subject: "Reconcile Boubyan Bank — March",
+    body: "Please complete the Boubyan reconciliation by end of day. There are 3 unmatched items from Mar 28 totaling 2,462.500 KWD. Check the deposit slips folder for the missing reference numbers.",
+    type: "reconcile-account",
+    direction: "downward",
+    status: "in-progress",
+    sender: P.cfo,
+    recipient: P.sara,
+    visibleTo: ["CFO", "Junior"],
+    createdAt: _hoursAgo(8),
+    updatedAt: _hoursAgo(2),
+    dueDate: _daysFromNow(0),
+    linkedItem: { type: "account", id: "1140", preview: "Boubyan Bank · Reconciliation pending" },
+    unread: false,
+    thread: [
+      _sysEvent("created", "You created this task", _hoursAgo(8)),
+      _msgEvent(P.cfo, "Please complete the Boubyan reconciliation by end of day. There are **3 unmatched items** from Mar 28 totaling **2,462.500 KWD**. Check the deposit slips folder for the missing reference numbers.", _hoursAgo(8)),
+      _msgEvent(P.sara, "Started. I'll check the deposit slips folder this morning.", _hoursAgo(3)),
+      _sysEvent("status-changed", "Sara marked this in-progress", _hoursAgo(2)),
+    ],
+  },
+  // 3 — CFO → Noor, draft-je, open
+  {
+    id: "TSK-103",
+    subject: "PIFSS accrual — March",
+    body: "Draft the PIFSS accrual entry for March. Amount should be ~9,500.000 KWD based on the payroll run. Post it to account 2200 (PIFSS Payable) and 6110 (PIFSS Contributions).",
+    type: "draft-je",
+    direction: "downward",
+    status: "open",
+    sender: P.cfo,
+    recipient: P.noor,
+    visibleTo: ["CFO", "Junior"],
+    createdAt: _hoursAgo(6),
+    updatedAt: _hoursAgo(6),
+    dueDate: _daysFromNow(2),
+    unread: false,
+    thread: [
+      _sysEvent("created", "You created this task", _hoursAgo(6)),
+      _msgEvent(P.cfo, "Draft the PIFSS accrual entry for March. Amount should be ~**9,500.000 KWD** based on the payroll run. Post to **2200 (PIFSS Payable)** and **6110 (PIFSS Contributions)**.", _hoursAgo(6)),
+    ],
+  },
+  // 4 — Sara → CFO, escalate, open
+  {
+    id: "TSK-104",
+    subject: "Unusual Boubyan transfer — 2,462.500 KWD",
+    body: "Found this transfer from Boubyan dated Mar 28 with no matching reference in our records. Merchant description just says 'TRF-INT-2847'. Escalating for your review before I categorize.",
+    type: "escalate",
+    direction: "upward",
+    status: "open",
+    sender: P.sara,
+    recipient: P.cfo,
+    visibleTo: ["CFO", "Junior"],
+    createdAt: _hoursAgo(4),
+    updatedAt: _hoursAgo(4),
+    linkedItem: { type: "bank-transaction", id: "BT-4521", preview: "Unidentified transfer · +2,462.500 · Mar 28" },
+    unread: true,
+    thread: [
+      _sysEvent("created", "Sara created this task", _hoursAgo(4)),
+      _msgEvent(P.sara, "Found this transfer from Boubyan dated Mar 28 with no matching reference in our records. Merchant description just says 'TRF-INT-2847' which doesn't match any of our vendors or customers. Escalating for your review before I categorize.", _hoursAgo(4)),
+    ],
+  },
+  // 5 — Sara → CFO, submit-work, completed (multi-turn with reopen)
+  {
+    id: "TSK-105",
+    subject: "Completed: NBK and KIB reconciliations",
+    body: "Both NBK and KIB reconciliations are complete. 78 items matched, 0 exceptions. Summary attached.",
+    type: "submit-work",
+    direction: "upward",
+    status: "completed",
+    sender: P.sara,
+    recipient: P.cfo,
+    visibleTo: ["CFO", "Junior"],
+    createdAt: _daysAgo(1),
+    updatedAt: _hoursAgo(2),
+    attachments: [{ name: "reconciliation-summary-mar26.pdf", size: "142 KB", type: "pdf" }],
+    unread: false,
+    thread: [
+      _sysEvent("created", "Sara created this task", _daysAgo(1)),
+      _msgEvent(P.sara, "Both NBK and KIB reconciliations are complete. **78 items matched**, **0 exceptions**. Summary attached.", _daysAgo(1), [{ name: "reconciliation-summary-mar26.pdf", size: "142 KB", type: "pdf" }]),
+      _sysEvent("completed", "Sara completed this task", _daysAgo(1)),
+      _msgEvent(P.cfo, "Thanks Sara, reviewing now.", _hoursAgo(20)),
+      _sysEvent("reopened", "You reopened this task", _hoursAgo(20)),
+      _msgEvent(P.cfo, "One question — the NBK closing balance shows 142,100.250 but our GL shows 142,099.750. Can you check?", _hoursAgo(19)),
+      _msgEvent(P.sara, "Resolved — there was a 0.500 rounding discrepancy on a wire fee. Adjusting JE posted as JE-0418. Closing balances now match.", _hoursAgo(3)),
+      _sysEvent("completed", "Sara completed this task", _hoursAgo(2)),
+    ],
+  },
+  // 6 — CFO → Jasem, categorize, open
+  {
+    id: "TSK-106",
+    subject: "23 uncategorized transactions from Avenues branch",
+    body: "Batch of 23 transactions from the Avenues branch needs categorization. Most are POS settlements but a few look unusual. Flag anything you're unsure about.",
+    type: "categorize-transactions",
+    direction: "downward",
+    status: "open",
+    sender: P.cfo,
+    recipient: P.jasem,
+    visibleTo: ["CFO", "Junior"],
+    createdAt: _hoursAgo(11),
+    updatedAt: _hoursAgo(11),
+    unread: false,
+    thread: [
+      _sysEvent("created", "You created this task", _hoursAgo(11)),
+      _msgEvent(P.cfo, "Batch of 23 transactions from the Avenues branch needs categorization. Most are POS settlements but a few look unusual. Please review and categorize each one. Flag anything you're unsure about.", _hoursAgo(11)),
+    ],
+  },
+  // 7 — CFO → Owner, request-approval, open with attachment
+  {
+    id: "TSK-107",
+    subject: "March close ready for your sign-off",
+    body: "March close is 93% complete. All reconciliations done, adjusting entries posted, trial balance balanced. The final close requires your approval. Period summary attached.",
+    type: "request-approval",
+    direction: "lateral",
+    status: "open",
+    sender: P.cfo,
+    recipient: P.owner,
+    visibleTo: ["Owner", "CFO"],
+    createdAt: _hoursAgo(3),
+    updatedAt: _hoursAgo(3),
+    attachments: [{ name: "march-close-summary.pdf", size: "256 KB", type: "pdf" }],
+    unread: true,
+    thread: [
+      _sysEvent("created", "You created this task", _hoursAgo(3)),
+      _msgEvent(P.cfo, "March close is **93% complete**. All reconciliations done, adjusting entries posted, trial balance balanced. The final close requires your approval. Period summary attached.", _hoursAgo(3), [{ name: "march-close-summary.pdf", size: "256 KB", type: "pdf" }]),
+    ],
+  },
+  // 8 — Owner → CFO, explain-transaction, completed (with reply chain)
+  {
+    id: "TSK-108",
+    subject: "What's this Al Shaya charge?",
+    body: "Saw a 24,500 KWD outflow to Al Shaya Trading yesterday. Didn't recognize it. Can you explain?",
+    type: "explain-transaction",
+    direction: "lateral",
+    status: "completed",
+    sender: P.owner,
+    recipient: P.cfo,
+    visibleTo: ["Owner", "CFO"],
+    createdAt: _daysAgo(1),
+    updatedAt: _hoursAgo(22),
+    linkedItem: { type: "bank-transaction", id: "BT-4498", preview: "Al Shaya Trading · -24,500.000 · Apr 6" },
+    unread: false,
+    thread: [
+      _sysEvent("created", "Tarek created this task", _daysAgo(1)),
+      _msgEvent(P.owner, "Saw a **24,500 KWD** outflow to Al Shaya Trading yesterday. Didn't recognize it. Can you explain?", _daysAgo(1)),
+      _msgEvent(P.cfo, "This was a scheduled supplier payment for Q1 inventory. Invoice **#ALS-2847**, approved by you on March 15. I've attached the full documentation for reference.", _hoursAgo(23), [{ name: "ALS-2847-supplier-doc.pdf", size: "318 KB", type: "pdf" }]),
+      _sysEvent("completed", "You completed this task", _hoursAgo(22)),
+      _msgEvent(P.owner, "Got it, thanks.", _hoursAgo(22)),
+    ],
+  },
+  // 9 — CFO → Sara, flag-for-review, open with due
+  {
+    id: "TSK-109",
+    subject: "Marketing spend pattern — needs attention",
+    body: "Marketing is at 91% of budget with 8 days left in the period. Third consecutive month trending over. Please pull the detail by campaign.",
+    type: "flag-for-review",
+    direction: "lateral",
+    status: "open",
+    sender: P.cfo,
+    recipient: P.sara,
+    visibleTo: ["CFO", "Junior"],
+    createdAt: _hoursAgo(7),
+    updatedAt: _hoursAgo(7),
+    dueDate: _daysFromNow(1),
+    unread: false,
+    thread: [
+      _sysEvent("created", "You created this task", _hoursAgo(7)),
+      _msgEvent(P.cfo, "Marketing is at **91% of budget** with 8 days left in the period. **Third consecutive month** trending over. Please pull the detail by campaign so we can understand what's driving this.", _hoursAgo(7)),
+    ],
+  },
+  // 10 — Sara → CFO, ask-clarification, completed
+  {
+    id: "TSK-110",
+    subject: "Which account for trade show booth fees?",
+    body: "The Avenues Mall charged us 3,100 KWD for booth fees during the Q1 promotion. Should this go to Trade Shows (6310) or Marketing & Advertising (6300)?",
+    type: "ask-clarification",
+    direction: "upward",
+    status: "completed",
+    sender: P.sara,
+    recipient: P.cfo,
+    visibleTo: ["CFO", "Junior"],
+    createdAt: _daysAgo(2),
+    updatedAt: _daysAgo(1),
+    unread: false,
+    thread: [
+      _sysEvent("created", "Sara created this task", _daysAgo(2)),
+      _msgEvent(P.sara, "The Avenues Mall charged us **3,100 KWD** for booth fees during the Q1 promotion. Should this go to **Trade Shows (6310)** or **Marketing & Advertising (6300)**? Company policy wasn't clear.", _daysAgo(2)),
+      _msgEvent(P.cfo, "**Trade Shows (6310)** — booth fees always go there regardless of which event. Updating the rules registry to auto-categorize future Avenues Mall booth fees.", _daysAgo(1)),
+      _sysEvent("completed", "You completed this task", _daysAgo(1)),
+    ],
+  },
+  // 11 — CFO → Sara, request-investigation, open, reassigned
+  {
+    id: "TSK-111",
+    subject: "Investigate duplicate vendor payment to Gulf Logistics",
+    body: "There appear to be two payments to Gulf Logistics WLL on Apr 3 — one for 4,200.000 and another for 4,200.000. Can you confirm whether this is a duplicate or two separate invoices?",
+    type: "request-investigation",
+    direction: "downward",
+    status: "open",
+    sender: P.cfo,
+    recipient: P.sara,
+    visibleTo: ["CFO", "Junior"],
+    createdAt: _hoursAgo(15),
+    updatedAt: _hoursAgo(9),
+    unread: false,
+    thread: [
+      _sysEvent("created", "You created this task", _hoursAgo(15)),
+      _msgEvent(P.cfo, "Two payments to **Gulf Logistics WLL** on Apr 3 — one for **4,200.000** and another for **4,200.000**. Confirm duplicate or two separate invoices.", _hoursAgo(15)),
+      _sysEvent("reassigned", "You reassigned this from Noor to Sara", _hoursAgo(9)),
+      _msgEvent(P.cfo, "Reassigning to you, Sara — Noor is in training today.", _hoursAgo(9)),
+    ],
+  },
+  // 12 — CFO → Layla, upload-document, open
+  {
+    id: "TSK-112",
+    subject: "Upload signed PIFSS receipts for March",
+    body: "We need the PIFSS payment receipts for March uploaded to the audit folder. Three receipts total.",
+    type: "upload-document",
+    direction: "downward",
+    status: "open",
+    sender: P.cfo,
+    recipient: P.layla,
+    visibleTo: ["CFO", "Junior"],
+    createdAt: _hoursAgo(13),
+    updatedAt: _hoursAgo(13),
+    dueDate: _daysFromNow(2),
+    unread: false,
+    thread: [
+      _sysEvent("created", "You created this task", _hoursAgo(13)),
+      _msgEvent(P.cfo, "We need the **PIFSS payment receipts** for March uploaded to the audit folder. Three receipts total.", _hoursAgo(13)),
+    ],
+  },
+  // 13 — Sara → CFO, request-approval, open
+  {
+    id: "TSK-113",
+    subject: "Approve PIFSS accrual JE-0415",
+    body: "Drafted PIFSS accrual JE-0415 per your instructions. Total 9,500.000 KWD. Awaiting your approval before I post.",
+    type: "request-approval",
+    direction: "upward",
+    status: "open",
+    sender: P.sara,
+    recipient: P.cfo,
+    visibleTo: ["CFO", "Junior"],
+    createdAt: _hoursAgo(2),
+    updatedAt: _hoursAgo(2),
+    linkedItem: { type: "journal-entry", id: "JE-0415", preview: "PIFSS accrual · 9,500.000 KWD · Draft" },
+    unread: true,
+    thread: [
+      _sysEvent("created", "Sara created this task", _hoursAgo(2)),
+      _msgEvent(P.sara, "Drafted PIFSS accrual **JE-0415** per your instructions. Total **9,500.000 KWD**. Awaiting your approval before I post.", _hoursAgo(2)),
+    ],
+  },
+  // 14 — CFO → Noor, draft-budget, open
+  {
+    id: "TSK-114",
+    subject: "Q2 marketing budget proposal",
+    body: "Draft the Q2 marketing budget proposal based on Q1 actuals + 8% growth assumption. Use the template in the budgets folder.",
+    type: "draft-budget",
+    direction: "downward",
+    status: "open",
+    sender: P.cfo,
+    recipient: P.noor,
+    visibleTo: ["CFO", "Junior"],
+    createdAt: _daysAgo(1),
+    updatedAt: _daysAgo(1),
+    dueDate: _daysFromNow(4),
+    unread: false,
+    thread: [
+      _sysEvent("created", "You created this task", _daysAgo(1)),
+      _msgEvent(P.cfo, "Draft the **Q2 marketing budget proposal** based on Q1 actuals + 8% growth assumption. Use the template in the budgets folder.", _daysAgo(1)),
+    ],
+  },
+  // 15 — Owner → CFO, request-information, completed
+  {
+    id: "TSK-115",
+    subject: "Cash burn rate trend",
+    body: "What's our 90-day rolling cash burn rate?",
+    type: "request-information",
+    direction: "lateral",
+    status: "completed",
+    sender: P.owner,
+    recipient: P.cfo,
+    visibleTo: ["Owner", "CFO"],
+    createdAt: _daysAgo(3),
+    updatedAt: _daysAgo(2),
+    unread: false,
+    thread: [
+      _sysEvent("created", "Tarek created this task", _daysAgo(3)),
+      _msgEvent(P.owner, "What's our 90-day rolling cash burn rate?", _daysAgo(3)),
+      _msgEvent(P.cfo, "Trailing 90-day burn is **~21,400.000 KWD/month** on average. April month-to-date is tracking 7% below average.", _daysAgo(2)),
+      _sysEvent("completed", "Tarek completed this task", _daysAgo(2)),
+    ],
+  },
+  // 16 — Sara → CFO, submit-work, open
+  {
+    id: "TSK-116",
+    subject: "Bank charges reconciliation — March",
+    body: "Reconciled all bank charges across KIB Operating, KIB Reserve, and NBK Settlement. Found 4 unposted charges totaling 87.500 KWD. Posting JEs now.",
+    type: "submit-work",
+    direction: "upward",
+    status: "open",
+    sender: P.sara,
+    recipient: P.cfo,
+    visibleTo: ["CFO", "Junior"],
+    createdAt: _hoursAgo(1),
+    updatedAt: _hoursAgo(1),
+    unread: true,
+    thread: [
+      _sysEvent("created", "Sara created this task", _hoursAgo(1)),
+      _msgEvent(P.sara, "Reconciled all bank charges across **KIB Operating**, **KIB Reserve**, and **NBK Settlement**. Found 4 unposted charges totaling **87.500 KWD**. Posting JEs now.", _hoursAgo(1)),
+    ],
+  },
+  // 17 — CFO → Sara, request-review, open
+  {
+    id: "TSK-117",
+    subject: "Review March variance commentary draft",
+    body: "Draft commentary for March variance is ready. Please review for accuracy before I send to Owner.",
+    type: "request-review",
+    direction: "downward",
+    status: "open",
+    sender: P.cfo,
+    recipient: P.sara,
+    visibleTo: ["CFO", "Junior"],
+    createdAt: _hoursAgo(9),
+    updatedAt: _hoursAgo(9),
+    attachments: [{ name: "march-variance-draft.docx", size: "48 KB", type: "docx" }],
+    unread: false,
+    thread: [
+      _sysEvent("created", "You created this task", _hoursAgo(9)),
+      _msgEvent(P.cfo, "Draft commentary for March variance is ready. Please review for accuracy before I send to Owner.", _hoursAgo(9), [{ name: "march-variance-draft.docx", size: "48 KB", type: "docx" }]),
+    ],
+  },
+  // 18 — Noor → CFO, ask-clarification, open
+  {
+    id: "TSK-118",
+    subject: "Capitalize or expense the office furniture?",
+    body: "We bought office furniture for 1,840.000 KWD. Above our 500 KWD threshold but it's a single chair set. Capitalize per policy or expense as one-off?",
+    type: "ask-clarification",
+    direction: "upward",
+    status: "open",
+    sender: P.noor,
+    recipient: P.cfo,
+    visibleTo: ["CFO", "Junior"],
+    createdAt: _hoursAgo(4),
+    updatedAt: _hoursAgo(4),
+    unread: false,
+    thread: [
+      _sysEvent("created", "Noor created this task", _hoursAgo(4)),
+      _msgEvent(P.noor, "We bought office furniture for **1,840.000 KWD**. Above our 500 KWD threshold but it's a single chair set. Capitalize per policy or expense as one-off?", _hoursAgo(4)),
+    ],
+  },
+  // 19 — CFO → Sara, general-question, completed
+  {
+    id: "TSK-119",
+    subject: "Did we receive the Alghanim April invoice?",
+    body: "Quick check — did we receive the April invoice from Alghanim Industries yet?",
+    type: "general-question",
+    direction: "downward",
+    status: "completed",
+    sender: P.cfo,
+    recipient: P.sara,
+    visibleTo: ["CFO", "Junior"],
+    createdAt: _daysAgo(2),
+    updatedAt: _daysAgo(2),
+    unread: false,
+    thread: [
+      _sysEvent("created", "You created this task", _daysAgo(2)),
+      _msgEvent(P.cfo, "Quick check — did we receive the April invoice from Alghanim Industries yet?", _daysAgo(2)),
+      _msgEvent(P.sara, "Yes, received Apr 5. Already in the AP queue. Reference: ALS-3122.", _daysAgo(2)),
+      _sysEvent("completed", "You completed this task", _daysAgo(2)),
+    ],
+  },
+  // 20 — CFO → Owner, draft-report, open
+  {
+    id: "TSK-120",
+    subject: "March P&L draft for review",
+    body: "March P&L draft is ready. Net income 24,300.000 KWD. Highlights: revenue up 10.5%, marketing 23% over budget, ops on plan.",
+    type: "draft-report",
+    direction: "lateral",
+    status: "open",
+    sender: P.cfo,
+    recipient: P.owner,
+    visibleTo: ["Owner", "CFO"],
+    createdAt: _hoursAgo(18),
+    updatedAt: _hoursAgo(18),
+    attachments: [{ name: "march-pnl-draft.xlsx", size: "94 KB", type: "xlsx" }],
+    unread: false,
+    thread: [
+      _sysEvent("created", "You created this task", _hoursAgo(18)),
+      _msgEvent(P.cfo, "March P&L draft is ready. Net income **24,300.000 KWD**. Highlights: revenue up **10.5%**, marketing **23% over budget**, ops on plan.", _hoursAgo(18), [{ name: "march-pnl-draft.xlsx", size: "94 KB", type: "xlsx" }]),
+    ],
+  },
+  // 21 — Layla → CFO, escalate, open
+  {
+    id: "TSK-121",
+    subject: "Vendor refusing to send invoice",
+    body: "The Sharq landlord won't send a formal invoice for the April rent payment. They said 'standing order, no invoice needed'. Need your guidance on documentation.",
+    type: "escalate",
+    direction: "upward",
+    status: "open",
+    sender: P.layla,
+    recipient: P.cfo,
+    visibleTo: ["CFO", "Junior"],
+    createdAt: _hoursAgo(5),
+    updatedAt: _hoursAgo(5),
+    unread: true,
+    thread: [
+      _sysEvent("created", "Layla created this task", _hoursAgo(5)),
+      _msgEvent(P.layla, "The Sharq landlord won't send a formal invoice for the April rent payment. They said 'standing order, no invoice needed'. Need your guidance on documentation.", _hoursAgo(5)),
+    ],
+  },
+  // 22 — CFO → Sara, request-work, completed (reassigned earlier)
+  {
+    id: "TSK-122",
+    subject: "Pull customer aging report — top 20",
+    body: "Need an aging report for our top 20 customers. Format: 0-30, 31-60, 61-90, 90+. Include AR balance and last payment date.",
+    type: "request-work",
+    direction: "downward",
+    status: "completed",
+    sender: P.cfo,
+    recipient: P.sara,
+    visibleTo: ["CFO", "Junior"],
+    createdAt: _daysAgo(3),
+    updatedAt: _daysAgo(2),
+    attachments: [{ name: "top20-aging.xlsx", size: "62 KB", type: "xlsx" }],
+    unread: false,
+    thread: [
+      _sysEvent("created", "You created this task", _daysAgo(3)),
+      _msgEvent(P.cfo, "Need an aging report for our top 20 customers. Format: 0-30, 31-60, 61-90, 90+. Include AR balance and last payment date.", _daysAgo(3)),
+      _sysEvent("reassigned", "You reassigned this from Jasem to Sara", _daysAgo(3)),
+      _msgEvent(P.sara, "Done — attached. Two customers are over 90 days: Gulf Logistics (8,400) and Marina Holdings (5,100).", _daysAgo(2), [{ name: "top20-aging.xlsx", size: "62 KB", type: "xlsx" }]),
+      _sysEvent("completed", "Sara completed this task", _daysAgo(2)),
+    ],
+  },
+  // 23 — CFO → Sara, request-work, in-progress
+  {
+    id: "TSK-123",
+    subject: "Match Q1 expense receipts to bank charges",
+    body: "We have 47 expense receipts from Q1 that need to be matched against bank charges. Use the receipts folder. Anything unmatched, flag for follow-up.",
+    type: "request-work",
+    direction: "downward",
+    status: "in-progress",
+    sender: P.cfo,
+    recipient: P.sara,
+    visibleTo: ["CFO", "Junior"],
+    createdAt: _daysAgo(1),
+    updatedAt: _hoursAgo(6),
+    unread: false,
+    thread: [
+      _sysEvent("created", "You created this task", _daysAgo(1)),
+      _msgEvent(P.cfo, "We have **47 expense receipts** from Q1 that need to be matched against bank charges. Use the receipts folder. Anything unmatched, flag for follow-up.", _daysAgo(1)),
+      _msgEvent(P.sara, "31 of 47 matched so far. 4 receipts have no corresponding bank charge — investigating whether they were paid in cash.", _hoursAgo(6)),
+      _sysEvent("status-changed", "Sara marked this in-progress", _hoursAgo(6)),
+    ],
+  },
+  // 24 — Owner → CFO, general-question, completed
+  {
+    id: "TSK-124",
+    subject: "Are we still on track for Q1 revenue target?",
+    body: "Quick check before the partner call.",
+    type: "general-question",
+    direction: "lateral",
+    status: "completed",
+    sender: P.owner,
+    recipient: P.cfo,
+    visibleTo: ["Owner", "CFO"],
+    createdAt: _daysAgo(4),
+    updatedAt: _daysAgo(4),
+    unread: false,
+    thread: [
+      _sysEvent("created", "Tarek created this task", _daysAgo(4)),
+      _msgEvent(P.owner, "Quick check before the partner call.", _daysAgo(4)),
+      _msgEvent(P.cfo, "Yes — Q1 actuals **612,400.000 KWD** vs target **600,000.000**. Hit 102% of target.", _daysAgo(4)),
+      _sysEvent("completed", "Tarek completed this task", _daysAgo(4)),
+    ],
+  },
+  // 25 — CFO → Sara, request-review, open with linked JE
+  {
+    id: "TSK-125",
+    subject: "Review JE-0418 — wire fee adjustment",
+    body: "I posted JE-0418 to fix the 0.500 NBK rounding discrepancy. Please double-check the entry before our weekly review.",
+    type: "request-review",
+    direction: "downward",
+    status: "open",
+    sender: P.cfo,
+    recipient: P.sara,
+    visibleTo: ["CFO", "Junior"],
+    createdAt: _hoursAgo(2),
+    updatedAt: _hoursAgo(2),
+    linkedItem: { type: "journal-entry", id: "JE-0418", preview: "Wire fee adjustment · 0.500 KWD · Posted" },
+    unread: true,
+    thread: [
+      _sysEvent("created", "You created this task", _hoursAgo(2)),
+      _msgEvent(P.cfo, "I posted **JE-0418** to fix the 0.500 NBK rounding discrepancy. Please double-check the entry before our weekly review.", _hoursAgo(2)),
+    ],
+  },
+];
+
+export async function getTaskbox(role = "CFO", filter = "all") {
+  await delay();
+  let visible;
+  if (role === "CFO") {
+    visible = TASKBOX_DB; // CFO sees everything
+  } else if (role === "Owner") {
+    visible = TASKBOX_DB.filter(
+      (t) => t.sender.id === "owner" || t.recipient.id === "owner" || (t.visibleTo || []).includes("Owner")
+    );
+  } else if (role === "Junior") {
+    visible = TASKBOX_DB.filter(
+      (t) => ["sara", "noor", "jasem", "layla"].includes(t.sender.id) || ["sara", "noor", "jasem", "layla"].includes(t.recipient.id)
+    );
+  } else {
+    visible = [];
+  }
+
+  // Apply filter
+  const me = role === "CFO" ? "cfo" : role === "Owner" ? "owner" : "sara";
+  switch (filter) {
+    case "unread":
+      visible = visible.filter((t) => t.unread && t.status !== "completed");
+      break;
+    case "received":
+      visible = visible.filter((t) => t.recipient.id === me);
+      break;
+    case "sent":
+      visible = visible.filter((t) => t.sender.id === me);
+      break;
+    case "needs-action":
+      visible = visible.filter((t) => t.recipient.id === me && t.status !== "completed");
+      break;
+    case "completed":
+      visible = visible.filter((t) => t.status === "completed");
+      break;
+    default:
+      break;
+  }
+  // Sort: open first by updatedAt desc, completed last
+  return visible
+    .slice()
+    .sort((a, b) => {
+      const ac = a.status === "completed" ? 1 : 0;
+      const bc = b.status === "completed" ? 1 : 0;
+      if (ac !== bc) return ac - bc;
+      return new Date(b.updatedAt) - new Date(a.updatedAt);
+    });
+}
+
+export async function getTaskById(taskId) {
+  await delay();
+  return TASKBOX_DB.find((t) => t.id === taskId) || null;
+}
+
+export async function createTask(params) {
+  await delay();
+  const sender = P[params.senderId] || P.cfo;
+  const newTask = {
+    id: _newId(),
+    subject: params.subject || "",
+    body: params.body || "",
+    type: params.type || "general-question",
+    direction: getTaskTypeMeta(params.type).direction,
+    status: "open",
+    sender,
+    recipient: params.recipient,
+    visibleTo: params.visibleTo || [sender.role, params.recipient.role === "Owner" ? "Owner" : params.recipient.role === "CFO" ? "CFO" : "Junior"],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    dueDate: params.dueDate || null,
+    linkedItem: params.linkedItem || null,
+    attachments: params.attachments || [],
+    unread: true,
+    thread: [
+      _sysEvent("created", `${sender.name} created this task`),
+      _msgEvent(sender, params.body || "", new Date().toISOString(), params.attachments || []),
+    ],
+  };
+  TASKBOX_DB.unshift(newTask);
+  return newTask;
+}
+
+export async function replyToTask(taskId, body, authorId = "cfo", attachments = []) {
+  await delay();
+  const t = TASKBOX_DB.find((x) => x.id === taskId);
+  if (!t) return null;
+  const author = P[authorId] || P.cfo;
+  t.thread.push(_msgEvent(author, body, new Date().toISOString(), attachments));
+  t.updatedAt = new Date().toISOString();
+  return t;
+}
+
+export async function reassignTask(taskId, newRecipientId, note, byId = "cfo") {
+  await delay();
+  const t = TASKBOX_DB.find((x) => x.id === taskId);
+  if (!t) return null;
+  const newRecipient = P[newRecipientId];
+  if (!newRecipient) return t;
+  const by = P[byId];
+  t.thread.push(_sysEvent("reassigned", `${by.name} reassigned this from ${t.recipient.name} to ${newRecipient.name}`));
+  if (note) t.thread.push(_msgEvent(by, note));
+  t.recipient = newRecipient;
+  t.updatedAt = new Date().toISOString();
+  return t;
+}
+
+export async function completeTask(taskId, completionNote, byId = "cfo") {
+  await delay();
+  const t = TASKBOX_DB.find((x) => x.id === taskId);
+  if (!t) return null;
+  const by = P[byId];
+  if (completionNote) t.thread.push(_msgEvent(by, completionNote));
+  t.thread.push(_sysEvent("completed", `${by.name} completed this task`));
+  t.status = "completed";
+  t.updatedAt = new Date().toISOString();
+  return t;
+}
+
+export async function getOpenTaskCount(role = "CFO") {
+  await delay();
+  const all = await getTaskbox(role, "all");
+  return all.filter((t) => t.status !== "completed").length;
+}
+
+export async function getTaskTypesForDirection(direction) {
+  await delay();
+  if (direction === "any") return TASK_TYPES;
+  return TASK_TYPES.filter((t) => t.direction === direction || t.direction === "lateral");
+}
+
+export async function getRecipientsForRole(senderRole) {
+  await delay();
+  if (senderRole === "Owner") return [P.cfo];
+  if (senderRole === "CFO") return [P.owner, P.sara, P.noor, P.jasem, P.layla];
+  if (senderRole === "Junior") return [P.cfo];
+  return [];
+}

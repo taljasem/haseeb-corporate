@@ -6,7 +6,8 @@ import TodayScreen from "./TodayScreen";
 import BankTransactionsScreen from "./BankTransactionsScreen";
 import ConversationalJEScreen from "./ConversationalJEScreen";
 import PlaceholderScreen from "./PlaceholderScreen";
-import { getCFOTodayQueue } from "../../engine/mockEngine";
+import TaskboxScreen from "../../components/taskbox/TaskboxScreen";
+import { getCFOTodayQueue, getOpenTaskCount } from "../../engine/mockEngine";
 
 const SCREEN_TITLES = {
   approvals:             "APPROVALS",
@@ -25,28 +26,48 @@ export default function CFOView() {
   const [aminahOpen, setAminahOpen] = useState(false);
   const [aminahContext, setAminahContext] = useState(null);
   const [pendingApprovals, setPendingApprovals] = useState(0);
+  const [taskboxOpen, setTaskboxOpen] = useState(0);
+  const [initialTaskId, setInitialTaskId] = useState(null);
 
   useEffect(() => {
     getCFOTodayQueue().then((q) => setPendingApprovals(q.pendingApprovals));
-  }, []);
+    getOpenTaskCount("CFO").then(setTaskboxOpen);
+  }, [activeScreen]);
 
   const openAminah = (context = null) => {
     setAminahContext(context);
     setAminahOpen(true);
   };
 
+  const navigateToTask = (taskId) => {
+    setInitialTaskId(taskId);
+    setActiveScreen("taskbox");
+  };
+
   const renderScreen = () => {
     switch (activeScreen) {
       case "today":
-        return <TodayScreen setActiveScreen={setActiveScreen} />;
+        return (
+          <TodayScreen
+            setActiveScreen={setActiveScreen}
+            onOpenTask={navigateToTask}
+          />
+        );
       case "bank-transactions":
         return <BankTransactionsScreen onOpenAminah={openAminah} />;
       case "conversational-je":
         return <ConversationalJEScreen />;
+      case "taskbox":
+        return <TaskboxScreen role="CFO" initialTaskId={initialTaskId} />;
       default:
         return <PlaceholderScreen title={SCREEN_TITLES[activeScreen] || activeScreen.toUpperCase()} />;
     }
   };
+
+  // Reset initialTaskId after switching away
+  useEffect(() => {
+    if (activeScreen !== "taskbox") setInitialTaskId(null);
+  }, [activeScreen]);
 
   return (
     <div
@@ -64,6 +85,7 @@ export default function CFOView() {
         active={activeScreen}
         setActive={setActiveScreen}
         pendingApprovals={pendingApprovals}
+        taskboxOpen={taskboxOpen}
       />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
         <CFOHeroBand onOpenAminah={() => openAminah()} />

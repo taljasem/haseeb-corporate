@@ -7,6 +7,7 @@ import PendingApprovals from "./sections/PendingApprovals";
 import BudgetPerformance from "./sections/BudgetPerformance";
 import AuditReadiness from "./sections/AuditReadiness";
 import CloseStatus from "./sections/CloseStatus";
+import TaskboxSummaryCard from "./taskbox/TaskboxSummaryCard";
 
 export default function IntelligenceStream() {
   const [wide, setWide] = useState(
@@ -38,6 +39,23 @@ export default function IntelligenceStream() {
         <MonthlyInsights />
         <FinancialHealthSection />
         <PendingApprovals />
+        <TaskboxSummaryCard
+          role="Owner"
+          onViewAll={() => {
+            // Owner full Taskbox screen comes in the owner restructure step
+            console.log("[owner] full taskbox coming in owner view restructure");
+          }}
+          onTaskClick={() => {
+            console.log("[owner] task click — full taskbox coming in owner view restructure");
+          }}
+          wrapperStyle={{
+            background: "rgba(255,255,255,0.02)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            borderRadius: 8,
+            padding: "16px 18px",
+            marginBottom: 0,
+          }}
+        />
         <BudgetPerformance />
         <AminahNotes />
         <CloseStatus />

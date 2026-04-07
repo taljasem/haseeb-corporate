@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import TodaySection from "../../components/cfo/TodaySection";
 import AssignToButton from "../../components/shared/AssignToButton";
+import TaskboxSummaryCard from "../../components/taskbox/TaskboxSummaryCard";
 import {
   getCFOTodayQueue,
   getCFOAminahNotes,
@@ -115,7 +116,7 @@ function Avatar({ initials }) {
   );
 }
 
-export default function TodayScreen({ setActiveScreen }) {
+export default function TodayScreen({ setActiveScreen, onOpenTask }) {
   const [queue, setQueue] = useState(null);
   const [notes, setNotes] = useState(null);
   const [team, setTeam] = useState(null);
@@ -145,6 +146,13 @@ export default function TodayScreen({ setActiveScreen }) {
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px" }}>
       <div style={{ maxWidth: 920, margin: "0 auto" }}>
+        {/* 0. TASKBOX SUMMARY */}
+        <TaskboxSummaryCard
+          role="CFO"
+          onViewAll={() => setActiveScreen("taskbox")}
+          onTaskClick={(t) => onOpenTask && onOpenTask(t.id)}
+        />
+
         {/* 1. NEEDS YOUR REVIEW */}
         <TodaySection
           label="NEEDS YOUR REVIEW"

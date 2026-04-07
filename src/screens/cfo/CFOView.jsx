@@ -11,6 +11,7 @@ import RulesScreen from "./RulesScreen";
 import BankAccountsScreen from "../shared/BankAccountsScreen";
 import BudgetScreen from "../../components/budget/BudgetScreen";
 import ReconciliationScreen from "../../components/reconciliation/ReconciliationScreen";
+import ManualJEScreen from "./ManualJEScreen";
 import NewTaskModal from "../../components/taskbox/NewTaskModal";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 
@@ -95,6 +96,8 @@ export default function CFOView({ registerNav }) {
         return <BankAccountsScreen role="CFO" />;
       case "reconciliation":
         return <ReconciliationScreen role="CFO" />;
+      case "manual-je":
+        return <ManualJEScreen onOpenAminah={openAminah} />;
       case "taskbox":
         return (
           <TaskboxScreen

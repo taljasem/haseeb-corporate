@@ -4016,3 +4016,477 @@ export async function createReconciliation(accountId, period) {
   _RECONS_DB[id] = r;
   return _brandObj({ ...r });
 }
+
+// ─────────────────────────────────────────
+// MANUAL JOURNAL ENTRIES — formal double-entry workspace
+// ─────────────────────────────────────────
+
+const _MANUAL_JES_DB = {};
+const _MANUAL_JE_TEMPLATES_DB = {};
+
+function _mkLine(id, code, name, dr, cr, memo = "") {
+  return { id, accountCode: code, accountName: name, debit: Number(dr || 0), credit: Number(cr || 0), memo };
+}
+
+function _mkManualJE(overrides = {}) {
+  const lines = overrides.lines || [];
+  const totalDebits = Number(lines.reduce((s, l) => s + (l.debit || 0), 0).toFixed(3));
+  const totalCredits = Number(lines.reduce((s, l) => s + (l.credit || 0), 0).toFixed(3));
+  return {
+    id: overrides.id,
+    type: "manual",
+    source: overrides.source || "manual",
+    date: overrides.date || new Date().toISOString(),
+    reference: overrides.reference || "",
+    description: overrides.description || "",
+    status: overrides.status || "draft",
+    lines,
+    totalDebits,
+    totalCredits,
+    isBalanced: totalDebits === totalCredits && totalDebits > 0,
+    createdBy: overrides.createdBy || "cfo",
+    createdAt: overrides.createdAt || new Date().toISOString(),
+    postedAt: overrides.postedAt || null,
+    postedBy: overrides.postedBy || null,
+    reversalOf: overrides.reversalOf || null,
+    reversedBy: overrides.reversedBy || null,
+    templateId: overrides.templateId || null,
+    scheduledFor: overrides.scheduledFor || null,
+    recurringRule: overrides.recurringRule || null,
+    attachmentUrl: overrides.attachmentUrl || null,
+    hashChain: overrides.hashChain || null,
+  };
+}
+
+// Templates
+_MANUAL_JE_TEMPLATES_DB["TPL-MONTHLY-RENT"] = {
+  id: "TPL-MONTHLY-RENT",
+  name: "Monthly Rent Allocation",
+  description: "Monthly office rent payment, allocated to Admin",
+  source: "manual",
+  defaultReference: "Rent — {month} {year}",
+  createdAt: _daysAgo(120),
+  usageCount: 6,
+  lines: [
+    { id: "T1L1", accountCode: "6200", accountName: "Office Rent",          debit: 0, credit: 0, memo: "" },
+    { id: "T1L2", accountCode: "1120", accountName: "KIB Operating Account", debit: 0, credit: 0, memo: "" },
+  ],
+};
+_MANUAL_JE_TEMPLATES_DB["TPL-PAYROLL"] = {
+  id: "TPL-PAYROLL",
+  name: "Payroll Run",
+  description: "Monthly payroll posting",
+  source: "manual",
+  defaultReference: "Payroll — {month} {year}",
+  createdAt: _daysAgo(120),
+  usageCount: 6,
+  lines: [
+    { id: "T2L1", accountCode: "6100", accountName: "Salaries & Wages",      debit: 0, credit: 0, memo: "" },
+    { id: "T2L2", accountCode: "6110", accountName: "PIFSS Contributions",   debit: 0, credit: 0, memo: "" },
+    { id: "T2L3", accountCode: "2210", accountName: "Salaries Payable",      debit: 0, credit: 0, memo: "" },
+    { id: "T2L4", accountCode: "2200", accountName: "PIFSS Payable",         debit: 0, credit: 0, memo: "" },
+    { id: "T2L5", accountCode: "1120", accountName: "KIB Operating Account", debit: 0, credit: 0, memo: "" },
+  ],
+};
+_MANUAL_JE_TEMPLATES_DB["TPL-DEPRECIATION"] = {
+  id: "TPL-DEPRECIATION",
+  name: "Monthly Depreciation",
+  description: "Monthly depreciation of fixed assets",
+  source: "manual",
+  defaultReference: "Depreciation — {month} {year}",
+  createdAt: _daysAgo(120),
+  usageCount: 6,
+  lines: [
+    { id: "T3L1", accountCode: "6420", accountName: "Depreciation Expense",   debit: 0, credit: 0, memo: "" },
+    { id: "T3L2", accountCode: "1520", accountName: "Accumulated Depreciation", debit: 0, credit: 0, memo: "" },
+  ],
+};
+_MANUAL_JE_TEMPLATES_DB["TPL-PIFSS-ACCRUAL"] = {
+  id: "TPL-PIFSS-ACCRUAL",
+  name: "PIFSS Accrual",
+  description: "Monthly PIFSS accrual",
+  source: "manual",
+  defaultReference: "PIFSS Accrual — {month} {year}",
+  createdAt: _daysAgo(90),
+  usageCount: 3,
+  lines: [
+    { id: "T4L1", accountCode: "6110", accountName: "PIFSS Contributions", debit: 0, credit: 0, memo: "" },
+    { id: "T4L2", accountCode: "2200", accountName: "PIFSS Payable",       debit: 0, credit: 0, memo: "" },
+  ],
+};
+
+// Posted JEs
+(function seedManualJEs() {
+  const list = [
+    _mkManualJE({
+      id: "JE-MAN-0501", source: "manual", status: "posted", reference: "Rent — March 2026",
+      description: "Monthly office rent allocation", date: _daysAgo(38), templateId: "TPL-MONTHLY-RENT",
+      lines: [
+        _mkLine("L1", "6200", "Office Rent",          4200, 0),
+        _mkLine("L2", "1120", "KIB Operating Account", 0,   4200),
+      ],
+      postedAt: _daysAgo(38), postedBy: "cfo", hashChain: "h:a1b2c3",
+    }),
+    _mkManualJE({
+      id: "JE-MAN-0502", source: "manual", status: "posted", reference: "Depreciation — March 2026",
+      description: "Monthly depreciation of equipment & furniture", date: _daysAgo(38), templateId: "TPL-DEPRECIATION",
+      lines: [
+        _mkLine("L1", "6420", "Depreciation Expense",     1800, 0),
+        _mkLine("L2", "1520", "Accumulated Depreciation", 0,    1800),
+      ],
+      postedAt: _daysAgo(38), postedBy: "cfo", hashChain: "h:b2c3d4",
+    }),
+    _mkManualJE({
+      id: "JE-MAN-0503", source: "adjustment", status: "posted", reference: "REF-ADJ-001",
+      description: "Insurance prepayment adjustment", date: _daysAgo(34),
+      lines: [
+        _mkLine("L1", "1400", "Prepaid Expenses", 850, 0),
+        _mkLine("L2", "6700", "Insurance",        0,   850),
+      ],
+      postedAt: _daysAgo(34), postedBy: "cfo", hashChain: "h:c3d4e5",
+    }),
+    _mkManualJE({
+      id: "JE-MAN-0504", source: "manual", status: "posted", reference: "Payroll — March 2026",
+      description: "Monthly payroll posting", date: _daysAgo(24), templateId: "TPL-PAYROLL",
+      lines: [
+        _mkLine("L1", "6100", "Salaries & Wages",      15800, 0),
+        _mkLine("L2", "6110", "PIFSS Contributions",    1620, 0),
+        _mkLine("L3", "2210", "Salaries Payable",       0, 15800),
+        _mkLine("L4", "2200", "PIFSS Payable",          0,  1620),
+        _mkLine("L5", "1120", "KIB Operating Account",  0,     0),
+      ],
+      postedAt: _daysAgo(24), postedBy: "cfo", hashChain: "h:d4e5f6",
+    }),
+    _mkManualJE({
+      id: "JE-MAN-0505", source: "manual", status: "posted", reference: "PIFSS Accrual — March 2026",
+      description: "Monthly PIFSS accrual", date: _daysAgo(14), templateId: "TPL-PIFSS-ACCRUAL",
+      lines: [
+        _mkLine("L1", "6110", "PIFSS Contributions", 1640, 0),
+        _mkLine("L2", "2200", "PIFSS Payable",       0,    1640),
+      ],
+      postedAt: _daysAgo(14), postedBy: "cfo", hashChain: "h:e5f6a7",
+    }),
+    _mkManualJE({
+      id: "JE-MAN-0506", source: "reversal", status: "posted", reference: "REV-JE-MAN-0490",
+      description: "Reversal of prior year-end accrual", date: _daysAgo(38), reversalOf: "JE-MAN-0490",
+      lines: [
+        _mkLine("L1", "2400", "Accrued Expenses",        3200, 0),
+        _mkLine("L2", "6500", "Professional Fees",       0,    3200),
+      ],
+      postedAt: _daysAgo(38), postedBy: "cfo", hashChain: "h:f6a7b8",
+    }),
+    _mkManualJE({
+      id: "JE-MAN-0507", source: "adjustment", status: "posted", reference: "REF-ADJ-002",
+      description: "Bank fee miscategorization fix", date: _daysAgo(21),
+      lines: [
+        _mkLine("L1", "6800", "Bank Charges",           75, 0),
+        _mkLine("L2", "6500", "Professional Fees",      0,  75),
+      ],
+      postedAt: _daysAgo(21), postedBy: "cfo", hashChain: "h:a7b8c9",
+    }),
+    _mkManualJE({
+      id: "JE-MAN-0508", source: "adjustment", status: "posted", reference: "REF-ADJ-003",
+      description: "Inventory adjustment for damaged stock", date: _daysAgo(11),
+      lines: [
+        _mkLine("L1", "5100", "Cost of Goods Sold", 1200, 0),
+        _mkLine("L2", "1300", "Inventory",          0,    1200),
+      ],
+      postedAt: _daysAgo(11), postedBy: "cfo", hashChain: "h:b8c9d0",
+    }),
+    // Drafts
+    _mkManualJE({
+      id: "JE-MAN-DRAFT-001", source: "manual", status: "draft", reference: "Marketing Accrual",
+      description: "March marketing services accrual (incomplete)", date: _hoursAgo(8),
+      lines: [
+        _mkLine("L1", "6300", "Marketing & Advertising", 3200, 0),
+        _mkLine("L2", "",     "",                         0,    0),
+      ],
+      createdAt: _hoursAgo(8),
+    }),
+    _mkManualJE({
+      id: "JE-MAN-DRAFT-002", source: "manual", status: "draft", reference: "Q1 Bonus Accrual",
+      description: "Quarterly bonus accrual — ready to post", date: _hoursAgo(3),
+      lines: [
+        _mkLine("L1", "6120", "Bonuses",         8500, 0),
+        _mkLine("L2", "2400", "Accrued Expenses", 0,  8500),
+      ],
+      createdAt: _hoursAgo(3),
+    }),
+    _mkManualJE({
+      id: "JE-MAN-DRAFT-003", source: "adjustment", status: "draft", reference: "Equipment Write-off",
+      description: "Equipment write-off (in progress)", date: _hoursAgo(20),
+      lines: [
+        _mkLine("L1", "1500", "Fixed Assets — Equipment", 0, 2400),
+        _mkLine("L2", "",     "",                         0, 0),
+      ],
+      createdAt: _hoursAgo(20),
+    }),
+    // Scheduled
+    _mkManualJE({
+      id: "JE-MAN-SCHED-001", source: "recurring", status: "scheduled", reference: "Rent — April 2026",
+      description: "Monthly rent allocation (scheduled)", date: _daysFromNow(7), templateId: "TPL-MONTHLY-RENT",
+      scheduledFor: _daysFromNow(7),
+      recurringRule: { frequency: "monthly", nextRun: _daysFromNow(7) },
+      lines: [
+        _mkLine("L1", "6200", "Office Rent",          4200, 0),
+        _mkLine("L2", "1120", "KIB Operating Account", 0,   4200),
+      ],
+    }),
+    _mkManualJE({
+      id: "JE-MAN-SCHED-002", source: "recurring", status: "scheduled", reference: "Depreciation — April 2026",
+      description: "Monthly depreciation (scheduled)", date: _daysFromNow(7), templateId: "TPL-DEPRECIATION",
+      scheduledFor: _daysFromNow(7),
+      recurringRule: { frequency: "monthly", nextRun: _daysFromNow(7) },
+      lines: [
+        _mkLine("L1", "6420", "Depreciation Expense",     1800, 0),
+        _mkLine("L2", "1520", "Accumulated Depreciation", 0,    1800),
+      ],
+    }),
+    _mkManualJE({
+      id: "JE-MAN-SCHED-003", source: "recurring", status: "scheduled", reference: "Payroll — April 2026",
+      description: "Monthly payroll (scheduled)", date: _daysFromNow(21), templateId: "TPL-PAYROLL",
+      scheduledFor: _daysFromNow(21),
+      recurringRule: { frequency: "monthly", nextRun: _daysFromNow(21) },
+      lines: [
+        _mkLine("L1", "6100", "Salaries & Wages",      15800, 0),
+        _mkLine("L2", "6110", "PIFSS Contributions",    1620, 0),
+        _mkLine("L3", "2210", "Salaries Payable",       0, 15800),
+        _mkLine("L4", "2200", "PIFSS Payable",          0,  1620),
+      ],
+    }),
+  ];
+  list.forEach((j) => { _MANUAL_JES_DB[j.id] = j; });
+})();
+
+function _recomputeJE(j) {
+  j.totalDebits = Number(j.lines.reduce((s, l) => s + (l.debit || 0), 0).toFixed(3));
+  j.totalCredits = Number(j.lines.reduce((s, l) => s + (l.credit || 0), 0).toFixed(3));
+  j.isBalanced = j.totalDebits === j.totalCredits && j.totalDebits > 0;
+}
+
+function _validateJELines(lines) {
+  const errors = [];
+  if (lines.length < 2) errors.push("Entry must have at least 2 lines");
+  lines.forEach((l, i) => {
+    if (!l.accountCode) errors.push(`Line ${i + 1}: account not selected`);
+    if (l.debit > 0 && l.credit > 0) errors.push(`Line ${i + 1}: cannot have both debit and credit`);
+    if (l.debit === 0 && l.credit === 0 && l.accountCode) errors.push(`Line ${i + 1}: amount required`);
+  });
+  const td = lines.reduce((s, l) => s + (l.debit || 0), 0);
+  const tc = lines.reduce((s, l) => s + (l.credit || 0), 0);
+  if (Math.abs(td - tc) > 0.0001) errors.push(`Out of balance by ${(td - tc).toFixed(3)}`);
+  return { isBalanced: Math.abs(td - tc) < 0.0001 && td > 0, totalDebits: td, totalCredits: tc, difference: td - tc, errors };
+}
+
+export async function getManualJEs(filter = "all") {
+  await delay();
+  let list = Object.values(_MANUAL_JES_DB);
+  if (filter === "recent-posted") list = list.filter((j) => j.status === "posted").sort((a, b) => new Date(b.postedAt) - new Date(a.postedAt));
+  else if (filter === "drafts") list = list.filter((j) => j.status === "draft").sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  else if (filter === "scheduled") list = list.filter((j) => j.status === "scheduled").sort((a, b) => new Date(a.scheduledFor) - new Date(b.scheduledFor));
+  return _brandObj(list.map((j) => ({ ...j, lines: [...j.lines] })));
+}
+
+export async function getManualJEById(id) {
+  await delay();
+  const j = _MANUAL_JES_DB[id];
+  return j ? _brandObj({ ...j, lines: j.lines.map((l) => ({ ...l })) }) : null;
+}
+
+export async function getManualJETemplates() {
+  await delay();
+  return _brandObj(Object.values(_MANUAL_JE_TEMPLATES_DB).map((t) => ({ ...t, lines: t.lines.map((l) => ({ ...l })) })));
+}
+
+export async function getManualJETemplateById(id) {
+  await delay();
+  const t = _MANUAL_JE_TEMPLATES_DB[id];
+  return t ? _brandObj({ ...t, lines: t.lines.map((l) => ({ ...l })) }) : null;
+}
+
+export async function getRecentManualJEs(limit = 10) {
+  const all = await getManualJEs("recent-posted");
+  return all.slice(0, limit);
+}
+
+export async function getDraftManualJEs() {
+  return getManualJEs("drafts");
+}
+
+export async function getScheduledManualJEs() {
+  return getManualJEs("scheduled");
+}
+
+let _manualJESeq = 600;
+function _nextManualJEId() {
+  _manualJESeq += 1;
+  return `JE-MAN-${String(_manualJESeq).padStart(4, "0")}`;
+}
+
+export async function createManualJEDraft(initialData = {}) {
+  await delay();
+  const id = initialData.id || _nextManualJEId();
+  const lines = initialData.lines && initialData.lines.length
+    ? initialData.lines.map((l, i) => ({ id: `L${i + 1}`, accountCode: l.accountCode || "", accountName: l.accountName || "", debit: l.debit || 0, credit: l.credit || 0, memo: l.memo || "" }))
+    : [
+        { id: "L1", accountCode: "", accountName: "", debit: 0, credit: 0, memo: "" },
+        { id: "L2", accountCode: "", accountName: "", debit: 0, credit: 0, memo: "" },
+      ];
+  const j = _mkManualJE({ ...initialData, id, status: "draft", lines, createdAt: new Date().toISOString() });
+  _MANUAL_JES_DB[id] = j;
+  return _brandObj({ ...j, lines: j.lines.map((l) => ({ ...l })) });
+}
+
+export async function updateManualJEDraft(jeId, changes) {
+  await delay();
+  const j = _MANUAL_JES_DB[jeId];
+  if (!j) return null;
+  Object.assign(j, changes);
+  if (changes.lines) j.lines = changes.lines;
+  _recomputeJE(j);
+  return _brandObj({ ...j, lines: j.lines.map((l) => ({ ...l })) });
+}
+
+export async function addLineToManualJE(jeId) {
+  await delay();
+  const j = _MANUAL_JES_DB[jeId];
+  if (!j) return null;
+  j.lines.push({ id: `L${j.lines.length + 1}-${Math.random().toString(36).slice(2, 5)}`, accountCode: "", accountName: "", debit: 0, credit: 0, memo: "" });
+  _recomputeJE(j);
+  return _brandObj({ ...j, lines: j.lines.map((l) => ({ ...l })) });
+}
+
+export async function updateLineInManualJE(jeId, lineId, changes) {
+  await delay();
+  const j = _MANUAL_JES_DB[jeId];
+  if (!j) return null;
+  const line = j.lines.find((l) => l.id === lineId);
+  if (!line) return null;
+  Object.assign(line, changes);
+  if (changes.debit && changes.debit > 0) line.credit = 0;
+  if (changes.credit && changes.credit > 0) line.debit = 0;
+  _recomputeJE(j);
+  return _brandObj({ ...j, lines: j.lines.map((l) => ({ ...l })) });
+}
+
+export async function removeLineFromManualJE(jeId, lineId) {
+  await delay();
+  const j = _MANUAL_JES_DB[jeId];
+  if (!j) return null;
+  j.lines = j.lines.filter((l) => l.id !== lineId);
+  _recomputeJE(j);
+  return _brandObj({ ...j, lines: j.lines.map((l) => ({ ...l })) });
+}
+
+export async function validateManualJE(jeId) {
+  await delay();
+  const j = _MANUAL_JES_DB[jeId];
+  if (!j) return null;
+  return _validateJELines(j.lines);
+}
+
+export async function postManualJE(jeId, postedBy = "cfo") {
+  await delay();
+  const j = _MANUAL_JES_DB[jeId];
+  if (!j) return null;
+  const v = _validateJELines(j.lines);
+  if (!v.isBalanced) return { error: "Cannot post unbalanced entry", validation: v };
+  j.status = "posted";
+  j.postedAt = new Date().toISOString();
+  j.postedBy = postedBy;
+  j.hashChain = `h:${Math.random().toString(36).slice(2, 8)}`;
+  _recomputeJE(j);
+  return _brandObj({ ...j, lines: j.lines.map((l) => ({ ...l })) });
+}
+
+export async function saveDraftManualJE(jeId) {
+  await delay();
+  const j = _MANUAL_JES_DB[jeId];
+  if (!j) return null;
+  j.status = "draft";
+  return _brandObj({ ...j, lines: j.lines.map((l) => ({ ...l })) });
+}
+
+export async function discardManualJEDraft(jeId) {
+  await delay();
+  delete _MANUAL_JES_DB[jeId];
+  return { success: true };
+}
+
+export async function createFromTemplate(templateId) {
+  await delay();
+  const t = _MANUAL_JE_TEMPLATES_DB[templateId];
+  if (!t) return null;
+  const id = _nextManualJEId();
+  const lines = t.lines.map((l, i) => ({ id: `L${i + 1}`, accountCode: l.accountCode, accountName: l.accountName, debit: 0, credit: 0, memo: "" }));
+  const j = _mkManualJE({
+    id, status: "draft", source: t.source, templateId,
+    reference: t.defaultReference || t.name,
+    description: t.description, lines, createdAt: new Date().toISOString(),
+  });
+  _MANUAL_JES_DB[id] = j;
+  t.usageCount = (t.usageCount || 0) + 1;
+  return _brandObj({ ...j, lines: j.lines.map((l) => ({ ...l })) });
+}
+
+export async function saveAsTemplate(jeId, templateName, description) {
+  await delay();
+  const j = _MANUAL_JES_DB[jeId];
+  if (!j) return null;
+  const id = `TPL-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+  const t = {
+    id, name: templateName, description: description || "",
+    source: j.source || "manual",
+    defaultReference: j.reference,
+    createdAt: new Date().toISOString(),
+    usageCount: 0,
+    lines: j.lines.map((l, i) => ({ id: `T${i + 1}`, accountCode: l.accountCode, accountName: l.accountName, debit: 0, credit: 0, memo: "" })),
+  };
+  _MANUAL_JE_TEMPLATES_DB[id] = t;
+  return _brandObj({ ...t });
+}
+
+export async function reverseManualJE(originalJeId, reason = "") {
+  await delay();
+  const orig = _MANUAL_JES_DB[originalJeId];
+  if (!orig) return null;
+  const id = _nextManualJEId();
+  const flippedLines = orig.lines.map((l, i) => ({
+    id: `L${i + 1}`, accountCode: l.accountCode, accountName: l.accountName,
+    debit: l.credit, credit: l.debit, memo: l.memo,
+  }));
+  const j = _mkManualJE({
+    id, status: "draft", source: "reversal",
+    reference: `REV-${orig.id}`,
+    description: `Reversal of ${orig.id}${reason ? ` — ${reason}` : ""}`,
+    reversalOf: originalJeId,
+    lines: flippedLines,
+    createdAt: new Date().toISOString(),
+  });
+  _MANUAL_JES_DB[id] = j;
+  orig.reversedBy = id;
+  return _brandObj({ ...j, lines: j.lines.map((l) => ({ ...l })) });
+}
+
+export async function scheduleManualJE(jeId, scheduledFor, recurring = null) {
+  await delay();
+  const j = _MANUAL_JES_DB[jeId];
+  if (!j) return null;
+  j.status = "scheduled";
+  j.scheduledFor = scheduledFor;
+  j.recurringRule = recurring;
+  j.source = recurring ? "recurring" : j.source;
+  return _brandObj({ ...j, lines: j.lines.map((l) => ({ ...l })) });
+}
+
+export async function postScheduledNow(jeId, postedBy = "cfo") {
+  await delay();
+  const j = _MANUAL_JES_DB[jeId];
+  if (!j) return null;
+  j.status = "posted";
+  j.postedAt = new Date().toISOString();
+  j.postedBy = postedBy;
+  j.scheduledFor = null;
+  j.hashChain = `h:${Math.random().toString(36).slice(2, 8)}`;
+  return _brandObj({ ...j, lines: j.lines.map((l) => ({ ...l })) });
+}

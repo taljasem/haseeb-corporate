@@ -8,6 +8,7 @@ import TaskboxScreen from "../../components/taskbox/TaskboxScreen";
 import BankAccountsScreen from "../shared/BankAccountsScreen";
 import BankTransactionsScreen from "../cfo/BankTransactionsScreen";
 import ConversationalJEScreen from "../cfo/ConversationalJEScreen";
+import NewTaskModal from "../../components/taskbox/NewTaskModal";
 import { getSaraTaskStats } from "../../engine/mockEngine";
 
 function Placeholder({ label, sub }) {
@@ -61,6 +62,7 @@ export default function JuniorView() {
   const [aminahContext, setAminahContext] = useState(null);
   const [taskStats, setTaskStats] = useState({ open: 0, overdue: 0, dueSoon: 0 });
   const [initialTaskId, setInitialTaskId] = useState(null);
+  const [newTaskOpen, setNewTaskOpen] = useState(false);
 
   useEffect(() => {
     getSaraTaskStats().then(setTaskStats);
@@ -109,7 +111,7 @@ export default function JuniorView() {
           />
         );
       case "responsibilities":
-        return <MyResponsibilitiesScreen onContactCFO={() => console.log("[junior] contact CFO")} />;
+        return <MyResponsibilitiesScreen onContactCFO={() => setNewTaskOpen(true)} />;
       case "bank-accounts":
         return <BankAccountsScreen role="Junior" readOnly />;
       case "profile":
@@ -156,6 +158,12 @@ export default function JuniorView() {
           setAminahContext(null);
         }}
         context={aminahContext}
+        role="Junior"
+      />
+      <NewTaskModal
+        open={newTaskOpen}
+        role="Junior"
+        onClose={() => setNewTaskOpen(false)}
       />
     </div>
   );

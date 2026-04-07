@@ -47,6 +47,7 @@ export default function AssignToButton({
   onAssign,
   compact = false,
   variant = "default", // "default" | "ghost"
+  onClickOverride = null, // when set, click bypasses the popover and fires this callback
 }) {
   const [open, setOpen] = useState(false);
   const [members, setMembers] = useState(null);
@@ -106,6 +107,10 @@ export default function AssignToButton({
       <button
         onClick={(e) => {
           e.stopPropagation();
+          if (onClickOverride) {
+            onClickOverride();
+            return;
+          }
           setOpen((o) => !o);
         }}
         style={{

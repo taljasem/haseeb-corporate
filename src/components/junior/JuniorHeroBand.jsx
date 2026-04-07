@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { getSaraAccuracy } from "../../engine/mockEngine";
 
@@ -34,26 +34,102 @@ function StatusPill({ dotColor, label, pulse = false }) {
   );
 }
 
-function AccuracyPill({ value }) {
+function AccuracyPill({ value, previous = 91 }) {
   const color = value >= 90 ? "#00C48C" : value >= 80 ? "#D4A84B" : "#FF5A5F";
+  const [hover, setHover] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!pinned) return;
+    const onClick = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setPinned(false);
+    };
+    window.addEventListener("mousedown", onClick);
+    return () => window.removeEventListener("mousedown", onClick);
+  }, [pinned]);
+  const visible = hover || pinned;
   return (
     <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        fontSize: 10,
-        fontWeight: 700,
-        letterSpacing: "0.12em",
-        color,
-        background: `${color}14`,
-        border: `1px solid ${color}55`,
-        padding: "5px 10px",
-        borderRadius: 4,
-        fontFamily: "'DM Mono', monospace",
-      }}
+      ref={ref}
+      style={{ position: "relative", display: "inline-block" }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
     >
-      ACCURACY {value}%
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setPinned((p) => !p);
+        }}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: "0.12em",
+          color,
+          background: `${color}14`,
+          border: `1px solid ${color}55`,
+          padding: "5px 10px",
+          borderRadius: 4,
+          fontFamily: "'DM Mono', monospace",
+          cursor: "pointer",
+        }}
+      >
+        ACCURACY {value}%
+      </button>
+      {visible && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 8px)",
+            right: 0,
+            width: 280,
+            background: "#0C0E12",
+            border: "1px solid rgba(255,255,255,0.10)",
+            borderRadius: 8,
+            padding: "12px 14px",
+            boxShadow: "0 12px 32px rgba(0,0,0,0.6)",
+            zIndex: 200,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 9,
+              fontWeight: 600,
+              letterSpacing: "0.15em",
+              color: "#5B6570",
+              marginBottom: 6,
+            }}
+          >
+            ACCURACY THIS WEEK
+          </div>
+          <div
+            style={{
+              fontFamily: "'DM Mono', monospace",
+              fontSize: 16,
+              color,
+              fontWeight: 500,
+              marginBottom: 6,
+            }}
+          >
+            {value}% — up from {previous}% last week
+          </div>
+          <div style={{ fontSize: 11, color: "#8B98A5", lineHeight: 1.5, marginBottom: 6 }}>
+            Most common correction: <span style={{ color: "#E6EDF3" }}>cost center allocation</span>
+          </div>
+          <div style={{ fontSize: 11, color: "#5B6570", lineHeight: 1.5 }}>
+            Calculated from <span style={{ fontFamily: "'DM Mono', monospace", color: "#E6EDF3" }}>47</span>{" "}
+            categorizations and{" "}
+            <span style={{ fontFamily: "'DM Mono', monospace", color: "#E6EDF3" }}>12</span> reconciliations
+          </div>
+          <div style={{ marginTop: 10, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+            <a style={{ fontSize: 11, color: "#00C48C", cursor: "pointer" }}>
+              How is this calculated? →
+            </a>
+          </div>
+        </div>
+      )}
     </span>
   );
 }
@@ -113,7 +189,7 @@ export default function JuniorHeroBand({ onOpenAminah }) {
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
         <StatusPill dotColor="#00C48C" label="ONLINE" pulse />
-        {accuracy && <AccuracyPill value={accuracy.current} />}
+        {accuracy && <AccuracyPill value={accuracy.current} previous={accuracy.previous} />}
         <button
           onClick={onOpenAminah}
           style={{

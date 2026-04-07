@@ -122,7 +122,17 @@ export default function JuniorTodayScreen({ setActiveScreen, onOpenTask }) {
         {/* 1. MY TASKS */}
         <SectionCard
           label="MY TASKS"
-          extra={myTasks ? <span className="tension-dot">{myTasks.length}</span> : null}
+          extra={myTasks ? (
+            <span
+              className="tension-dot"
+              style={{
+                background: "rgba(255,255,255,0.06)",
+                color: "#8B98A5",
+              }}
+            >
+              {myTasks.length}
+            </span>
+          ) : null}
         >
           <div style={{ marginInline: -10 }}>
             {myTasks === null ? (

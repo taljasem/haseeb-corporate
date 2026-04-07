@@ -58,6 +58,12 @@ export default function OwnerView() {
   const [pendingApprovals, setPendingApprovals] = useState(0);
   const [initialTaskId, setInitialTaskId] = useState(null);
   const [initialTaskboxFilter, setInitialTaskboxFilter] = useState(null);
+  const [initialAccountId, setInitialAccountId] = useState(null);
+
+  const navigateToBankAccount = (accountId) => {
+    setInitialAccountId(accountId);
+    setActiveScreen("bank-accounts");
+  };
 
   useEffect(() => {
     getOpenTaskCount("Owner").then(setTaskboxOpen);
@@ -87,6 +93,7 @@ export default function OwnerView() {
 
   useEffect(() => {
     if (activeScreen !== "taskbox") setInitialTaskId(null);
+    if (activeScreen !== "bank-accounts") setInitialAccountId(null);
   }, [activeScreen]);
 
   const renderScreen = () => {
@@ -108,9 +115,14 @@ export default function OwnerView() {
           />
         );
       case "overview":
-        return <OwnerOverviewScreen setActiveScreen={setActive} />;
+        return (
+          <OwnerOverviewScreen
+            setActiveScreen={setActive}
+            onOpenBankAccount={navigateToBankAccount}
+          />
+        );
       case "bank-accounts":
-        return <BankAccountsScreen role="Owner" />;
+        return <BankAccountsScreen role="Owner" initialAccountId={initialAccountId} />;
       case "financial-statements":
         return <FinancialStatementsScreen onOpenAminah={openAminah} />;
       case "month-end-close":
@@ -169,6 +181,7 @@ export default function OwnerView() {
           setAminahContext(null);
         }}
         context={aminahContext}
+        role="Owner"
       />
     </div>
   );

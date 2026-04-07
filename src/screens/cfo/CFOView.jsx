@@ -9,6 +9,7 @@ import PlaceholderScreen from "./PlaceholderScreen";
 import TaskboxScreen from "../../components/taskbox/TaskboxScreen";
 import RulesScreen from "./RulesScreen";
 import BankAccountsScreen from "../shared/BankAccountsScreen";
+import NewTaskModal from "../../components/taskbox/NewTaskModal";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 
 const SCREEN_TITLES = {
@@ -31,6 +32,13 @@ export default function CFOView() {
   const [taskboxOpen, setTaskboxOpen] = useState(0);
   const [initialTaskId, setInitialTaskId] = useState(null);
   const [initialTaskboxFilter, setInitialTaskboxFilter] = useState(null);
+  const [newTaskOpen, setNewTaskOpen] = useState(false);
+  const [newTaskPrefill, setNewTaskPrefill] = useState(null);
+
+  const openNewTask = (prefill = null) => {
+    setNewTaskPrefill(prefill);
+    setNewTaskOpen(true);
+  };
 
   useEffect(() => {
     getOpenApprovalCount("CFO").then(setPendingApprovals);
@@ -65,6 +73,7 @@ export default function CFOView() {
           <TodayScreen
             setActiveScreen={setActive}
             onOpenTask={navigateToTask}
+            onCreateTask={openNewTask}
           />
         );
       case "bank-transactions":
@@ -127,6 +136,13 @@ export default function CFOView() {
           setAminahContext(null);
         }}
         context={aminahContext}
+        role="CFO"
+      />
+      <NewTaskModal
+        open={newTaskOpen}
+        role="CFO"
+        onClose={() => { setNewTaskOpen(false); setNewTaskPrefill(null); }}
+        prefilledLinkedItem={newTaskPrefill?.linkedItem}
       />
     </div>
   );

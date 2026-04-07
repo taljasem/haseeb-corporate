@@ -1,3 +1,5 @@
+import SidebarGroup from "../shared/SidebarGroup";
+
 // Simple inline SVG icon set — 16px stroke icons
 const I = (path) => (props) => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -72,21 +74,6 @@ function NavItem({ icon: Icon, label, active, onClick, badge }) {
   );
 }
 
-function GroupLabel({ children }) {
-  return (
-    <div
-      style={{
-        fontSize: 10,
-        fontWeight: 600,
-        letterSpacing: "0.15em",
-        color: "#5B6570",
-        padding: "16px 20px 8px",
-      }}
-    >
-      {children}
-    </div>
-  );
-}
 
 export default function CFOSidebar({ active, setActive, pendingApprovals = 0, taskboxOpen = 0 }) {
   const isActive = (k) => active === k;
@@ -113,23 +100,26 @@ export default function CFOSidebar({ active, setActive, pendingApprovals = 0, ta
       <NavItem icon={HomeIcon}  label="Today"   active={isActive("today")}   onClick={() => setActive("today")} />
       <NavItem icon={InboxIcon} label="Taskbox" active={isActive("taskbox")} onClick={() => setActive("taskbox")} badge={taskboxBadge} />
 
-      <GroupLabel>BOOKKEEPING</GroupLabel>
-      <NavItem icon={BankIcon}    label="Bank Transactions"   active={isActive("bank-transactions")}   onClick={() => setActive("bank-transactions")} />
-      <NavItem icon={BankIcon}    label="Bank Accounts"       active={isActive("bank-accounts")}       onClick={() => setActive("bank-accounts")} />
-      <NavItem icon={ChatIcon}    label="Conversational JE"   active={isActive("conversational-je")}   onClick={() => setActive("conversational-je")} />
-      <NavItem icon={PencilIcon}  label="Manual JE"           active={isActive("manual-je")}           onClick={() => setActive("manual-je")} />
-      <NavItem icon={FileText}    label="Rules"               active={isActive("rules")}               onClick={() => setActive("rules")} />
-      <NavItem icon={RecIcon}     label="Reconciliation"      active={isActive("reconciliation")}      onClick={() => setActive("reconciliation")} />
+      <SidebarGroup label="BOOKKEEPING">
+        <NavItem icon={BankIcon}    label="Bank Transactions"   active={isActive("bank-transactions")}   onClick={() => setActive("bank-transactions")} />
+        <NavItem icon={BankIcon}    label="Bank Accounts"       active={isActive("bank-accounts")}       onClick={() => setActive("bank-accounts")} />
+        <NavItem icon={ChatIcon}    label="Conversational JE"   active={isActive("conversational-je")}   onClick={() => setActive("conversational-je")} />
+        <NavItem icon={PencilIcon}  label="Manual JE"           active={isActive("manual-je")}           onClick={() => setActive("manual-je")} />
+        <NavItem icon={FileText}    label="Rules"               active={isActive("rules")}               onClick={() => setActive("rules")} />
+        <NavItem icon={RecIcon}     label="Reconciliation"      active={isActive("reconciliation")}      onClick={() => setActive("reconciliation")} />
+      </SidebarGroup>
 
-      <GroupLabel>REPORTING</GroupLabel>
-      <NavItem icon={DocIcon}   label="Financial Statements" active={isActive("financial-statements")} onClick={() => setActive("financial-statements")} />
-      <NavItem icon={ClockIcon} label="Aging Reports"        active={isActive("aging-reports")}        onClick={() => setActive("aging-reports")} />
-      <NavItem icon={ChartIcon} label="Variance Analysis"    active={isActive("variance-analysis")}    onClick={() => setActive("variance-analysis")} />
+      <SidebarGroup label="REPORTING">
+        <NavItem icon={DocIcon}   label="Financial Statements" active={isActive("financial-statements")} onClick={() => setActive("financial-statements")} />
+        <NavItem icon={ClockIcon} label="Aging Reports"        active={isActive("aging-reports")}        onClick={() => setActive("aging-reports")} />
+        <NavItem icon={ChartIcon} label="Variance Analysis"    active={isActive("variance-analysis")}    onClick={() => setActive("variance-analysis")} />
+      </SidebarGroup>
 
-      <GroupLabel>OPERATIONS</GroupLabel>
-      <NavItem icon={CalIcon}    label="Month-End Close" active={isActive("month-end-close")} onClick={() => setActive("month-end-close")} />
-      <NavItem icon={ShieldIcon} label="Audit Bridge"    active={isActive("audit-bridge")}    onClick={() => setActive("audit-bridge")} />
-      <NavItem icon={GearIcon}   label="Setup"           active={isActive("setup")}           onClick={() => setActive("setup")} />
+      <SidebarGroup label="OPERATIONS">
+        <NavItem icon={CalIcon}    label="Month-End Close" active={isActive("month-end-close")} onClick={() => setActive("month-end-close")} />
+        <NavItem icon={ShieldIcon} label="Audit Bridge"    active={isActive("audit-bridge")}    onClick={() => setActive("audit-bridge")} />
+        <NavItem icon={GearIcon}   label="Setup"           active={isActive("setup")}           onClick={() => setActive("setup")} />
+      </SidebarGroup>
     </aside>
   );
 }

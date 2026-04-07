@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Search, Plus, Inbox } from "lucide-react";
 import {
   getTaskbox,
+  getTaskboxCounts,
   completeTask as engineCompleteTask,
   replyToTask as engineReplyToTask,
   cancelTask as engineCancelTask,
@@ -35,9 +36,11 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
   const [refreshTick, setRefreshTick] = useState(0);
 
   const refresh = useCallback(() => setRefreshTick((t) => t + 1), []);
+  const [counts, setCounts] = useState({});
 
   useEffect(() => {
     getTaskbox(role, filter).then(setTasks);
+    getTaskboxCounts(role).then(setCounts);
   }, [role, filter, refreshTick]);
 
   useEffect(() => {
@@ -85,6 +88,9 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
             await engineReplyToTask(t.id, "[Escalated]", author);
           } else if (action === "cancel") {
             await engineCancelTask(t.id, author);
+            setOpenTaskId(null);
+            setToast("Request cancelled");
+            setTimeout(() => setToast(null), 2000);
           }
           refresh();
         }}
@@ -192,6 +198,19 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
                   }}
                 >
                   {f.label}
+                  {counts[f.id] != null && (
+                    <span
+                      style={{
+                        marginLeft: 6,
+                        fontSize: 10,
+                        color: on ? "#00C48C" : "#5B6570",
+                        fontFamily: "'DM Mono', monospace",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      · {counts[f.id]}
+                    </span>
+                  )}
                 </button>
               );
             })}

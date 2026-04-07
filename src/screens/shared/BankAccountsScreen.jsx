@@ -19,7 +19,7 @@ const RANGES = [
 ];
 const TYPE_FILTERS = ["All", "Inflow", "Outflow"];
 
-export default function BankAccountsScreen({ role = "CFO", readOnly = false }) {
+export default function BankAccountsScreen({ role = "CFO", readOnly = false, initialAccountId = null }) {
   const [accounts, setAccounts] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [range, setRange] = useState("month");
@@ -31,9 +31,12 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false }) {
   useEffect(() => {
     getBankAccounts().then((accs) => {
       setAccounts(accs);
-      if (accs.length > 0) setSelectedId(accs[0].id);
+      if (accs.length > 0) {
+        const initial = initialAccountId && accs.find((a) => a.id === initialAccountId);
+        setSelectedId(initial ? initial.id : accs[0].id);
+      }
     });
-  }, []);
+  }, [initialAccountId]);
 
   useEffect(() => {
     if (!selectedId) return;

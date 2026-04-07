@@ -1070,37 +1070,61 @@ export async function getTaskbox(role = "CFO", filter = "all") {
 
   // Apply filter
   const me = role === "CFO" ? "cfo" : role === "Owner" ? "owner" : "sara";
+  const isCancelled = (t) => t.status === "cancelled";
   switch (filter) {
     case "unread":
-      visible = visible.filter((t) => t.unread && t.status !== "completed");
+      visible = visible.filter((t) => t.unread && t.status !== "completed" && !isCancelled(t));
       break;
     case "approvals":
-      visible = visible.filter((t) => t.type === "request-approval");
+      visible = visible.filter(
+        (t) => t.type === "request-approval" && !isCancelled(t) && t.status !== "completed"
+      );
       break;
     case "received":
-      visible = visible.filter((t) => t.recipient.id === me);
+      visible = visible.filter((t) => t.recipient.id === me && !isCancelled(t));
       break;
     case "sent":
+      // sent: include cancelled so the user remembers they cancelled it
       visible = visible.filter((t) => t.sender.id === me);
       break;
     case "needs-action":
-      visible = visible.filter((t) => t.recipient.id === me && t.status !== "completed");
+      visible = visible.filter(
+        (t) => t.recipient.id === me && t.status !== "completed" && !isCancelled(t)
+      );
       break;
     case "completed":
       visible = visible.filter((t) => t.status === "completed");
       break;
     default:
+      // "all" — show everything including cancelled (sorted last)
       break;
   }
-  // Sort: open first by updatedAt desc, completed last
+  // Sort: open first by updatedAt desc, completed/cancelled last
   return visible
     .slice()
     .sort((a, b) => {
-      const ac = a.status === "completed" ? 1 : 0;
-      const bc = b.status === "completed" ? 1 : 0;
-      if (ac !== bc) return ac - bc;
+      const rank = (s) => (s === "cancelled" ? 2 : s === "completed" ? 1 : 0);
+      const r = rank(a.status) - rank(b.status);
+      if (r !== 0) return r;
       return new Date(b.updatedAt) - new Date(a.updatedAt);
     });
+}
+
+// Counts for each Taskbox filter tab — single-pass, no per-filter delay
+export async function getTaskboxCounts(role = "CFO") {
+  await delay();
+  const all = await getTaskbox(role, "all");
+  const me = role === "CFO" ? "cfo" : role === "Owner" ? "owner" : "sara";
+  const isCancelled = (t) => t.status === "cancelled";
+  return {
+    all:           all.length,
+    unread:        all.filter((t) => t.unread && t.status !== "completed" && !isCancelled(t)).length,
+    approvals:     all.filter((t) => t.type === "request-approval" && !isCancelled(t) && t.status !== "completed").length,
+    received:      all.filter((t) => t.recipient.id === me && !isCancelled(t)).length,
+    sent:          all.filter((t) => t.sender.id === me).length,
+    "needs-action":all.filter((t) => t.recipient.id === me && t.status !== "completed" && !isCancelled(t)).length,
+    completed:     all.filter((t) => t.status === "completed").length,
+  };
 }
 
 export async function getTaskById(taskId) {
@@ -1974,13 +1998,13 @@ export async function getIncomeStatement(period = "month") {
     sections: [
       { name: "REVENUE",             lines: revenue, subtotal: { label: "Total Revenue", current: totalRevenueCurrent, prior: totalRevenuePrior } },
       { name: "COST OF GOODS SOLD",  lines: cogs,    subtotal: { label: "Total COGS",    current: totalCogsCurrent,    prior: totalCogsPrior, negative: true } },
-      { name: "GROSS PROFIT",        highlight: "teal", current: grossCurrent, prior: grossPrior },
+      { name: "GROSS PROFIT",        highlight: grossCurrent < 0 ? "red" : grossCurrent >= grossPrior ? "teal" : "amber", current: grossCurrent, prior: grossPrior },
       { name: "OPERATING EXPENSES",  lines: opex,    subtotal: { label: "Total OpEx",    current: totalOpexCurrent,    prior: totalOpexPrior, negative: true } },
-      { name: "OPERATING INCOME",    highlight: "amber", current: opIncomeCurrent, prior: opIncomePrior },
+      { name: "OPERATING INCOME",    highlight: opIncomeCurrent < 0 ? "red" : opIncomeCurrent >= opIncomePrior ? "teal" : "amber", current: opIncomeCurrent, prior: opIncomePrior },
       { name: "OTHER INCOME/(EXPENSE)", lines: other, subtotal: { label: "Total Other", current: totalOtherCurrent, prior: totalOtherPrior } },
-      { name: "NET INCOME BEFORE TAX", highlight: "teal", current: nibtCurrent, prior: nibtPrior },
+      { name: "NET INCOME BEFORE TAX", highlight: nibtCurrent < 0 ? "red" : nibtCurrent >= nibtPrior ? "teal" : "amber", current: nibtCurrent, prior: nibtPrior },
       { name: "TAX EXPENSE",         lines: [_line("Corporate tax (Kuwait 0%)", 0, 0)], subtotal: { label: "Total Tax", current: 0, prior: 0, negative: true } },
-      { name: "NET INCOME",          highlight: "teal", final: true, current: netIncomeCurrent, prior: netIncomePrior },
+      { name: "NET INCOME",          highlight: netIncomeCurrent < 0 ? "red" : netIncomeCurrent >= netIncomePrior ? "teal" : "amber", final: true, current: netIncomeCurrent, prior: netIncomePrior },
     ],
   };
 }

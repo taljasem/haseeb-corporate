@@ -1,10 +1,34 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
-const STARTERS = [
-  { role: "aminah", text: "Hi — I'm here as advisory only. I can answer questions about the close, the engine's suggestions, or any number you see in this view. I won't categorize or post entries — that's your call." },
-  { role: "user",   text: "Why is the trial balance off?" },
-  { role: "aminah", text: "Trial balance is off by **2,462.500 KWD**. The difference matches a Boubyan transfer-in flagged as unidentified in the bank queue. Once you code that line, the TB should balance." },
-];
+const ROLE_CONTENT = {
+  Owner: {
+    greeting: "Hi Tarek. What can I help you understand?",
+    suggestions: [
+      "How is cash this month?",
+      "What's my biggest expense risk?",
+      "Walk me through the close progress",
+      "Why is marketing over budget again?",
+    ],
+  },
+  CFO: {
+    greeting: "Hi. What are we working on?",
+    suggestions: [
+      "What needs my attention right now?",
+      "Summarize today's bank transactions",
+      "What's blocking the close?",
+      "Any rules I should approve?",
+    ],
+  },
+  Junior: {
+    greeting: "Hi Sara. How can I help with your work?",
+    suggestions: [
+      "What should I work on next?",
+      "Help me categorize this transaction",
+      "Draft a JE for me",
+      "What's my accuracy this week?",
+    ],
+  },
+};
 
 function Bubble({ msg }) {
   const isUser = msg.role === "user";
@@ -53,7 +77,9 @@ function renderBold(text) {
   });
 }
 
-export default function AminahSlideOver({ open, onClose, context = null }) {
+export default function AminahSlideOver({ open, onClose, context = null, role = "CFO" }) {
+  const content = ROLE_CONTENT[role] || ROLE_CONTENT.CFO;
+  const [draft, setDraft] = useState("");
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => {
@@ -146,13 +172,46 @@ export default function AminahSlideOver({ open, onClose, context = null }) {
               Context: {context}
             </div>
           )}
-          {STARTERS.map((m, i) => (
-            <Bubble key={i} msg={m} />
-          ))}
+          <Bubble msg={{ role: "aminah", text: content.greeting }} />
+          <div
+            style={{
+              fontSize: 10,
+              fontWeight: 600,
+              letterSpacing: "0.15em",
+              color: "#5B6570",
+              marginTop: 14,
+              marginBottom: 8,
+            }}
+          >
+            SUGGESTED QUESTIONS
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {content.suggestions.map((q) => (
+              <button
+                key={q}
+                onClick={() => setDraft(q)}
+                style={{
+                  textAlign: "left",
+                  padding: "8px 12px",
+                  background: "rgba(255,255,255,0.02)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 8,
+                  color: "#8B98A5",
+                  fontSize: 12,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                {q}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div style={{ padding: "12px 18px 16px", borderTop: "1px solid rgba(255,255,255,0.10)" }}>
           <input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
             className="chat-input"
             placeholder="Ask Aminah…"
             style={{

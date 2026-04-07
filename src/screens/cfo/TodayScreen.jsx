@@ -118,7 +118,7 @@ function Avatar({ initials }) {
   );
 }
 
-export default function TodayScreen({ setActiveScreen, onOpenTask }) {
+export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask }) {
   const [suggestions, setSuggestions] = useState([]);
   const [queue, setQueue] = useState(null);
   const [notes, setNotes] = useState(null);
@@ -162,7 +162,14 @@ export default function TodayScreen({ setActiveScreen, onOpenTask }) {
         {/* 1. NEEDS YOUR REVIEW */}
         <TodaySection
           label="NEEDS YOUR REVIEW"
-          extra={totalQueue > 0 ? <span className="tension-dot">{totalQueue}</span> : null}
+          extra={totalQueue > 0 ? (
+            <span
+              className="tension-dot"
+              style={{ background: "rgba(212,168,75,0.18)", color: "#D4A84B" }}
+            >
+              {totalQueue}
+            </span>
+          ) : null}
           aminah
         >
           {queue && (
@@ -294,6 +301,16 @@ export default function TodayScreen({ setActiveScreen, onOpenTask }) {
                       currentAssignee={t.assignee.toLowerCase().includes("you") ? "self" : t.assignee.toLowerCase()}
                       compact
                       onAssign={() => {}}
+                      onClickOverride={() =>
+                        onCreateTask &&
+                        onCreateTask({
+                          linkedItem: {
+                            type: "close-task",
+                            id: `CT-${i}`,
+                            preview: `${t.task} · March 2026 close`,
+                          },
+                        })
+                      }
                     />
                   </div>
                 ))}

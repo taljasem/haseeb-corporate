@@ -1,5 +1,26 @@
+import { useEffect, useRef, useState } from "react";
+
 // DEMO ONLY — production roles come from auth
 const ROLES = ["Owner", "CFO", "Junior"];
+
+const NOTIFICATIONS_BY_ROLE = {
+  Owner: [
+    { id: "n1", title: "Q1 P&L draft ready for review",        body: "From CFO · TSK-120",            time: "18h ago" },
+    { id: "n2", title: "March close 60% complete",             body: "9 of 15 tasks done",            time: "45m ago" },
+    { id: "n3", title: "March close ready for your sign-off",  body: "From CFO · TSK-107",            time: "3h ago" },
+  ],
+  CFO: [
+    { id: "n1", title: "Sara submitted PIFSS approval request",  body: "TSK-113 · 9,500.000 KWD",     time: "2h ago" },
+    { id: "n2", title: "1 audit check failing",                  body: "JE-0413 missing reference",   time: "2h ago" },
+    { id: "n3", title: "Bank feed updated",                      body: "All KIB accounts current",    time: "5m ago" },
+    { id: "n4", title: "Sara escalated unidentified transfer",   body: "TSK-104 · 2,462.500 KWD",     time: "4h ago" },
+  ],
+  Junior: [
+    { id: "n1", title: "New transaction needs categorization",  body: "Boubyan transfer in",         time: "12m ago" },
+    { id: "n2", title: "CFO assigned: Investigate Gulf Logistics", body: "TSK-111 · due tomorrow",  time: "9h ago" },
+    { id: "n3", title: "PIFSS accrual approval pending",        body: "Awaiting CFO response",       time: "2h ago" },
+  ],
+};
 // Canonical role accent colors (match team member avatar colors)
 const ROLE_COLOR = {
   Owner:  "#8B5CF6", // Tarek purple
@@ -24,7 +45,46 @@ function MoonIcon() {
   );
 }
 
+function Tooltip({ title, sub }) {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: "calc(100% + 8px)",
+        right: 0,
+        background: "#0C0E12",
+        border: "1px solid rgba(255,255,255,0.10)",
+        borderRadius: 8,
+        padding: "10px 12px",
+        boxShadow: "0 12px 32px rgba(0,0,0,0.6)",
+        minWidth: 220,
+        zIndex: 200,
+      }}
+    >
+      <div style={{ fontSize: 12, color: "#E6EDF3", fontWeight: 500 }}>{title}</div>
+      <div style={{ fontSize: 11, color: "#5B6570", marginTop: 3 }}>{sub}</div>
+    </div>
+  );
+}
+
 export default function Header({ role, setRole }) {
+  const [bellOpen, setBellOpen] = useState(false);
+  const [unread, setUnread] = useState(true);
+  const [arabicTip, setArabicTip] = useState(false);
+  const [themeTip, setThemeTip] = useState(false);
+  const bellRef = useRef(null);
+
+  useEffect(() => {
+    if (!bellOpen) return;
+    const onClick = (e) => {
+      if (bellRef.current && !bellRef.current.contains(e.target)) setBellOpen(false);
+    };
+    window.addEventListener("mousedown", onClick);
+    return () => window.removeEventListener("mousedown", onClick);
+  }, [bellOpen]);
+
+  const notifications = NOTIFICATIONS_BY_ROLE[role] || NOTIFICATIONS_BY_ROLE.CFO;
+
   return (
     <header
       style={{
@@ -121,66 +181,181 @@ export default function Header({ role, setRole }) {
           })}
         </div>
 
-        {/* Bell with red dot */}
-        <button
-          aria-label="Notifications"
-          style={{
-            position: "relative",
-            width: 28, height: 28,
-            background: "transparent",
-            border: "none",
-            color: "#5B6570",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <BellIcon />
-          <span
+        {/* Bell with red dot + dropdown */}
+        <div ref={bellRef} style={{ position: "relative" }}>
+          <button
+            aria-label="Notifications"
+            onClick={() => setBellOpen((o) => !o)}
             style={{
-              position: "absolute",
-              top: 4, right: 4,
-              width: 6, height: 6,
-              borderRadius: "50%",
-              background: "#FF5A5F",
+              position: "relative",
+              width: 28, height: 28,
+              background: "transparent",
+              border: "none",
+              color: "#5B6570",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
-          />
-        </button>
+          >
+            <BellIcon />
+            {unread && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: 4, right: 4,
+                  width: 6, height: 6,
+                  borderRadius: "50%",
+                  background: "#FF5A5F",
+                }}
+              />
+            )}
+          </button>
+          {bellOpen && (
+            <div
+              style={{
+                position: "absolute",
+                top: "calc(100% + 8px)",
+                right: 0,
+                width: 320,
+                maxHeight: 480,
+                background: "#0C0E12",
+                border: "1px solid rgba(255,255,255,0.10)",
+                borderRadius: 10,
+                boxShadow: "0 12px 32px rgba(0,0,0,0.6)",
+                zIndex: 200,
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "12px 14px",
+                  borderBottom: "1px solid rgba(255,255,255,0.06)",
+                }}
+              >
+                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570" }}>
+                  NOTIFICATIONS
+                </div>
+                <a
+                  onClick={() => setUnread(false)}
+                  style={{ fontSize: 11, color: "#00C48C", cursor: "pointer" }}
+                >
+                  Mark all read
+                </a>
+              </div>
+              <div style={{ overflowY: "auto", flex: 1 }}>
+                {notifications.map((n) => (
+                  <div
+                    key={n.id}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    style={{
+                      padding: "10px 14px",
+                      borderBottom: "1px solid rgba(255,255,255,0.04)",
+                      cursor: "pointer",
+                      transition: "background 0.12s ease",
+                    }}
+                  >
+                    <div style={{ fontSize: 12, color: "#E6EDF3", fontWeight: 500 }}>
+                      {n.title}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: "#5B6570",
+                        marginTop: 2,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {n.body}
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: "'DM Mono', monospace",
+                        fontSize: 9,
+                        color: "#5B6570",
+                        marginTop: 2,
+                      }}
+                    >
+                      {n.time}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div
+                style={{
+                  padding: "10px 14px",
+                  borderTop: "1px solid rgba(255,255,255,0.06)",
+                  textAlign: "center",
+                }}
+              >
+                <a style={{ fontSize: 11, color: "#00C48C", cursor: "pointer" }}>
+                  View all in Taskbox →
+                </a>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Theme toggle */}
-        <button
-          aria-label="Theme"
-          style={{
-            width: 28, height: 28,
-            background: "transparent",
-            border: "none",
-            color: "#5B6570",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <MoonIcon />
-        </button>
+        <div style={{ position: "relative" }}>
+          <button
+            aria-label="Theme"
+            onClick={() => {
+              setThemeTip(true);
+              setTimeout(() => setThemeTip(false), 3000);
+            }}
+            style={{
+              width: 28, height: 28,
+              background: "transparent",
+              border: "none",
+              color: "#5B6570",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <MoonIcon />
+          </button>
+          {themeTip && <Tooltip title="Light mode — coming soon" sub="Light theme in development" />}
+        </div>
 
         {/* Language toggle */}
-        <button
-          style={{
-            fontFamily: "'Noto Sans Arabic', sans-serif",
-            fontSize: 12,
-            fontWeight: 600,
-            color: "#5B6570",
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.10)",
-            borderRadius: 4,
-            padding: "4px 10px",
-            cursor: "pointer",
-          }}
-        >
-          عربي
-        </button>
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={() => {
+              setArabicTip(true);
+              setTimeout(() => setArabicTip(false), 3000);
+            }}
+            style={{
+              fontFamily: "'Noto Sans Arabic', sans-serif",
+              fontSize: 12,
+              fontWeight: 600,
+              color: "#5B6570",
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              borderRadius: 4,
+              padding: "4px 10px",
+              cursor: "pointer",
+            }}
+          >
+            عربي
+          </button>
+          {arabicTip && (
+            <Tooltip
+              title="Arabic interface — coming soon"
+              sub="Right-to-left support and full Arabic translation in development"
+            />
+          )}
+        </div>
 
         {/* Avatar */}
         <div

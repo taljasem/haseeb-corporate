@@ -1,4 +1,5 @@
 import * as L from "lucide-react";
+import SidebarGroup from "../shared/SidebarGroup";
 
 function NavItem({ icon: Icon, label, active, onClick, badge }) {
   return (
@@ -52,21 +53,6 @@ function NavItem({ icon: Icon, label, active, onClick, badge }) {
   );
 }
 
-function GroupLabel({ children }) {
-  return (
-    <div
-      style={{
-        fontSize: 10,
-        fontWeight: 600,
-        letterSpacing: "0.15em",
-        color: "#5B6570",
-        padding: "16px 20px 8px",
-      }}
-    >
-      {children}
-    </div>
-  );
-}
 
 export default function JuniorSidebar({ active, setActive, taskStats = { open: 0, overdue: 0 } }) {
   const is = (k) => active === k;
@@ -92,17 +78,20 @@ export default function JuniorSidebar({ active, setActive, taskStats = { open: 0
       <NavItem icon={L.Home}  label="Today"   active={is("today")}   onClick={() => setActive("today")} />
       <NavItem icon={L.Inbox} label="Taskbox" active={is("taskbox")} onClick={() => setActive("taskbox")} badge={taskboxBadge} />
 
-      <GroupLabel>MY WORK</GroupLabel>
-      <NavItem icon={L.Landmark}       label="Bank Transactions" active={is("bank-transactions")} onClick={() => setActive("bank-transactions")} />
-      <NavItem icon={L.MessageSquare}  label="Conversational JE" active={is("conversational-je")} onClick={() => setActive("conversational-je")} />
-      <NavItem icon={L.CheckCircle}    label="Reconciliation"    active={is("reconciliation")}    onClick={() => setActive("reconciliation")} />
+      <SidebarGroup label="MY WORK">
+        <NavItem icon={L.Landmark}       label="Bank Transactions" active={is("bank-transactions")} onClick={() => setActive("bank-transactions")} />
+        <NavItem icon={L.MessageSquare}  label="Conversational JE" active={is("conversational-je")} onClick={() => setActive("conversational-je")} />
+        <NavItem icon={L.CheckCircle}    label="Reconciliation"    active={is("reconciliation")}    onClick={() => setActive("reconciliation")} />
+      </SidebarGroup>
 
-      <GroupLabel>REFERENCE</GroupLabel>
-      <NavItem icon={L.ListChecks} label="My Responsibilities" active={is("responsibilities")} onClick={() => setActive("responsibilities")} />
-      <NavItem icon={L.Building2}  label="Bank Accounts"       active={is("bank-accounts")}    onClick={() => setActive("bank-accounts")} />
+      <SidebarGroup label="REFERENCE">
+        <NavItem icon={L.ListChecks} label="My Responsibilities" active={is("responsibilities")} onClick={() => setActive("responsibilities")} />
+        <NavItem icon={L.Building2}  label="Bank Accounts"       active={is("bank-accounts")}    onClick={() => setActive("bank-accounts")} />
+      </SidebarGroup>
 
-      <GroupLabel>PERSONAL</GroupLabel>
-      <NavItem icon={L.User} label="Profile" active={is("profile")} onClick={() => setActive("profile")} />
+      <SidebarGroup label="PERSONAL">
+        <NavItem icon={L.User} label="Profile" active={is("profile")} onClick={() => setActive("profile")} />
+      </SidebarGroup>
     </aside>
   );
 }

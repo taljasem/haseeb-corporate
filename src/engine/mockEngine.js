@@ -1612,3 +1612,291 @@ if (_tsk113) {
     },
   };
 }
+
+// ─────────────────────────────────────────
+// BANK ACCOUNTS
+// ─────────────────────────────────────────
+
+const BANK_ACCOUNTS_DB = [
+  {
+    id: "ACC-1",
+    bankName: "KIB",
+    accountName: "KIB Operating Account",
+    accountNumberMasked: "KWIB •••• 8472",
+    accountType: "operating",
+    currency: "KWD",
+    currentBalance: 142100.25,
+    availableBalance: 142100.25,
+    mtdInflow:  87420.0,
+    mtdOutflow: 63180.5,
+    lastUpdated: _hoursAgo(0),
+    status: "active",
+    accentColor: "#00C48C",
+  },
+  {
+    id: "ACC-2",
+    bankName: "KIB",
+    accountName: "KIB Reserve Account",
+    accountNumberMasked: "KWIB •••• 9211",
+    accountType: "reserve",
+    currency: "KWD",
+    currentBalance: 42135.25,
+    availableBalance: 42135.25,
+    mtdInflow:  0,
+    mtdOutflow: 0,
+    lastUpdated: _hoursAgo(1),
+    status: "active",
+    accentColor: "#3B82F6",
+  },
+  {
+    id: "ACC-3",
+    bankName: "NBK",
+    accountName: "NBK Settlement Account",
+    accountNumberMasked: "NBK •••• 3049",
+    accountType: "settlement",
+    currency: "KWD",
+    currentBalance: 18420.75,
+    availableBalance: 18420.75,
+    mtdInflow:  23890.0,
+    mtdOutflow: 18200.0,
+    lastUpdated: _hoursAgo(0),
+    status: "active",
+    accentColor: "#8B5CF6",
+  },
+  {
+    id: "ACC-4",
+    bankName: "KIB",
+    accountName: "KIB USD Account",
+    accountNumberMasked: "KWIB •••• 5560",
+    accountType: "usd",
+    currency: "USD",
+    currentBalance: 8240.5,
+    availableBalance: 8240.5,
+    mtdInflow:  5000.0,
+    mtdOutflow: 2800.0,
+    lastUpdated: _hoursAgo(3),
+    status: "active",
+    accentColor: "#D4A84B",
+  },
+];
+
+const _cat = (method, category, ruleId, jeId) => ({
+  method, category, ruleId: ruleId || null, journalEntryId: jeId || null,
+});
+
+function _mkStmt(accountId, txs, startingBalance) {
+  // txs are given oldest-first. Compute running balance forward.
+  let bal = startingBalance;
+  const enriched = txs.map((t, i) => {
+    bal += t.amount;
+    return {
+      id: `BST-${accountId}-${String(i + 1).padStart(3, "0")}`,
+      accountId,
+      ...t,
+      runningBalance: Number(bal.toFixed(3)),
+    };
+  });
+  // Return newest-first
+  return enriched.slice().reverse();
+}
+
+// Account 1 — KIB Operating — 30 tx, starting balance ~118k, ending 142,100.250
+const _acc1Tx = (() => {
+  const now = new Date();
+  const d = (n, h = 10, m = 0) => {
+    const x = new Date(now);
+    x.setDate(x.getDate() - n);
+    x.setHours(h, m, 0, 0);
+    return x.toISOString();
+  };
+  return [
+    { date: d(13,  9,  0), description: "Opening adjustment",              reference: "ADJ-0001",  amount:  0,         type: "credit",   categorization: _cat("MANUAL",  "Opening Balance") },
+    { date: d(13, 14, 30), description: "Talabat payout",                  reference: "TLB-88412", amount:  3800.0,   type: "credit",   categorization: _cat("RULE",    "Sales Revenue",       "CRULE-004") },
+    { date: d(12, 11, 15), description: "KNPC fuel cards",                 reference: "KNPC-2211", amount: -1820.5,   type: "debit",    categorization: _cat("RULE",    "Fuel & Vehicle",      "CRULE-001") },
+    { date: d(12, 16, 45), description: "Alghanim Industries — payment",   reference: "ALG-9918",  amount: 12450.0,   type: "credit",   categorization: _cat("PATTERN", "Sales Revenue") },
+    { date: d(11, 10,  0), description: "Zain Kuwait — corporate lines",   reference: "ZN-44812",  amount:  -624.75,  type: "debit",    categorization: _cat("RULE",    "Internet & Phone",    "CRULE-008") },
+    { date: d(11, 15, 20), description: "Al Shaya Trading — invoice #2847",reference: "ALS-2847",  amount: -8740.0,   type: "debit",    categorization: _cat("MANUAL",  "Cost of Goods Sold") },
+    { date: d(10,  9,  0), description: "Office rent — Sharq",             reference: "RENT-APR",  amount: -4200.0,   type: "debit",    categorization: _cat("RULE",    "Office Rent",         "CRULE-003") },
+    { date: d(10, 13, 15), description: "Deliveroo payout",                reference: "DLV-3321",  amount:  2310.0,   type: "credit",   categorization: _cat("RULE",    "Sales Revenue",       "CRULE-004") },
+    { date: d( 9,  9,  0), description: "KIB transfer — payroll run",      reference: "PAY-MAR",   amount:-18500.0,   type: "transfer", categorization: _cat("MANUAL",  "Salaries & Wages"),        counterparty: "Payroll batch" },
+    { date: d( 9, 14,  0), description: "Staff salary — Sara",             reference: "PAY-SARA",  amount: -2200.0,   type: "debit",    categorization: _cat("RULE",    "Salaries & Wages",    "CRULE-007") },
+    { date: d( 8, 11, 20), description: "Ooredoo fiber",                   reference: "OOR-7712",  amount:  -135.0,   type: "debit",    categorization: _cat("RULE",    "Internet & Phone",    "CRULE-002") },
+    { date: d( 8, 16, 30), description: "Avenues Mall — booth fee Q2",     reference: "AVN-5521",  amount: -3100.0,   type: "debit",    categorization: _cat("AI",      "Trade Shows") },
+    { date: d( 7, 10, 15), description: "Al Shaya Trading",                reference: "ALS-9902",  amount:  8740.0,   type: "credit",   categorization: _cat("RULE",    "Sales Revenue",       "CRULE-005") },
+    { date: d( 7, 12,  0), description: "Office supplies — batch",         reference: "OFS-4412",  amount:  -182.5,   type: "debit",    categorization: _cat("RULE",    "Office Supplies",     "CRULE-011") },
+    { date: d( 6,  9, 30), description: "Boubyan transfer in — unidentified", reference: "TRF-INT-2847", amount: 2462.5, type: "transfer", categorization: _cat("PENDING", "Needs review"),        counterparty: "Boubyan (?)" },
+    { date: d( 6, 15, 40), description: "MyFatoorah settlement",           reference: "MF-2019",   amount:  5612.25,  type: "credit",   categorization: _cat("PATTERN", "Sales Revenue") },
+    { date: d( 5, 11,  0), description: "KNPC fuel cards",                 reference: "KNPC-2315", amount:  -980.25,  type: "debit",    categorization: _cat("RULE",    "Fuel & Vehicle",      "CRULE-001") },
+    { date: d( 5, 14, 20), description: "Gulf Logistics WLL",              reference: "GLG-1102",  amount: -4200.0,   type: "debit",    categorization: _cat("MANUAL",  "Accounts Payable") },
+    { date: d( 4, 10, 30), description: "Alghanim Industries — payment",   reference: "ALG-9921",  amount:  8740.0,   type: "credit",   categorization: _cat("PATTERN", "Sales Revenue") },
+    { date: d( 4, 13, 15), description: "Cleaning services",               reference: "CLN-0412",  amount:  -135.0,   type: "debit",    categorization: _cat("MANUAL",  "Cleaning & Maintenance") },
+    { date: d( 3,  9, 45), description: "Bank charges",                    reference: "BCH-APR",   amount:   -12.5,   type: "debit",    categorization: _cat("MANUAL",  "Bank Charges") },
+    { date: d( 3, 14, 30), description: "Deliveroo payout",                reference: "DLV-3398",  amount:  1840.0,   type: "credit",   categorization: _cat("RULE",    "Sales Revenue",       "CRULE-004") },
+    { date: d( 2, 10, 15), description: "KNPC fuel cards",                 reference: "KNPC-2401", amount: -1420.75,  type: "debit",    categorization: _cat("RULE",    "Fuel & Vehicle",      "CRULE-001") },
+    { date: d( 2, 16,  0), description: "Talabat payout",                  reference: "TLB-88492", amount:  2940.0,   type: "credit",   categorization: _cat("RULE",    "Sales Revenue",       "CRULE-004") },
+    { date: d( 1,  9,  0), description: "Office rent — Sharq",             reference: "RENT-EXT",  amount:  -280.0,   type: "debit",    categorization: _cat("RULE",    "Office Rent",         "CRULE-003") },
+    { date: d( 1, 12, 30), description: "PIFSS contribution",              reference: "PIFSS-MAR", amount: -4862.5,   type: "debit",    categorization: _cat("PATTERN", "PIFSS Contributions") },
+    { date: d( 1, 15, 45), description: "Alghanim Industries — payment",   reference: "ALG-9941",  amount: 12450.0,   type: "credit",   categorization: _cat("PATTERN", "Sales Revenue") },
+    { date: d( 0,  9, 45), description: "Al Shaya Trading",                reference: "ALS-1011",  amount:  8740.0,   type: "credit",   categorization: _cat("RULE",    "Sales Revenue",       "CRULE-005") },
+    { date: d( 0, 11,  5), description: "KNPC fuel cards",                 reference: "KNPC-2498", amount: -1820.5,   type: "debit",    categorization: _cat("RULE",    "Fuel & Vehicle",      "CRULE-001") },
+    { date: d( 0, 14, 14), description: "Talabat payout",                  reference: "TLB-88521", amount:  3800.0,   type: "credit",   categorization: _cat("RULE",    "Sales Revenue",       "CRULE-004") },
+  ];
+})();
+
+const _acc2Tx = (() => {
+  const now = new Date();
+  const d = (n, h = 10) => { const x = new Date(now); x.setDate(x.getDate() - n); x.setHours(h, 0, 0, 0); return x.toISOString(); };
+  return [
+    { date: d(13), description: "Opening adjustment",      reference: "ADJ-RSV", amount: 0,       type: "credit",   categorization: _cat("MANUAL", "Opening Balance") },
+    { date: d(11), description: "Interest credit — March", reference: "INT-MAR", amount:  85.25,  type: "credit",   categorization: _cat("RULE",   "Interest Income") },
+    { date: d(10), description: "Interest credit — March", reference: "INT-MAR2",amount:  40.0,   type: "credit",   categorization: _cat("RULE",   "Interest Income") },
+    { date: d( 9), description: "Reserve top-up transfer", reference: "TRF-901", amount: 10000.0, type: "transfer", categorization: _cat("MANUAL", "Transfer"), counterparty: "KIB Operating" },
+    { date: d( 8), description: "Reserve top-up transfer", reference: "TRF-902", amount:  5000.0, type: "transfer", categorization: _cat("MANUAL", "Transfer"), counterparty: "KIB Operating" },
+    { date: d( 6), description: "Bank charges",            reference: "BCH-R1",  amount:   -3.0,  type: "debit",    categorization: _cat("MANUAL", "Bank Charges") },
+    { date: d( 5), description: "Interest credit",         reference: "INT-MAR3",amount:  25.0,   type: "credit",   categorization: _cat("RULE",   "Interest Income") },
+    { date: d( 4), description: "Reserve top-up transfer", reference: "TRF-903", amount:  8000.0, type: "transfer", categorization: _cat("MANUAL", "Transfer"), counterparty: "KIB Operating" },
+    { date: d( 3), description: "Bank charges",            reference: "BCH-R2",  amount:   -3.0,  type: "debit",    categorization: _cat("MANUAL", "Bank Charges") },
+    { date: d( 2), description: "Interest credit",         reference: "INT-MAR4",amount:  18.5,   type: "credit",   categorization: _cat("RULE",   "Interest Income") },
+    { date: d( 1), description: "Reserve top-up transfer", reference: "TRF-904", amount:  4000.0, type: "transfer", categorization: _cat("MANUAL", "Transfer"), counterparty: "KIB Operating" },
+    { date: d( 0), description: "Interest credit",         reference: "INT-MAR5",amount:  12.5,   type: "credit",   categorization: _cat("RULE",   "Interest Income") },
+  ];
+})();
+
+const _acc3Tx = (() => {
+  const now = new Date();
+  const d = (n, h = 12) => { const x = new Date(now); x.setDate(x.getDate() - n); x.setHours(h, 0, 0, 0); return x.toISOString(); };
+  const rows = [];
+  rows.push({ date: d(13, 9), description: "Opening adjustment", reference: "ADJ-NBK", amount: 0, type: "credit", categorization: _cat("MANUAL", "Opening Balance") });
+  for (let i = 12; i >= 0; i--) {
+    rows.push({ date: d(i, 15),  description: "POS settlement — batch", reference: `POS-${3000 + i}`, amount: 1420.0 + i * 35,  type: "credit", categorization: _cat("RULE", "Sales Revenue", "CRULE-004") });
+    rows.push({ date: d(i, 16),  description: "Acquirer fees",           reference: `ACQ-${3000 + i}`, amount: -(85 + i * 3),   type: "debit",  categorization: _cat("RULE", "Bank Charges") });
+  }
+  return rows;
+})();
+
+const _acc4Tx = (() => {
+  const now = new Date();
+  const d = (n) => { const x = new Date(now); x.setDate(x.getDate() - n); x.setHours(10, 0, 0, 0); return x.toISOString(); };
+  return [
+    { date: d(13), description: "Opening adjustment",          reference: "ADJ-USD", amount: 0,        type: "credit",   categorization: _cat("MANUAL", "Opening Balance") },
+    { date: d(11), description: "Wire in — international client",reference: "WIRE-441", amount: 3500.0, type: "credit",  categorization: _cat("PATTERN","Service Revenue") },
+    { date: d( 9), description: "Vendor wire — software license",reference: "WIRE-442", amount: -1200.0,type: "debit",   categorization: _cat("MANUAL", "Professional Fees") },
+    { date: d( 7), description: "Wire in — international client",reference: "WIRE-443", amount: 1500.0, type: "credit",  categorization: _cat("PATTERN","Service Revenue") },
+    { date: d( 5), description: "Vendor wire — AWS hosting",     reference: "WIRE-444", amount:  -800.0,type: "debit",   categorization: _cat("RULE",   "Internet & Phone") },
+    { date: d( 3), description: "Bank charges — wire fee",       reference: "BCH-USD",  amount:   -25.0,type: "debit",   categorization: _cat("MANUAL", "Bank Charges") },
+    { date: d( 1), description: "Vendor wire — contractor",      reference: "WIRE-445", amount:  -775.0,type: "debit",   categorization: _cat("MANUAL", "Professional Fees") },
+    { date: d( 0), description: "Wire in — international client",reference: "WIRE-446", amount:    0.0, type: "credit",  categorization: _cat("PATTERN","Service Revenue") },
+  ];
+})();
+
+// Compute opening balances so the final running balance matches currentBalance
+function _computeOpening(txs, targetEnding) {
+  const net = txs.reduce((s, t) => s + t.amount, 0);
+  return Number((targetEnding - net).toFixed(3));
+}
+
+const _openingBalances = {
+  "ACC-1": _computeOpening(_acc1Tx, 142100.25),
+  "ACC-2": _computeOpening(_acc2Tx, 42135.25),
+  "ACC-3": _computeOpening(_acc3Tx, 18420.75),
+  "ACC-4": _computeOpening(_acc4Tx, 8240.5),
+};
+
+const _statements = {
+  "ACC-1": _mkStmt("ACC-1", _acc1Tx, _openingBalances["ACC-1"]),
+  "ACC-2": _mkStmt("ACC-2", _acc2Tx, _openingBalances["ACC-2"]),
+  "ACC-3": _mkStmt("ACC-3", _acc3Tx, _openingBalances["ACC-3"]),
+  "ACC-4": _mkStmt("ACC-4", _acc4Tx, _openingBalances["ACC-4"]),
+};
+
+export async function getBankAccounts() {
+  await delay();
+  return BANK_ACCOUNTS_DB.slice();
+}
+
+export async function getBankAccountById(id) {
+  await delay();
+  return BANK_ACCOUNTS_DB.find((a) => a.id === id) || null;
+}
+
+export async function getBankStatement(accountId, range = "month") {
+  await delay();
+  const all = (_statements[accountId] || []).slice();
+  const now = new Date();
+  let since = null;
+  if (range === "today") {
+    since = new Date(now); since.setHours(0, 0, 0, 0);
+  } else if (range === "week") {
+    since = new Date(now); since.setDate(since.getDate() - 7);
+  } else if (range === "month") {
+    since = new Date(now); since.setDate(since.getDate() - 30);
+  } else if (range && range.from) {
+    since = new Date(range.from);
+  }
+  if (since) {
+    return all.filter((t) => new Date(t.date) >= since);
+  }
+  return all;
+}
+
+export async function getBankAccountSummary(accountId, period = "month") {
+  await delay();
+  const txs = (_statements[accountId] || []).slice();
+  const opening = _openingBalances[accountId] || 0;
+  const acct = BANK_ACCOUNTS_DB.find((a) => a.id === accountId);
+  let totalInflow = 0;
+  let totalOutflow = 0;
+  const breakdown = { RULE: 0, PATTERN: 0, AI: 0, MANUAL: 0, PENDING: 0 };
+  for (const t of txs) {
+    if (t.amount > 0) totalInflow += t.amount;
+    else totalOutflow += -t.amount;
+    const m = t.categorization?.method || "MANUAL";
+    breakdown[m] = (breakdown[m] || 0) + 1;
+  }
+  return {
+    openingBalance: opening,
+    closingBalance: acct ? acct.currentBalance : 0,
+    totalInflow: Number(totalInflow.toFixed(3)),
+    totalOutflow: Number(totalOutflow.toFixed(3)),
+    transactionCount: txs.length,
+    categorizationBreakdown: breakdown,
+  };
+}
+
+export async function getTransactionJournalEntry(transactionId) {
+  await delay();
+  // Find the statement row across all statements
+  let tx = null;
+  for (const k of Object.keys(_statements)) {
+    const found = _statements[k].find((t) => t.id === transactionId);
+    if (found) { tx = found; break; }
+  }
+  if (!tx) return null;
+  const cat = tx.categorization || {};
+  const abs = Math.abs(tx.amount);
+  const isOutflow = tx.amount < 0;
+  const acct = BANK_ACCOUNTS_DB.find((a) => a.id === tx.accountId);
+  const bankLine = { account: acct?.accountName || "Bank Account", code: acct?.id === "ACC-1" ? "1120" : acct?.id === "ACC-2" ? "1130" : acct?.id === "ACC-3" ? "1140" : "1120" };
+  const otherLine = { account: cat.category || "Suspense", code: cat.ruleId ? "AUTO" : "—" };
+  const lines = isOutflow
+    ? [
+        { account: otherLine.account, code: otherLine.code, debit: abs, credit: null },
+        { account: bankLine.account, code: bankLine.code, debit: null, credit: abs },
+      ]
+    : [
+        { account: bankLine.account, code: bankLine.code, debit: abs, credit: null },
+        { account: otherLine.account, code: otherLine.code, debit: null, credit: abs },
+      ];
+  return {
+    id: cat.journalEntryId || `JE-POST-${transactionId.slice(-3)}`,
+    description: tx.description,
+    status: "Posted",
+    lines,
+    totalDebit: abs,
+    totalCredit: abs,
+    balanced: true,
+    mappingVersion: "v1.0",
+    createdAt: tx.date,
+    hashChainStatus: "extended",
+  };
+}

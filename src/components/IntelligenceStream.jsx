@@ -8,6 +8,7 @@ import BudgetPerformance from "./sections/BudgetPerformance";
 import AuditReadiness from "./sections/AuditReadiness";
 import CloseStatus from "./sections/CloseStatus";
 import TaskboxSummaryCard from "./taskbox/TaskboxSummaryCard";
+import BankAccountsCompact from "./sections/BankAccountsCompact";
 
 export default function IntelligenceStream() {
   const [wide, setWide] = useState(
@@ -36,6 +37,7 @@ export default function IntelligenceStream() {
           gap: 16,
         }}
       >
+        <BankAccountsCompact />
         <MonthlyInsights />
         <FinancialHealthSection />
         <PendingApprovals />

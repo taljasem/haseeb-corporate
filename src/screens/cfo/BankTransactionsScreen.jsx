@@ -7,7 +7,7 @@ import { getBankTransactionsPending, getSuggestedCategorizationRules } from "../
 
 const FILTERS = ["All", "Today", "This week", "Suggestions", "Needs review"];
 
-export default function BankTransactionsScreen({ onOpenAminah }) {
+export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccounts }) {
   const [txs, setTxs] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [filter, setFilter] = useState("All");
@@ -81,14 +81,35 @@ export default function BankTransactionsScreen({ onOpenAminah }) {
         >
           <div
             style={{
-              fontSize: 10,
-              fontWeight: 600,
-              letterSpacing: "0.15em",
-              color: "#5B6570",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
               marginBottom: 12,
+              gap: 12,
             }}
           >
-            BANK TRANSACTIONS PENDING REVIEW · {txs ? txs.length : "—"}
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: "0.15em",
+                color: "#5B6570",
+              }}
+            >
+              BANK TRANSACTIONS PENDING REVIEW · {txs ? txs.length : "—"}
+            </div>
+            <a
+              onClick={onOpenBankAccounts}
+              style={{
+                fontSize: 12,
+                color: "#00C48C",
+                cursor: "pointer",
+                fontWeight: 500,
+                letterSpacing: "0.02em",
+              }}
+            >
+              View full bank accounts →
+            </a>
           </div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {FILTERS.map((f) => {

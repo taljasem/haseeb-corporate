@@ -8,6 +8,7 @@ import ConversationalJEScreen from "./ConversationalJEScreen";
 import PlaceholderScreen from "./PlaceholderScreen";
 import TaskboxScreen from "../../components/taskbox/TaskboxScreen";
 import RulesScreen from "./RulesScreen";
+import BankAccountsScreen from "../shared/BankAccountsScreen";
 import { getCFOTodayQueue, getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 
 const SCREEN_TITLES = {
@@ -67,11 +68,18 @@ export default function CFOView() {
           />
         );
       case "bank-transactions":
-        return <BankTransactionsScreen onOpenAminah={openAminah} />;
+        return (
+          <BankTransactionsScreen
+            onOpenAminah={openAminah}
+            onOpenBankAccounts={() => setActive("bank-accounts")}
+          />
+        );
       case "conversational-je":
         return <ConversationalJEScreen />;
       case "rules":
         return <RulesScreen />;
+      case "bank-accounts":
+        return <BankAccountsScreen role="CFO" />;
       case "taskbox":
         return (
           <TaskboxScreen

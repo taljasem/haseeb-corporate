@@ -56,16 +56,17 @@ function NavItem({ icon: Icon, label, active, onClick, badge }) {
       {badge && (
         <span
           style={{
-            background: "#FF5A5F",
-            color: "#fff",
+            background: badge.bg || "#FF5A5F",
+            color: badge.fg || "#fff",
             fontSize: 9,
             fontWeight: 700,
             fontFamily: "'DM Mono', monospace",
             padding: "2px 6px",
             borderRadius: 8,
+            border: badge.border || "none",
           }}
         >
-          {badge}
+          {badge.label != null ? badge.label : badge}
         </span>
       )}
     </button>
@@ -90,6 +91,13 @@ function GroupLabel({ children }) {
 
 export default function CFOSidebar({ active, setActive, pendingApprovals = 0, taskboxOpen = 0 }) {
   const isActive = (k) => active === k;
+  // Taskbox badge color: red if approvals pending, tertiary if only non-approval tasks, none if empty
+  const taskboxBadge =
+    pendingApprovals > 0
+      ? { label: taskboxOpen, bg: "#FF5A5F", fg: "#fff" }
+      : taskboxOpen > 0
+        ? { label: taskboxOpen, bg: "rgba(255,255,255,0.08)", fg: "#8B98A5", border: "1px solid rgba(255,255,255,0.12)" }
+        : null;
   return (
     <aside
       style={{
@@ -103,12 +111,12 @@ export default function CFOSidebar({ active, setActive, pendingApprovals = 0, ta
         zIndex: 1,
       }}
     >
-      <NavItem icon={HomeIcon}  label="Today"     active={isActive("today")}     onClick={() => setActive("today")} />
-      <NavItem icon={CheckIcon} label="Approvals" active={isActive("approvals")} onClick={() => setActive("approvals")} badge={pendingApprovals > 0 ? pendingApprovals : null} />
-      <NavItem icon={InboxIcon} label="Taskbox"   active={isActive("taskbox")}   onClick={() => setActive("taskbox")}   badge={taskboxOpen > 0 ? taskboxOpen : null} />
+      <NavItem icon={HomeIcon}  label="Today"   active={isActive("today")}   onClick={() => setActive("today")} />
+      <NavItem icon={InboxIcon} label="Taskbox" active={isActive("taskbox")} onClick={() => setActive("taskbox")} badge={taskboxBadge} />
 
       <GroupLabel>BOOKKEEPING</GroupLabel>
       <NavItem icon={BankIcon}    label="Bank Transactions"   active={isActive("bank-transactions")}   onClick={() => setActive("bank-transactions")} />
+      <NavItem icon={BankIcon}    label="Bank Accounts"       active={isActive("bank-accounts")}       onClick={() => setActive("bank-accounts")} />
       <NavItem icon={ChatIcon}    label="Conversational JE"   active={isActive("conversational-je")}   onClick={() => setActive("conversational-je")} />
       <NavItem icon={PencilIcon}  label="Manual JE"           active={isActive("manual-je")}           onClick={() => setActive("manual-je")} />
       <NavItem icon={FileText}    label="Rules"               active={isActive("rules")}               onClick={() => setActive("rules")} />

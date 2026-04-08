@@ -35,6 +35,16 @@ const ROLE_COLOR = {
   Junior: "var(--semantic-info)", // Sara blue
 };
 
+function HamburgerIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <line x1="3" y1="18" x2="21" y2="18" />
+    </svg>
+  );
+}
+
 function BellIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -90,7 +100,7 @@ function Tooltip({ title, sub }) {
   );
 }
 
-export default function Header({ role, setRole }) {
+export default function Header({ role, setRole, onOpenDrawer }) {
   const { t } = useTranslation("header");
   const { language, toggleLanguage } = useLanguage();
   const { toggleTheme, isLight } = useTheme();
@@ -145,6 +155,25 @@ export default function Header({ role, setRole }) {
         WebkitBackdropFilter: "blur(12px)",
       }}
     >
+      {/* Hamburger — mobile only */}
+      <button
+        className="hamburger-btn"
+        onClick={() => onOpenDrawer && onOpenDrawer()}
+        aria-label="Menu"
+        style={{
+          background: "transparent",
+          border: "none",
+          color: "var(--text-secondary)",
+          cursor: "pointer",
+          padding: 6,
+          marginInlineEnd: 8,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <HamburgerIcon />
+      </button>
+
       {/* Logo block */}
       <div
         style={{

@@ -1,6 +1,7 @@
 @import "./styles/tokens.css";
 @import "./styles/themes.css";
 @import "./styles/rtl.css";
+@import "./styles/responsive.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

@@ -1,4 +1,7 @@
+import { useTranslation } from "react-i18next";
+
 export default function PlaceholderScreen({ title }) {
+  const { t } = useTranslation("common");
   return (
     <div
       style={{
@@ -32,7 +35,7 @@ export default function PlaceholderScreen({ title }) {
           {title}
         </div>
         <div style={{ fontSize: 14, color: "#8B98A5", marginBottom: 10 }}>
-          Coming next.
+          {t("placeholder.coming_next")}
         </div>
         <div
           style={{
@@ -42,7 +45,7 @@ export default function PlaceholderScreen({ title }) {
             lineHeight: 1.55,
           }}
         >
-          The CFO view is built in screens. This one is queued.
+          {t("placeholder.queued_desc")}
         </div>
       </div>
     </div>

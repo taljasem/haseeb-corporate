@@ -8,22 +8,22 @@ import LtrText from "./shared/LtrText";
 // DEMO ONLY — production roles come from auth
 const ROLES = ["Owner", "CFO", "Junior"];
 
-const NOTIFICATIONS_BY_ROLE = {
+const NOTIFICATION_IDS = {
   Owner: [
-    { id: "n1", title: "Q1 P&L draft ready for review",        body: "From CFO · TSK-120",          time: "18h ago", destination: { screen: "taskbox", taskId: "TSK-120" } },
-    { id: "n2", title: "March close 60% complete",             body: "9 of 15 tasks done",          time: "45m ago", destination: { screen: "month-end-close" } },
-    { id: "n3", title: "Marketing budget +23% over target",    body: "Third consecutive month",     time: "3h ago",  destination: { screen: "financial-statements" } },
+    { id: "owner_1", destination: { screen: "taskbox", taskId: "TSK-120" } },
+    { id: "owner_2", destination: { screen: "month-end-close" } },
+    { id: "owner_3", destination: { screen: "financial-statements" } },
   ],
   CFO: [
-    { id: "n1", title: "Sara submitted PIFSS approval request", body: "TSK-113 · 9,500.000 KWD",   time: "2h ago", destination: { screen: "taskbox", taskId: "TSK-113" } },
-    { id: "n2", title: "1 audit check failing",                 body: "JE-0413 missing reference", time: "2h ago", destination: { screen: "audit-bridge" } },
-    { id: "n3", title: "Bank feed updated",                     body: "All KIB accounts current",  time: "5m ago", destination: { screen: "bank-accounts" } },
-    { id: "n4", title: "March close 60% complete",              body: "9 of 15 tasks done",        time: "45m ago",destination: { screen: "month-end-close" } },
+    { id: "cfo_1", destination: { screen: "taskbox", taskId: "TSK-113" } },
+    { id: "cfo_2", destination: { screen: "audit-bridge" } },
+    { id: "cfo_3", destination: { screen: "bank-accounts" } },
+    { id: "cfo_4", destination: { screen: "month-end-close" } },
   ],
   Junior: [
-    { id: "n1", title: "8 new transactions to categorize",     body: "Engine queued for your review", time: "12m ago", destination: { screen: "bank-transactions" } },
-    { id: "n2", title: "CFO approved your PIFSS accrual",      body: "TSK-113 · JE-0415 posted",      time: "1h ago",  destination: { screen: "taskbox", taskId: "TSK-113" } },
-    { id: "n3", title: "Boubyan reconciliation overdue",       body: "TSK-102",                       time: "9h ago",  destination: { screen: "taskbox", taskId: "TSK-102" } },
+    { id: "junior_1", destination: { screen: "bank-transactions" } },
+    { id: "junior_2", destination: { screen: "taskbox", taskId: "TSK-113" } },
+    { id: "junior_3", destination: { screen: "taskbox", taskId: "TSK-102" } },
   ],
 };
 // Canonical role accent colors (match team member avatar colors)
@@ -101,7 +101,15 @@ export default function Header({ role, setRole }) {
     return () => window.removeEventListener("mousedown", onClick);
   }, [bellOpen]);
 
-  const notifications = NOTIFICATIONS_BY_ROLE[role] || NOTIFICATIONS_BY_ROLE.CFO;
+  const notificationIds = NOTIFICATION_IDS[role] || NOTIFICATION_IDS.CFO;
+  const bankAbbr = tenant?.banks?.[0]?.abbreviation || "KIB";
+  const notifications = notificationIds.map((n) => ({
+    id: n.id,
+    title: t(`notifications.items.${n.id}_title`),
+    body: t(`notifications.items.${n.id}_body`, { bank: bankAbbr }),
+    time: t(`notifications.items.${n.id}_time`),
+    destination: n.destination,
+  }));
 
   return (
     <header
@@ -180,7 +188,7 @@ export default function Header({ role, setRole }) {
             cursor: "pointer",
             fontFamily: "inherit",
           }}
-          title="Demo tenant switcher (dev only)"
+          title={t("tenant_dev_only")}
         >
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
@@ -309,7 +317,7 @@ export default function Header({ role, setRole }) {
         {/* Bell with red dot + dropdown */}
         <div ref={bellRef} style={{ position: "relative" }}>
           <button
-            aria-label="Notifications"
+            aria-label={t("notifications.aria_bell")}
             onClick={() => setBellOpen((o) => !o)}
             style={{
               position: "relative",
@@ -441,7 +449,7 @@ export default function Header({ role, setRole }) {
         {/* Theme toggle */}
         <div style={{ position: "relative" }}>
           <button
-            aria-label="Theme"
+            aria-label={t("notifications.aria_theme")}
             onClick={() => {
               setThemeTip(true);
               setTimeout(() => setThemeTip(false), 3000);
@@ -466,7 +474,7 @@ export default function Header({ role, setRole }) {
         <div style={{ position: "relative" }}>
           <button
             onClick={toggleLanguage}
-            aria-label="Toggle language"
+            aria-label={t("notifications.aria_language")}
             style={{
               fontFamily: "'Noto Sans Arabic', sans-serif",
               fontSize: 12,

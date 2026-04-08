@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import CFOSidebar from "../../components/cfo/CFOSidebar";
 import CFOHeroBand from "../../components/cfo/CFOHeroBand";
 import AminahSlideOver from "../../components/cfo/AminahSlideOver";
@@ -15,19 +16,8 @@ import ManualJEScreen from "./ManualJEScreen";
 import NewTaskModal from "../../components/taskbox/NewTaskModal";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 
-const SCREEN_TITLES = {
-  approvals:             "APPROVALS",
-  "manual-je":           "MANUAL JOURNAL ENTRY",
-  reconciliation:        "RECONCILIATION",
-  "financial-statements": "FINANCIAL STATEMENTS",
-  "aging-reports":       "AGING REPORTS",
-  "variance-analysis":   "VARIANCE ANALYSIS",
-  "month-end-close":     "MONTH-END CLOSE",
-  "audit-bridge":        "AUDIT BRIDGE",
-  setup:                 "SETUP",
-};
-
 export default function CFOView({ registerNav }) {
+  const { t } = useTranslation("common");
   const [activeScreen, setActiveScreen] = useState("today");
   const [aminahOpen, setAminahOpen] = useState(false);
   const [aminahContext, setAminahContext] = useState(null);
@@ -107,7 +97,7 @@ export default function CFOView({ registerNav }) {
           />
         );
       default:
-        return <PlaceholderScreen title={SCREEN_TITLES[activeScreen] || activeScreen.toUpperCase()} />;
+        return <PlaceholderScreen title={t(`placeholder.screens.${activeScreen}`, { defaultValue: activeScreen.toUpperCase() })} />;
     }
   };
 

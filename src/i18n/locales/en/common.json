@@ -149,6 +149,34 @@
     "usd": "USD",
     "eur": "EUR"
   },
+  "placeholder": {
+    "coming_next": "Coming next.",
+    "queued_desc": "The CFO view is built in screens. This one is queued.",
+    "profile_label": "PROFILE",
+    "profile_sub": "Your profile, notification preferences, and settings will appear here.",
+    "screens": {
+      "approvals": "APPROVALS",
+      "manual-je": "MANUAL JOURNAL ENTRY",
+      "reconciliation": "RECONCILIATION",
+      "financial-statements": "FINANCIAL STATEMENTS",
+      "aging-reports": "AGING REPORTS",
+      "variance-analysis": "VARIANCE ANALYSIS",
+      "month-end-close": "MONTH-END CLOSE",
+      "audit-bridge": "AUDIT BRIDGE",
+      "setup": "SETUP",
+      "settings": "SETTINGS"
+    }
+  },
+  "assign": {
+    "assign_to": "ASSIGN TO",
+    "search_placeholder": "Search team members...",
+    "note_placeholder": "Add a note (optional)",
+    "button_assign": "Assign",
+    "button_cancel": "Cancel",
+    "assigned_to": "Assigned to {{name}}",
+    "reassign": "Reassign · {{initials}}",
+    "assign_to_myself": "Assign to myself"
+  },
   "je_card": {
     "state_suggested_pill": "ENGINE SUGGESTION · PENDING CONFIRMATION",
     "state_draft_pill": "DRAFT · VALIDATED",

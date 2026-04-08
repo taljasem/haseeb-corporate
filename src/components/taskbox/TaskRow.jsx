@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Paperclip, Link2 } from "lucide-react";
 import Avatar from "./Avatar";
+import LtrText from "../shared/LtrText";
 import TaskTypePill from "./TaskTypePill";
 import { formatRelativeTime } from "../../utils/relativeTime";
 
@@ -106,7 +107,7 @@ export default function TaskRow({ task, onClick, compact = false }) {
               }}
             >
               <Link2 size={9} strokeWidth={2.4} />
-              {task.linkedItem.id}
+              <LtrText>{task.linkedItem.id}</LtrText>
             </span>
           )}
         </div>

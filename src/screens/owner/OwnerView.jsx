@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import OwnerSidebar from "../../components/owner/OwnerSidebar";
 import OwnerHeroBand from "../../components/owner/OwnerHeroBand";
 import AminahSlideOver from "../../components/cfo/AminahSlideOver";
@@ -14,6 +15,7 @@ import TaskboxScreen from "../../components/taskbox/TaskboxScreen";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 
 function Placeholder({ label }) {
+  const { t } = useTranslation("common");
   return (
     <div
       style={{
@@ -45,13 +47,14 @@ function Placeholder({ label }) {
         >
           {label}
         </div>
-        <div style={{ fontSize: 13, color: "#8B98A5" }}>Coming next.</div>
+        <div style={{ fontSize: 13, color: "#8B98A5" }}>{t("placeholder.coming_next")}</div>
       </div>
     </div>
   );
 }
 
 export default function OwnerView({ registerNav }) {
+  const { t: tc } = useTranslation("common");
   const [activeScreen, setActiveScreen] = useState("today");
   const [aminahOpen, setAminahOpen] = useState(false);
   const [aminahContext, setAminahContext] = useState(null);
@@ -139,7 +142,7 @@ export default function OwnerView({ registerNav }) {
       case "budget":
         return <BudgetScreen role="Owner" onOpenAminah={openAminah} />;
       case "settings":
-        return <Placeholder label="SETTINGS" />;
+        return <Placeholder label={tc("placeholder.screens.settings")} />;
       default:
         return <Placeholder label={activeScreen.toUpperCase()} />;
     }

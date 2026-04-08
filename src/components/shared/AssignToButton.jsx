@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getTeamMembers } from "../../engine/mockEngine";
 
 function PersonPlusIcon() {
@@ -49,6 +50,7 @@ export default function AssignToButton({
   variant = "default", // "default" | "ghost"
   onClickOverride = null, // when set, click bypasses the popover and fires this callback
 }) {
+  const { t } = useTranslation("common");
   const [open, setOpen] = useState(false);
   const [members, setMembers] = useState(null);
   const [query, setQuery] = useState("");
@@ -95,10 +97,10 @@ export default function AssignToButton({
   };
 
   const buttonLabel = currentMember
-    ? `Reassign · ${currentMember.initials}`
+    ? t("assign.reassign", { initials: currentMember.initials })
     : confirmation
-      ? `Assigned to ${confirmation.name.split(" ")[0]}`
-      : "Assign";
+      ? t("assign.assigned_to", { name: confirmation.name.split(" ")[0] })
+      : t("assign.button_assign");
 
   const isGhost = variant === "ghost";
 
@@ -174,12 +176,12 @@ export default function AssignToButton({
               marginBottom: 10,
             }}
           >
-            ASSIGN TO
+            {t("assign.assign_to")}
           </div>
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search team members..."
+            placeholder={t("assign.search_placeholder")}
             style={{
               width: "100%",
               background: "rgba(255,255,255,0.04)",
@@ -231,7 +233,7 @@ export default function AssignToButton({
                   <Avatar member={m} size={26} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 12, color: "#E6EDF3" }}>
-                      {m.id === "self" ? "Assign to myself" : m.name}
+                      {m.id === "self" ? t("assign.assign_to_myself") : m.name}
                     </div>
                     <div style={{ fontSize: 10, color: "#5B6570", marginTop: 1 }}>
                       {m.role}
@@ -244,7 +246,7 @@ export default function AssignToButton({
           <input
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Add a note (optional)"
+            placeholder={t("assign.note_placeholder")}
             style={{
               width: "100%",
               background: "rgba(255,255,255,0.04)",
@@ -275,7 +277,7 @@ export default function AssignToButton({
                 fontFamily: "inherit",
               }}
             >
-              Assign
+              {t("assign.button_assign")}
             </button>
             <button
               onClick={() => {
@@ -294,7 +296,7 @@ export default function AssignToButton({
                 fontFamily: "inherit",
               }}
             >
-              Cancel
+              {t("assign.button_cancel")}
             </button>
           </div>
         </div>

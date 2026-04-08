@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getChartOfAccounts } from "../../engine/mockEngine";
+import LtrText from "../shared/LtrText";
 
 const CATEGORIES = [
   { id: "Operating Expenses", key: "cat_operating_expenses" },
@@ -48,7 +49,7 @@ function AccountRow({ account, onPick, active = false }) {
           minWidth: 44,
         }}
       >
-        {account.code}
+        <LtrText>{account.code}</LtrText>
       </span>
       <span style={{ flex: 1, fontSize: 13, color: "#E6EDF3" }}>{account.name}</span>
       <span
@@ -134,7 +135,7 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "#5B6570" }}>
-            {selected.code}
+            <LtrText>{selected.code}</LtrText>
           </span>
           <span style={{ flex: 1, fontSize: 14, color: "#E6EDF3", fontWeight: 500 }}>
             {selected.name}

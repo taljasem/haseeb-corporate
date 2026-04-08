@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import LtrText from "../shared/LtrText";
 import EngineConfidencePill from "../cfo/EngineConfidencePill";
 import JournalEntryCard from "../cfo/JournalEntryCard";
 import { getTransactionJournalEntry } from "../../engine/mockEngine";
@@ -102,8 +103,7 @@ export default function BankStatementRow({ tx, expanded, onToggle, currency = "K
               marginTop: 2,
             }}
           >
-            {tx.reference}
-            {tx.counterparty ? ` · ${tx.counterparty}` : ""}
+            <LtrText>{tx.reference}{tx.counterparty ? ` · ${tx.counterparty}` : ""}</LtrText>
           </div>
         </div>
         <div>

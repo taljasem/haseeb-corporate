@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatKWD } from "../../utils/format";
+import LtrText from "../shared/LtrText";
 import AccountPicker from "./AccountPicker";
 import AssignToButton from "../shared/AssignToButton";
 
@@ -163,7 +164,7 @@ export default function JournalEntryCard({
               marginTop: 2,
             }}
           >
-            {live.id}
+            <LtrText>{live.id}</LtrText>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
@@ -256,7 +257,7 @@ export default function JournalEntryCard({
                           marginTop: 2,
                         }}
                       >
-                        ({line.code})
+                        <LtrText>({line.code})</LtrText>
                       </div>
                     </>
                   )}

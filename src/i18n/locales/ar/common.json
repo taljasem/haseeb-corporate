@@ -149,6 +149,34 @@
     "usd": "دولار",
     "eur": "يورو"
   },
+  "placeholder": {
+    "coming_next": "قريباً.",
+    "queued_desc": "عرض المدير المالي مبني على شاشات. هذه الشاشة في قائمة الانتظار.",
+    "profile_label": "الملف الشخصي",
+    "profile_sub": "ملفك الشخصي وتفضيلات الإشعارات والإعدادات ستظهر هنا.",
+    "screens": {
+      "approvals": "الاعتمادات",
+      "manual-je": "قيد محاسبي يدوي",
+      "reconciliation": "التسويات البنكية",
+      "financial-statements": "القوائم المالية",
+      "aging-reports": "تقارير الأعمار",
+      "variance-analysis": "تحليل الانحرافات",
+      "month-end-close": "إقفال نهاية الشهر",
+      "audit-bridge": "جسر التدقيق",
+      "setup": "الإعداد",
+      "settings": "الإعدادات"
+    }
+  },
+  "assign": {
+    "assign_to": "إسناد إلى",
+    "search_placeholder": "بحث في أعضاء الفريق...",
+    "note_placeholder": "أضف ملاحظة (اختياري)",
+    "button_assign": "إسناد",
+    "button_cancel": "إلغاء",
+    "assigned_to": "مُسند إلى {{name}}",
+    "reassign": "إعادة إسناد · {{initials}}",
+    "assign_to_myself": "إسناد إليّ"
+  },
   "je_card": {
     "state_suggested_pill": "اقتراح المحرك · بانتظار التأكيد",
     "state_draft_pill": "مسودة · موثقة",

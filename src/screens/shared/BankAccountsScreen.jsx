@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
+import LtrText from "../../components/shared/LtrText";
 import {
   getBankAccounts,
   getBankStatement,
@@ -169,7 +170,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
                     marginTop: 4,
                   }}
                 >
-                  {selected.accountNumberMasked}
+                  <LtrText>{selected.accountNumberMasked}</LtrText>
                 </div>
               </div>
               <div

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Trash2, Search, Lock, X, FileText, Clock, CheckCircle2, AlertCircle, RotateCcw, Save, Calendar, Sparkles } from "lucide-react";
+import LtrText from "../../components/shared/LtrText";
 import {
   getManualJEs,
   getManualJEById,
@@ -441,7 +442,7 @@ function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedul
           <div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: COLORS.text, letterSpacing: "-0.3px", lineHeight: 1 }}>
-                {readOnly ? je.id : isDraft ? t("composer.edit_draft") : t("composer.manual_je")}
+                {readOnly ? <LtrText>{je.id}</LtrText> : isDraft ? t("composer.edit_draft") : t("composer.manual_je")}
               </div>
               <span style={{
                 fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: statusColor,
@@ -470,7 +471,7 @@ function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedul
               )}
             </div>
             <div style={{ fontSize: 11, color: COLORS.textFaint, marginTop: 6, fontFamily: "'DM Mono', monospace" }}>
-              {je.id} · {je.source.toUpperCase()}
+              <LtrText>{je.id}</LtrText> · {je.source.toUpperCase()}
               {je.templateId && <> · {t("composer.from_template", { id: je.templateId })}</>}
             </div>
           </div>

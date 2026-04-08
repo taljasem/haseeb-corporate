@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import JuniorSidebar from "../../components/junior/JuniorSidebar";
 import JuniorHeroBand from "../../components/junior/JuniorHeroBand";
 import AminahSlideOver from "../../components/cfo/AminahSlideOver";
@@ -14,6 +15,7 @@ import NewTaskModal from "../../components/taskbox/NewTaskModal";
 import { getSaraTaskStats } from "../../engine/mockEngine";
 
 function Placeholder({ label, sub }) {
+  const { t } = useTranslation("common");
   return (
     <div
       style={{
@@ -46,7 +48,7 @@ function Placeholder({ label, sub }) {
           {label}
         </div>
         <div style={{ fontSize: 13, color: "#8B98A5", marginBottom: 10 }}>
-          Coming next.
+          {t("placeholder.coming_next")}
         </div>
         {sub && (
           <div style={{ fontSize: 12, color: "#5B6570", fontStyle: "italic", lineHeight: 1.55 }}>
@@ -59,6 +61,7 @@ function Placeholder({ label, sub }) {
 }
 
 export default function JuniorView({ registerNav }) {
+  const { t } = useTranslation("common");
   const [activeScreen, setActiveScreen] = useState("today");
   const [aminahOpen, setAminahOpen] = useState(false);
   const [aminahContext, setAminahContext] = useState(null);
@@ -120,8 +123,8 @@ export default function JuniorView({ registerNav }) {
       case "profile":
         return (
           <Placeholder
-            label="PROFILE"
-            sub="Your profile, notification preferences, and settings will appear here."
+            label={t("placeholder.profile_label")}
+            sub={t("placeholder.profile_sub")}
           />
         );
       default:

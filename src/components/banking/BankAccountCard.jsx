@@ -3,6 +3,7 @@ import { formatMoney } from "../../utils/formatCurrency";
 import { formatRelativeTime } from "../../utils/relativeTime";
 import BankChip from "./BankChip";
 import { useTenant } from "../shared/TenantContext";
+import LtrText from "../shared/LtrText";
 
 export default function BankAccountCard({ account, selected = false, onSelect }) {
   const { t } = useTranslation("bank-accounts");
@@ -68,7 +69,7 @@ export default function BankAccountCard({ account, selected = false, onSelect })
               marginTop: 2,
             }}
           >
-            {account.accountNumberMasked}
+            <LtrText>{account.accountNumberMasked}</LtrText>
           </div>
         </div>
       </div>

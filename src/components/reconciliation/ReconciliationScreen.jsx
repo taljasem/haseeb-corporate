@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronLeft, CheckCircle2, AlertCircle, Circle, Lock, FileWarning, Plus, X } from "lucide-react";
+import LtrText from "../shared/LtrText";
 import {
   getReconciliationDashboard,
   getReconciliationById,
@@ -152,7 +153,7 @@ function ReconciliationAccountCard({ row, onOpen }) {
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 }}>
         <div>
           <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570" }}>
-            {row.bankName} · {row.accountNumberMasked}
+            <LtrText>{row.bankName} · {row.accountNumberMasked}</LtrText>
           </div>
           <div style={{ fontSize: 16, fontWeight: 600, color: "#E6EDF3", marginTop: 4 }}>
             {row.accountName}
@@ -280,7 +281,7 @@ function ReconciliationDetail({ rec, loading, role, onBack, onReload }) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: "#E6EDF3", letterSpacing: "-0.3px", lineHeight: 1 }}>
-              {rec.id} · {rec.period.label}
+              <LtrText>{rec.id}</LtrText> · {rec.period.label}
             </div>
             <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570", marginTop: 6 }}>
               {t("detail.sub", { accountId: rec.accountId, matched: rec.matchedCount, total: rec.totalBankItems })}
@@ -543,7 +544,7 @@ function StatementRow({ item, exception, isBank }) {
           <span>{fmtDate(item.date)}</span>
           <span>·</span>
           <span style={{ fontFamily: "'DM Mono', monospace" }}>
-            {isBank ? item.reference : item.journalEntryId}
+            <LtrText>{isBank ? item.reference : item.journalEntryId}</LtrText>
           </span>
         </div>
       </div>
@@ -589,7 +590,7 @@ function ExceptionRow({ exc, onResolve, onOpenJE }) {
           >
             {t(`exceptions.${EXC_TYPE_KEY[exc.type] || "type_unidentified"}`)}
           </span>
-          <span style={{ fontSize: 10, color: "#5B6570", fontFamily: "'DM Mono', monospace" }}>{exc.id}</span>
+          <span style={{ fontSize: 10, color: "#5B6570", fontFamily: "'DM Mono', monospace" }}><LtrText>{exc.id}</LtrText></span>
           {exc.resolved && (
             <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: "#00C48C" }}>
               {t("exceptions.resolved")}

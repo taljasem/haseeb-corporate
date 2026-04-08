@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import TodaySection from "../../components/cfo/TodaySection";
 import AssignToButton from "../../components/shared/AssignToButton";
 import TaskboxSummaryCard from "../../components/taskbox/TaskboxSummaryCard";
@@ -119,6 +120,7 @@ function Avatar({ initials }) {
 }
 
 export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask }) {
+  const { t } = useTranslation("cfo-today");
   const [suggestions, setSuggestions] = useState([]);
   const [queue, setQueue] = useState(null);
   const [notes, setNotes] = useState(null);
@@ -161,7 +163,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
 
         {/* 1. NEEDS YOUR REVIEW */}
         <TodaySection
-          label="NEEDS YOUR REVIEW"
+          label={t("sections.needs_review")}
           extra={totalQueue > 0 ? <span className="tension-dot tension-dot--warning">{totalQueue}</span> : null}
           aminah
         >
@@ -169,31 +171,31 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
             <div style={{ marginTop: 4 }}>
               <QueueRow
                 count={queue.pendingApprovals}
-                label="pending approvals"
+                label={t("queue.pending_approvals")}
                 onClick={() => setActiveScreen("approvals")}
                 itemId="approvals"
               />
               <QueueRow
                 count={queue.bankTransactionsToReview}
-                label="bank transactions awaiting review"
+                label={t("queue.bank_tx_review")}
                 onClick={() => setActiveScreen("bank-transactions")}
                 itemId="bank-tx"
               />
               <QueueRow
                 count={queue.reconciliationExceptions}
-                label="reconciliation exceptions"
+                label={t("queue.reconciliation_exceptions")}
                 onClick={() => setActiveScreen("reconciliation")}
                 itemId="recon"
               />
               <QueueRow
                 count={queue.auditFailures}
-                label="audit check failing"
+                label={t("queue.audit_failing")}
                 onClick={() => setActiveScreen("audit-bridge")}
                 itemId="audit"
               />
               <QueueRow
                 count={1}
-                label="budget department over plan"
+                label={t("queue.budget_over_plan")}
                 onClick={() => setActiveScreen("budget")}
                 itemId="budget"
               />
@@ -203,7 +205,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
 
         {/* 1.5 SUGGESTED RULES */}
         {suggestions.length > 0 && (
-          <TodaySection label="SUGGESTED RULES" aminah>
+          <TodaySection label={t("sections.suggested_rules")} aminah>
             <div style={{ marginInline: -20 }}>
               {suggestions.map((s) => (
                 <SuggestedRuleRow
@@ -220,14 +222,14 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                 onClick={() => setActiveScreen("rules")}
                 style={{ fontSize: 12, color: "#00C48C", cursor: "pointer" }}
               >
-                View all suggestions →
+                {t("suggestions.view_all")}
               </a>
             </div>
           </TodaySection>
         )}
 
         {/* 2. CLOSE PROGRESS */}
-        <TodaySection label={close ? `${close.period.toUpperCase()} CLOSE` : "MONTH-END CLOSE"}>
+        <TodaySection label={close ? t("sections.close_with_period", { period: close.period.toUpperCase() }) : t("sections.month_end_close_fallback")}>
           {close && (
             <>
               <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 8 }}>
@@ -250,7 +252,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                     fontWeight: 600,
                   }}
                 >
-                  TASKS COMPLETE · {close.percentComplete}%
+                  {t("close.tasks_complete_label", { pct: close.percentComplete })}
                 </span>
               </div>
               <div
@@ -320,7 +322,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
 
         {/* 3. AMINAH'S NOTES */}
         <TodaySection
-          label="AMINAH'S NOTES"
+          label={t("sections.aminahs_notes")}
           extra={notes ? <span className="tension-dot tension-dot--info">{notes.length}</span> : null}
           aminah
         >
@@ -343,7 +345,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
         </TodaySection>
 
         {/* 4. TEAM ACTIVITY */}
-        <TodaySection label="TEAM ACTIVITY TODAY">
+        <TodaySection label={t("sections.team_activity")}>
           {team && (
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {team.map((t) => (
@@ -375,7 +377,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
         </TodaySection>
 
         {/* 5. ENGINE STATUS */}
-        <TodaySection label="DETERMINISTIC ENGINE">
+        <TodaySection label={t("sections.deterministic_engine")}>
           {engine && (
             <>
               <div
@@ -407,7 +409,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                       marginTop: 2,
                     }}
                   >
-                    COVERAGE THIS PERIOD
+                    {t("engine.coverage_label")}
                   </div>
                 </div>
                 <div>
@@ -431,7 +433,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                       marginTop: 2,
                     }}
                   >
-                    TRANSACTIONS AUTO-CATEGORIZED TODAY
+                    {t("engine.auto_today_label")}
                   </div>
                 </div>
               </div>
@@ -443,24 +445,24 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                   borderTop: "1px solid rgba(255,255,255,0.06)",
                 }}
               >
-                Rule-based:{" "}
+                {t("engine.rule_based")}:{" "}
                 <span style={{ color: "#00C48C", fontWeight: 500, fontFamily: "'DM Mono', monospace" }}>
                   {engine.ruleBased}%
                 </span>
                 {"  ·  "}
-                Pattern:{" "}
+                {t("engine.pattern")}:{" "}
                 <span style={{ color: "#3B82F6", fontWeight: 500, fontFamily: "'DM Mono', monospace" }}>
                   {engine.patternBased}%
                 </span>
                 {"  ·  "}
-                AI:{" "}
+                {t("engine.ai")}:{" "}
                 <span style={{ color: "#D4A84B", fontWeight: 500, fontFamily: "'DM Mono', monospace" }}>
                   {engine.aiSuggested}%
                 </span>
               </div>
               <div style={{ marginTop: 12 }}>
                 <a style={{ fontSize: 12, color: "#00C48C", cursor: "pointer" }}>
-                  View engine performance →
+                  {t("engine.view_performance")}
                 </a>
               </div>
             </>

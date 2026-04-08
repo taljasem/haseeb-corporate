@@ -1,13 +1,21 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import BankTransactionRow from "../../components/cfo/BankTransactionRow";
 import BankTransactionDetail from "../../components/cfo/BankTransactionDetail";
 import SuggestionBanner from "../../components/shared/SuggestionBanner";
 import NewCategorizationRuleModal from "../../components/rules/NewCategorizationRuleModal";
 import { getBankTransactionsPending, getFilteredBankTransactions, getSuggestedCategorizationRules } from "../../engine/mockEngine";
 
-const FILTERS = ["All", "Today", "This week", "Suggestions", "Needs review"];
+const FILTERS = [
+  { id: "All", key: "all" },
+  { id: "Today", key: "today" },
+  { id: "This week", key: "this_week" },
+  { id: "Suggestions", key: "suggestions" },
+  { id: "Needs review", key: "needs_review" },
+];
 
 export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccounts, role = "CFO", filterByAssignee = null }) {
+  const { t } = useTranslation("bank-transactions");
   const [txs, setTxs] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [filter, setFilter] = useState("All");
@@ -100,11 +108,11 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
                   color: "#5B6570",
                 }}
               >
-                BANK TRANSACTIONS PENDING REVIEW · {txs ? txs.length : "—"}
+                {txs ? t("header.pending_count", { count: txs.length }) : t("header.pending_unknown")}
               </div>
               {filterByAssignee && (
                 <div style={{ fontSize: 11, color: "#5B6570", marginTop: 4, fontStyle: "italic" }}>
-                  Showing transactions in your domain
+                  {t("header.in_your_domain")}
                 </div>
               )}
             </div>
@@ -118,16 +126,16 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
                 letterSpacing: "0.02em",
               }}
             >
-              View full bank accounts →
+              {t("header.view_full_accounts")}
             </a>
           </div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {FILTERS.map((f) => {
-              const on = f === filter;
+              const on = f.id === filter;
               return (
                 <button
-                  key={f}
-                  onClick={() => setFilter(f)}
+                  key={f.id}
+                  onClick={() => setFilter(f.id)}
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
@@ -141,7 +149,7 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
                     fontFamily: "inherit",
                   }}
                 >
-                  {f}
+                  {t(`filters.${f.key}`)}
                 </button>
               );
             })}

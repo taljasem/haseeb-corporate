@@ -1,1 +1,56 @@
-{}
+{
+  "title": "BANK ACCOUNTS",
+  "accounts_count": "{{count}} ACCOUNTS",
+  "loading": "LOADING",
+  "read_only_banner": "READ-ONLY · You can view accounts but cannot initiate transactions.",
+  "last_updated": "Last updated {{time}}",
+  "updated": "Updated {{time}}",
+  "ranges": {
+    "today": "Today",
+    "week": "This Week",
+    "month": "This Month",
+    "all": "All"
+  },
+  "type_filters": {
+    "all": "All",
+    "inflow": "Inflow",
+    "outflow": "Outflow"
+  },
+  "search_placeholder": "Search transactions...",
+  "export": "Export {{format}}",
+  "card": {
+    "current_balance": "CURRENT BALANCE",
+    "mtd_inflow": "MTD INFLOW",
+    "mtd_outflow": "MTD OUTFLOW"
+  },
+  "summary": {
+    "opening_balance": "OPENING BALANCE",
+    "closing_balance": "CLOSING BALANCE",
+    "total_inflow": "TOTAL INFLOW",
+    "total_outflow": "TOTAL OUTFLOW",
+    "transactions": "TRANSACTIONS"
+  },
+  "table": {
+    "loading": "Loading…",
+    "empty": "No transactions in this period.",
+    "col_date": "DATE",
+    "col_description": "DESCRIPTION",
+    "col_categorization": "CATEGORIZATION",
+    "col_amount": "AMOUNT",
+    "col_balance": "BALANCE"
+  },
+  "row": {
+    "view_journal_entry": "VIEW JOURNAL ENTRY",
+    "loading_je": "Loading…",
+    "view_rule": "View rule ({{id}}) →",
+    "view_in_taskbox": "View in Taskbox →"
+  },
+  "future_ops": {
+    "title": "MORE BANK OPERATIONS",
+    "transfer": "Transfer between accounts",
+    "wire": "Initiate wire",
+    "statement": "Request statement",
+    "card_mgmt": "Card management",
+    "coming_next": "COMING NEXT"
+  }
+}

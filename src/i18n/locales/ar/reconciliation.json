@@ -1,1 +1,61 @@
-{}
+{
+  "title": "التسويات البنكية",
+  "period_label": "مارس 2026 · الحسابات البنكية",
+  "loading": "جارٍ تحميل التسويات…",
+  "loading_detail": "جارٍ تحميل التسوية…",
+  "status": {
+    "completed": "مكتملة",
+    "in_progress": "قيد التنفيذ",
+    "not_started": "لم تبدأ",
+    "locked": "مقفلة"
+  },
+  "card": {
+    "matched": "مطابقة",
+    "exception_one": "{{count}} استثناء",
+    "exception_other": "{{count}} استثناءات",
+    "clean": "مطابقة تامة",
+    "not_started": "لم تبدأ"
+  },
+  "detail": {
+    "back": "العودة إلى التسويات",
+    "sub": "الحساب {{accountId}} · {{matched}}/{{total}} مطابقة",
+    "complete": "إكمال التسوية"
+  },
+  "summary": {
+    "opening_balance": "الرصيد الافتتاحي",
+    "closing_bank": "الرصيد الختامي (البنك)",
+    "closing_ledger": "الرصيد الختامي (دفتر الأستاذ)",
+    "difference": "الفرق"
+  },
+  "columns": {
+    "bank_statement": "كشف حساب البنك",
+    "general_ledger": "دفتر الأستاذ العام",
+    "bank_sub": "{{total}} عملية · {{unmatched}} غير مطابقة",
+    "ledger_sub": "{{total}} قيد · {{unmatched}} غير مطابقة",
+    "matched_collapsed": "{{count}} عنصر مطابق",
+    "collapsed": "(مطوي)",
+    "no_unmatched": "لا توجد عناصر غير مطابقة"
+  },
+  "exceptions": {
+    "header": "الاستثناءات · {{open}} مفتوحة",
+    "type_unidentified": "غير محدد",
+    "type_amount_mismatch": "اختلاف في المبلغ",
+    "type_missing_ledger": "قيد مفقود في دفتر الأستاذ",
+    "type_date_mismatch": "اختلاف في التاريخ",
+    "resolved": "✓ مُسوَّى",
+    "create_je": "إنشاء قيد",
+    "accept_match": "قبول المطابقة",
+    "mark_resolved": "تحديد كمُسوَّى",
+    "resolution_accepted": "مقبول",
+    "resolution_investigated": "تم التحقق"
+  },
+  "je_composer": {
+    "label": "إنشاء قيد محاسبي",
+    "title": "قيد مفقود في دفتر الأستاذ",
+    "debit_account": "الحساب المدين",
+    "credit_account": "الحساب الدائن",
+    "cancel": "إلغاء",
+    "confirm": "ترحيل القيد والمطابقة",
+    "close": "إغلاق"
+  }
+}

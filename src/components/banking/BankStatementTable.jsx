@@ -1,11 +1,13 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import BankStatementRow from "./BankStatementRow";
 
 export default function BankStatementTable({ txs, currency = "KWD" }) {
+  const { t } = useTranslation("bank-accounts");
   const [expandedId, setExpandedId] = useState(null);
 
   if (!txs) {
-    return <div style={{ padding: 24, color: "#5B6570", fontSize: 12 }}>Loading…</div>;
+    return <div style={{ padding: 24, color: "#5B6570", fontSize: 12 }}>{t("table.loading")}</div>;
   }
   if (txs.length === 0) {
     return (
@@ -17,7 +19,7 @@ export default function BankStatementTable({ txs, currency = "KWD" }) {
           fontSize: 13,
         }}
       >
-        No transactions in this period.
+        {t("table.empty")}
       </div>
     );
   }
@@ -39,11 +41,11 @@ export default function BankStatementTable({ txs, currency = "KWD" }) {
           color: "#5B6570",
         }}
       >
-        <div>DATE</div>
-        <div>DESCRIPTION</div>
-        <div>CATEGORIZATION</div>
-        <div style={{ textAlign: "right" }}>AMOUNT</div>
-        <div style={{ textAlign: "right" }}>BALANCE</div>
+        <div>{t("table.col_date")}</div>
+        <div>{t("table.col_description")}</div>
+        <div>{t("table.col_categorization")}</div>
+        <div style={{ textAlign: "right" }}>{t("table.col_amount")}</div>
+        <div style={{ textAlign: "right" }}>{t("table.col_balance")}</div>
         <div />
       </div>
       {txs.map((t) => (

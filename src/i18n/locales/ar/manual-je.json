@@ -1,1 +1,131 @@
-{}
+{
+  "title": "قيد يدوي",
+  "subtitle": "قيد مزدوج رسمي",
+  "new": "جديد",
+  "tabs": {
+    "drafts": "المسودات",
+    "recent": "الحديثة",
+    "templates": "القوالب",
+    "scheduled": "المجدولة"
+  },
+  "empty_list": "لا توجد {{tab}}",
+  "tab_names": {
+    "drafts": "مسودات",
+    "recent": "قيود حديثة",
+    "templates": "قوالب",
+    "scheduled": "قيود مجدولة"
+  },
+  "search_placeholder": "بحث في القيود...",
+  "list": {
+    "untitled": "(بدون عنوان)",
+    "balanced": "متوازن",
+    "unbalanced": "غير متوازن",
+    "lines_used": "{{count}} بنود · استُخدم {{used}} مرة"
+  },
+  "toast": {
+    "draft_from_template": "تم إنشاء مسودة من القالب",
+    "draft_discarded": "تم تجاهل المسودة",
+    "posted": "تم ترحيل {{id}}",
+    "cannot_post": "تعذّر الترحيل: {{reason}}",
+    "reversal_created": "تم إنشاء قيد عكسي",
+    "scheduled": "تم جدولة القيد في {{date}}",
+    "template_saved": "تم حفظ القالب"
+  },
+  "empty_state": {
+    "title": "القيود المحاسبية اليدوية",
+    "desc": "أنشئ قيوداً دقيقة متعددة البنود، وأدر القوالب، وجدوِل الترحيلات المتكررة.",
+    "blank": "قيد جديد فارغ",
+    "use_template": "استخدام قالب ←",
+    "view_recent": "عرض القيود الحديثة ←"
+  },
+  "composer": {
+    "edit_draft": "تعديل المسودة",
+    "manual_je": "قيد محاسبي يدوي",
+    "from_template": "من {{id}}",
+    "ask_aminah": "اسأل أمينة",
+    "discard": "تجاهل",
+    "schedule": "جدولة",
+    "save_as_template": "حفظ كقالب",
+    "post_entry": "ترحيل القيد",
+    "reverse_entry": "عكس القيد",
+    "post_now": "ترحيل الآن",
+    "cancel_schedule": "إلغاء الجدولة",
+    "reversed_by": "عُكس بواسطة {{id}}",
+    "reversal_of": "عكس لـ {{id}}"
+  },
+  "status": {
+    "posted": "مُرحَّل",
+    "scheduled": "مجدول",
+    "draft": "مسودة"
+  },
+  "fields": {
+    "date": "التاريخ",
+    "reference": "المرجع",
+    "description": "الوصف",
+    "source": "المصدر"
+  },
+  "source_options": {
+    "manual": "يدوي",
+    "adjustment": "تسوية",
+    "reversal": "عكس قيد",
+    "recurring": "متكرر"
+  },
+  "lines": {
+    "col_account": "الحساب",
+    "col_debit": "مدين",
+    "col_credit": "دائن",
+    "col_memo": "ملاحظة",
+    "add_line": "إضافة بند",
+    "memo_placeholder": "ملاحظة اختيارية",
+    "line_account_not_selected": "البند {{n}}: لم يتم اختيار الحساب",
+    "line_both": "البند {{n}}: لا يمكن أن يحوي مديناً ودائناً معاً"
+  },
+  "totals": {
+    "total_debits": "إجمالي المدين",
+    "total_credits": "إجمالي الدائن",
+    "difference": "الفرق",
+    "balanced": "متوازن",
+    "out_of_balance": "غير متوازن"
+  },
+  "account_picker": {
+    "search_placeholder": "بحث عن حساب..."
+  },
+  "template_detail": {
+    "template_label": "قالب",
+    "lines": "البنود ({{count}})",
+    "used_times": "استُخدم <strong>{{count}}</strong> مرة",
+    "created": "أُنشئ {{time}}",
+    "use_template": "استخدام القالب"
+  },
+  "reverse_modal": {
+    "title": "عكس القيد المحاسبي",
+    "sub": "إنشاء قيد عكسي",
+    "body": "هل تريد إنشاء قيد عكسي لـ <strong>{{ref}}</strong>؟ سيتم إنشاء قيد جديد بعكس المدين والدائن بتاريخ اليوم.",
+    "reason_label": "السبب (إلزامي)",
+    "reason_placeholder": "لماذا تعكس هذا القيد؟",
+    "cancel": "إلغاء",
+    "confirm": "إنشاء القيد العكسي"
+  },
+  "schedule_modal": {
+    "title": "جدولة القيد المحاسبي",
+    "sub": "تأجيل / تكرار",
+    "post_on": "تاريخ الترحيل",
+    "frequency": "التكرار",
+    "freq_none": "بدون (مرة واحدة)",
+    "freq_monthly": "شهري",
+    "freq_quarterly": "ربع سنوي",
+    "freq_annually": "سنوي",
+    "cancel": "إلغاء",
+    "confirm": "جدولة القيد"
+  },
+  "save_template_modal": {
+    "title": "حفظ كقالب",
+    "sub": "قيد قابل لإعادة الاستخدام",
+    "name_label": "اسم القالب",
+    "name_placeholder": "مثال: مكافأة ربع سنوية",
+    "desc_label": "الوصف",
+    "desc_placeholder": "وصف مختصر",
+    "cancel": "إلغاء",
+    "confirm": "حفظ القالب"
+  }
+}

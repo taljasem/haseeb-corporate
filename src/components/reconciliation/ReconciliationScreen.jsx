@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronLeft, CheckCircle2, AlertCircle, Circle, Lock, FileWarning, Plus, X } from "lucide-react";
 import {
   getReconciliationDashboard,
@@ -10,10 +11,17 @@ import {
 } from "../../engine/mockEngine";
 
 const STATUS_META = {
-  "completed":    { label: "COMPLETED",   color: "#00C48C", icon: CheckCircle2 },
-  "in-progress":  { label: "IN PROGRESS", color: "#F5A524", icon: Circle },
-  "not-started":  { label: "NOT STARTED", color: "#5B6570", icon: Circle },
-  "locked":       { label: "LOCKED",      color: "#5B6570", icon: Lock },
+  "completed":    { key: "completed",   color: "#00C48C", icon: CheckCircle2 },
+  "in-progress":  { key: "in_progress", color: "#F5A524", icon: Circle },
+  "not-started":  { key: "not_started", color: "#5B6570", icon: Circle },
+  "locked":       { key: "locked",      color: "#5B6570", icon: Lock },
+};
+
+const EXC_TYPE_KEY = {
+  "unidentified": "type_unidentified",
+  "amount-mismatch": "type_amount_mismatch",
+  "missing-ledger-entry": "type_missing_ledger",
+  "date-mismatch": "type_date_mismatch",
 };
 
 function fmtKWD(n) {
@@ -29,6 +37,7 @@ function fmtDate(iso) {
 }
 
 export default function ReconciliationScreen({ role = "CFO" }) {
+  const { t } = useTranslation("reconciliation");
   const [view, setView] = useState("dashboard"); // dashboard | detail
   const [dashboard, setDashboard] = useState(null);
   const [activeRecId, setActiveRecId] = useState(null);
@@ -86,16 +95,16 @@ export default function ReconciliationScreen({ role = "CFO" }) {
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <div style={{ padding: "20px 28px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
         <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: "#E6EDF3", letterSpacing: "-0.3px", lineHeight: 1 }}>
-          RECONCILIATION
+          {t("title")}
         </div>
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570", marginTop: 6 }}>
-          MARCH 2026 · BANK ACCOUNTS
+          {t("period_label")}
         </div>
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "20px 28px" }}>
         {!dashboard ? (
-          <div style={{ color: "#5B6570", fontSize: 13 }}>Loading reconciliations…</div>
+          <div style={{ color: "#5B6570", fontSize: 13 }}>{t("loading")}</div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 14 }}>
             {dashboard.map((row) => (
@@ -109,6 +118,7 @@ export default function ReconciliationScreen({ role = "CFO" }) {
 }
 
 function ReconciliationAccountCard({ row, onOpen }) {
+  const { t } = useTranslation("reconciliation");
   const meta = STATUS_META[row.status] || STATUS_META["not-started"];
   const Icon = meta.icon;
   const pct = row.totalCount > 0 ? Math.round((row.matchedCount / row.totalCount) * 100) : 0;
@@ -164,7 +174,7 @@ function ReconciliationAccountCard({ row, onOpen }) {
           }}
         >
           <Icon size={10} />
-          {meta.label}
+          {t(`status.${meta.key}`)}
         </div>
       </div>
 
@@ -193,17 +203,17 @@ function ReconciliationAccountCard({ row, onOpen }) {
           <span style={{ color: "#E6EDF3", fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>
             {row.matchedCount}/{row.totalCount}
           </span>{" "}
-          matched
+          {t("card.matched")}
         </div>
         {row.exceptionCount > 0 ? (
           <div style={{ color: "#F5A524", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}>
             <AlertCircle size={11} />
-            {row.exceptionCount} exception{row.exceptionCount === 1 ? "" : "s"}
+            {row.exceptionCount === 1 ? t("card.exception_one", { count: 1 }) : t("card.exception_other", { count: row.exceptionCount })}
           </div>
         ) : row.status === "completed" ? (
-          <div style={{ color: "#00C48C", fontWeight: 600 }}>Clean</div>
+          <div style={{ color: "#00C48C", fontWeight: 600 }}>{t("card.clean")}</div>
         ) : row.status === "not-started" ? (
-          <div style={{ color: "#5B6570" }}>Not started</div>
+          <div style={{ color: "#5B6570" }}>{t("card.not_started")}</div>
         ) : null}
       </div>
     </button>
@@ -211,12 +221,13 @@ function ReconciliationAccountCard({ row, onOpen }) {
 }
 
 function ReconciliationDetail({ rec, loading, role, onBack, onReload }) {
+  const { t } = useTranslation("reconciliation");
   const [jeComposerFor, setJeComposerFor] = useState(null);
 
   if (loading || !rec) {
     return (
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#5B6570" }}>
-        Loading reconciliation…
+        {t("loading_detail")}
       </div>
     );
   }
@@ -264,7 +275,7 @@ function ReconciliationDetail({ rec, loading, role, onBack, onReload }) {
             marginBottom: 8,
           }}
         >
-          <ChevronLeft size={14} /> Back to reconciliations
+          <ChevronLeft size={14} /> {t("detail.back")}
         </button>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
@@ -272,7 +283,7 @@ function ReconciliationDetail({ rec, loading, role, onBack, onReload }) {
               {rec.id} · {rec.period.label}
             </div>
             <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570", marginTop: 6 }}>
-              ACCOUNT {rec.accountId} · {rec.matchedCount}/{rec.totalBankItems} MATCHED
+              {t("detail.sub", { accountId: rec.accountId, matched: rec.matchedCount, total: rec.totalBankItems })}
             </div>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -288,7 +299,7 @@ function ReconciliationDetail({ rec, loading, role, onBack, onReload }) {
                 borderRadius: 4,
               }}
             >
-              {meta.label}
+              {t(`status.${meta.key}`)}
             </div>
             {rec.status === "in-progress" && (
               <button
@@ -306,7 +317,7 @@ function ReconciliationDetail({ rec, loading, role, onBack, onReload }) {
                   fontFamily: "inherit",
                 }}
               >
-                Complete reconciliation
+                {t("detail.complete")}
               </button>
             )}
           </div>
@@ -326,11 +337,11 @@ function ReconciliationDetail({ rec, loading, role, onBack, onReload }) {
           overflow: "hidden",
         }}
       >
-        <SummaryCell label="OPENING BALANCE" value={fmtKWD(rec.openingBalance)} />
-        <SummaryCell label="CLOSING (BANK)" value={fmtKWD(rec.closingBalance)} />
-        <SummaryCell label="CLOSING (LEDGER)" value={fmtKWD(rec.closingLedgerBalance)} />
+        <SummaryCell label={t("summary.opening_balance")} value={fmtKWD(rec.openingBalance)} />
+        <SummaryCell label={t("summary.closing_bank")} value={fmtKWD(rec.closingBalance)} />
+        <SummaryCell label={t("summary.closing_ledger")} value={fmtKWD(rec.closingLedgerBalance)} />
         <SummaryCell
-          label="DIFFERENCE"
+          label={t("summary.difference")}
           value={fmtKWD(diff)}
           highlight={diff === 0 ? "#00C48C" : "#F5A524"}
         />
@@ -341,16 +352,16 @@ function ReconciliationDetail({ rec, loading, role, onBack, onReload }) {
         {/* Side-by-side columns */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 18 }}>
           <StatementColumn
-            title="BANK STATEMENT"
-            sub={`${rec.totalBankItems} items · ${rec.unmatchedBankItems.length} unmatched`}
+            title={t("columns.bank_statement")}
+            sub={t("columns.bank_sub", { total: rec.totalBankItems, unmatched: rec.unmatchedBankItems.length })}
             matchedCount={rec.matchedCount}
             unmatched={rec.unmatchedBankItems}
             exceptions={rec.exceptions}
             isBank
           />
           <StatementColumn
-            title="GENERAL LEDGER"
-            sub={`${rec.totalLedgerItems} entries · ${rec.unmatchedLedgerItems.length} unmatched`}
+            title={t("columns.general_ledger")}
+            sub={t("columns.ledger_sub", { total: rec.totalLedgerItems, unmatched: rec.unmatchedLedgerItems.length })}
             matchedCount={rec.matchedCount}
             unmatched={rec.unmatchedLedgerItems}
             exceptions={rec.exceptions}
@@ -374,7 +385,7 @@ function ReconciliationDetail({ rec, loading, role, onBack, onReload }) {
               }}
             >
               <FileWarning size={12} />
-              EXCEPTIONS · {rec.exceptions.filter((e) => !e.resolved).length} OPEN
+              {t("exceptions.header", { open: rec.exceptions.filter((e) => !e.resolved).length })}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {rec.exceptions.map((exc) => (
@@ -424,6 +435,7 @@ function SummaryCell({ label, value, highlight }) {
 }
 
 function StatementColumn({ title, sub, matchedCount, unmatched, exceptions, isBank }) {
+  const { t } = useTranslation("reconciliation");
   return (
     <div
       style={{
@@ -462,13 +474,13 @@ function StatementColumn({ title, sub, matchedCount, unmatched, exceptions, isBa
         >
           <CheckCircle2 size={12} color="#00C48C" />
           <span style={{ color: "#8B98A5" }}>
-            {matchedCount} matched items
+            {t("columns.matched_collapsed", { count: matchedCount })}
           </span>
-          <span style={{ color: "#5B6570" }}>(collapsed)</span>
+          <span style={{ color: "#5B6570" }}>{t("columns.collapsed")}</span>
         </div>
         {unmatched.length === 0 ? (
           <div style={{ padding: "16px", textAlign: "center", color: "#5B6570", fontSize: 12 }}>
-            No unmatched items
+            {t("columns.no_unmatched")}
           </div>
         ) : (
           unmatched.map((item) => {
@@ -540,6 +552,7 @@ function StatementRow({ item, exception, isBank }) {
 }
 
 function ExceptionRow({ exc, onResolve, onOpenJE }) {
+  const { t } = useTranslation("reconciliation");
   const typeColors = {
     "unidentified":           "#F5A524",
     "amount-mismatch":        "#F5A524",
@@ -574,12 +587,12 @@ function ExceptionRow({ exc, onResolve, onOpenJE }) {
               borderRadius: 3,
             }}
           >
-            {exc.type.replace(/-/g, " ").toUpperCase()}
+            {t(`exceptions.${EXC_TYPE_KEY[exc.type] || "type_unidentified"}`)}
           </span>
           <span style={{ fontSize: 10, color: "#5B6570", fontFamily: "'DM Mono', monospace" }}>{exc.id}</span>
           {exc.resolved && (
             <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: "#00C48C" }}>
-              ✓ RESOLVED
+              {t("exceptions.resolved")}
             </span>
           )}
         </div>
@@ -607,12 +620,12 @@ function ExceptionRow({ exc, onResolve, onOpenJE }) {
                 gap: 4,
               }}
             >
-              <Plus size={11} /> Create JE
+              <Plus size={11} /> {t("exceptions.create_je")}
             </button>
           )}
           {exc.suggestedAction === "accept" && (
             <button
-              onClick={() => onResolve(exc.id, "Accepted")}
+              onClick={() => onResolve(exc.id, t("exceptions.resolution_accepted"))}
               style={{
                 background: "#00C48C",
                 color: "#fff",
@@ -625,12 +638,12 @@ function ExceptionRow({ exc, onResolve, onOpenJE }) {
                 fontFamily: "inherit",
               }}
             >
-              Accept match
+              {t("exceptions.accept_match")}
             </button>
           )}
           {exc.suggestedAction === "investigate" && (
             <button
-              onClick={() => onResolve(exc.id, "Investigated")}
+              onClick={() => onResolve(exc.id, t("exceptions.resolution_investigated"))}
               style={{
                 background: "rgba(255,255,255,0.06)",
                 color: "#E6EDF3",
@@ -643,7 +656,7 @@ function ExceptionRow({ exc, onResolve, onOpenJE }) {
                 fontFamily: "inherit",
               }}
             >
-              Mark resolved
+              {t("exceptions.mark_resolved")}
             </button>
           )}
         </div>
@@ -653,6 +666,7 @@ function ExceptionRow({ exc, onResolve, onOpenJE }) {
 }
 
 function InlineJEComposer({ exception, bankItem, onCancel, onConfirm }) {
+  const { t } = useTranslation("reconciliation");
   const [debit, setDebit] = useState("6800 — Bank Charges");
   const [credit, setCredit] = useState("1010 — KIB Operating");
 
@@ -689,10 +703,10 @@ function InlineJEComposer({ exception, bankItem, onCancel, onConfirm }) {
         >
           <div>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570" }}>
-              CREATE JOURNAL ENTRY
+              {t("je_composer.label")}
             </div>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "#E6EDF3", marginTop: 4 }}>
-              MISSING LEDGER ENTRY
+              {t("je_composer.title")}
             </div>
           </div>
           <button onClick={onCancel} style={{ background: "transparent", border: "none", color: "#5B6570", cursor: "pointer", padding: 4 }}>
@@ -705,7 +719,7 @@ function InlineJEComposer({ exception, bankItem, onCancel, onConfirm }) {
           </div>
           <div style={{ marginBottom: 12 }}>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "#5B6570", marginBottom: 5 }}>
-              DEBIT ACCOUNT
+              {t("je_composer.debit_account")}
             </div>
             <input
               value={debit}
@@ -725,7 +739,7 @@ function InlineJEComposer({ exception, bankItem, onCancel, onConfirm }) {
           </div>
           <div>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "#5B6570", marginBottom: 5 }}>
-              CREDIT ACCOUNT
+              {t("je_composer.credit_account")}
             </div>
             <input
               value={credit}
@@ -766,7 +780,7 @@ function InlineJEComposer({ exception, bankItem, onCancel, onConfirm }) {
               fontFamily: "inherit",
             }}
           >
-            Cancel
+            {t("je_composer.cancel")}
           </button>
           <button
             onClick={() => onConfirm(exception.bankItemId, debit, credit)}
@@ -782,7 +796,7 @@ function InlineJEComposer({ exception, bankItem, onCancel, onConfirm }) {
               fontFamily: "inherit",
             }}
           >
-            Post entry & match
+            {t("je_composer.confirm")}
           </button>
         </div>
       </div>

@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { formatKWD } from "../../utils/format";
 import EngineConfidencePill from "./EngineConfidencePill";
 import JournalEntryCard from "./JournalEntryCard";
 import AminahTag from "../AminahTag";
 import { suggestJournalEntryFromBankTransaction } from "../../engine/mockEngine";
 
-function Field({ label, value }) {
+function Field({ label, value, mono = false }) {
   return (
     <div>
       <div
@@ -23,7 +24,7 @@ function Field({ label, value }) {
         style={{
           fontSize: 13,
           color: "#E6EDF3",
-          fontFamily: label === "AMOUNT" ? "'DM Mono', monospace" : "inherit",
+          fontFamily: mono ? "'DM Mono', monospace" : "inherit",
         }}
       >
         {value}
@@ -33,6 +34,7 @@ function Field({ label, value }) {
 }
 
 export default function BankTransactionDetail({ tx, onOpenAminah, onConfirmed }) {
+  const { t } = useTranslation("bank-transactions");
   const [suggestion, setSuggestion] = useState(null);
   const [posted, setPosted] = useState(false);
 
@@ -56,7 +58,7 @@ export default function BankTransactionDetail({ tx, onOpenAminah, onConfirmed })
           fontSize: 13,
         }}
       >
-        Select a transaction to review.
+        {t("detail.select_to_review")}
       </div>
     );
   }
@@ -84,7 +86,7 @@ export default function BankTransactionDetail({ tx, onOpenAminah, onConfirmed })
             marginBottom: 12,
           }}
         >
-          BANK FACTS · IMMUTABLE
+          {t("detail.bank_facts")}
         </div>
         <div
           style={{
@@ -93,19 +95,20 @@ export default function BankTransactionDetail({ tx, onOpenAminah, onConfirmed })
             gap: 12,
           }}
         >
-          <Field label="DATE" value={tx.date} />
-          <Field label="SOURCE" value={tx.source} />
-          <Field label="MERCHANT" value={tx.merchant} />
-          <Field label="TERMINAL" value={tx.terminal || "—"} />
+          <Field label={t("detail.field_date")} value={tx.date} />
+          <Field label={t("detail.field_source")} value={tx.source} />
+          <Field label={t("detail.field_merchant")} value={tx.merchant} />
+          <Field label={t("detail.field_terminal")} value={tx.terminal || t("detail.none")} />
           <Field
-            label="AMOUNT"
+            label={t("detail.field_amount")}
+            mono
             value={
               <span style={{ color: tx.amount < 0 ? "#FF5A5F" : "#00C48C" }}>
                 {formatKWD(Math.abs(tx.amount))}
               </span>
             }
           />
-          <Field label="DIRECTION" value={tx.amount < 0 ? "Outflow" : "Inflow"} />
+          <Field label={t("detail.field_direction")} value={tx.amount < 0 ? t("detail.direction_outflow") : t("detail.direction_inflow")} />
         </div>
       </div>
 
@@ -126,7 +129,7 @@ export default function BankTransactionDetail({ tx, onOpenAminah, onConfirmed })
             color: "#5B6570",
           }}
         >
-          ENGINE SUGGESTS
+          {t("detail.engine_suggests")}
         </div>
         <AminahTag />
       </div>

@@ -1,1 +1,28 @@
-{}
+{
+  "label": "AMINAH",
+  "context_prefix": "Context: {{context}}",
+  "suggested_questions": "SUGGESTED QUESTIONS",
+  "input_placeholder": "Ask Aminah…",
+  "close": "Close",
+  "owner": {
+    "greeting": "Hi Tarek. What can I help you understand?",
+    "q1": "How is cash this month?",
+    "q2": "What's my biggest expense risk?",
+    "q3": "Walk me through the close progress",
+    "q4": "Why is marketing over budget again?"
+  },
+  "cfo": {
+    "greeting": "Hi. What are we working on?",
+    "q1": "What needs my attention right now?",
+    "q2": "Summarize today's bank transactions",
+    "q3": "What's blocking the close?",
+    "q4": "Any rules I should approve?"
+  },
+  "junior": {
+    "greeting": "Hi Sara. How can I help with your work?",
+    "q1": "What should I work on next?",
+    "q2": "Help me categorize this transaction",
+    "q3": "Draft a JE for me",
+    "q4": "What's my accuracy this week?"
+  }
+}

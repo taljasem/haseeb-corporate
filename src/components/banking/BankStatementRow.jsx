@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import EngineConfidencePill from "../cfo/EngineConfidencePill";
 import JournalEntryCard from "../cfo/JournalEntryCard";
@@ -47,6 +48,8 @@ function SimplePill({ label, color, bg, border }) {
 }
 
 export default function BankStatementRow({ tx, expanded, onToggle, currency = "KWD" }) {
+  const { t } = useTranslation("bank-accounts");
+  const { t: tTx } = useTranslation("bank-transactions");
   const [je, setJe] = useState(null);
   useEffect(() => {
     if (expanded && !je) getTransactionJournalEntry(tx.id).then(setJe);
@@ -105,9 +108,9 @@ export default function BankStatementRow({ tx, expanded, onToggle, currency = "K
         </div>
         <div>
           {cat.method === "MANUAL" ? (
-            <SimplePill label="MANUAL" color="#8B98A5" bg="rgba(255,255,255,0.04)" border="rgba(255,255,255,0.15)" />
+            <SimplePill label={tTx("confidence.manual")} color="#8B98A5" bg="rgba(255,255,255,0.04)" border="rgba(255,255,255,0.15)" />
           ) : cat.method === "PENDING" ? (
-            <SimplePill label="PENDING" color="#FF5A5F" bg="rgba(255,90,95,0.08)" border="rgba(255,90,95,0.30)" />
+            <SimplePill label={tTx("confidence.pending")} color="#FF5A5F" bg="rgba(255,90,95,0.08)" border="rgba(255,90,95,0.30)" />
           ) : (
             <EngineConfidencePill confidence={pillKey} />
           )}
@@ -169,7 +172,7 @@ export default function BankStatementRow({ tx, expanded, onToggle, currency = "K
               paddingTop: 16,
             }}
           >
-            VIEW JOURNAL ENTRY
+            {t("row.view_journal_entry")}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             {je ? (
@@ -178,14 +181,14 @@ export default function BankStatementRow({ tx, expanded, onToggle, currency = "K
                 <div style={{ display: "flex", gap: 14, marginTop: 4, fontSize: 11 }}>
                   {cat.ruleId && (
                     <a style={{ color: "#00C48C", cursor: "pointer" }}>
-                      View rule ({cat.ruleId}) →
+                      {t("row.view_rule", { id: cat.ruleId })}
                     </a>
                   )}
-                  <a style={{ color: "#00C48C", cursor: "pointer" }}>View in Taskbox →</a>
+                  <a style={{ color: "#00C48C", cursor: "pointer" }}>{t("row.view_in_taskbox")}</a>
                 </div>
               </>
             ) : (
-              <div style={{ color: "#5B6570", fontSize: 12, padding: 12 }}>Loading…</div>
+              <div style={{ color: "#5B6570", fontSize: 12, padding: 12 }}>{t("row.loading_je")}</div>
             )}
           </div>
         </div>

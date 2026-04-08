@@ -1,37 +1,8 @@
 import { useState } from "react";
+import { useTranslation, Trans } from "react-i18next";
 import AccountPicker from "../../components/cfo/AccountPicker";
 import JournalEntryCard from "../../components/cfo/JournalEntryCard";
-
-/**
- * Mocked conversational JE flow.
- * Three exchanges, scripted to demonstrate:
- *   1. Clarifying conversation with inline AccountPicker (twice) → draft JE
- *   2. Refusal — bank transaction
- *   3. Refusal — too vague
- */
-
-function renderBold(text) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-  return parts.map((p, i) => {
-    if (p.startsWith("**") && p.endsWith("**")) {
-      const inner = p.slice(2, -2);
-      const isNum = /\d/.test(inner);
-      return (
-        <span
-          key={i}
-          style={{
-            color: "#E6EDF3",
-            fontWeight: 500,
-            fontFamily: isNum ? "'DM Mono', monospace" : "inherit",
-          }}
-        >
-          {inner}
-        </span>
-      );
-    }
-    return <span key={i}>{p}</span>;
-  });
-}
+import { useTenant } from "../../components/shared/TenantContext";
 
 function UserBubble({ children }) {
   return (
@@ -79,16 +50,16 @@ function AminahBubble({ children, wide = false }) {
 }
 
 function ExchangeOne() {
+  const { t } = useTranslation("conv-je");
   const [step, setStep] = useState(0);
   const [debit, setDebit] = useState(null);
   const [credit, setCredit] = useState(null);
   const [posted, setPosted] = useState(false);
 
-  // Hard-coded amount/description for the demo
   const amount = 30.0;
   const draft = debit && credit && {
     id: "JE-0421",
-    description: "Cash payment for cleaning",
+    description: t("cfo.cleaning_je_description"),
     status: "Draft - Validated",
     lines: [
       { account: debit.name, code: debit.code, debit: amount, credit: null },
@@ -104,17 +75,13 @@ function ExchangeOne() {
 
   return (
     <div>
-      <UserBubble>I paid the cleaning lady 30 KWD cash today</UserBubble>
-
-      <AminahBubble>
-        Got it — cash payment for cleaning. I need a couple of details before drafting the entry.
-        Which expense account should I post this to?
-      </AminahBubble>
+      <UserBubble>{t("cfo.user_1")}</UserBubble>
+      <AminahBubble>{t("cfo.aminah_1")}</AminahBubble>
 
       {step >= 0 && !debit && (
         <AminahBubble wide>
           <div style={{ marginBottom: 8, fontSize: 11, color: "#5B6570", letterSpacing: "0.10em", fontWeight: 600 }}>
-            EXPENSE ACCOUNT
+            {t("labels.expense_account")}
           </div>
           <AccountPicker
             filterCategories={["Operating Expenses"]}
@@ -128,15 +95,16 @@ function ExchangeOne() {
 
       {debit && (
         <AminahBubble>
-          Got it — <span style={{ color: "#E6EDF3", fontWeight: 500 }}>{debit.name}</span>. And which
-          cash account did this come from?
+          {t("cfo.aminah_got_debit_prefix")}
+          <span style={{ color: "#E6EDF3", fontWeight: 500 }}>{debit.name}</span>
+          {t("cfo.aminah_got_debit_suffix")}
         </AminahBubble>
       )}
 
       {debit && !credit && (
         <AminahBubble wide>
           <div style={{ marginBottom: 8, fontSize: 11, color: "#5B6570", letterSpacing: "0.10em", fontWeight: 600 }}>
-            CASH ACCOUNT
+            {t("labels.cash_account")}
           </div>
           <AccountPicker
             filterCategories={["Assets"]}
@@ -150,7 +118,7 @@ function ExchangeOne() {
 
       {draft && (
         <>
-          <AminahBubble>Drafting now…</AminahBubble>
+          <AminahBubble>{t("cfo.drafting")}</AminahBubble>
           <div style={{ maxWidth: "100%" }}>
             <JournalEntryCard
               entry={draft}
@@ -166,14 +134,8 @@ function ExchangeOne() {
               assignItemType="journal-entry"
             />
           </div>
-          {!posted && (
-            <AminahBubble>Here's the draft. Review and confirm to post.</AminahBubble>
-          )}
-          {posted && (
-            <AminahBubble>
-              Posted. Hash chain extended. Entry visible in your ledger and audit trail.
-            </AminahBubble>
-          )}
+          {!posted && <AminahBubble>{t("cfo.review_and_confirm")}</AminahBubble>}
+          {posted && <AminahBubble>{t("cfo.posted")}</AminahBubble>}
         </>
       )}
     </div>
@@ -181,12 +143,14 @@ function ExchangeOne() {
 }
 
 function ExchangeTwo() {
+  const { t } = useTranslation("conv-je");
+  const { tenant } = useTenant();
+  const bankName = tenant?.banks?.[0]?.abbreviation || "KIB";
   return (
     <div>
-      <UserBubble>Record the Zain payment that came in today</UserBubble>
+      <UserBubble>{t("cfo.user_2")}</UserBubble>
       <AminahBubble>
-        That looks like a bank transaction — it came from your KIB feed. I can't create entries for
-        bank-originated items via conversation. Please review it in Bank Transactions instead.{" "}
+        {t("cfo.aminah_2", { bank: bankName })}{" "}
         <a
           style={{
             color: "#00C48C",
@@ -195,7 +159,7 @@ function ExchangeTwo() {
             textDecoration: "underline",
           }}
         >
-          Open Bank Transactions →
+          {t("cfo.open_bank_tx")}
         </a>
       </AminahBubble>
     </div>
@@ -203,13 +167,11 @@ function ExchangeTwo() {
 }
 
 function ExchangeThree() {
+  const { t } = useTranslation("conv-je");
   return (
     <div>
-      <UserBubble>Add the thing from yesterday</UserBubble>
-      <AminahBubble>
-        I can't draft this without more detail. Which transaction are you referring to? What was the
-        amount and category?
-      </AminahBubble>
+      <UserBubble>{t("cfo.user_3")}</UserBubble>
+      <AminahBubble>{t("cfo.aminah_3")}</AminahBubble>
     </div>
   );
 }
@@ -219,13 +181,14 @@ function ExchangeThree() {
 // ─────────────────────────────────────────
 
 function JuniorExchangeOne() {
-  const [step, setStep] = useState(0); // 0=idle, 1=playing, 2=draft, 3=posted
+  const { t } = useTranslation("conv-je");
+  const [step, setStep] = useState(0);
   const [debit, setDebit] = useState(null);
   const [credit, setCredit] = useState(null);
   const amount = 45.0;
   const draft = debit && credit && {
     id: "JE-0421",
-    description: "Office supplies",
+    description: t("junior.office_supplies_description"),
     status: "Draft - Validated",
     lines: [
       { account: debit.name, code: debit.code, debit: amount, credit: null },
@@ -242,7 +205,7 @@ function JuniorExchangeOne() {
   if (step === 0) {
     return (
       <div>
-        <AminahBubble>Hi Sara. What entry do you need to make today?</AminahBubble>
+        <AminahBubble>{t("junior.greeting")}</AminahBubble>
         <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 10 }}>
           <button
             onClick={() => setStep(1)}
@@ -259,7 +222,7 @@ function JuniorExchangeOne() {
               fontFamily: "inherit",
             }}
           >
-            Try this example: small petty cash entry →
+            {t("junior.try_small_example")}
           </button>
         </div>
       </div>
@@ -267,26 +230,24 @@ function JuniorExchangeOne() {
   }
   return (
     <div>
-      <AminahBubble>Hi Sara. What entry do you need to make today?</AminahBubble>
-      <UserBubble>Petty cash for office supplies — 45 KWD</UserBubble>
-      <AminahBubble>Got it. Which expense account?</AminahBubble>
+      <AminahBubble>{t("junior.greeting")}</AminahBubble>
+      <UserBubble>{t("junior.user_1")}</UserBubble>
+      <AminahBubble>{t("junior.aminah_which_expense")}</AminahBubble>
       {!debit && (
         <AminahBubble wide>
           <div style={{ marginBottom: 8, fontSize: 11, color: "#5B6570", letterSpacing: "0.10em", fontWeight: 600 }}>
-            EXPENSE ACCOUNT
+            {t("labels.expense_account")}
           </div>
           <AccountPicker filterCategories={["Operating Expenses"]} onSelect={setDebit} />
         </AminahBubble>
       )}
       {debit && (
         <>
-          <AminahBubble>
-            And which petty cash account?
-          </AminahBubble>
+          <AminahBubble>{t("junior.aminah_which_petty")}</AminahBubble>
           {!credit && (
             <AminahBubble wide>
               <div style={{ marginBottom: 8, fontSize: 11, color: "#5B6570", letterSpacing: "0.10em", fontWeight: 600 }}>
-                PETTY CASH ACCOUNT
+                {t("labels.petty_cash_account")}
               </div>
               <AccountPicker filterCategories={["Assets"]} onSelect={setCredit} />
             </AminahBubble>
@@ -295,7 +256,7 @@ function JuniorExchangeOne() {
       )}
       {draft && (
         <>
-          <AminahBubble>Drafting now…</AminahBubble>
+          <AminahBubble>{t("junior.drafting")}</AminahBubble>
           <JournalEntryCard
             entry={draft}
             state={step === 3 ? "posted" : "draft-validated"}
@@ -303,12 +264,12 @@ function JuniorExchangeOne() {
           />
           {step !== 3 && (
             <AminahBubble>
-              Below the <strong style={{ color: "#E6EDF3", fontWeight: 500 }}>1,000 KWD threshold</strong> — this will post directly when you confirm. Hash chain extends.
+              <Trans i18nKey="junior.under_threshold" ns="conv-je" components={{ b: <strong style={{ color: "#E6EDF3", fontWeight: 500 }} /> }} />
             </AminahBubble>
           )}
           {step === 3 && (
             <AminahBubble>
-              Posted as <strong style={{ color: "#E6EDF3", fontWeight: 500 }}>JE-0421</strong>. Hash chain extended.
+              <Trans i18nKey="junior.posted_as" ns="conv-je" values={{ id: "JE-0421" }} components={{ b: <strong style={{ color: "#E6EDF3", fontWeight: 500 }} /> }} />
             </AminahBubble>
           )}
         </>
@@ -318,13 +279,14 @@ function JuniorExchangeOne() {
 }
 
 function JuniorExchangeTwo({ onOpenTaskbox }) {
+  const { t } = useTranslation("conv-je");
   const [step, setStep] = useState(0);
   const [debit, setDebit] = useState(null);
   const [credit, setCredit] = useState(null);
   const amount = 3200.0;
   const draft = debit && credit && {
     id: "JE-0428",
-    description: "Q1 marketing bonus accrual",
+    description: t("junior.bonus_accrual_description"),
     status: step === 3 ? "Pending Approval" : "Draft - Validated",
     lines: [
       { account: debit.name, code: debit.code, debit: amount, credit: null },
@@ -357,7 +319,7 @@ function JuniorExchangeTwo({ onOpenTaskbox }) {
               fontFamily: "inherit",
             }}
           >
-            Try this example: large accrual that needs CFO approval →
+            {t("junior.try_large_example")}
           </button>
         </div>
       </div>
@@ -365,23 +327,23 @@ function JuniorExchangeTwo({ onOpenTaskbox }) {
   }
   return (
     <div>
-      <UserBubble>Q1 marketing bonus accrual — 3,200 KWD</UserBubble>
-      <AminahBubble>Which expense account for the bonus?</AminahBubble>
+      <UserBubble>{t("junior.user_2")}</UserBubble>
+      <AminahBubble>{t("junior.aminah_which_expense_bonus")}</AminahBubble>
       {!debit && (
         <AminahBubble wide>
           <div style={{ marginBottom: 8, fontSize: 11, color: "#5B6570", letterSpacing: "0.10em", fontWeight: 600 }}>
-            EXPENSE ACCOUNT
+            {t("labels.expense_account")}
           </div>
           <AccountPicker filterCategories={["Operating Expenses"]} onSelect={setDebit} />
         </AminahBubble>
       )}
       {debit && (
         <>
-          <AminahBubble>And which liability account?</AminahBubble>
+          <AminahBubble>{t("junior.aminah_which_liability")}</AminahBubble>
           {!credit && (
             <AminahBubble wide>
               <div style={{ marginBottom: 8, fontSize: 11, color: "#5B6570", letterSpacing: "0.10em", fontWeight: 600 }}>
-                LIABILITY ACCOUNT
+                {t("labels.liability_account")}
               </div>
               <AccountPicker filterCategories={["Liabilities"]} onSelect={setCredit} />
             </AminahBubble>
@@ -390,7 +352,7 @@ function JuniorExchangeTwo({ onOpenTaskbox }) {
       )}
       {draft && (
         <>
-          <AminahBubble>Drafting now…</AminahBubble>
+          <AminahBubble>{t("junior.drafting")}</AminahBubble>
           <JournalEntryCard
             entry={draft}
             state={step === 3 ? "pending-approval" : "draft-validated"}
@@ -398,20 +360,20 @@ function JuniorExchangeTwo({ onOpenTaskbox }) {
           />
           {step !== 3 && (
             <AminahBubble>
-              This is <strong style={{ color: "#E6EDF3", fontWeight: 500, fontFamily: "'DM Mono', monospace" }}>3,200 KWD</strong> which is above your 1,000 KWD threshold. When you confirm, I'll send it to the CFO as an approval request — it won't post until the CFO approves.
+              <Trans i18nKey="junior.over_threshold" ns="conv-je" components={{ b: <strong style={{ color: "#E6EDF3", fontWeight: 500, fontFamily: "'DM Mono', monospace" }} /> }} />
             </AminahBubble>
           )}
           {step === 3 && (
             <>
               <AminahBubble>
-                Sent to CFO. You'll see the response in your Taskbox. Created <strong style={{ color: "#E6EDF3", fontWeight: 500 }}>TSK-0428</strong>.
+                <Trans i18nKey="junior.sent_to_cfo" ns="conv-je" values={{ id: "TSK-0428" }} components={{ b: <strong style={{ color: "#E6EDF3", fontWeight: 500 }} /> }} />
               </AminahBubble>
               <div style={{ display: "flex", justifyContent: "flex-start", marginTop: 4 }}>
                 <a
                   onClick={onOpenTaskbox}
                   style={{ fontSize: 11, color: "#00C48C", cursor: "pointer", marginLeft: 38 }}
                 >
-                  → View in Taskbox
+                  {t("junior.view_in_taskbox")}
                 </a>
               </div>
             </>
@@ -423,6 +385,10 @@ function JuniorExchangeTwo({ onOpenTaskbox }) {
 }
 
 function JuniorExchangeThree({ onOpenBankTx }) {
+  const { t } = useTranslation("conv-je");
+  const { tenant } = useTenant();
+  const bankName = tenant?.banks?.[0]?.abbreviation || "KIB";
+  const accountName = `${bankName} Operating Account`;
   const [played, setPlayed] = useState(false);
   if (!played) {
     return (
@@ -442,23 +408,23 @@ function JuniorExchangeThree({ onOpenBankTx }) {
             fontFamily: "inherit",
           }}
         >
-          Try this example: bank transaction (Aminah refuses) →
+          {t("junior.try_bank_example")}
         </button>
       </div>
     );
   }
   return (
     <div>
-      <UserBubble>Record the Talabat payout from today</UserBubble>
+      <UserBubble>{t("junior.user_3")}</UserBubble>
       <AminahBubble>
-        That's a bank transaction. It came from <strong style={{ color: "#E6EDF3", fontWeight: 500 }}>KIB Operating Account</strong>. Please review it in <strong style={{ color: "#E6EDF3", fontWeight: 500 }}>Bank Transactions</strong> instead — I can't draft entries for bank-sourced items here. The deterministic engine handles those directly.
+        <Trans i18nKey="junior.aminah_bank_refuse" ns="conv-je" values={{ account: accountName }} components={{ b: <strong style={{ color: "#E6EDF3", fontWeight: 500 }} /> }} />
       </AminahBubble>
       <div style={{ display: "flex", justifyContent: "flex-start" }}>
         <a
           onClick={onOpenBankTx}
           style={{ fontSize: 11, color: "#00C48C", cursor: "pointer", marginLeft: 38 }}
         >
-          → Go to Bank Transactions
+          {t("junior.go_to_bank_tx")}
         </a>
       </div>
     </div>
@@ -466,6 +432,7 @@ function JuniorExchangeThree({ onOpenBankTx }) {
 }
 
 export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
+  const { t } = useTranslation("conv-je");
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {/* Header */}
@@ -485,10 +452,10 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
             marginBottom: 4,
           }}
         >
-          CONVERSATIONAL JOURNAL ENTRY
+          {t("header.label")}
         </div>
         <div style={{ fontSize: 12, color: "#8B98A5", fontStyle: "italic" }}>
-          For non-bank transactions only. Bank transactions go through Bank Review.
+          {t("header.sub")}
         </div>
       </div>
 
@@ -526,7 +493,7 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
         <div style={{ maxWidth: 720, margin: "0 auto", position: "relative" }}>
           <input
             className="chat-input"
-            placeholder="Describe a non-bank transaction…"
+            placeholder={t("input_placeholder")}
             style={{
               width: "100%",
               background: "rgba(255,255,255,0.04)",

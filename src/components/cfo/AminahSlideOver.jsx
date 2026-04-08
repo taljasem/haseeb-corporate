@@ -1,34 +1,5 @@
 import { useEffect, useState } from "react";
-
-const ROLE_CONTENT = {
-  Owner: {
-    greeting: "Hi Tarek. What can I help you understand?",
-    suggestions: [
-      "How is cash this month?",
-      "What's my biggest expense risk?",
-      "Walk me through the close progress",
-      "Why is marketing over budget again?",
-    ],
-  },
-  CFO: {
-    greeting: "Hi. What are we working on?",
-    suggestions: [
-      "What needs my attention right now?",
-      "Summarize today's bank transactions",
-      "What's blocking the close?",
-      "Any rules I should approve?",
-    ],
-  },
-  Junior: {
-    greeting: "Hi Sara. How can I help with your work?",
-    suggestions: [
-      "What should I work on next?",
-      "Help me categorize this transaction",
-      "Draft a JE for me",
-      "What's my accuracy this week?",
-    ],
-  },
-};
+import { useTranslation } from "react-i18next";
 
 function Bubble({ msg }) {
   const isUser = msg.role === "user";
@@ -78,7 +49,10 @@ function renderBold(text) {
 }
 
 export default function AminahSlideOver({ open, onClose, context = null, role = "CFO" }) {
-  const content = ROLE_CONTENT[role] || ROLE_CONTENT.CFO;
+  const { t } = useTranslation("aminah");
+  const roleKey = role === "Owner" ? "owner" : role === "Junior" ? "junior" : "cfo";
+  const greeting = t(`${roleKey}.greeting`);
+  const suggestions = [t(`${roleKey}.q1`), t(`${roleKey}.q2`), t(`${roleKey}.q3`), t(`${roleKey}.q4`)];
   const [draft, setDraft] = useState("");
   useEffect(() => {
     if (!open) return;
@@ -136,12 +110,12 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
                 letterSpacing: "0.06em",
               }}
             >
-              AMINAH
+              {t("label")}
             </span>
           </div>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("close")}
             style={{
               background: "transparent",
               border: "none",
@@ -169,10 +143,10 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
                 fontStyle: "italic",
               }}
             >
-              Context: {context}
+              {t("context_prefix", { context })}
             </div>
           )}
-          <Bubble msg={{ role: "aminah", text: content.greeting }} />
+          <Bubble msg={{ role: "aminah", text: greeting }} />
           <div
             style={{
               fontSize: 10,
@@ -183,10 +157,10 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
               marginBottom: 8,
             }}
           >
-            SUGGESTED QUESTIONS
+            {t("suggested_questions")}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {content.suggestions.map((q) => (
+            {suggestions.map((q) => (
               <button
                 key={q}
                 onClick={() => setDraft(q)}
@@ -213,7 +187,7 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             className="chat-input"
-            placeholder="Ask Aminah…"
+            placeholder={t("input_placeholder")}
             style={{
               width: "100%",
               background: "rgba(255,255,255,0.04)",

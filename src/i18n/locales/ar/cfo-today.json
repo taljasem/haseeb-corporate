@@ -1,0 +1,32 @@
+{
+  "sections": {
+    "needs_review": "بحاجة لمراجعتك",
+    "suggested_rules": "قواعد مقترحة",
+    "month_end_close_fallback": "إقفال نهاية الشهر",
+    "close_with_period": "إقفال {{period}}",
+    "aminahs_notes": "ملاحظات أمينة",
+    "team_activity": "نشاط الفريق اليوم",
+    "deterministic_engine": "المحرك الحتمي"
+  },
+  "queue": {
+    "pending_approvals": "اعتمادات معلقة",
+    "bank_tx_review": "عمليات بنكية بانتظار المراجعة",
+    "reconciliation_exceptions": "استثناءات التسويات",
+    "audit_failing": "فحص تدقيق غير مجتاز",
+    "budget_over_plan": "قسم تجاوز الميزانية"
+  },
+  "suggestions": {
+    "view_all": "عرض جميع الاقتراحات ←"
+  },
+  "close": {
+    "tasks_complete_label": "مهام مكتملة · {{pct}}%"
+  },
+  "engine": {
+    "coverage_label": "التغطية لهذه الفترة",
+    "auto_today_label": "عمليات صنِّفت تلقائياً اليوم",
+    "rule_based": "وفق قاعدة",
+    "pattern": "نمط",
+    "ai": "ذكاء اصطناعي",
+    "view_performance": "عرض أداء المحرك ←"
+  }
+}

@@ -1,1 +1,42 @@
-{}
+{
+  "header": {
+    "pending_count": "BANK TRANSACTIONS PENDING REVIEW · {{count}}",
+    "pending_unknown": "BANK TRANSACTIONS PENDING REVIEW · —",
+    "in_your_domain": "Showing transactions in your domain",
+    "view_full_accounts": "View full bank accounts →"
+  },
+  "filters": {
+    "all": "All",
+    "today": "Today",
+    "this_week": "This week",
+    "suggestions": "Suggestions",
+    "needs_review": "Needs review"
+  },
+  "detail": {
+    "select_to_review": "Select a transaction to review.",
+    "bank_facts": "BANK FACTS · IMMUTABLE",
+    "engine_suggests": "ENGINE SUGGESTS",
+    "field_date": "DATE",
+    "field_source": "SOURCE",
+    "field_merchant": "MERCHANT",
+    "field_terminal": "TERMINAL",
+    "field_amount": "AMOUNT",
+    "field_direction": "DIRECTION",
+    "direction_outflow": "Outflow",
+    "direction_inflow": "Inflow",
+    "none": "—"
+  },
+  "confidence": {
+    "rule": "RULE",
+    "pattern": "PATTERN",
+    "ai": "AI SUGGESTED",
+    "none": "NEEDS REVIEW",
+    "manual": "MANUAL",
+    "pending": "PENDING"
+  },
+  "suggestion_banner": {
+    "apply_all": "Apply All",
+    "dismiss": "Dismiss",
+    "auto_cat_name": "{{merchant}} auto-categorization"
+  }
+}

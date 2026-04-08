@@ -1,9 +1,11 @@
+import { useTranslation } from "react-i18next";
 import { Repeat } from "lucide-react";
 
 export default function SuggestedRuleRow({ suggestion, onCreate, onDismiss, compact = false }) {
+  const { t } = useTranslation("rules");
   const title =
     suggestion.kind === "categorization"
-      ? `${suggestion.count} similar: ${suggestion.merchant} → ${suggestion.target}`
+      ? t("suggested.count_similar", { count: suggestion.count, merchant: suggestion.merchant, target: suggestion.target })
       : suggestion.description;
 
   return (
@@ -53,7 +55,7 @@ export default function SuggestedRuleRow({ suggestion, onCreate, onDismiss, comp
             fontFamily: "inherit",
           }}
         >
-          Create Rule
+          {t("suggested.create_rule")}
         </button>
         <button
           onClick={() => onDismiss && onDismiss(suggestion)}
@@ -68,7 +70,7 @@ export default function SuggestedRuleRow({ suggestion, onCreate, onDismiss, comp
             fontFamily: "inherit",
           }}
         >
-          Dismiss
+          {t("suggested.dismiss")}
         </button>
       </div>
     </div>

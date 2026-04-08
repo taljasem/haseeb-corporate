@@ -19,6 +19,7 @@ import enManualJe from "./locales/en/manual-je.json";
 import enConvJe from "./locales/en/conv-je.json";
 import enAminah from "./locales/en/aminah.json";
 import enNotifications from "./locales/en/notifications.json";
+import enCfoToday from "./locales/en/cfo-today.json";
 
 import arCommon from "./locales/ar/common.json";
 import arHeader from "./locales/ar/header.json";
@@ -37,12 +38,13 @@ import arManualJe from "./locales/ar/manual-je.json";
 import arConvJe from "./locales/ar/conv-je.json";
 import arAminah from "./locales/ar/aminah.json";
 import arNotifications from "./locales/ar/notifications.json";
+import arCfoToday from "./locales/ar/cfo-today.json";
 
 const namespaces = [
   "common", "header", "sidebar", "hero", "taskbox",
   "bank-accounts", "bank-transactions", "rules", "reconciliation",
   "financial", "audit", "close", "team", "manual-je", "conv-je",
-  "aminah", "notifications",
+  "aminah", "notifications", "cfo-today",
 ];
 
 i18n
@@ -68,6 +70,7 @@ i18n
         "conv-je": enConvJe,
         aminah: enAminah,
         notifications: enNotifications,
+        "cfo-today": enCfoToday,
       },
       ar: {
         common: arCommon,
@@ -87,6 +90,7 @@ i18n
         "conv-je": arConvJe,
         aminah: arAminah,
         notifications: arNotifications,
+        "cfo-today": arCfoToday,
       },
     },
     fallbackLng: "en",

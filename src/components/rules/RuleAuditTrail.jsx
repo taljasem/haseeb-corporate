@@ -1,10 +1,12 @@
+import { useTranslation } from "react-i18next";
 import { formatRelativeTime } from "../../utils/relativeTime";
 
 export default function RuleAuditTrail({ events = [] }) {
+  const { t } = useTranslation("rules");
   if (!events || events.length === 0) {
     return (
       <div style={{ fontSize: 12, color: "#5B6570", fontStyle: "italic" }}>
-        No audit events yet.
+        {t("detail.no_audit_events")}
       </div>
     );
   }

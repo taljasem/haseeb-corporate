@@ -1,1 +1,61 @@
-{}
+{
+  "title": "RECONCILIATION",
+  "period_label": "MARCH 2026 · BANK ACCOUNTS",
+  "loading": "Loading reconciliations…",
+  "loading_detail": "Loading reconciliation…",
+  "status": {
+    "completed": "COMPLETED",
+    "in_progress": "IN PROGRESS",
+    "not_started": "NOT STARTED",
+    "locked": "LOCKED"
+  },
+  "card": {
+    "matched": "matched",
+    "exception_one": "{{count}} exception",
+    "exception_other": "{{count}} exceptions",
+    "clean": "Clean",
+    "not_started": "Not started"
+  },
+  "detail": {
+    "back": "Back to reconciliations",
+    "sub": "ACCOUNT {{accountId}} · {{matched}}/{{total}} MATCHED",
+    "complete": "Complete reconciliation"
+  },
+  "summary": {
+    "opening_balance": "OPENING BALANCE",
+    "closing_bank": "CLOSING (BANK)",
+    "closing_ledger": "CLOSING (LEDGER)",
+    "difference": "DIFFERENCE"
+  },
+  "columns": {
+    "bank_statement": "BANK STATEMENT",
+    "general_ledger": "GENERAL LEDGER",
+    "bank_sub": "{{total}} items · {{unmatched}} unmatched",
+    "ledger_sub": "{{total}} entries · {{unmatched}} unmatched",
+    "matched_collapsed": "{{count}} matched items",
+    "collapsed": "(collapsed)",
+    "no_unmatched": "No unmatched items"
+  },
+  "exceptions": {
+    "header": "EXCEPTIONS · {{open}} OPEN",
+    "type_unidentified": "UNIDENTIFIED",
+    "type_amount_mismatch": "AMOUNT MISMATCH",
+    "type_missing_ledger": "MISSING LEDGER ENTRY",
+    "type_date_mismatch": "DATE MISMATCH",
+    "resolved": "✓ RESOLVED",
+    "create_je": "Create JE",
+    "accept_match": "Accept match",
+    "mark_resolved": "Mark resolved",
+    "resolution_accepted": "Accepted",
+    "resolution_investigated": "Investigated"
+  },
+  "je_composer": {
+    "label": "CREATE JOURNAL ENTRY",
+    "title": "MISSING LEDGER ENTRY",
+    "debit_account": "DEBIT ACCOUNT",
+    "credit_account": "CREDIT ACCOUNT",
+    "cancel": "Cancel",
+    "confirm": "Post entry & match",
+    "close": "Close"
+  }
+}

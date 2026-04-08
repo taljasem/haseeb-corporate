@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 import {
   getBankAccounts,
@@ -13,14 +14,19 @@ import { formatRelativeTime } from "../../utils/relativeTime";
 import { useTenant } from "../../components/shared/TenantContext";
 
 const RANGES = [
-  { id: "today", label: "Today" },
-  { id: "week",  label: "This Week" },
-  { id: "month", label: "This Month" },
-  { id: "all",   label: "All" },
+  { id: "today", key: "today" },
+  { id: "week",  key: "week" },
+  { id: "month", key: "month" },
+  { id: "all",   key: "all" },
 ];
-const TYPE_FILTERS = ["All", "Inflow", "Outflow"];
+const TYPE_FILTERS = [
+  { id: "All", key: "all" },
+  { id: "Inflow", key: "inflow" },
+  { id: "Outflow", key: "outflow" },
+];
 
 export default function BankAccountsScreen({ role = "CFO", readOnly = false, initialAccountId = null }) {
+  const { t } = useTranslation("bank-accounts");
   const { tenant } = useTenant();
   const showFutureOps = tenant.features?.showFutureBankOperations !== false;
   const [accounts, setAccounts] = useState(null);
@@ -82,7 +88,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
               fontStyle: "italic",
             }}
           >
-            READ-ONLY · You can view accounts but cannot initiate transactions.
+            {t("read_only_banner")}
           </div>
         )}
         {/* Header */}
@@ -96,7 +102,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
               lineHeight: 1,
             }}
           >
-            BANK ACCOUNTS
+            {t("title")}
           </div>
           <div
             style={{
@@ -107,7 +113,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
               marginTop: 6,
             }}
           >
-            {accounts ? `${accounts.length} ACCOUNTS` : "LOADING"}
+            {accounts ? t("accounts_count", { count: accounts.length }) : t("loading")}
           </div>
         </div>
 
@@ -172,7 +178,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
                   color: "#5B6570",
                 }}
               >
-                Last updated {formatRelativeTime(selected.lastUpdated)}
+                {t("last_updated", { time: formatRelativeTime(selected.lastUpdated) })}
               </div>
             </div>
 
@@ -210,7 +216,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
                         fontFamily: "inherit",
                       }}
                     >
-                      {r.label}
+                      {t(`ranges.${r.key}`)}
                     </button>
                   );
                 })}
@@ -218,11 +224,11 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <div style={{ display: "flex", gap: 4 }}>
                   {TYPE_FILTERS.map((f) => {
-                    const on = typeFilter === f;
+                    const on = typeFilter === f.id;
                     return (
                       <button
-                        key={f}
-                        onClick={() => setTypeFilter(f)}
+                        key={f.id}
+                        onClick={() => setTypeFilter(f.id)}
                         style={{
                           fontSize: 11,
                           fontWeight: 600,
@@ -235,7 +241,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
                           fontFamily: "inherit",
                         }}
                       >
-                        {f}
+                        {t(`type_filters.${f.key}`)}
                       </button>
                     );
                   })}
@@ -249,7 +255,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
                   <input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search transactions..."
+                    placeholder={t("search_placeholder")}
                     style={{
                       width: "100%",
                       background: "rgba(255,255,255,0.04)",
@@ -297,7 +303,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
                     fontFamily: "inherit",
                   }}
                 >
-                  Export {fmt}
+                  {t("export", { format: fmt })}
                 </button>
               ))}
             </div>}

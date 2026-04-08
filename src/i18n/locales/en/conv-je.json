@@ -1,1 +1,51 @@
-{}
+{
+  "header": {
+    "label": "CONVERSATIONAL JOURNAL ENTRY",
+    "sub": "For non-bank transactions only. Bank transactions go through Bank Review."
+  },
+  "input_placeholder": "Describe a non-bank transaction…",
+  "labels": {
+    "expense_account": "EXPENSE ACCOUNT",
+    "cash_account": "CASH ACCOUNT",
+    "petty_cash_account": "PETTY CASH ACCOUNT",
+    "liability_account": "LIABILITY ACCOUNT"
+  },
+  "cfo": {
+    "user_1": "I paid the cleaning lady 30 KWD cash today",
+    "aminah_1": "Got it — cash payment for cleaning. I need a couple of details before drafting the entry. Which expense account should I post this to?",
+    "aminah_got_debit_prefix": "Got it — ",
+    "aminah_got_debit_suffix": ". And which cash account did this come from?",
+    "drafting": "Drafting now…",
+    "review_and_confirm": "Here's the draft. Review and confirm to post.",
+    "posted": "Posted. Hash chain extended. Entry visible in your ledger and audit trail.",
+    "user_2": "Record the Zain payment that came in today",
+    "aminah_2": "That looks like a bank transaction — it came from your {{bank}} feed. I can't create entries for bank-originated items via conversation. Please review it in Bank Transactions instead.",
+    "open_bank_tx": "Open Bank Transactions →",
+    "user_3": "Add the thing from yesterday",
+    "aminah_3": "I can't draft this without more detail. Which transaction are you referring to? What was the amount and category?",
+    "cleaning_je_description": "Cash payment for cleaning"
+  },
+  "junior": {
+    "greeting": "Hi Sara. What entry do you need to make today?",
+    "try_small_example": "Try this example: small petty cash entry →",
+    "try_large_example": "Try this example: large accrual that needs CFO approval →",
+    "try_bank_example": "Try this example: bank transaction (Aminah refuses) →",
+    "user_1": "Petty cash for office supplies — 45 KWD",
+    "aminah_which_expense": "Got it. Which expense account?",
+    "aminah_which_petty": "And which petty cash account?",
+    "drafting": "Drafting now…",
+    "under_threshold": "Below the <b>1,000 KWD threshold</b> — this will post directly when you confirm. Hash chain extends.",
+    "posted_as": "Posted as <b>{{id}}</b>. Hash chain extended.",
+    "office_supplies_description": "Office supplies",
+    "user_2": "Q1 marketing bonus accrual — 3,200 KWD",
+    "aminah_which_expense_bonus": "Which expense account for the bonus?",
+    "aminah_which_liability": "And which liability account?",
+    "over_threshold": "This is <b>3,200 KWD</b> which is above your 1,000 KWD threshold. When you confirm, I'll send it to the CFO as an approval request — it won't post until the CFO approves.",
+    "sent_to_cfo": "Sent to CFO. You'll see the response in your Taskbox. Created <b>{{id}}</b>.",
+    "view_in_taskbox": "→ View in Taskbox",
+    "bonus_accrual_description": "Q1 marketing bonus accrual",
+    "user_3": "Record the Talabat payout from today",
+    "aminah_bank_refuse": "That's a bank transaction. It came from <b>{{account}}</b>. Please review it in <b>Bank Transactions</b> instead — I can't draft entries for bank-sourced items here. The deterministic engine handles those directly.",
+    "go_to_bank_tx": "→ Go to Bank Transactions"
+  }
+}

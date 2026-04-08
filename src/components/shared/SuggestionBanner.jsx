@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Repeat, X } from "lucide-react";
 
 export default function SuggestionBanner({ suggestion, onApply, onDismiss }) {
+  const { t } = useTranslation("bank-transactions");
   const [hidden, setHidden] = useState(false);
   if (hidden || !suggestion) return null;
 
@@ -41,14 +43,14 @@ export default function SuggestionBanner({ suggestion, onApply, onDismiss }) {
           fontFamily: "inherit",
         }}
       >
-        Apply All
+        {t("suggestion_banner.apply_all")}
       </button>
       <button
         onClick={() => {
           setHidden(true);
           onDismiss && onDismiss(suggestion);
         }}
-        aria-label="Dismiss"
+        aria-label={t("suggestion_banner.dismiss")}
         style={{
           background: "transparent",
           border: "none",

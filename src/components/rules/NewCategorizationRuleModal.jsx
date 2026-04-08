@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import AccountPicker from "../cfo/AccountPicker";
 import { createCategorizationRule, updateCategorizationRule } from "../../engine/mockEngine";
@@ -73,13 +74,15 @@ function SegBtn({ on, onClick, children }) {
   );
 }
 
-const MODES = [
-  { id: "auto-apply",    label: "Auto-apply",     desc: "Apply automatically to every matching transaction." },
-  { id: "suggest-only",  label: "Suggest only",   desc: "Show the suggestion — user must confirm before posting." },
-  { id: "ask-each-time", label: "Ask each time",  desc: "Always prompt the user; never apply silently." },
-];
+const MODE_IDS = ["auto-apply", "suggest-only", "ask-each-time"];
+const MODE_KEYS = {
+  "auto-apply": { label: "mode_auto_apply", desc: "mode_auto_apply_desc" },
+  "suggest-only": { label: "mode_suggest_only", desc: "mode_suggest_only_desc" },
+  "ask-each-time": { label: "mode_ask_each", desc: "mode_ask_each_desc" },
+};
 
 export default function NewCategorizationRuleModal({ open, onClose, onCreated, prefill = null, editingRule = null }) {
+  const { t } = useTranslation("rules");
   const [name, setName] = useState("");
   const [patternType, setPatternType] = useState("contains");
   const [patternValue, setPatternValue] = useState("");
@@ -188,7 +191,7 @@ export default function NewCategorizationRuleModal({ open, onClose, onCreated, p
         >
           <div>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570" }}>
-              {editingRule ? "EDIT CATEGORIZATION RULE" : "NEW CATEGORIZATION RULE"}
+              {editingRule ? t("cat_modal.edit_label") : t("cat_modal.new_label")}
             </div>
             <div
               style={{
@@ -199,12 +202,12 @@ export default function NewCategorizationRuleModal({ open, onClose, onCreated, p
                 marginTop: 2,
               }}
             >
-              {editingRule ? "UPDATE RULE" : "CREATE RULE"}
+              {editingRule ? t("cat_modal.update_title") : t("cat_modal.create_title")}
             </div>
           </div>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("cat_modal.close")}
             style={{ background: "transparent", border: "none", color: "#5B6570", cursor: "pointer", padding: 4 }}
           >
             <X size={18} />
@@ -213,49 +216,50 @@ export default function NewCategorizationRuleModal({ open, onClose, onCreated, p
 
         <div style={{ padding: "18px 22px", overflowY: "auto", flex: 1 }}>
           <div style={{ marginBottom: 14 }}>
-            <FieldLabel filled={!!name.trim()}>RULE NAME</FieldLabel>
+            <FieldLabel filled={!!name.trim()}>{t("cat_modal.rule_name")}</FieldLabel>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. KNPC Fuel Station auto-categorization"
+              placeholder={t("cat_modal.rule_name_placeholder")}
               style={inputStyle}
             />
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <FieldLabel filled={!!patternValue.trim()}>MERCHANT PATTERN</FieldLabel>
+            <FieldLabel filled={!!patternValue.trim()}>{t("cat_modal.merchant_pattern")}</FieldLabel>
             <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-              <SegBtn on={patternType === "exact"}    onClick={() => setPatternType("exact")}>Exact</SegBtn>
-              <SegBtn on={patternType === "contains"} onClick={() => setPatternType("contains")}>Contains</SegBtn>
-              <SegBtn on={patternType === "regex"}    onClick={() => setPatternType("regex")}>Regex</SegBtn>
+              <SegBtn on={patternType === "exact"}    onClick={() => setPatternType("exact")}>{t("cat_modal.pattern_exact")}</SegBtn>
+              <SegBtn on={patternType === "contains"} onClick={() => setPatternType("contains")}>{t("cat_modal.pattern_contains")}</SegBtn>
+              <SegBtn on={patternType === "regex"}    onClick={() => setPatternType("regex")}>{t("cat_modal.pattern_regex")}</SegBtn>
             </div>
             <input
               value={patternValue}
               onChange={(e) => setPatternValue(e.target.value)}
-              placeholder="e.g. KNPC"
+              placeholder={t("cat_modal.pattern_placeholder")}
               style={inputStyle}
             />
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <FieldLabel filled={!!debitAccount}>DEBIT ACCOUNT</FieldLabel>
+            <FieldLabel filled={!!debitAccount}>{t("cat_modal.debit_account")}</FieldLabel>
             <AccountPicker onSelect={setDebitAccount} />
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <FieldLabel filled={!!creditAccount}>CREDIT ACCOUNT</FieldLabel>
+            <FieldLabel filled={!!creditAccount}>{t("cat_modal.credit_account")}</FieldLabel>
             <AccountPicker onSelect={setCreditAccount} />
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <FieldLabel filled={true}>MODE</FieldLabel>
+            <FieldLabel filled={true}>{t("cat_modal.mode")}</FieldLabel>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {MODES.map((m) => {
-                const on = mode === m.id;
+              {MODE_IDS.map((mId) => {
+                const on = mode === mId;
+                const mKeys = MODE_KEYS[mId];
                 return (
                   <button
-                    key={m.id}
-                    onClick={() => setMode(m.id)}
+                    key={mId}
+                    onClick={() => setMode(mId)}
                     style={{
                       display: "flex",
                       alignItems: "flex-start",
@@ -281,8 +285,8 @@ export default function NewCategorizationRuleModal({ open, onClose, onCreated, p
                       }}
                     />
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 12, color: "#E6EDF3", fontWeight: 500 }}>{m.label}</div>
-                      <div style={{ fontSize: 11, color: "#5B6570", marginTop: 2 }}>{m.desc}</div>
+                      <div style={{ fontSize: 12, color: "#E6EDF3", fontWeight: 500 }}>{t(`cat_modal.${mKeys.label}`)}</div>
+                      <div style={{ fontSize: 11, color: "#5B6570", marginTop: 2 }}>{t(`cat_modal.${mKeys.desc}`)}</div>
                     </div>
                   </button>
                 );
@@ -300,24 +304,24 @@ export default function NewCategorizationRuleModal({ open, onClose, onCreated, p
                 listStyle: "none",
               }}
             >
-              + Conditions (optional)
+              {t("cat_modal.conditions_toggle")}
             </summary>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
               <div>
-                <FieldLabel filled={!!amountMin}>MIN AMOUNT (KWD)</FieldLabel>
+                <FieldLabel filled={!!amountMin}>{t("cat_modal.min_amount_kwd")}</FieldLabel>
                 <input
                   value={amountMin}
                   onChange={(e) => setAmountMin(e.target.value)}
-                  placeholder="0"
+                  placeholder={t("cat_modal.min_placeholder")}
                   style={inputStyle}
                 />
               </div>
               <div>
-                <FieldLabel filled={!!amountMax}>MAX AMOUNT (KWD)</FieldLabel>
+                <FieldLabel filled={!!amountMax}>{t("cat_modal.max_amount_kwd")}</FieldLabel>
                 <input
                   value={amountMax}
                   onChange={(e) => setAmountMax(e.target.value)}
-                  placeholder="∞"
+                  placeholder={t("cat_modal.max_placeholder")}
                   style={inputStyle}
                 />
               </div>
@@ -325,11 +329,11 @@ export default function NewCategorizationRuleModal({ open, onClose, onCreated, p
           </details>
 
           <div style={{ marginBottom: 14 }}>
-            <FieldLabel filled={!!approvalThreshold}>APPROVAL THRESHOLD (OPTIONAL)</FieldLabel>
+            <FieldLabel filled={!!approvalThreshold}>{t("cat_modal.approval_threshold")}</FieldLabel>
             <input
               value={approvalThreshold}
               onChange={(e) => setApprovalThreshold(e.target.value)}
-              placeholder="Route to CFO for approval if amount exceeds..."
+              placeholder={t("cat_modal.approval_placeholder")}
               style={inputStyle}
             />
           </div>
@@ -357,7 +361,7 @@ export default function NewCategorizationRuleModal({ open, onClose, onCreated, p
               fontFamily: "inherit",
             }}
           >
-            Cancel
+            {t("cat_modal.cancel")}
           </button>
           <button
             onClick={handleCreate}
@@ -374,7 +378,7 @@ export default function NewCategorizationRuleModal({ open, onClose, onCreated, p
               fontFamily: "inherit",
             }}
           >
-            {sending ? "Saving..." : editingRule ? "Save Changes" : "Create Rule"}
+            {sending ? t("cat_modal.saving") : editingRule ? t("cat_modal.save_changes") : t("cat_modal.create_rule")}
           </button>
         </div>
       </div>

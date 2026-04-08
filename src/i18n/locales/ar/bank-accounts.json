@@ -1,1 +1,56 @@
-{}
+{
+  "title": "الحسابات البنكية",
+  "accounts_count": "{{count}} حساباً",
+  "loading": "جارٍ التحميل",
+  "read_only_banner": "للعرض فقط · يمكنك عرض الحسابات دون إجراء أي عمليات.",
+  "last_updated": "آخر تحديث {{time}}",
+  "updated": "تم التحديث {{time}}",
+  "ranges": {
+    "today": "اليوم",
+    "week": "هذا الأسبوع",
+    "month": "هذا الشهر",
+    "all": "الكل"
+  },
+  "type_filters": {
+    "all": "الكل",
+    "inflow": "قبض",
+    "outflow": "صرف"
+  },
+  "search_placeholder": "بحث في العمليات...",
+  "export": "تصدير {{format}}",
+  "card": {
+    "current_balance": "الرصيد الحالي",
+    "mtd_inflow": "إيرادات الشهر حتى اليوم",
+    "mtd_outflow": "مصروفات الشهر حتى اليوم"
+  },
+  "summary": {
+    "opening_balance": "الرصيد الافتتاحي",
+    "closing_balance": "الرصيد الختامي",
+    "total_inflow": "إجمالي القبض",
+    "total_outflow": "إجمالي الصرف",
+    "transactions": "العمليات"
+  },
+  "table": {
+    "loading": "جارٍ التحميل…",
+    "empty": "لا توجد عمليات في هذه الفترة.",
+    "col_date": "التاريخ",
+    "col_description": "الوصف",
+    "col_categorization": "التصنيف",
+    "col_amount": "المبلغ",
+    "col_balance": "الرصيد"
+  },
+  "row": {
+    "view_journal_entry": "عرض القيد المحاسبي",
+    "loading_je": "جارٍ التحميل…",
+    "view_rule": "عرض القاعدة ({{id}}) ←",
+    "view_in_taskbox": "عرض في صندوق المهام ←"
+  },
+  "future_ops": {
+    "title": "عمليات بنكية أخرى",
+    "transfer": "تحويل بين الحسابات",
+    "wire": "إصدار حوالة",
+    "statement": "طلب كشف حساب",
+    "card_mgmt": "إدارة البطاقات",
+    "coming_next": "قريباً"
+  }
+}

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import RuleAuditTrail from "./RuleAuditTrail";
 import { formatKWD } from "../../utils/format";
 import { formatRelativeTime } from "../../utils/relativeTime";
@@ -16,44 +17,46 @@ function Field({ label, children }) {
       >
         {label}
       </div>
-      <div style={{ fontSize: 12, color: "#E6EDF3" }}>{children || "—"}</div>
+      <div style={{ fontSize: 12, color: "#E6EDF3" }}>{children || "\u2014"}</div>
     </div>
   );
 }
 
 export default function RuleDetailExpanded({ rule, kind = "categorization", onEdit, onMute, onDelete }) {
+  const { t } = useTranslation("rules");
   if (!rule) return null;
   const fields = [];
+  const DASH = t("detail.dash");
 
   if (kind === "categorization") {
-    fields.push(["MERCHANT PATTERN", `${rule.merchantPattern.type}: "${rule.merchantPattern.value}"`]);
-    fields.push(["DEBIT ACCOUNT",  `${rule.debitAccount.name} (${rule.debitAccount.code})`]);
-    fields.push(["CREDIT ACCOUNT", `${rule.creditAccount.name} (${rule.creditAccount.code})`]);
-    fields.push(["MODE", rule.mode]);
-    if (rule.conditions.amountMin != null) fields.push(["MIN AMOUNT", formatKWD(rule.conditions.amountMin)]);
-    if (rule.conditions.amountMax != null) fields.push(["MAX AMOUNT", formatKWD(rule.conditions.amountMax)]);
-    if (rule.conditions.sourceAccount)     fields.push(["SOURCE ACCOUNT", rule.conditions.sourceAccount]);
-    if (rule.costCenter)                   fields.push(["COST CENTER", rule.costCenter]);
-    if (rule.approvalThreshold != null)    fields.push(["APPROVAL THRESHOLD", `> ${formatKWD(rule.approvalThreshold)}`]);
+    fields.push([t("detail.merchant_pattern"), `${rule.merchantPattern.type}: "${rule.merchantPattern.value}"`]);
+    fields.push([t("detail.debit_account"),  `${rule.debitAccount.name} (${rule.debitAccount.code})`]);
+    fields.push([t("detail.credit_account"), `${rule.creditAccount.name} (${rule.creditAccount.code})`]);
+    fields.push([t("detail.mode"), rule.mode]);
+    if (rule.conditions.amountMin != null) fields.push([t("detail.min_amount"), formatKWD(rule.conditions.amountMin)]);
+    if (rule.conditions.amountMax != null) fields.push([t("detail.max_amount"), formatKWD(rule.conditions.amountMax)]);
+    if (rule.conditions.sourceAccount)     fields.push([t("detail.source_account"), rule.conditions.sourceAccount]);
+    if (rule.costCenter)                   fields.push([t("detail.cost_center"), rule.costCenter]);
+    if (rule.approvalThreshold != null)    fields.push([t("detail.approval_threshold"), t("detail.approval_threshold_value", { amount: formatKWD(rule.approvalThreshold) })]);
   } else {
-    const t = rule.trigger || {};
-    fields.push(["TASK TYPES", (t.taskTypes || []).join(", ") || "all"]);
-    if (t.linkedItemTypes && t.linkedItemTypes.length) fields.push(["LINKED ITEM TYPES", t.linkedItemTypes.join(", ")]);
-    const c = t.conditions || {};
-    if (c.amountMin != null)    fields.push(["MIN AMOUNT", formatKWD(c.amountMin)]);
-    if (c.amountMax != null)    fields.push(["MAX AMOUNT", formatKWD(c.amountMax)]);
-    if (c.merchantPattern)      fields.push(["MERCHANT PATTERN", c.merchantPattern]);
-    if (c.accountCategory)      fields.push(["ACCOUNT CATEGORY", c.accountCategory]);
-    if (c.costCenter)           fields.push(["COST CENTER", c.costCenter]);
-    fields.push(["ASSIGN TO", rule.action.assignTo?.name || "—"]);
-    if (rule.action.alsoNotify) fields.push(["ALSO NOTIFY", (rule.action.alsoNotify || []).join(", ")]);
-    fields.push(["PRIORITY", rule.action.priority || "normal"]);
+    const tg = rule.trigger || {};
+    fields.push([t("detail.task_types"), (tg.taskTypes || []).join(", ") || t("detail.all")]);
+    if (tg.linkedItemTypes && tg.linkedItemTypes.length) fields.push([t("detail.linked_item_types"), tg.linkedItemTypes.join(", ")]);
+    const c = tg.conditions || {};
+    if (c.amountMin != null)    fields.push([t("detail.min_amount"), formatKWD(c.amountMin)]);
+    if (c.amountMax != null)    fields.push([t("detail.max_amount"), formatKWD(c.amountMax)]);
+    if (c.merchantPattern)      fields.push([t("detail.merchant_pattern"), c.merchantPattern]);
+    if (c.accountCategory)      fields.push([t("detail.account_category"), c.accountCategory]);
+    if (c.costCenter)           fields.push([t("detail.cost_center"), c.costCenter]);
+    fields.push([t("detail.assign_to"), rule.action.assignTo?.name || DASH]);
+    if (rule.action.alsoNotify) fields.push([t("detail.also_notify"), (rule.action.alsoNotify || []).join(", ")]);
+    fields.push([t("detail.priority"), rule.action.priority || "normal"]);
   }
 
-  fields.push(["APPLIED", `${rule.appliedCount} times`]);
-  fields.push(["LAST APPLIED", rule.lastAppliedAt ? formatRelativeTime(rule.lastAppliedAt) : "never"]);
-  fields.push(["CREATED BY", rule.createdBy?.name || "—"]);
-  fields.push(["CREATED", formatRelativeTime(rule.createdAt)]);
+  fields.push([t("detail.applied"), t("detail.applied_times", { count: rule.appliedCount })]);
+  fields.push([t("detail.last_applied"), rule.lastAppliedAt ? formatRelativeTime(rule.lastAppliedAt) : t("detail.never")]);
+  fields.push([t("detail.created_by"), rule.createdBy?.name || DASH]);
+  fields.push([t("detail.created"), formatRelativeTime(rule.createdAt)]);
 
   const isMuted = rule.status === "muted";
 
@@ -89,7 +92,7 @@ export default function RuleDetailExpanded({ rule, kind = "categorization", onEd
           marginBottom: 8,
         }}
       >
-        AUDIT TRAIL
+        {t("detail.audit_trail")}
       </div>
       <RuleAuditTrail events={rule.auditTrail} />
 
@@ -107,7 +110,7 @@ export default function RuleDetailExpanded({ rule, kind = "categorization", onEd
             fontFamily: "inherit",
           }}
         >
-          Edit
+          {t("detail.edit")}
         </button>
         <button
           onClick={() => onMute && onMute(rule)}
@@ -122,7 +125,7 @@ export default function RuleDetailExpanded({ rule, kind = "categorization", onEd
             fontFamily: "inherit",
           }}
         >
-          {isMuted ? "Unmute" : "Mute"}
+          {isMuted ? t("detail.unmute") : t("detail.mute")}
         </button>
         <button
           onClick={() => onDelete && onDelete(rule)}
@@ -137,7 +140,7 @@ export default function RuleDetailExpanded({ rule, kind = "categorization", onEd
             fontFamily: "inherit",
           }}
         >
-          Delete
+          {t("detail.delete")}
         </button>
       </div>
     </div>

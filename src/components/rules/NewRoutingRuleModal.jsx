@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import {
   createRoutingRule,
@@ -59,6 +60,7 @@ function FieldLabel({ filled, children }) {
 const PRIORITIES = ["normal", "high", "urgent"];
 
 export default function NewRoutingRuleModal({ open, onClose, onCreated, editingRule = null }) {
+  const { t } = useTranslation("rules");
   const [name, setName] = useState("");
   const [types, setTypes] = useState([]);
   const [selectedTypes, setSelectedTypes] = useState(["all"]);
@@ -171,7 +173,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
         >
           <div>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570" }}>
-              {editingRule ? "EDIT ROUTING RULE" : "NEW ROUTING RULE"}
+              {editingRule ? t("route_modal.edit_label") : t("route_modal.new_label")}
             </div>
             <div
               style={{
@@ -182,12 +184,12 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
                 marginTop: 2,
               }}
             >
-              {editingRule ? "UPDATE RULE" : "CREATE RULE"}
+              {editingRule ? t("route_modal.update_title") : t("route_modal.create_title")}
             </div>
           </div>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("route_modal.close")}
             style={{ background: "transparent", border: "none", color: "#5B6570", cursor: "pointer", padding: 4 }}
           >
             <X size={18} />
@@ -196,17 +198,17 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
 
         <div style={{ padding: "18px 22px", overflowY: "auto", flex: 1 }}>
           <div style={{ marginBottom: 14 }}>
-            <FieldLabel filled={!!name.trim()}>RULE NAME</FieldLabel>
+            <FieldLabel filled={!!name.trim()}>{t("route_modal.rule_name")}</FieldLabel>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Marketing tasks → Layla"
+              placeholder={t("route_modal.rule_name_placeholder")}
               style={inputStyle}
             />
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <FieldLabel filled={selectedTypes.length > 0}>APPLY TO TASK TYPES</FieldLabel>
+            <FieldLabel filled={selectedTypes.length > 0}>{t("route_modal.apply_to_task_types")}</FieldLabel>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               <button
                 onClick={() => toggleType("all")}
@@ -222,7 +224,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
                   fontFamily: "inherit",
                 }}
               >
-                Apply to all
+                {t("route_modal.apply_all")}
               </button>
               {types.map((t) => {
                 const on = selectedTypes.includes(t.id);
@@ -257,28 +259,28 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
                 listStyle: "none",
               }}
             >
-              + Conditions (optional)
+              {t("route_modal.conditions_toggle")}
             </summary>
             <div style={{ marginTop: 8 }}>
-              <FieldLabel filled={!!amountMin}>MIN AMOUNT (KWD)</FieldLabel>
+              <FieldLabel filled={!!amountMin}>{t("route_modal.min_amount_kwd")}</FieldLabel>
               <input
                 value={amountMin}
                 onChange={(e) => setAmountMin(e.target.value)}
-                placeholder="e.g. 5000"
+                placeholder={t("route_modal.min_amount_placeholder")}
                 style={{ ...inputStyle, marginBottom: 10 }}
               />
-              <FieldLabel filled={!!merchantPattern}>MERCHANT PATTERN</FieldLabel>
+              <FieldLabel filled={!!merchantPattern}>{t("route_modal.merchant_pattern")}</FieldLabel>
               <input
                 value={merchantPattern}
                 onChange={(e) => setMerchantPattern(e.target.value)}
-                placeholder="e.g. marketing|advertising|campaign"
+                placeholder={t("route_modal.merchant_placeholder")}
                 style={inputStyle}
               />
             </div>
           </details>
 
           <div style={{ marginBottom: 14 }}>
-            <FieldLabel filled={!!assignee}>ASSIGN TO</FieldLabel>
+            <FieldLabel filled={!!assignee}>{t("route_modal.assign_to")}</FieldLabel>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
               {recipients.map((r) => {
                 const on = assignee && assignee.id === r.id;
@@ -311,7 +313,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <FieldLabel filled={true}>PRIORITY</FieldLabel>
+            <FieldLabel filled={true}>{t("route_modal.priority")}</FieldLabel>
             <div style={{ display: "flex", gap: 6 }}>
               {PRIORITIES.map((p) => {
                 const on = priority === p;
@@ -334,7 +336,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
                       fontFamily: "inherit",
                     }}
                   >
-                    {p}
+                    {t(`route_modal.priority_${p}`)}
                   </button>
                 );
               })}
@@ -364,7 +366,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
               fontFamily: "inherit",
             }}
           >
-            Cancel
+            {t("route_modal.cancel")}
           </button>
           <button
             onClick={handleCreate}
@@ -381,7 +383,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
               fontFamily: "inherit",
             }}
           >
-            {sending ? "Saving..." : editingRule ? "Save Changes" : "Create Rule"}
+            {sending ? t("route_modal.saving") : editingRule ? t("route_modal.save_changes") : t("route_modal.create_rule")}
           </button>
         </div>
       </div>

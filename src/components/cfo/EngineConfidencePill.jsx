@@ -1,11 +1,14 @@
+import { useTranslation } from "react-i18next";
+
 const STYLES = {
-  RULE:    { bg: "#00C48C",            fg: "#05070A", border: "transparent",            label: "RULE"    },
-  PATTERN: { bg: "#3B82F6",            fg: "#FFFFFF", border: "transparent",            label: "PATTERN" },
-  AI:      { bg: "rgba(212,168,75,0.18)", fg: "#D4A84B", border: "rgba(212,168,75,0.4)", label: "AI SUGGESTED" },
-  NONE:    { bg: "transparent",        fg: "#FF5A5F", border: "rgba(255,90,95,0.5)",    label: "NEEDS REVIEW" },
+  RULE:    { bg: "#00C48C",            fg: "#05070A", border: "transparent",            key: "rule"    },
+  PATTERN: { bg: "#3B82F6",            fg: "#FFFFFF", border: "transparent",            key: "pattern" },
+  AI:      { bg: "rgba(212,168,75,0.18)", fg: "#D4A84B", border: "rgba(212,168,75,0.4)", key: "ai" },
+  NONE:    { bg: "transparent",        fg: "#FF5A5F", border: "rgba(255,90,95,0.5)",    key: "none" },
 };
 
 export default function EngineConfidencePill({ confidence }) {
+  const { t } = useTranslation("bank-transactions");
   const s = STYLES[confidence] || STYLES.NONE;
   return (
     <span
@@ -23,7 +26,7 @@ export default function EngineConfidencePill({ confidence }) {
         whiteSpace: "nowrap",
       }}
     >
-      {s.label}
+      {t(`confidence.${s.key}`)}
     </span>
   );
 }

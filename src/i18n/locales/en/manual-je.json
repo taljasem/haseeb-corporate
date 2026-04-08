@@ -1,1 +1,131 @@
-{}
+{
+  "title": "MANUAL JE",
+  "subtitle": "FORMAL DOUBLE-ENTRY",
+  "new": "New",
+  "tabs": {
+    "drafts": "Drafts",
+    "recent": "Recent",
+    "templates": "Templates",
+    "scheduled": "Scheduled"
+  },
+  "empty_list": "No {{tab}}",
+  "tab_names": {
+    "drafts": "drafts",
+    "recent": "recent",
+    "templates": "templates",
+    "scheduled": "scheduled"
+  },
+  "search_placeholder": "Search entries...",
+  "list": {
+    "untitled": "(untitled)",
+    "balanced": "balanced",
+    "unbalanced": "unbalanced",
+    "lines_used": "{{count}} lines · used {{used}}×"
+  },
+  "toast": {
+    "draft_from_template": "Draft created from template",
+    "draft_discarded": "Draft discarded",
+    "posted": "Posted {{id}}",
+    "cannot_post": "Cannot post: {{reason}}",
+    "reversal_created": "Reversal entry created",
+    "scheduled": "Entry scheduled for {{date}}",
+    "template_saved": "Template saved"
+  },
+  "empty_state": {
+    "title": "MANUAL JOURNAL ENTRIES",
+    "desc": "Create precise multi-line entries, manage templates, and schedule recurring postings.",
+    "blank": "Blank entry",
+    "use_template": "Use a template →",
+    "view_recent": "View recent →"
+  },
+  "composer": {
+    "edit_draft": "EDIT DRAFT",
+    "manual_je": "MANUAL JOURNAL ENTRY",
+    "from_template": "from {{id}}",
+    "ask_aminah": "Ask Aminah",
+    "discard": "Discard",
+    "schedule": "Schedule",
+    "save_as_template": "Save as Template",
+    "post_entry": "Post Entry",
+    "reverse_entry": "Reverse Entry",
+    "post_now": "Post Now",
+    "cancel_schedule": "Cancel Schedule",
+    "reversed_by": "REVERSED BY {{id}}",
+    "reversal_of": "REVERSAL OF {{id}}"
+  },
+  "status": {
+    "posted": "POSTED",
+    "scheduled": "SCHEDULED",
+    "draft": "DRAFT"
+  },
+  "fields": {
+    "date": "DATE",
+    "reference": "REFERENCE",
+    "description": "DESCRIPTION",
+    "source": "SOURCE"
+  },
+  "source_options": {
+    "manual": "Manual",
+    "adjustment": "Adjustment",
+    "reversal": "Reversal",
+    "recurring": "Recurring"
+  },
+  "lines": {
+    "col_account": "ACCOUNT",
+    "col_debit": "DEBIT",
+    "col_credit": "CREDIT",
+    "col_memo": "MEMO",
+    "add_line": "Add line",
+    "memo_placeholder": "Optional memo",
+    "line_account_not_selected": "Line {{n}}: account not selected",
+    "line_both": "Line {{n}}: cannot have both debit and credit"
+  },
+  "totals": {
+    "total_debits": "TOTAL DEBITS",
+    "total_credits": "TOTAL CREDITS",
+    "difference": "DIFFERENCE",
+    "balanced": "BALANCED",
+    "out_of_balance": "OUT OF BALANCE"
+  },
+  "account_picker": {
+    "search_placeholder": "Search account..."
+  },
+  "template_detail": {
+    "template_label": "TEMPLATE",
+    "lines": "LINES ({{count}})",
+    "used_times": "Used <strong>{{count}}</strong> times",
+    "created": "Created {{time}}",
+    "use_template": "Use Template"
+  },
+  "reverse_modal": {
+    "title": "REVERSE JOURNAL ENTRY",
+    "sub": "CREATE REVERSAL",
+    "body": "Create a reversal entry for <strong>{{ref}}</strong>? This will create a new JE with all debits and credits flipped, dated today.",
+    "reason_label": "REASON (REQUIRED)",
+    "reason_placeholder": "Why are you reversing this entry?",
+    "cancel": "Cancel",
+    "confirm": "Create Reversal"
+  },
+  "schedule_modal": {
+    "title": "SCHEDULE JOURNAL ENTRY",
+    "sub": "POSTPONE / RECUR",
+    "post_on": "POST ON DATE",
+    "frequency": "FREQUENCY",
+    "freq_none": "None (one-time)",
+    "freq_monthly": "Monthly",
+    "freq_quarterly": "Quarterly",
+    "freq_annually": "Annually",
+    "cancel": "Cancel",
+    "confirm": "Schedule Entry"
+  },
+  "save_template_modal": {
+    "title": "SAVE AS TEMPLATE",
+    "sub": "REUSABLE ENTRY",
+    "name_label": "TEMPLATE NAME",
+    "name_placeholder": "e.g. Quarterly Bonus",
+    "desc_label": "DESCRIPTION",
+    "desc_placeholder": "Short description",
+    "cancel": "Cancel",
+    "confirm": "Save Template"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "sections": {
+    "needs_review": "NEEDS YOUR REVIEW",
+    "suggested_rules": "SUGGESTED RULES",
+    "month_end_close_fallback": "MONTH-END CLOSE",
+    "close_with_period": "{{period}} CLOSE",
+    "aminahs_notes": "AMINAH'S NOTES",
+    "team_activity": "TEAM ACTIVITY TODAY",
+    "deterministic_engine": "DETERMINISTIC ENGINE"
+  },
+  "queue": {
+    "pending_approvals": "pending approvals",
+    "bank_tx_review": "bank transactions awaiting review",
+    "reconciliation_exceptions": "reconciliation exceptions",
+    "audit_failing": "audit check failing",
+    "budget_over_plan": "budget department over plan"
+  },
+  "suggestions": {
+    "view_all": "View all suggestions →"
+  },
+  "close": {
+    "tasks_complete_label": "TASKS COMPLETE · {{pct}}%"
+  },
+  "engine": {
+    "coverage_label": "COVERAGE THIS PERIOD",
+    "auto_today_label": "TRANSACTIONS AUTO-CATEGORIZED TODAY",
+    "rule_based": "Rule-based",
+    "pattern": "Pattern",
+    "ai": "AI",
+    "view_performance": "View engine performance →"
+  }
+}

@@ -1,13 +1,14 @@
+import { useTranslation } from "react-i18next";
 import { ArrowLeftRight, Send, FileText, CreditCard } from "lucide-react";
 
-const OPS = [
-  { icon: ArrowLeftRight, label: "Transfer between accounts" },
-  { icon: Send,           label: "Initiate wire" },
-  { icon: FileText,       label: "Request statement" },
-  { icon: CreditCard,     label: "Card management" },
-];
-
 export default function FutureBankOperationsCard() {
+  const { t } = useTranslation("bank-accounts");
+  const OPS = [
+    { icon: ArrowLeftRight, label: t("future_ops.transfer") },
+    { icon: Send,           label: t("future_ops.wire") },
+    { icon: FileText,       label: t("future_ops.statement") },
+    { icon: CreditCard,     label: t("future_ops.card_mgmt") },
+  ];
   return (
     <div
       style={{
@@ -27,7 +28,7 @@ export default function FutureBankOperationsCard() {
           marginBottom: 12,
         }}
       >
-        MORE BANK OPERATIONS
+        {t("future_ops.title")}
       </div>
       <div
         style={{
@@ -70,7 +71,7 @@ export default function FutureBankOperationsCard() {
                 borderRadius: 3,
               }}
             >
-              COMING NEXT
+              {t("future_ops.coming_next")}
             </span>
           </button>
         ))}

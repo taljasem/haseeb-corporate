@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { formatKWD } from "../../utils/format";
 import AccountPicker from "./AccountPicker";
 import AssignToButton from "../shared/AssignToButton";
@@ -17,9 +18,9 @@ const STATE_STYLES = {
     pillFg: "#D4A84B",
     pillBg: "rgba(212,168,75,0.10)",
     pillBorder: "rgba(212,168,75,0.30)",
-    pillLabel: "ENGINE SUGGESTION · PENDING CONFIRMATION",
-    headerLabel: "ENGINE SUGGESTED ENTRY",
-    hashSuffix: "not yet committed",
+    pillKey: "state_suggested_pill",
+    headerKey: "header_suggested",
+    hashKey: "hash_suggested",
     cardBg: "rgba(255,255,255,0.04)",
     opacity: 1,
   },
@@ -28,9 +29,9 @@ const STATE_STYLES = {
     pillFg: "#00C48C",
     pillBg: "rgba(0,196,140,0.10)",
     pillBorder: "rgba(0,196,140,0.30)",
-    pillLabel: "DRAFT · VALIDATED",
-    headerLabel: "DRAFT JOURNAL ENTRY",
-    hashSuffix: "ready",
+    pillKey: "state_draft_pill",
+    headerKey: "header_draft",
+    hashKey: "hash_draft",
     cardBg: "rgba(255,255,255,0.04)",
     opacity: 1,
   },
@@ -39,9 +40,9 @@ const STATE_STYLES = {
     pillFg: "#D4A84B",
     pillBg: "rgba(212,168,75,0.10)",
     pillBorder: "rgba(212,168,75,0.30)",
-    pillLabel: "PENDING CFO APPROVAL",
-    headerLabel: "JOURNAL ENTRY",
-    hashSuffix: "not committed",
+    pillKey: "state_pending_pill",
+    headerKey: "header_je",
+    hashKey: "hash_pending",
     cardBg: "rgba(255,255,255,0.04)",
     opacity: 0.95,
   },
@@ -50,11 +51,12 @@ const STATE_STYLES = {
     pillFg: "#8B98A5",
     pillBg: "rgba(91,101,112,0.14)",
     pillBorder: "rgba(91,101,112,0.30)",
-    pillLabelTemplate: (id) => `POSTED · ${id}`,
-    headerLabel: "JOURNAL ENTRY",
-    hashSuffix: "extended · a4f2…9c1b",
+    pillKey: "state_posted_pill",
+    headerKey: "header_je",
+    hashKey: "hash_posted",
     cardBg: "rgba(255,255,255,0.025)",
     opacity: 0.85,
+    postedWithId: true,
   },
 };
 
@@ -77,13 +79,15 @@ export default function JournalEntryCard({
   onDiscard,
   onAskAminah,
   onChooseDifferentAccount,
-  postedBy = "You (CFO)",
+  postedBy,
   showAssign = false,
   assignItemType = "journal-entry",
   onAssign,
 }) {
+  const { t } = useTranslation("common");
   const [pickerLineIdx, setPickerLineIdx] = useState(null); // which line is being edited
   const [workingEntry, setWorkingEntry] = useState(null);
+  const postedByLabel = postedBy || t("je_card.posted_by_cfo");
 
   if (!entry) return null;
   const live = workingEntry || entry;
@@ -93,7 +97,9 @@ export default function JournalEntryCard({
   const isLocked = state === "posted" || state === "pending-approval";
   const balanced = live.lines.every((l) => l.account != null) && live.balanced !== false;
 
-  const pillLabel = s.pillLabelTemplate ? s.pillLabelTemplate(live.id) : s.pillLabel;
+  const pillLabel = s.postedWithId ? t("je_card.state_posted_pill", { id: live.id }) : t(`je_card.${s.pillKey}`);
+  const headerLabel = t(`je_card.${s.headerKey}`);
+  const hashSuffix = t(`je_card.${s.hashKey}`);
 
   // Handlers for the inline picker swap
   const openPickerForLine = (idx) => {
@@ -147,7 +153,7 @@ export default function JournalEntryCard({
               color: "#5B6570",
             }}
           >
-            {s.headerLabel}
+            {headerLabel}
           </div>
           <div
             style={{
@@ -204,9 +210,9 @@ export default function JournalEntryCard({
             borderBottom: "1px solid rgba(255,255,255,0.06)",
           }}
         >
-          <div>ACCOUNT</div>
-          <div style={{ textAlign: "right" }}>DEBIT</div>
-          <div style={{ textAlign: "right" }}>CREDIT</div>
+          <div>{t("je_card.col_account")}</div>
+          <div style={{ textAlign: "right" }}>{t("je_card.col_debit")}</div>
+          <div style={{ textAlign: "right" }}>{t("je_card.col_credit")}</div>
         </div>
 
         {live.lines.map((line, i) => {
@@ -237,7 +243,7 @@ export default function JournalEntryCard({
                         fontFamily: "inherit",
                       }}
                     >
-                      Select account...
+                      {t("je_card.select_account")}
                     </button>
                   ) : (
                     <>
@@ -287,7 +293,7 @@ export default function JournalEntryCard({
                       onClick={() => setPickerLineIdx(null)}
                       style={{ fontSize: 11, color: "#5B6570", cursor: "pointer" }}
                     >
-                      ← Cancel
+                      {t("je_card.cancel_picker")}
                     </a>
                   </div>
                 </div>
@@ -310,7 +316,7 @@ export default function JournalEntryCard({
             color: "#8B98A5",
           }}
         >
-          <div>TOTAL</div>
+          <div>{t("je_card.total")}</div>
           <div
             style={{
               textAlign: "right",
@@ -349,16 +355,16 @@ export default function JournalEntryCard({
           flexWrap: "wrap",
         }}
       >
-        <span>MAPPING: {live.mappingVersion}</span>
+        <span>{t("je_card.mapping", { version: live.mappingVersion })}</span>
         <span>·</span>
         <span style={{ color: balanced ? "#00C48C" : "#FF5A5F" }}>
-          {balanced ? "✓ BALANCED" : "✗ INCOMPLETE"}
+          {balanced ? t("je_card.balanced") : t("je_card.incomplete")}
         </span>
         <span>·</span>
-        <span>CREATED: {fmtCreated(live.createdAt)}</span>
+        <span>{t("je_card.created_at", { time: fmtCreated(live.createdAt) })}</span>
         <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 4 }}>
           <ShieldIcon />
-          HASH CHAIN: SHA-256 · {s.hashSuffix}
+          {t("je_card.hash_chain", { suffix: hashSuffix })}
         </span>
       </div>
 
@@ -372,9 +378,9 @@ export default function JournalEntryCard({
             color: "#5B6570",
           }}
         >
-          Posted by <span style={{ color: "#8B98A5", fontWeight: 500 }}>{postedBy}</span> at{" "}
-          {fmtCreated(live.createdAt)} ·{" "}
-          <a style={{ color: "#00C48C", cursor: "pointer" }}>View audit trail →</a>
+          {t("je_card.posted_by")} <span style={{ color: "#8B98A5", fontWeight: 500 }}>{postedByLabel}</span>{" "}
+          {t("je_card.posted_at_time", { time: fmtCreated(live.createdAt) })} ·{" "}
+          <a style={{ color: "#00C48C", cursor: "pointer" }}>{t("je_card.view_audit_trail")}</a>
         </div>
       )}
 
@@ -404,7 +410,7 @@ export default function JournalEntryCard({
               fontFamily: "inherit",
             }}
           >
-            Confirm and post
+            {t("je_card.confirm_post")}
           </button>
 
           {isSuggested ? (
@@ -426,7 +432,7 @@ export default function JournalEntryCard({
                   fontFamily: "inherit",
                 }}
               >
-                Choose different account
+                {t("je_card.choose_different")}
               </button>
               <button
                 onClick={onAskAminah}
@@ -443,7 +449,7 @@ export default function JournalEntryCard({
                 onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(139,92,246,0.10)")}
                 onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
               >
-                Ask Aminah
+                {t("je_card.ask_aminah_btn")}
               </button>
             </>
           ) : (
@@ -461,7 +467,7 @@ export default function JournalEntryCard({
                   fontFamily: "inherit",
                 }}
               >
-                Edit
+                {t("je_card.edit_btn")}
               </button>
               <button
                 onClick={onDiscard}
@@ -476,7 +482,7 @@ export default function JournalEntryCard({
                   fontFamily: "inherit",
                 }}
               >
-                Discard
+                {t("je_card.discard_btn")}
               </button>
             </>
           )}

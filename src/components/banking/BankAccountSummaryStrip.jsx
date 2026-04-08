@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { formatMoney } from "../../utils/formatCurrency";
 
 function Stat({ label, value, color = "#E6EDF3" }) {
@@ -30,6 +31,7 @@ function Stat({ label, value, color = "#E6EDF3" }) {
 }
 
 export default function BankAccountSummaryStrip({ summary, currency = "KWD" }) {
+  const { t } = useTranslation("bank-accounts");
   if (!summary) return null;
   return (
     <div
@@ -43,11 +45,11 @@ export default function BankAccountSummaryStrip({ summary, currency = "KWD" }) {
         borderRadius: 8,
       }}
     >
-      <Stat label="OPENING BALANCE" value={formatMoney(summary.openingBalance, currency)} />
-      <Stat label="CLOSING BALANCE" value={formatMoney(summary.closingBalance, currency)} />
-      <Stat label="TOTAL INFLOW"    value={`+${formatMoney(summary.totalInflow,  currency).replace(/^(KWD|USD) /, "")}`} color="#00C48C" />
-      <Stat label="TOTAL OUTFLOW"   value={`-${formatMoney(summary.totalOutflow, currency).replace(/^(KWD|USD) /, "")}`} color="#FF5A5F" />
-      <Stat label="TRANSACTIONS"    value={String(summary.transactionCount)} />
+      <Stat label={t("summary.opening_balance")} value={formatMoney(summary.openingBalance, currency)} />
+      <Stat label={t("summary.closing_balance")} value={formatMoney(summary.closingBalance, currency)} />
+      <Stat label={t("summary.total_inflow")}    value={`+${formatMoney(summary.totalInflow,  currency).replace(/^(KWD|USD) /, "")}`} color="#00C48C" />
+      <Stat label={t("summary.total_outflow")}   value={`-${formatMoney(summary.totalOutflow, currency).replace(/^(KWD|USD) /, "")}`} color="#FF5A5F" />
+      <Stat label={t("summary.transactions")}    value={String(summary.transactionCount)} />
     </div>
   );
 }

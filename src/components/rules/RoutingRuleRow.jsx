@@ -1,25 +1,27 @@
+import { useTranslation } from "react-i18next";
 import { UserPlus, ChevronDown, ChevronUp } from "lucide-react";
 import { StatusPill } from "./StatusPills";
 import RuleDetailExpanded from "./RuleDetailExpanded";
 import { formatKWD } from "../../utils/format";
 import { formatRelativeTime } from "../../utils/relativeTime";
 
-function conditionSummary(trigger) {
+function buildConditionSummary(trigger, t) {
   const parts = [];
   if (trigger.taskTypes && trigger.taskTypes.length && !trigger.taskTypes.includes("all")) {
-    parts.push(`type = ${trigger.taskTypes.join("/")}`);
+    parts.push(t("row.condition_type", { values: trigger.taskTypes.join("/") }));
   }
   const c = trigger.conditions || {};
-  if (c.amountMin != null) parts.push(`amount ≥ ${formatKWD(c.amountMin)}`);
-  if (c.amountMax != null) parts.push(`amount ≤ ${formatKWD(c.amountMax)}`);
-  if (c.merchantPattern)   parts.push(`merchant ~ "${c.merchantPattern}"`);
-  if (c.accountCategory)   parts.push(`category = ${c.accountCategory}`);
-  if (c.costCenter)        parts.push(`cost center = ${c.costCenter}`);
-  return parts.length ? `· When ${parts.join(" AND ")}` : "";
+  if (c.amountMin != null) parts.push(t("row.condition_amount_min", { amount: formatKWD(c.amountMin) }));
+  if (c.amountMax != null) parts.push(t("row.condition_amount_max", { amount: formatKWD(c.amountMax) }));
+  if (c.merchantPattern)   parts.push(t("row.condition_merchant", { pattern: c.merchantPattern }));
+  if (c.accountCategory)   parts.push(t("row.condition_category", { value: c.accountCategory }));
+  if (c.costCenter)        parts.push(t("row.condition_cost_center", { value: c.costCenter }));
+  return parts.length ? t("row.condition_prefix", { conditions: parts.join(" AND ") }) : "";
 }
 
 export default function RoutingRuleRow({ rule, expanded, onToggle, onEdit, onMute, onDelete }) {
-  const cond = conditionSummary(rule.trigger || {});
+  const { t } = useTranslation("rules");
+  const cond = buildConditionSummary(rule.trigger || {}, t);
   return (
     <div
       style={{
@@ -65,11 +67,11 @@ export default function RoutingRuleRow({ rule, expanded, onToggle, onEdit, onMut
             {rule.name}
           </div>
           <div style={{ fontSize: 12, color: "#8B98A5" }}>
-            Auto-assigns to{" "}
+            {t("row.auto_assigns_to")}{" "}
             <span style={{ color: "#E6EDF3" }}>{rule.action.assignTo?.name || "—"}</span>
             <span style={{ color: "#5B6570" }}>
               {" · "}
-              {rule.appliedCount} applied · {formatRelativeTime(rule.createdAt)}
+              {t("row.applied_times", { count: rule.appliedCount, time: formatRelativeTime(rule.createdAt) })}
             </span>
           </div>
           {cond && (

@@ -1,18 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getChartOfAccounts } from "../../engine/mockEngine";
 
 const CATEGORIES = [
-  "Operating Expenses",
-  "Cost of Goods Sold",
-  "Revenue",
-  "Assets",
-  "Liabilities",
-  "Equity",
-  "Other Income",
-  "Other Expense",
+  { id: "Operating Expenses", key: "cat_operating_expenses" },
+  { id: "Cost of Goods Sold", key: "cat_cogs" },
+  { id: "Revenue", key: "cat_revenue" },
+  { id: "Assets", key: "cat_assets" },
+  { id: "Liabilities", key: "cat_liabilities" },
+  { id: "Equity", key: "cat_equity" },
+  { id: "Other Income", key: "cat_other_income" },
+  { id: "Other Expense", key: "cat_other_expense" },
 ];
 
+const CATEGORY_KEY_BY_ID = CATEGORIES.reduce((acc, c) => ({ ...acc, [c.id]: c.key }), {});
+
 function AccountRow({ account, onPick, active = false }) {
+  const { t } = useTranslation("common");
+  const catKey = CATEGORY_KEY_BY_ID[account.category];
+  const catLabel = catKey ? t(`account_picker.${catKey}`) : account.category;
   return (
     <button
       onClick={() => onPick(account)}
@@ -54,7 +60,7 @@ function AccountRow({ account, onPick, active = false }) {
           textTransform: "uppercase",
         }}
       >
-        {account.category}
+        {catLabel}
       </span>
     </button>
   );
@@ -68,6 +74,7 @@ function AccountRow({ account, onPick, active = false }) {
  *  - selected: optional pre-selected account
  */
 export default function AccountPicker({ filterCategories = null, onSelect, selected: initial = null }) {
+  const { t } = useTranslation("common");
   const [accounts, setAccounts] = useState(null);
   const [mode, setMode] = useState("dropdown"); // dropdown | categories | category-detail
   const [activeCategory, setActiveCategory] = useState(null);
@@ -85,7 +92,7 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
   const visibleCategories = useMemo(() => {
     if (!accounts) return [];
     const set = new Set(accounts.map((a) => a.category));
-    return CATEGORIES.filter((c) => set.has(c));
+    return CATEGORIES.filter((c) => set.has(c.id));
   }, [accounts]);
 
   const filteredDropdown = useMemo(() => {
@@ -123,7 +130,7 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
         }}
       >
         <div style={{ fontSize: 10, color: "#5B6570", letterSpacing: "0.12em", fontWeight: 600, marginBottom: 6 }}>
-          SELECTED
+          {t("account_picker.selected")}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "#5B6570" }}>
@@ -143,7 +150,7 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
               fontFamily: "inherit",
             }}
           >
-            Change
+            {t("account_picker.change")}
           </button>
         </div>
       </div>
@@ -168,7 +175,7 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
               setOpen(true);
             }}
             onFocus={() => setOpen(true)}
-            placeholder="Search accounts by name or code..."
+            placeholder={t("account_picker.search_placeholder")}
             className="chat-input"
             style={{
               width: "100%",
@@ -198,7 +205,7 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
                   <AccountRow key={a.code} account={a} onPick={pick} />
                 ))
               ) : (
-                <div style={{ padding: 14, fontSize: 12, color: "#5B6570" }}>No matches</div>
+                <div style={{ padding: 14, fontSize: 12, color: "#5B6570" }}>{t("account_picker.no_matches")}</div>
               )}
             </div>
           )}
@@ -215,7 +222,7 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
                 cursor: "pointer",
               }}
             >
-              Or browse by category
+              {t("account_picker.browse_by_category")}
             </a>
           </div>
         </>
@@ -231,12 +238,12 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
             }}
           >
             {visibleCategories.map((cat) => {
-              const count = accounts.filter((a) => a.category === cat).length;
+              const count = accounts.filter((a) => a.category === cat.id).length;
               return (
                 <button
-                  key={cat}
+                  key={cat.id}
                   onClick={() => {
-                    setActiveCategory(cat);
+                    setActiveCategory(cat.id);
                     setMode("category-detail");
                   }}
                   style={{
@@ -254,7 +261,7 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
                     textAlign: "left",
                   }}
                 >
-                  <span>{cat}</span>
+                  <span>{t(`account_picker.${cat.key}`)}</span>
                   <span style={{ fontSize: 10, color: "#5B6570", fontFamily: "'DM Mono', monospace" }}>
                     {count}
                   </span>
@@ -272,7 +279,7 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
                 cursor: "pointer",
               }}
             >
-              Or search all accounts
+              {t("account_picker.search_all")}
             </a>
           </div>
         </>
@@ -293,7 +300,7 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
               marginBottom: 8,
             }}
           >
-            ← All categories
+            {t("account_picker.all_categories")}
           </a>
           <div
             style={{

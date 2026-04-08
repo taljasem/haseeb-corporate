@@ -1,9 +1,11 @@
+import { useTranslation } from "react-i18next";
 import { FileText, ChevronDown, ChevronUp } from "lucide-react";
 import { StatusPill, ModePill } from "./StatusPills";
 import RuleDetailExpanded from "./RuleDetailExpanded";
 import { formatRelativeTime } from "../../utils/relativeTime";
 
 export default function CategorizationRuleRow({ rule, expanded, onToggle, onEdit, onMute, onDelete }) {
+  const { t } = useTranslation("rules");
   return (
     <div
       style={{
@@ -56,7 +58,7 @@ export default function CategorizationRuleRow({ rule, expanded, onToggle, onEdit
             </span>
             <span style={{ color: "#5B6570" }}>
               {" · "}
-              {rule.appliedCount} applied · {formatRelativeTime(rule.createdAt)}
+              {t("row.applied_times", { count: rule.appliedCount, time: formatRelativeTime(rule.createdAt) })}
             </span>
           </div>
         </div>

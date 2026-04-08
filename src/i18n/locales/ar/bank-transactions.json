@@ -1,1 +1,42 @@
-{}
+{
+  "header": {
+    "pending_count": "عمليات بنكية بانتظار المراجعة · {{count}}",
+    "pending_unknown": "عمليات بنكية بانتظار المراجعة · —",
+    "in_your_domain": "عرض العمليات ضمن نطاقك",
+    "view_full_accounts": "عرض كامل الحسابات البنكية ←"
+  },
+  "filters": {
+    "all": "الكل",
+    "today": "اليوم",
+    "this_week": "هذا الأسبوع",
+    "suggestions": "اقتراحات",
+    "needs_review": "بحاجة للمراجعة"
+  },
+  "detail": {
+    "select_to_review": "اختر عملية للمراجعة.",
+    "bank_facts": "بيانات البنك · غير قابلة للتغيير",
+    "engine_suggests": "اقتراح المحرك",
+    "field_date": "التاريخ",
+    "field_source": "المصدر",
+    "field_merchant": "الجهة",
+    "field_terminal": "نقطة البيع",
+    "field_amount": "المبلغ",
+    "field_direction": "الاتجاه",
+    "direction_outflow": "صرف",
+    "direction_inflow": "قبض",
+    "none": "—"
+  },
+  "confidence": {
+    "rule": "قاعدة",
+    "pattern": "نمط",
+    "ai": "اقتراح ذكاء اصطناعي",
+    "none": "بحاجة للمراجعة",
+    "manual": "يدوي",
+    "pending": "معلق"
+  },
+  "suggestion_banner": {
+    "apply_all": "تطبيق الكل",
+    "dismiss": "تجاهل",
+    "auto_cat_name": "تصنيف تلقائي لـ {{merchant}}"
+  }
+}

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Plus, Search } from "lucide-react";
 import {
   getCategorizationRules,
@@ -19,13 +20,14 @@ import NewCategorizationRuleModal from "../../components/rules/NewCategorization
 import NewRoutingRuleModal from "../../components/rules/NewRoutingRuleModal";
 
 const TABS = [
-  { id: "categorization", label: "CATEGORIZATION" },
-  { id: "routing",        label: "ROUTING" },
-  { id: "suggested",      label: "SUGGESTED" },
+  { id: "categorization", key: "categorization" },
+  { id: "routing",        key: "routing" },
+  { id: "suggested",      key: "suggested" },
 ];
 const STATUS_FILTERS = ["all", "active", "muted", "deleted"];
 
 export default function RulesScreen({ initialTab = "categorization" }) {
+  const { t } = useTranslation("rules");
   const [tab, setTab] = useState(initialTab);
   const [statusFilter, setStatusFilter] = useState("active");
   const [query, setQuery] = useState("");
@@ -94,14 +96,14 @@ export default function RulesScreen({ initialTab = "categorization" }) {
       else await muteRoutingRule(rule.id);
     }
     refresh();
-    toast2(`Rule ${rule.status === "muted" ? "re-activated" : "muted"}`);
+    toast2(rule.status === "muted" ? t("toast.rule_reactivated") : t("toast.rule_muted"));
   };
 
   const handleDelete = async (rule) => {
     if (tab === "categorization") await deleteCategorizationRule(rule.id);
     else                           await deleteRoutingRule(rule.id);
     refresh();
-    toast2("Rule deleted");
+    toast2(t("toast.rule_deleted"));
   };
 
   const handleCreateSuggestion = (s) => {
@@ -141,7 +143,7 @@ export default function RulesScreen({ initialTab = "categorization" }) {
                 lineHeight: 1,
               }}
             >
-              RULES
+              {t("title")}
             </div>
             <div
               style={{
@@ -152,7 +154,7 @@ export default function RulesScreen({ initialTab = "categorization" }) {
                 marginTop: 6,
               }}
             >
-              {totalActive} ACTIVE
+              {t("active_count", { count: totalActive })}
             </div>
           </div>
           <button
@@ -176,19 +178,19 @@ export default function RulesScreen({ initialTab = "categorization" }) {
             }}
           >
             <Plus size={14} strokeWidth={2.4} />
-            New rule
+            {t("new_rule")}
           </button>
         </div>
 
         {/* Tab bar */}
         <div style={{ display: "flex", gap: 4, marginBottom: 10 }}>
-          {TABS.map((t) => {
-            const on = tab === t.id;
-            const count = t.id === "categorization" ? catCount : t.id === "routing" ? routeCount : sugCount;
+          {TABS.map((tb) => {
+            const on = tab === tb.id;
+            const count = tb.id === "categorization" ? catCount : tb.id === "routing" ? routeCount : sugCount;
             return (
               <button
-                key={t.id}
-                onClick={() => { setTab(t.id); setExpandedId(null); }}
+                key={tb.id}
+                onClick={() => { setTab(tb.id); setExpandedId(null); }}
                 style={{
                   background: "transparent",
                   border: "none",
@@ -202,7 +204,7 @@ export default function RulesScreen({ initialTab = "categorization" }) {
                   boxShadow: on ? "inset 0 -2px 0 #00C48C" : "none",
                 }}
               >
-                {t.label}
+                {t(`tabs.${tb.key}`)}
                 <span style={{ color: "#5B6570", marginLeft: 6, fontWeight: 500 }}>({count})</span>
               </button>
             );
@@ -239,7 +241,7 @@ export default function RulesScreen({ initialTab = "categorization" }) {
                       fontFamily: "inherit",
                     }}
                   >
-                    {f}
+                    {t(`status_filters.${f}`)}
                   </button>
                 );
               })}
@@ -253,7 +255,7 @@ export default function RulesScreen({ initialTab = "categorization" }) {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search rules..."
+                placeholder={t("search_placeholder")}
                 style={{
                   width: "100%",
                   background: "rgba(255,255,255,0.04)",
@@ -321,7 +323,7 @@ export default function RulesScreen({ initialTab = "categorization" }) {
               key={s.id}
               suggestion={s}
               onCreate={handleCreateSuggestion}
-              onDismiss={() => toast2("Suggestion dismissed")}
+              onDismiss={() => toast2(t("suggested.suggestion_dismissed"))}
             />
           ))}
       </div>
@@ -333,7 +335,7 @@ export default function RulesScreen({ initialTab = "categorization" }) {
         editingRule={catEditingRule}
         onCreated={(r) => {
           refresh();
-          toast2(catEditingRule ? `Rule updated: ${r.name}` : `Rule created: ${r.name}`);
+          toast2(catEditingRule ? t("toast.rule_updated", { name: r.name }) : t("toast.rule_created", { name: r.name }));
           setCatEditingRule(null);
         }}
       />
@@ -343,7 +345,7 @@ export default function RulesScreen({ initialTab = "categorization" }) {
         editingRule={routeEditingRule}
         onCreated={(r) => {
           refresh();
-          toast2(routeEditingRule ? `Rule updated: ${r.name}` : `Rule created: ${r.name}`);
+          toast2(routeEditingRule ? t("toast.rule_updated", { name: r.name }) : t("toast.rule_created", { name: r.name }));
           setRouteEditingRule(null);
         }}
       />

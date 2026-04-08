@@ -1,9 +1,11 @@
+import { useTranslation } from "react-i18next";
 import { formatMoney } from "../../utils/formatCurrency";
 import { formatRelativeTime } from "../../utils/relativeTime";
 import BankChip from "./BankChip";
 import { useTenant } from "../shared/TenantContext";
 
 export default function BankAccountCard({ account, selected = false, onSelect }) {
+  const { t } = useTranslation("bank-accounts");
   const { tenant } = useTenant();
   if (!account) return null;
   const bank = tenant.banks[0] || {};
@@ -92,7 +94,7 @@ export default function BankAccountCard({ account, selected = false, onSelect })
           marginTop: 3,
         }}
       >
-        CURRENT BALANCE
+        {t("card.current_balance")}
       </div>
 
       <div
@@ -106,7 +108,7 @@ export default function BankAccountCard({ account, selected = false, onSelect })
       >
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.12em", color: "#5B6570" }}>
-            MTD INFLOW
+            {t("card.mtd_inflow")}
           </div>
           <div
             style={{
@@ -122,7 +124,7 @@ export default function BankAccountCard({ account, selected = false, onSelect })
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.12em", color: "#5B6570" }}>
-            MTD OUTFLOW
+            {t("card.mtd_outflow")}
           </div>
           <div
             style={{
@@ -147,7 +149,7 @@ export default function BankAccountCard({ account, selected = false, onSelect })
           marginTop: 10,
         }}
       >
-        Updated {formatRelativeTime(account.lastUpdated)}
+        {t("updated", { time: formatRelativeTime(account.lastUpdated) })}
       </div>
     </div>
   );

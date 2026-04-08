@@ -38,7 +38,7 @@ export default function TaskboxSummaryCard({
             {openCount > 0 && (
               <span
                 style={{
-                  marginLeft: 8,
+                  marginInlineStart: 8,
                   color: "#8B98A5",
                   fontWeight: 600,
                   fontSize: 10,

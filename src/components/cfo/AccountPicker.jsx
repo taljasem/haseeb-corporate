@@ -37,7 +37,7 @@ function AccountRow({ account, onPick, active = false }) {
         border: "none",
         borderBottom: "1px solid rgba(255,255,255,0.04)",
         cursor: "pointer",
-        textAlign: "left",
+        textAlign: "start",
         fontFamily: "inherit",
       }}
     >
@@ -259,7 +259,7 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
                     color: "#E6EDF3",
                     fontFamily: "inherit",
                     fontSize: 13,
-                    textAlign: "left",
+                    textAlign: "start",
                   }}
                 >
                   <span>{t(`account_picker.${cat.key}`)}</span>

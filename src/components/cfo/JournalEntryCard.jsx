@@ -127,7 +127,7 @@ export default function JournalEntryCard({
       style={{
         background: s.cardBg,
         border: "1px solid rgba(255,255,255,0.10)",
-        borderLeft: `2px solid ${s.accent}`,
+        borderInlineStart: `2px solid ${s.accent}`,
         borderRadius: 8,
         overflow: "hidden",
         opacity: s.opacity,
@@ -212,8 +212,8 @@ export default function JournalEntryCard({
           }}
         >
           <div>{t("je_card.col_account")}</div>
-          <div style={{ textAlign: "right" }}>{t("je_card.col_debit")}</div>
-          <div style={{ textAlign: "right" }}>{t("je_card.col_credit")}</div>
+          <div style={{ textAlign: "end" }}>{t("je_card.col_debit")}</div>
+          <div style={{ textAlign: "end" }}>{t("je_card.col_credit")}</div>
         </div>
 
         {live.lines.map((line, i) => {
@@ -264,7 +264,7 @@ export default function JournalEntryCard({
                 </div>
                 <div
                   style={{
-                    textAlign: "right",
+                    textAlign: "end",
                     fontFamily: "'DM Mono', monospace",
                     fontSize: 13,
                     color: line.debit != null ? "#FF5A5F" : "#5B6570",
@@ -276,7 +276,7 @@ export default function JournalEntryCard({
                 </div>
                 <div
                   style={{
-                    textAlign: "right",
+                    textAlign: "end",
                     fontFamily: "'DM Mono', monospace",
                     fontSize: 13,
                     color: line.credit != null ? "#00C48C" : "#5B6570",
@@ -320,7 +320,7 @@ export default function JournalEntryCard({
           <div>{t("je_card.total")}</div>
           <div
             style={{
-              textAlign: "right",
+              textAlign: "end",
               fontFamily: "'DM Mono', monospace",
               color: "#E6EDF3",
               fontVariantNumeric: "tabular-nums",
@@ -330,7 +330,7 @@ export default function JournalEntryCard({
           </div>
           <div
             style={{
-              textAlign: "right",
+              textAlign: "end",
               fontFamily: "'DM Mono', monospace",
               color: "#E6EDF3",
               fontVariantNumeric: "tabular-nums",
@@ -363,7 +363,7 @@ export default function JournalEntryCard({
         </span>
         <span>·</span>
         <span>{t("je_card.created_at", { time: fmtCreated(live.createdAt) })}</span>
-        <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 4 }}>
+        <span style={{ marginInlineStart: "auto", display: "inline-flex", alignItems: "center", gap: 4 }}>
           <ShieldIcon />
           {t("je_card.hash_chain", { suffix: hashSuffix })}
         </span>

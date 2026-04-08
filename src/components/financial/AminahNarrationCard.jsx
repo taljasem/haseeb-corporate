@@ -34,7 +34,7 @@ export default function AminahNarrationCard({ text, onAsk }) {
       style={{
         background: "rgba(255,255,255,0.03)",
         border: "1px solid rgba(255,255,255,0.08)",
-        borderLeft: "2px solid #00C48C",
+        borderInlineStart: "2px solid #00C48C",
         borderRadius: 8,
         padding: "16px 18px",
         marginBottom: 18,

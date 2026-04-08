@@ -120,7 +120,7 @@ export default function BankStatementRow({ tx, expanded, onToggle, currency = "K
         </div>
         <div
           style={{
-            textAlign: "right",
+            textAlign: "end",
             fontFamily: "'DM Mono', monospace",
             fontSize: 13,
             fontWeight: 500,
@@ -133,7 +133,7 @@ export default function BankStatementRow({ tx, expanded, onToggle, currency = "K
         </div>
         <div
           style={{
-            textAlign: "right",
+            textAlign: "end",
             fontFamily: "'DM Mono', monospace",
             fontSize: 12,
             color: "#8B98A5",

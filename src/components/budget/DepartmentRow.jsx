@@ -113,7 +113,7 @@ export default function DepartmentRow({
             fontFamily: "'DM Mono', monospace",
             fontSize: 13,
             color: "#E6EDF3",
-            textAlign: "right",
+            textAlign: "end",
             fontVariantNumeric: "tabular-nums",
           }}
         >
@@ -124,7 +124,7 @@ export default function DepartmentRow({
             fontFamily: "'DM Mono', monospace",
             fontSize: 12,
             color: "#5B6570",
-            textAlign: "right",
+            textAlign: "end",
             fontVariantNumeric: "tabular-nums",
           }}
         >
@@ -135,7 +135,7 @@ export default function DepartmentRow({
             fontFamily: "'DM Mono', monospace",
             fontSize: 13,
             color: "#E6EDF3",
-            textAlign: "right",
+            textAlign: "end",
             fontVariantNumeric: "tabular-nums",
           }}
         >
@@ -148,7 +148,7 @@ export default function DepartmentRow({
             color: row.category === "revenue"
               ? (row.varianceAmount < 0 ? "#FF5A5F" : "#00C48C")
               : (row.varianceAmount > 0 ? "#FF5A5F" : "#00C48C"),
-            textAlign: "right",
+            textAlign: "end",
             fontVariantNumeric: "tabular-nums",
           }}
         >
@@ -197,7 +197,7 @@ export default function DepartmentRow({
               style={{
                 background: "rgba(0,196,140,0.04)",
                 border: "1px solid rgba(0,196,140,0.20)",
-                borderLeft: "2px solid #00C48C",
+                borderInlineStart: "2px solid #00C48C",
                 borderRadius: 6,
                 padding: "10px 14px",
                 marginBottom: 12,
@@ -258,7 +258,7 @@ export default function DepartmentRow({
                       color: "#E6EDF3",
                       fontSize: 13,
                       fontFamily: "'DM Mono', monospace",
-                      textAlign: "right",
+                      textAlign: "end",
                       outline: "none",
                       fontVariantNumeric: "tabular-nums",
                     }}
@@ -269,7 +269,7 @@ export default function DepartmentRow({
                       fontFamily: "'DM Mono', monospace",
                       fontSize: 13,
                       color: "#E6EDF3",
-                      textAlign: "right",
+                      textAlign: "end",
                       fontVariantNumeric: "tabular-nums",
                     }}
                   >
@@ -523,7 +523,7 @@ export default function DepartmentRow({
                   }}
                 >
                   <div style={{ color: "#8B98A5" }}>
-                    <span style={{ fontFamily: "'DM Mono', monospace", color: "#5B6570", marginRight: 8 }}>
+                    <span style={{ fontFamily: "'DM Mono', monospace", color: "#5B6570", marginInlineEnd: 8 }}>
                       {l.glAccountCode}
                     </span>
                     {l.glAccountName}
@@ -533,7 +533,7 @@ export default function DepartmentRow({
                     style={{
                       fontFamily: "'DM Mono', monospace",
                       color: "#8B98A5",
-                      textAlign: "right",
+                      textAlign: "end",
                       fontVariantNumeric: "tabular-nums",
                     }}
                   >
@@ -543,7 +543,7 @@ export default function DepartmentRow({
                     style={{
                       fontFamily: "'DM Mono', monospace",
                       color: "#5B6570",
-                      textAlign: "right",
+                      textAlign: "end",
                       fontVariantNumeric: "tabular-nums",
                     }}
                   >
@@ -553,7 +553,7 @@ export default function DepartmentRow({
                     style={{
                       fontFamily: "'DM Mono', monospace",
                       color: "#8B98A5",
-                      textAlign: "right",
+                      textAlign: "end",
                       fontVariantNumeric: "tabular-nums",
                     }}
                   >
@@ -563,7 +563,7 @@ export default function DepartmentRow({
                     style={{
                       fontFamily: "'DM Mono', monospace",
                       color: l.varianceAmount > 0 ? "#FF5A5F" : "#00C48C",
-                      textAlign: "right",
+                      textAlign: "end",
                       fontVariantNumeric: "tabular-nums",
                     }}
                   >

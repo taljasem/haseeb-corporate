@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import TodaySection from "../../components/cfo/TodaySection";
 import AssignToButton from "../../components/shared/AssignToButton";
+import DirArrow from "../../components/shared/DirArrow";
 import TaskboxSummaryCard from "../../components/taskbox/TaskboxSummaryCard";
 import SuggestedRuleRow from "../../components/rules/SuggestedRuleRow";
 import { getSuggestedCategorizationRules, getSuggestedRoutingRules } from "../../engine/mockEngine";
@@ -62,7 +63,7 @@ function QueueRow({ count, label, onClick, itemId }) {
         background: "transparent",
         borderBottom: "1px solid rgba(255,255,255,0.04)",
         cursor: "pointer",
-        textAlign: "left",
+        textAlign: "start",
         fontFamily: "inherit",
         transition: "background 0.12s ease",
         borderRadius: 4,
@@ -75,7 +76,7 @@ function QueueRow({ count, label, onClick, itemId }) {
           color: "#E6EDF3",
           fontWeight: 500,
           minWidth: 32,
-          textAlign: "right",
+          textAlign: "end",
         }}
       >
         {count}
@@ -91,7 +92,7 @@ function QueueRow({ count, label, onClick, itemId }) {
       >
         <AssignToButton itemType="review-queue" itemId={itemId} compact onAssign={() => {}} />
       </span>
-      <span style={{ color: "#5B6570", fontSize: 14 }}>→</span>
+      <span style={{ color: "#5B6570", fontSize: 14 }}><DirArrow /></span>
     </div>
   );
 }

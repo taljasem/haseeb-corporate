@@ -28,7 +28,7 @@ export default function BankAccountCard({ account, selected = false, onSelect })
         padding: 20,
         background: "rgba(255,255,255,0.04)",
         border: selected ? "1px solid #00C48C" : "1px solid rgba(255,255,255,0.10)",
-        borderLeft: `3px solid ${account.accentColor}`,
+        borderInlineStart: `3px solid ${account.accentColor}`,
         borderRadius: 10,
         cursor: "pointer",
         boxShadow: selected ? "0 0 24px rgba(0,196,140,0.15)" : "none",

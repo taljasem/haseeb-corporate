@@ -221,7 +221,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
                   {counts[f.id] != null && (
                     <span
                       style={{
-                        marginLeft: 6,
+                        marginInlineStart: 6,
                         fontSize: 10,
                         color: on ? "#00C48C" : "#5B6570",
                         fontFamily: "'DM Mono', monospace",

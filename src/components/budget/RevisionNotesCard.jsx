@@ -8,7 +8,7 @@ export default function RevisionNotesCard({ notes, timestamp }) {
       style={{
         background: "rgba(212,168,75,0.06)",
         border: "1px solid rgba(212,168,75,0.25)",
-        borderLeft: "3px solid #D4A84B",
+        borderInlineStart: "3px solid #D4A84B",
         borderRadius: 8,
         padding: "12px 14px",
         marginBottom: 14,

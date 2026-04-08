@@ -27,7 +27,7 @@ function FieldDot({ filled }) {
         borderRadius: "50%",
         background: filled ? "#00C48C" : "transparent",
         border: `1px solid ${filled ? "#00C48C" : "rgba(255,255,255,0.20)"}`,
-        marginRight: 8,
+        marginInlineEnd: 8,
         flexShrink: 0,
       }}
     />
@@ -245,7 +245,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
                       borderRadius: 8,
                       cursor: "pointer",
                       fontFamily: "inherit",
-                      textAlign: "left",
+                      textAlign: "start",
                     }}
                   >
                     <Avatar person={r} size={26} />

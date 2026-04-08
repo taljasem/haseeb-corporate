@@ -22,7 +22,7 @@ export default function SidebarGroup({ label, defaultOpen = true, children }) {
           fontWeight: 600,
           letterSpacing: "0.15em",
           color: "#5B6570",
-          textAlign: "left",
+          textAlign: "start",
         }}
       >
         <span style={{ flex: 1 }}>{label}</span>

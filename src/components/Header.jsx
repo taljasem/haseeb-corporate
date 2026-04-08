@@ -4,6 +4,7 @@ import { useNav } from "./shared/NavContext";
 import { useTenant } from "./shared/TenantContext";
 import { useLanguage } from "../i18n/LanguageContext";
 import LtrText from "./shared/LtrText";
+import DirArrow from "./shared/DirArrow";
 
 // DEMO ONLY — production roles come from auth
 const ROLES = ["Owner", "CFO", "Junior"];
@@ -133,8 +134,8 @@ export default function Header({ role, setRole }) {
           display: "flex",
           alignItems: "center",
           gap: 8,
-          paddingRight: 20,
-          borderRight: "1px solid rgba(255,255,255,0.10)",
+          paddingInlineEnd: 20,
+          borderInlineEnd: "1px solid rgba(255,255,255,0.10)",
           height: "100%",
         }}
       >
@@ -170,7 +171,7 @@ export default function Header({ role, setRole }) {
       </div>
 
       {/* Tenant switcher (demo control) */}
-      <div ref={tenantRef} style={{ position: "relative", marginLeft: 18 }}>
+      <div ref={tenantRef} style={{ position: "relative", marginInlineStart: 18 }}>
         <button
           onClick={() => setTenantOpen((o) => !o)}
           style={{
@@ -197,6 +198,7 @@ export default function Header({ role, setRole }) {
         </button>
         {tenantOpen && (
           <div
+            data-popover-anchor="start"
             style={{
               position: "absolute",
               top: "calc(100% + 6px)",
@@ -249,7 +251,7 @@ export default function Header({ role, setRole }) {
                     borderBottom: "1px solid rgba(255,255,255,0.04)",
                     cursor: "pointer",
                     fontFamily: "inherit",
-                    textAlign: "left",
+                    textAlign: "start",
                   }}
                 >
                   <span
@@ -279,7 +281,7 @@ export default function Header({ role, setRole }) {
       {/* Right cluster */}
       <div
         style={{
-          marginLeft: "auto",
+          marginInlineStart: "auto",
           display: "flex",
           alignItems: "center",
           gap: 10,
@@ -346,6 +348,7 @@ export default function Header({ role, setRole }) {
           </button>
           {bellOpen && (
             <div
+              data-popover-anchor="end"
               style={{
                 position: "absolute",
                 top: "calc(100% + 8px)",
@@ -439,7 +442,7 @@ export default function Header({ role, setRole }) {
                 }}
               >
                 <a style={{ fontSize: 11, color: "#00C48C", cursor: "pointer" }}>
-                  {t("notifications.view_all_in_taskbox")} →
+                  {t("notifications.view_all_in_taskbox")} <DirArrow />
                 </a>
               </div>
             </div>

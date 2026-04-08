@@ -19,6 +19,7 @@ export default function BudgetVarianceBar({ percent, status, showLabel = true, w
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, width }}>
       <div
+        data-progress-bar="true"
         style={{
           flex: 1,
           height: 6,
@@ -47,9 +48,9 @@ export default function BudgetVarianceBar({ percent, status, showLabel = true, w
               height: 0,
               borderTop: "4px solid transparent",
               borderBottom: "4px solid transparent",
-              borderLeft: `6px solid ${color}`,
+              borderInlineStart: `6px solid ${color}`,
               alignSelf: "center",
-              marginLeft: 2,
+              marginInlineStart: 2,
               filter: `drop-shadow(0 0 3px ${color}80)`,
             }}
           />
@@ -75,7 +76,7 @@ export default function BudgetVarianceBar({ percent, status, showLabel = true, w
             color,
             fontVariantNumeric: "tabular-nums",
             minWidth: 56,
-            textAlign: "right",
+            textAlign: "end",
           }}
         >
           {percent.toFixed(0)}%

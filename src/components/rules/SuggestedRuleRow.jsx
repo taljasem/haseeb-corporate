@@ -17,7 +17,7 @@ export default function SuggestedRuleRow({ suggestion, onCreate, onDismiss, comp
         padding: compact ? "10px 12px" : "14px 18px",
         background: "rgba(212,168,75,0.04)",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
-        borderLeft: "2px solid #D4A84B",
+        borderInlineStart: "2px solid #D4A84B",
       }}
     >
       <span

@@ -142,9 +142,9 @@ export default function ManualJEScreen({ onOpenAminah }) {
   };
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "row", overflow: "hidden" }}>
+    <div data-split="true" style={{ flex: 1, display: "flex", flexDirection: "row", overflow: "hidden" }}>
       {/* LEFT PANE */}
-      <div style={{ width: 340, display: "flex", flexDirection: "column", borderRight: `1px solid ${COLORS.border}`, flexShrink: 0 }}>
+      <div style={{ width: 340, display: "flex", flexDirection: "column", borderInlineEnd: `1px solid ${COLORS.border}`, flexShrink: 0 }}>
         {/* Header */}
         <div style={{ padding: "20px 18px 12px", borderBottom: `1px solid ${COLORS.border}` }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
@@ -185,7 +185,7 @@ export default function ManualJEScreen({ onOpenAminah }) {
                   }}
                 >
                   {t(`tabs.${tab.key}`)}
-                  <span style={{ marginLeft: 4, fontFamily: "'DM Mono', monospace", fontSize: 10 }}>
+                  <span style={{ marginInlineStart: 4, fontFamily: "'DM Mono', monospace", fontSize: 10 }}>
                     {counts[tab.id]}
                   </span>
                 </button>
@@ -324,7 +324,7 @@ function EmptyState({ onBlank, onTemplates, onRecent }) {
             onClick={onBlank}
             style={{ background: COLORS.teal, color: "#fff", border: "none", padding: "10px 18px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
           >
-            <Plus size={12} style={{ verticalAlign: "middle", marginRight: 4 }} /> {t("empty_state.blank")}
+            <Plus size={12} style={{ verticalAlign: "middle", marginInlineEnd: 4 }} /> {t("empty_state.blank")}
           </button>
           <button
             onClick={onTemplates}
@@ -352,10 +352,10 @@ function ListItem({ item, tab, selected, onClick }) {
     <button
       onClick={onClick}
       style={{
-        display: "block", width: "100%", textAlign: "left", padding: "12px 16px",
+        display: "block", width: "100%", textAlign: "start", padding: "12px 16px",
         background: selected ? "rgba(0,196,140,0.06)" : "transparent",
         border: "none", borderBottom: `1px solid rgba(255,255,255,0.04)`,
-        borderLeft: selected ? `2px solid ${COLORS.teal}` : "2px solid transparent",
+        borderInlineStart: selected ? `2px solid ${COLORS.teal}` : "2px solid transparent",
         cursor: "pointer", fontFamily: "inherit", color: COLORS.text,
       }}
     >
@@ -567,8 +567,8 @@ function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedul
         <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 8, overflow: "hidden" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 130px 130px 1fr 32px", gap: 8, padding: "10px 14px", borderBottom: `1px solid ${COLORS.border}`, fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: COLORS.textFaint }}>
             <div>{t("lines.col_account")}</div>
-            <div style={{ textAlign: "right" }}>{t("lines.col_debit")}</div>
-            <div style={{ textAlign: "right" }}>{t("lines.col_credit")}</div>
+            <div style={{ textAlign: "end" }}>{t("lines.col_debit")}</div>
+            <div style={{ textAlign: "end" }}>{t("lines.col_credit")}</div>
             <div>{t("lines.col_memo")}</div>
             <div></div>
           </div>
@@ -682,13 +682,13 @@ function LineRow({ line, idx, readOnly, onUpdate, onRemove, canRemove }) {
         type="number" step="0.001" disabled={readOnly}
         value={line.debit || ""} placeholder="0.000"
         onChange={(e) => onUpdate({ debit: Number(e.target.value || 0), credit: 0 })}
-        style={{ ...inputStyle(readOnly), textAlign: "right", fontFamily: "'DM Mono', monospace" }}
+        style={{ ...inputStyle(readOnly), textAlign: "end", fontFamily: "'DM Mono', monospace" }}
       />
       <input
         type="number" step="0.001" disabled={readOnly}
         value={line.credit || ""} placeholder="0.000"
         onChange={(e) => onUpdate({ credit: Number(e.target.value || 0), debit: 0 })}
-        style={{ ...inputStyle(readOnly), textAlign: "right", fontFamily: "'DM Mono', monospace" }}
+        style={{ ...inputStyle(readOnly), textAlign: "end", fontFamily: "'DM Mono', monospace" }}
       />
       <input
         type="text" disabled={readOnly}
@@ -822,7 +822,7 @@ function TemplateDetail({ template, onUse }) {
             }}>
               <div>
                 <span style={{ fontFamily: "'DM Mono', monospace", color: COLORS.textFaint, fontSize: 11 }}>{l.accountCode}</span>
-                <span style={{ color: COLORS.text, fontSize: 12, marginLeft: 8 }}>{l.accountName}</span>
+                <span style={{ color: COLORS.text, fontSize: 12, marginInlineStart: 8 }}>{l.accountName}</span>
               </div>
               <div style={{ fontFamily: "'DM Mono', monospace", color: COLORS.textFaint, fontSize: 12 }}>—</div>
             </div>

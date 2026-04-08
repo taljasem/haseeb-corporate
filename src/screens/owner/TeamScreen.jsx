@@ -119,7 +119,7 @@ function ResponsibilityCard({ m }) {
                 fontSize: 12,
                 color: "#8B98A5",
                 lineHeight: 1.4,
-                paddingLeft: 10,
+                paddingInlineStart: 10,
                 position: "relative",
               }}
             >

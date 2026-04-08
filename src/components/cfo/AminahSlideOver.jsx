@@ -77,6 +77,7 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
         }}
       />
       <aside
+        data-panel="aminah-slideover"
         style={{
           position: "fixed",
           top: 52,
@@ -84,7 +85,7 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
           bottom: 0,
           width: 380,
           background: "#08090C",
-          borderLeft: "1px solid rgba(255,255,255,0.10)",
+          borderInlineStart: "1px solid rgba(255,255,255,0.10)",
           zIndex: 100,
           display: "flex",
           flexDirection: "column",
@@ -165,7 +166,7 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
                 key={q}
                 onClick={() => setDraft(q)}
                 style={{
-                  textAlign: "left",
+                  textAlign: "start",
                   padding: "8px 12px",
                   background: "rgba(255,255,255,0.02)",
                   border: "1px solid rgba(255,255,255,0.08)",

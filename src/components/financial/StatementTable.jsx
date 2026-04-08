@@ -75,7 +75,7 @@ function Row({ cols, label, current, prior, change, percent, indent = 0, bold = 
           fontSize: final ? 14 : size,
           color: labelColor,
           fontWeight: bold || hl || final ? 600 : 400,
-          paddingLeft: indent * 16,
+          paddingInlineStart: indent * 16,
           letterSpacing: final ? "0.03em" : "0",
           textTransform: final ? "uppercase" : "none",
         }}
@@ -124,10 +124,10 @@ export default function StatementTable({ sections = [] }) {
         }}
       >
         <div>{t("table.col_account")}</div>
-        <div style={{ textAlign: "right" }}>{t("table.col_current")}</div>
-        <div style={{ textAlign: "right" }}>{t("table.col_prior")}</div>
-        <div style={{ textAlign: "right" }}>{t("table.col_change")}</div>
-        <div style={{ textAlign: "right" }}>{t("table.col_pct")}</div>
+        <div style={{ textAlign: "end" }}>{t("table.col_current")}</div>
+        <div style={{ textAlign: "end" }}>{t("table.col_prior")}</div>
+        <div style={{ textAlign: "end" }}>{t("table.col_change")}</div>
+        <div style={{ textAlign: "end" }}>{t("table.col_pct")}</div>
       </div>
 
       {sections.map((s, si) => {

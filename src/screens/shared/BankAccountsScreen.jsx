@@ -82,7 +82,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
               color: "#5B6570",
               background: "rgba(255,255,255,0.02)",
               border: "1px solid rgba(255,255,255,0.08)",
-              borderLeft: "2px solid #5B6570",
+              borderInlineStart: "2px solid #5B6570",
               borderRadius: 6,
               padding: "10px 14px",
               marginBottom: 16,
@@ -247,7 +247,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
                     );
                   })}
                 </div>
-                <div style={{ position: "relative", width: 260, marginLeft: 10 }}>
+                <div style={{ position: "relative", width: 260, marginInlineStart: 10 }}>
                   <Search
                     size={13}
                     color="#5B6570"

@@ -47,7 +47,7 @@ export default function TaskThreadMessage({ event }) {
               fontFamily: "'DM Mono', monospace",
               fontSize: 10,
               color: "#5B6570",
-              marginLeft: "auto",
+              marginInlineStart: "auto",
             }}
           >
             {formatRelativeTime(event.timestamp)}

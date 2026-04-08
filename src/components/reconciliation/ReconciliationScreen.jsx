@@ -129,7 +129,7 @@ function ReconciliationAccountCard({ row, onOpen }) {
       onClick={() => row.currentReconciliationId && onOpen(row.currentReconciliationId)}
       disabled={!row.currentReconciliationId}
       style={{
-        textAlign: "left",
+        textAlign: "start",
         background: "rgba(255,255,255,0.02)",
         border: "1px solid rgba(255,255,255,0.10)",
         borderRadius: 10,
@@ -276,7 +276,7 @@ function ReconciliationDetail({ rec, loading, role, onBack, onReload }) {
             marginBottom: 8,
           }}
         >
-          <ChevronLeft size={14} /> {t("detail.back")}
+          <span className="rtl-flip" style={{ display: "inline-flex" }}><ChevronLeft size={14} /></span> {t("detail.back")}
         </button>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
@@ -568,7 +568,7 @@ function ExceptionRow({ exc, onResolve, onOpenJE }) {
         padding: "12px 16px",
         background: exc.resolved ? "rgba(0,196,140,0.04)" : "rgba(255,255,255,0.02)",
         border: `1px solid ${exc.resolved ? "rgba(0,196,140,0.2)" : "rgba(255,255,255,0.10)"}`,
-        borderLeft: `3px solid ${exc.resolved ? "#00C48C" : color}`,
+        borderInlineStart: `3px solid ${exc.resolved ? "#00C48C" : color}`,
         borderRadius: 6,
         display: "flex",
         alignItems: "flex-start",

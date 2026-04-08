@@ -44,8 +44,8 @@ export default function BankStatementTable({ txs, currency = "KWD" }) {
         <div>{t("table.col_date")}</div>
         <div>{t("table.col_description")}</div>
         <div>{t("table.col_categorization")}</div>
-        <div style={{ textAlign: "right" }}>{t("table.col_amount")}</div>
-        <div style={{ textAlign: "right" }}>{t("table.col_balance")}</div>
+        <div style={{ textAlign: "end" }}>{t("table.col_amount")}</div>
+        <div style={{ textAlign: "end" }}>{t("table.col_balance")}</div>
         <div />
       </div>
       {txs.map((t) => (

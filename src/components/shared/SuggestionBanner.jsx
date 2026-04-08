@@ -20,14 +20,14 @@ export default function SuggestionBanner({ suggestion, onApply, onDismiss }) {
         gap: 12,
         padding: "10px 16px",
         background: "rgba(212,168,75,0.08)",
-        borderLeft: "2px solid #D4A84B",
+        borderInlineStart: "2px solid #D4A84B",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
       }}
     >
       <Repeat size={14} color="#D4A84B" strokeWidth={2.2} />
       <div style={{ flex: 1, fontSize: 12, color: "#E6EDF3" }}>
         {title}
-        <span style={{ color: "#5B6570", marginLeft: 8 }}>· {suggestion.context}</span>
+        <span style={{ color: "#5B6570", marginInlineStart: 8 }}>· {suggestion.context}</span>
       </div>
       <button
         onClick={() => onApply && onApply(suggestion)}

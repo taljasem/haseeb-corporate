@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import SectionHeader from "../../components/SectionHeader";
 import { useTenant } from "../../components/shared/TenantContext";
+import DirArrow from "../../components/shared/DirArrow";
 import TaskboxSummaryCard from "../../components/taskbox/TaskboxSummaryCard";
 import {
   getBusinessPulse,
@@ -49,7 +50,7 @@ function KpiBlock({ label, value, accent, sub, onClick }) {
       style={{
         flex: "1 1 200px",
         padding: "14px 16px",
-        borderRight: "1px solid rgba(255,255,255,0.06)",
+        borderInlineEnd: "1px solid rgba(255,255,255,0.06)",
         cursor: onClick ? "pointer" : "default",
         borderRadius: 6,
         transition: "background 0.12s ease",
@@ -104,7 +105,7 @@ function AttentionRow({ count, label, onClick }) {
         border: "none",
         borderBottom: "1px solid rgba(255,255,255,0.04)",
         cursor: "pointer",
-        textAlign: "left",
+        textAlign: "start",
         fontFamily: "inherit",
         borderRadius: 4,
       }}
@@ -116,13 +117,13 @@ function AttentionRow({ count, label, onClick }) {
           color: "#E6EDF3",
           fontWeight: 500,
           minWidth: 32,
-          textAlign: "right",
+          textAlign: "end",
         }}
       >
         {count}
       </span>
       <span style={{ flex: 1, fontSize: 13, color: "#8B98A5" }}>{label}</span>
-      <span style={{ color: "#5B6570", fontSize: 14 }}>→</span>
+      <span style={{ color: "#5B6570", fontSize: 14 }}><DirArrow /></span>
     </button>
   );
 }

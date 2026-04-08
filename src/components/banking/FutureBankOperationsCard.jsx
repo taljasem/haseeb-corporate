@@ -54,7 +54,7 @@ export default function FutureBankOperationsCard() {
               fontFamily: "inherit",
               opacity: 0.5,
               cursor: "not-allowed",
-              textAlign: "left",
+              textAlign: "start",
             }}
           >
             <op.icon size={14} strokeWidth={2.2} />

@@ -98,7 +98,7 @@ export default function AminahChat() {
         display: "flex",
         flexDirection: "column",
         padding: "16px 18px 0",
-        borderRight: "1px solid rgba(255,255,255,0.10)",
+        borderInlineEnd: "1px solid rgba(255,255,255,0.10)",
         position: "relative",
         overflow: "hidden",
       }}

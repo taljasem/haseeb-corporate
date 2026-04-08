@@ -26,7 +26,7 @@ function FieldDot({ filled }) {
         borderRadius: "50%",
         background: filled ? "#00C48C" : "transparent",
         border: `1px solid ${filled ? "#00C48C" : "rgba(255,255,255,0.20)"}`,
-        marginRight: 8,
+        marginInlineEnd: 8,
         flexShrink: 0,
       }}
     />
@@ -269,7 +269,7 @@ export default function NewCategorizationRuleModal({ open, onClose, onCreated, p
                       border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
                       borderRadius: 8,
                       cursor: "pointer",
-                      textAlign: "left",
+                      textAlign: "start",
                       fontFamily: "inherit",
                     }}
                   >

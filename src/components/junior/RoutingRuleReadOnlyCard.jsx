@@ -25,7 +25,7 @@ export default function RoutingRuleReadOnlyCard({ rule }) {
       style={{
         background: "rgba(255,255,255,0.02)",
         border: "1px solid rgba(255,255,255,0.08)",
-        borderLeft: "2px solid #3B82F6",
+        borderInlineStart: "2px solid #3B82F6",
         borderRadius: 8,
         padding: "16px 18px",
       }}
@@ -88,7 +88,7 @@ export default function RoutingRuleReadOnlyCard({ rule }) {
               style={{
                 fontSize: 12,
                 color: "#8B98A5",
-                paddingLeft: 12,
+                paddingInlineStart: 12,
                 position: "relative",
               }}
             >

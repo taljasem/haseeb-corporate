@@ -62,7 +62,7 @@ function ChecklistRow({ task, allTasksComplete }) {
           fontSize: 10,
           color: "#5B6570",
           minWidth: 80,
-          textAlign: "right",
+          textAlign: "end",
         }}
       >
         {task.completedAt

@@ -1,0 +1,122 @@
+/* ============================================================
+   RTL layout overrides — Step 14F
+   Applied when <html dir="rtl"> (Arabic mode)
+   Strategy: use attribute-based overrides to mirror the UI
+   without touching thousands of inline styles.
+   ============================================================ */
+
+/* Force the whole document into RTL flow when dir=rtl */
+html[dir="rtl"] body,
+html[dir="rtl"] #root {
+  direction: rtl;
+}
+
+/* ------------------------------------------------------------
+   Icon flipping — directional icons get horizontally mirrored.
+   Only use for icons that have a clear left/right meaning.
+   We apply this via an explicit .rtl-flip utility class so we
+   never flip icons that should stay the same (home, bank, etc).
+   ------------------------------------------------------------ */
+html[dir="rtl"] .rtl-flip {
+  transform: scaleX(-1);
+}
+
+/* ------------------------------------------------------------
+   Split-pane screens — Bank Transactions, Manual JE,
+   Reconciliation detail. We can't reliably override all inline
+   flex styles, but we can target the top-level split using
+   flex-direction: row-reverse on the wrapping container when
+   it has data-split="true".
+   ------------------------------------------------------------ */
+html[dir="rtl"] [data-split="true"] {
+  flex-direction: row-reverse;
+}
+
+/* ------------------------------------------------------------
+   Chat bubble mirroring — Conversational JE screens use
+   justify-content: flex-end/flex-start to anchor user/aminah
+   bubbles. Flip those via data attributes.
+   ------------------------------------------------------------ */
+html[dir="rtl"] [data-bubble="user"] {
+  justify-content: flex-start !important;
+}
+html[dir="rtl"] [data-bubble="user"] > div {
+  border-bottom-right-radius: 12px !important;
+  border-bottom-left-radius: 4px !important;
+}
+html[dir="rtl"] [data-bubble="aminah"] {
+  justify-content: flex-end !important;
+}
+html[dir="rtl"] [data-bubble="aminah"] > div {
+  border-bottom-left-radius: 12px !important;
+  border-bottom-right-radius: 4px !important;
+}
+
+/* ------------------------------------------------------------
+   Aminah slide-over: anchored to right in LTR, should anchor
+   to left in RTL. The component uses inline right:0 — override
+   with !important.
+   ------------------------------------------------------------ */
+html[dir="rtl"] [data-panel="aminah-slideover"] {
+  right: auto !important;
+  left: 0 !important;
+  border-left: none !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.10) !important;
+}
+
+/* ------------------------------------------------------------
+   Notification / popover dropdowns anchored right: 0.
+   Tag them data-popover-anchor="end" and we mirror.
+   ------------------------------------------------------------ */
+html[dir="rtl"] [data-popover-anchor="end"] {
+  right: auto !important;
+  left: 0 !important;
+}
+html[dir="rtl"] [data-popover-anchor="start"] {
+  left: auto !important;
+  right: 0 !important;
+}
+
+/* ------------------------------------------------------------
+   Transaction selection indicator: inline box-shadow inset 3px 0 0.
+   Use data-selected-indicator to flip to end.
+   ------------------------------------------------------------ */
+html[dir="rtl"] [data-selected-indicator="start"] {
+  box-shadow: inset -3px 0 0 #00C48C !important;
+}
+
+/* ------------------------------------------------------------
+   Variance bars and progress bars — they fill left-to-right.
+   Reverse their flex direction so fill visually starts on the
+   inline-start (which is the right in RTL).
+   ------------------------------------------------------------ */
+html[dir="rtl"] [data-progress-bar="true"] {
+  direction: ltr;
+  transform: scaleX(-1);
+}
+
+/* ------------------------------------------------------------
+   Active-nav indicator — sidebar nav items use
+   boxShadow: inset 2px 0 0 teal. Flip to inline-end.
+   Target via data-active="nav".
+   ------------------------------------------------------------ */
+html[dir="rtl"] [data-nav-active="true"] {
+  box-shadow: inset -2px 0 0 #00C48C !important;
+}
+
+/* ------------------------------------------------------------
+   Bebas Neue display headers use letter-spacing that can
+   look cramped in Arabic — reset when an Arabic font is used.
+   ------------------------------------------------------------ */
+html[dir="rtl"] {
+  letter-spacing: 0 !important;
+}
+html[dir="rtl"] * {
+  letter-spacing: inherit;
+}
+
+/* Allow monospace to keep its natural letter-spacing */
+html[dir="rtl"] .dm-mono,
+html[dir="rtl"] [style*="DM Mono"] {
+  letter-spacing: normal;
+}

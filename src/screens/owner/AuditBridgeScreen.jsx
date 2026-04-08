@@ -16,7 +16,7 @@ function CheckCard({ check }) {
       style={{
         background: "rgba(255,255,255,0.02)",
         border: `1px solid ${passing ? "rgba(255,255,255,0.08)" : "rgba(255,90,95,0.30)"}`,
-        borderLeft: `2px solid ${color}`,
+        borderInlineStart: `2px solid ${color}`,
         borderRadius: 8,
         padding: "14px 16px",
         minHeight: 140,
@@ -193,7 +193,7 @@ export default function AuditBridgeScreen() {
           style={{
             background: "rgba(255,255,255,0.02)",
             border: "1px solid rgba(255,255,255,0.08)",
-            borderLeft: "2px solid #00C48C",
+            borderInlineStart: "2px solid #00C48C",
             borderRadius: 10,
             padding: "18px 20px",
             marginBottom: 18,

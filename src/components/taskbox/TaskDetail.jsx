@@ -79,7 +79,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
             fontFamily: "inherit",
           }}
         >
-          <ArrowLeft size={13} strokeWidth={2.4} />
+          <span className="rtl-flip" style={{ display: "inline-flex" }}><ArrowLeft size={13} strokeWidth={2.4} /></span>
           {t("detail.back")}
         </button>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -426,7 +426,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
               style={{
                 background: "rgba(255,255,255,0.025)",
                 border: "1px solid rgba(255,255,255,0.10)",
-                borderLeft: "2px solid #3B82F6",
+                borderInlineStart: "2px solid #3B82F6",
                 borderRadius: 6,
                 padding: "12px 14px",
                 marginBottom: 16,

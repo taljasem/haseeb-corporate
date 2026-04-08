@@ -202,6 +202,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                 </button>
                 {periodOpen && (
                   <div
+                    data-popover-anchor="start"
                     style={{
                       position: "absolute",
                       top: "calc(100% + 6px)",
@@ -242,7 +243,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                             borderBottom: "1px solid rgba(255,255,255,0.04)",
                             cursor: "pointer",
                             fontFamily: "inherit",
-                            textAlign: "left",
+                            textAlign: "start",
                           }}
                         >
                           <span style={{ fontSize: 12, color: on ? "#00C48C" : "#E6EDF3", fontWeight: 500 }}>
@@ -489,7 +490,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                 }}
               >
                 <span style={{ color: "#8B98A5" }}>{r.name}</span>
-                <span style={{ color: "#5B6570", flex: 1, textAlign: "right", marginRight: 18 }}>
+                <span style={{ color: "#5B6570", flex: 1, textAlign: "end", marginInlineEnd: 18 }}>
                   {t("owner_label", { name: ownerName(r.ownerUserId) })}
                 </span>
                 <span
@@ -498,7 +499,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                     color: "#E6EDF3",
                     fontVariantNumeric: "tabular-nums",
                     minWidth: 120,
-                    textAlign: "right",
+                    textAlign: "end",
                   }}
                 >
                   KWD {r.budgetAnnual.toLocaleString("en-US", {

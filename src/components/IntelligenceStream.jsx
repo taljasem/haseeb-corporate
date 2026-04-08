@@ -27,7 +27,7 @@ export default function IntelligenceStream() {
         minWidth: 0,
         padding: "20px 24px",
         overflowY: "auto",
-        borderRight: "1px solid rgba(255,255,255,0.10)",
+        borderInlineEnd: "1px solid rgba(255,255,255,0.10)",
       }}
     >
       <div

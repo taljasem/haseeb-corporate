@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useTranslation, Trans } from "react-i18next";
 import AccountPicker from "../../components/cfo/AccountPicker";
+import DirArrow from "../../components/shared/DirArrow";
 import JournalEntryCard from "../../components/cfo/JournalEntryCard";
 import { useTenant } from "../../components/shared/TenantContext";
 
 function UserBubble({ children }) {
   return (
-    <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
+    <div data-bubble="user" style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
       <div
         style={{
           maxWidth: "78%",
@@ -28,7 +29,7 @@ function UserBubble({ children }) {
 
 function AminahBubble({ children, wide = false }) {
   return (
-    <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 10 }}>
+    <div data-bubble="aminah" style={{ display: "flex", justifyContent: "flex-start", marginBottom: 10 }}>
       <div
         style={{
           maxWidth: wide ? "100%" : "88%",
@@ -371,7 +372,7 @@ function JuniorExchangeTwo({ onOpenTaskbox }) {
               <div style={{ display: "flex", justifyContent: "flex-start", marginTop: 4 }}>
                 <a
                   onClick={onOpenTaskbox}
-                  style={{ fontSize: 11, color: "#00C48C", cursor: "pointer", marginLeft: 38 }}
+                  style={{ fontSize: 11, color: "#00C48C", cursor: "pointer", marginInlineStart: 38 }}
                 >
                   {t("junior.view_in_taskbox")}
                 </a>
@@ -422,7 +423,7 @@ function JuniorExchangeThree({ onOpenBankTx }) {
       <div style={{ display: "flex", justifyContent: "flex-start" }}>
         <a
           onClick={onOpenBankTx}
-          style={{ fontSize: 11, color: "#00C48C", cursor: "pointer", marginLeft: 38 }}
+          style={{ fontSize: 11, color: "#00C48C", cursor: "pointer", marginInlineStart: 38 }}
         >
           {t("junior.go_to_bank_tx")}
         </a>
@@ -523,7 +524,7 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
               fontSize: 14,
             }}
           >
-            →
+            <DirArrow />
           </button>
         </div>
       </div>

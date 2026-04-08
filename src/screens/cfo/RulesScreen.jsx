@@ -205,7 +205,7 @@ export default function RulesScreen({ initialTab = "categorization" }) {
                 }}
               >
                 {t(`tabs.${tb.key}`)}
-                <span style={{ color: "#5B6570", marginLeft: 6, fontWeight: 500 }}>({count})</span>
+                <span style={{ color: "#5B6570", marginInlineStart: 6, fontWeight: 500 }}>({count})</span>
               </button>
             );
           })}

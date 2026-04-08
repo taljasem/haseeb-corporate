@@ -12,6 +12,7 @@ export default function BankTransactionRow({ tx, selected, onSelect }) {
   return (
     <div
       onClick={() => onSelect(tx)}
+      data-selected-indicator={selected ? "start" : undefined}
       style={{
         display: "grid",
         gridTemplateColumns: "46px 1fr auto auto",

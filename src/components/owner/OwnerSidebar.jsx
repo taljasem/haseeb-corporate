@@ -7,6 +7,7 @@ function NavItem({ icon: Icon, label, active, onClick, badge }) {
   return (
     <button
       onClick={onClick}
+      data-nav-active={active ? "true" : undefined}
       onMouseEnter={(e) => {
         if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.04)";
       }}
@@ -28,7 +29,7 @@ function NavItem({ icon: Icon, label, active, onClick, badge }) {
         fontSize: 12,
         fontWeight: 600,
         letterSpacing: "0.05em",
-        textAlign: "left",
+        textAlign: "start",
         boxShadow: active ? "inset 2px 0 0 #00C48C" : "none",
         transition: "all 0.12s ease",
       }}
@@ -72,7 +73,7 @@ export default function OwnerSidebar({ active, setActive, taskboxOpen = 0, pendi
         width: 220,
         flexShrink: 0,
         background: "rgba(255,255,255,0.02)",
-        borderRight: "1px solid rgba(255,255,255,0.10)",
+        borderInlineEnd: "1px solid rgba(255,255,255,0.10)",
         padding: "20px 0",
         overflowY: "auto",
         position: "relative",

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Check, Edit3 } from "lucide-react";
+import DirArrow from "../../components/shared/DirArrow";
 import SectionHeader from "../../components/SectionHeader";
 import TaskRow from "../../components/taskbox/TaskRow";
 import {
@@ -46,7 +47,7 @@ function QueueRow({ count, label, onClick }) {
         border: "none",
         borderBottom: "1px solid rgba(255,255,255,0.04)",
         cursor: "pointer",
-        textAlign: "left",
+        textAlign: "start",
         fontFamily: "inherit",
         borderRadius: 4,
       }}
@@ -58,13 +59,13 @@ function QueueRow({ count, label, onClick }) {
           color: "#E6EDF3",
           fontWeight: 500,
           minWidth: 32,
-          textAlign: "right",
+          textAlign: "end",
         }}
       >
         {count}
       </span>
       <span style={{ flex: 1, fontSize: 13, color: "#8B98A5" }}>{label}</span>
-      <span style={{ color: "#5B6570", fontSize: 14 }}>→</span>
+      <span style={{ color: "#5B6570", fontSize: 14 }}><DirArrow /></span>
     </button>
   );
 }
@@ -195,7 +196,7 @@ export default function JuniorTodayScreen({ setActiveScreen, onOpenTask }) {
                     fontSize: 13,
                     color: "#8B98A5",
                     lineHeight: 1.5,
-                    paddingLeft: 14,
+                    paddingInlineStart: 14,
                     position: "relative",
                   }}
                 >

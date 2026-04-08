@@ -62,14 +62,14 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
   };
 
   return (
-    <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+    <div data-split="true" style={{ flex: 1, display: "flex", overflow: "hidden" }}>
       {/* List 60% */}
       <div
         style={{
           flex: "0 0 60%",
           display: "flex",
           flexDirection: "column",
-          borderRight: "1px solid rgba(255,255,255,0.10)",
+          borderInlineEnd: "1px solid rgba(255,255,255,0.10)",
           overflow: "hidden",
         }}
       >

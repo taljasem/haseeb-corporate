@@ -154,6 +154,7 @@ export default function AssignToButton({
       {open && (
         <div
           onClick={(e) => e.stopPropagation()}
+          data-popover-anchor="end"
           style={{
             position: "absolute",
             top: "calc(100% + 6px)",
@@ -220,7 +221,7 @@ export default function AssignToButton({
                     border: "none",
                     borderBottom: "1px solid rgba(255,255,255,0.04)",
                     cursor: "pointer",
-                    textAlign: "left",
+                    textAlign: "start",
                     fontFamily: "inherit",
                   }}
                   onMouseEnter={(e) => {

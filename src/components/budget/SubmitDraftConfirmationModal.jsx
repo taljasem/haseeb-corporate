@@ -80,7 +80,7 @@ export default function SubmitDraftConfirmationModal({ open, departmentName, not
                 padding: "10px 12px",
                 background: "rgba(255,255,255,0.03)",
                 border: "1px solid rgba(255,255,255,0.08)",
-                borderLeft: "2px solid #00C48C",
+                borderInlineStart: "2px solid #00C48C",
                 borderRadius: 6,
                 fontSize: 12,
                 color: "#8B98A5",

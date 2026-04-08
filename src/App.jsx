@@ -13,6 +13,70 @@ import MobileDrawer from "./components/shared/MobileDrawer";
 import OwnerSidebar from "./components/owner/OwnerSidebar";
 import CFOSidebar from "./components/cfo/CFOSidebar";
 import JuniorSidebar from "./components/junior/JuniorSidebar";
+import { useTranslation } from "react-i18next";
+
+const ROLES = ["Owner", "CFO", "Junior"];
+const ROLE_COLOR = {
+  Owner: "var(--role-owner)",
+  CFO: "var(--accent-primary)",
+  Junior: "var(--semantic-info)",
+};
+
+function DrawerRoleSwitcher({ role, setRole, onClose }) {
+  const { t } = useTranslation("header");
+  return (
+    <div
+      style={{
+        borderTop: "1px solid var(--border-subtle)",
+        padding: "14px 16px 20px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 9,
+          fontWeight: 700,
+          letterSpacing: "0.15em",
+          color: "var(--text-tertiary)",
+        }}
+      >
+        ROLE
+      </div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {ROLES.map((r) => {
+          const on = role === r;
+          const color = ROLE_COLOR[r];
+          return (
+            <button
+              key={r}
+              onClick={() => {
+                setRole(r);
+                onClose && onClose();
+              }}
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: "0.06em",
+                padding: "8px 14px",
+                borderRadius: 6,
+                background: on ? `color-mix(in srgb, ${color} 10%, transparent)` : "var(--bg-surface-sunken)",
+                border: on ? `1px solid ${color}` : "1px solid var(--border-default)",
+                color: on ? color : "var(--text-secondary)",
+                cursor: "pointer",
+                fontFamily: "inherit",
+                minHeight: 36,
+              }}
+            >
+              {t(`role_${r.toLowerCase()}`)}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function AppInner() {
   const [role, setRoleState] = useState("Owner");
@@ -56,6 +120,7 @@ function AppInner() {
         {role === "Junior" && (
           <JuniorSidebar active={drawerActiveScreen} setActive={setActiveScreen} />
         )}
+        <DrawerRoleSwitcher role={role} setRole={setRole} onClose={() => setDrawerOpen(false)} />
       </MobileDrawer>
     </NavContext.Provider>
   );

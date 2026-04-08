@@ -217,7 +217,7 @@ export default function Header({ role, setRole, onOpenDrawer }) {
       </div>
 
       {/* Tenant switcher (demo control) */}
-      <div ref={tenantRef} style={{ position: "relative", marginInlineStart: 18 }}>
+      <div ref={tenantRef} data-hide-on-mobile="true" style={{ position: "relative", marginInlineStart: 18 }}>
         <button
           onClick={() => setTenantOpen((o) => !o)}
           style={{
@@ -334,7 +334,7 @@ export default function Header({ role, setRole, onOpenDrawer }) {
         }}
       >
         {/* Role switcher — DEMO ONLY */}
-        <div style={{ display: "flex", gap: 4 }}>
+        <div data-hide-on-mobile="true" style={{ display: "flex", gap: 4 }}>
           {ROLES.map((r) => {
             const on = role === r;
             const color = ROLE_COLOR[r];

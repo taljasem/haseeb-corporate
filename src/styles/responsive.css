@@ -8,8 +8,9 @@
    TABLET (768 – 1023px)
    ------------------------------------------------------------ */
 @media (max-width: 1023px) {
-  /* Narrow the sidebars slightly so main content breathes */
-  aside {
+  /* Narrow the sidebars slightly so main content breathes.
+     Exclude the mobile drawer wrapper — it has its own width. */
+  aside:not([data-mobile-drawer="true"]) {
     width: 180px !important;
   }
 
@@ -28,11 +29,20 @@
   aside:not([data-mobile-drawer="true"]) {
     display: none !important;
   }
-  /* But restore nested asides inside the mobile drawer */
-  .mobile-drawer aside {
+  /* But restore nested asides inside the mobile drawer.
+     Higher specificity than the aside[not-mobile-drawer] hide
+     and the tablet aside width override. */
+  .mobile-drawer aside,
+  aside[data-mobile-drawer="true"] aside {
     display: flex !important;
+    flex: 1 1 auto !important;
     width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
     border: none !important;
+    overflow-y: visible !important;
+    padding: 8px 0 16px !important;
+    background: transparent !important;
   }
 
   /* Role view containers: ensure full width */
@@ -181,17 +191,21 @@
   z-index: 400;
 }
 .mobile-drawer {
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  width: 80%;
-  max-width: 320px;
-  background: var(--bg-surface-raised);
+  position: fixed !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: 80% !important;
+  min-width: 280px !important;
+  max-width: 320px !important;
+  background: var(--bg-surface-raised) !important;
   z-index: 401;
-  display: flex;
-  flex-direction: column;
+  display: flex !important;
+  flex-direction: column !important;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   box-shadow: var(--shadow-lg);
+  padding: 0 !important;
+  border: none !important;
 }
 html[dir="ltr"] .mobile-drawer { left: 0; }
 html[dir="rtl"] .mobile-drawer { right: 0; }

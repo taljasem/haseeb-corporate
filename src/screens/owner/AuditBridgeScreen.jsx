@@ -9,13 +9,13 @@ import { formatRelativeTime } from "../../utils/relativeTime";
 function CheckCard({ check }) {
   const { t } = useTranslation("audit");
   const passing = check.status === "passing";
-  const color = passing ? "#00C48C" : "#FF5A5F";
+  const color = passing ? "var(--accent-primary)" : "var(--semantic-danger)";
   const Icon = passing ? Check : X;
   return (
     <div
       style={{
-        background: "rgba(255,255,255,0.02)",
-        border: `1px solid ${passing ? "rgba(255,255,255,0.08)" : "rgba(255,90,95,0.30)"}`,
+        background: "var(--bg-surface)",
+        border: `1px solid ${passing ? "var(--border-default)" : "var(--semantic-danger-subtle)"}`,
         borderInlineStart: `2px solid ${color}`,
         borderRadius: 8,
         padding: "14px 16px",
@@ -54,7 +54,7 @@ function CheckCard({ check }) {
       <div
         style={{
           fontSize: 13,
-          color: "#E6EDF3",
+          color: "var(--text-primary)",
           fontWeight: 500,
           lineHeight: 1.3,
           marginBottom: 8,
@@ -66,7 +66,7 @@ function CheckCard({ check }) {
       <div
         style={{
           fontSize: 11,
-          color: "#8B98A5",
+          color: "var(--text-secondary)",
           lineHeight: 1.4,
           marginBottom: 8,
         }}
@@ -77,7 +77,7 @@ function CheckCard({ check }) {
         style={{
           fontSize: 10,
           fontFamily: "'DM Mono', monospace",
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
         }}
       >
         {t("verified", { time: formatRelativeTime(check.lastVerified) })}
@@ -93,7 +93,7 @@ export default function AuditBridgeScreen() {
     getAuditChecks().then(setData);
   }, []);
 
-  if (!data) return <div style={{ padding: 28, color: "#5B6570" }}>{t("loading")}</div>;
+  if (!data) return <div style={{ padding: 28, color: "var(--text-tertiary)" }}>{t("loading")}</div>;
 
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px 32px" }}>
@@ -103,7 +103,7 @@ export default function AuditBridgeScreen() {
             style={{
               fontFamily: "'Bebas Neue', sans-serif",
               fontSize: 28,
-              color: "#E6EDF3",
+              color: "var(--text-primary)",
               letterSpacing: "-0.3px",
               lineHeight: 1,
             }}
@@ -115,7 +115,7 @@ export default function AuditBridgeScreen() {
               fontSize: 11,
               fontWeight: 600,
               letterSpacing: "0.15em",
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               marginTop: 6,
             }}
           >
@@ -138,7 +138,7 @@ export default function AuditBridgeScreen() {
               fontFamily: "'DM Mono', monospace",
               fontSize: 32,
               fontWeight: 500,
-              color: "#00C48C",
+              color: "var(--accent-primary)",
               fontVariantNumeric: "tabular-nums",
             }}
           >
@@ -149,7 +149,7 @@ export default function AuditBridgeScreen() {
               fontSize: 11,
               fontWeight: 600,
               letterSpacing: "0.15em",
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
             }}
           >
             {t("checks_passing")}
@@ -160,8 +160,8 @@ export default function AuditBridgeScreen() {
                 fontSize: 11,
                 fontWeight: 700,
                 letterSpacing: "0.10em",
-                color: "#FF5A5F",
-                background: "rgba(255,90,95,0.08)",
+                color: "var(--semantic-danger)",
+                background: "var(--semantic-danger-subtle)",
                 border: "1px solid rgba(255,90,95,0.30)",
                 padding: "5px 10px",
                 borderRadius: 4,
@@ -191,7 +191,7 @@ export default function AuditBridgeScreen() {
         {/* Hash chain status */}
         <div
           style={{
-            background: "rgba(255,255,255,0.02)",
+            background: "var(--bg-surface)",
             border: "1px solid rgba(255,255,255,0.08)",
             borderInlineStart: "2px solid #00C48C",
             borderRadius: 10,
@@ -207,13 +207,13 @@ export default function AuditBridgeScreen() {
               marginBottom: 14,
             }}
           >
-            <Lock size={14} color="#00C48C" strokeWidth={2.2} />
+            <Lock size={14} color="var(--accent-primary)" strokeWidth={2.2} />
             <div
               style={{
                 fontSize: 10,
                 fontWeight: 600,
                 letterSpacing: "0.15em",
-                color: "#5B6570",
+                color: "var(--text-tertiary)",
               }}
             >
               {t("hash_chain.title")}
@@ -227,14 +227,14 @@ export default function AuditBridgeScreen() {
             }}
           >
             <div>
-              <div style={{ fontSize: 9, color: "#5B6570", letterSpacing: "0.12em", fontWeight: 600 }}>
+              <div style={{ fontSize: 9, color: "var(--text-tertiary)", letterSpacing: "0.12em", fontWeight: 600 }}>
                 {t("hash_chain.total_entries")}
               </div>
               <div
                 style={{
                   fontFamily: "'DM Mono', monospace",
                   fontSize: 20,
-                  color: "#E6EDF3",
+                  color: "var(--text-primary)",
                   marginTop: 4,
                   fontVariantNumeric: "tabular-nums",
                 }}
@@ -243,14 +243,14 @@ export default function AuditBridgeScreen() {
               </div>
             </div>
             <div>
-              <div style={{ fontSize: 9, color: "#5B6570", letterSpacing: "0.12em", fontWeight: 600 }}>
+              <div style={{ fontSize: 9, color: "var(--text-tertiary)", letterSpacing: "0.12em", fontWeight: 600 }}>
                 {t("hash_chain.chain_length")}
               </div>
               <div
                 style={{
                   fontFamily: "'DM Mono', monospace",
                   fontSize: 20,
-                  color: "#E6EDF3",
+                  color: "var(--text-primary)",
                   marginTop: 4,
                 }}
               >
@@ -258,14 +258,14 @@ export default function AuditBridgeScreen() {
               </div>
             </div>
             <div>
-              <div style={{ fontSize: 9, color: "#5B6570", letterSpacing: "0.12em", fontWeight: 600 }}>
+              <div style={{ fontSize: 9, color: "var(--text-tertiary)", letterSpacing: "0.12em", fontWeight: 600 }}>
                 {t("hash_chain.last_hash")}
               </div>
               <div
                 style={{
                   fontFamily: "'DM Mono', monospace",
                   fontSize: 15,
-                  color: "#E6EDF3",
+                  color: "var(--text-primary)",
                   marginTop: 4,
                 }}
               >
@@ -273,13 +273,13 @@ export default function AuditBridgeScreen() {
               </div>
             </div>
             <div>
-              <div style={{ fontSize: 9, color: "#5B6570", letterSpacing: "0.12em", fontWeight: 600 }}>
+              <div style={{ fontSize: 9, color: "var(--text-tertiary)", letterSpacing: "0.12em", fontWeight: 600 }}>
                 {t("hash_chain.status")}
               </div>
               <div
                 style={{
                   fontSize: 13,
-                  color: "#00C48C",
+                  color: "var(--accent-primary)",
                   fontWeight: 600,
                   letterSpacing: "0.06em",
                   marginTop: 4,
@@ -292,7 +292,7 @@ export default function AuditBridgeScreen() {
           <div
             style={{
               fontSize: 10,
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               fontFamily: "'DM Mono', monospace",
               marginTop: 12,
             }}
@@ -318,13 +318,13 @@ export default function AuditBridgeScreen() {
               marginBottom: 8,
             }}
           >
-            <Shield size={16} color="#00C48C" strokeWidth={2.2} />
+            <Shield size={16} color="var(--accent-primary)" strokeWidth={2.2} />
             <div
               style={{
                 fontSize: 10,
                 fontWeight: 700,
                 letterSpacing: "0.15em",
-                color: "#00C48C",
+                color: "var(--accent-primary)",
               }}
             >
               {t("auditor.title")}
@@ -333,7 +333,7 @@ export default function AuditBridgeScreen() {
           <div
             style={{
               fontSize: 13,
-              color: "#8B98A5",
+              color: "var(--text-secondary)",
               lineHeight: 1.6,
               marginBottom: 14,
             }}
@@ -343,7 +343,7 @@ export default function AuditBridgeScreen() {
           <div style={{ display: "flex", gap: 8 }}>
             <button
               style={{
-                background: "#00C48C",
+                background: "var(--accent-primary)",
                 color: "#fff",
                 border: "none",
                 padding: "9px 16px",
@@ -359,7 +359,7 @@ export default function AuditBridgeScreen() {
             <button
               style={{
                 background: "transparent",
-                color: "#8B98A5",
+                color: "var(--text-secondary)",
                 border: "1px solid rgba(255,255,255,0.15)",
                 padding: "9px 16px",
                 borderRadius: 6,

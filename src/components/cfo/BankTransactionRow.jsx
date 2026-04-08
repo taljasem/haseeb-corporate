@@ -26,7 +26,7 @@ export default function BankTransactionRow({ tx, selected, onSelect }) {
         transition: "all 0.12s ease",
       }}
       onMouseEnter={(e) => {
-        if (!selected) e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+        if (!selected) e.currentTarget.style.background = "var(--bg-surface-sunken)";
       }}
       onMouseLeave={(e) => {
         if (!selected) e.currentTarget.style.background = "transparent";
@@ -36,7 +36,7 @@ export default function BankTransactionRow({ tx, selected, onSelect }) {
         style={{
           fontFamily: "'DM Mono', monospace",
           fontSize: 11,
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
         }}
       >
         {tx.date}
@@ -45,7 +45,7 @@ export default function BankTransactionRow({ tx, selected, onSelect }) {
         <div
           style={{
             fontSize: 13,
-            color: "#E6EDF3",
+            color: "var(--text-primary)",
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
@@ -53,7 +53,7 @@ export default function BankTransactionRow({ tx, selected, onSelect }) {
         >
           {tx.merchant}
         </div>
-        <div style={{ fontSize: 11, color: "#5B6570", marginTop: 2 }}>
+        <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>
           {tx.engineSuggestion.account
             ? `${tx.engineSuggestion.account} (${tx.engineSuggestion.accountCode})`
             : "—"}
@@ -64,7 +64,7 @@ export default function BankTransactionRow({ tx, selected, onSelect }) {
           fontFamily: "'DM Mono', monospace",
           fontSize: 13,
           fontWeight: 500,
-          color: tx.amount < 0 ? "#FF5A5F" : "#00C48C",
+          color: tx.amount < 0 ? "var(--semantic-danger)" : "var(--accent-primary)",
           opacity: tx.amount < 0 ? 0.85 : 1,
           fontVariantNumeric: "tabular-nums",
         }}

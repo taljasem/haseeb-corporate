@@ -17,16 +17,16 @@ export default function BankAccountCard({ account, selected = false, onSelect })
     <div
       onClick={() => onSelect && onSelect(account)}
       onMouseEnter={(e) => {
-        if (!selected) e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+        if (!selected) e.currentTarget.style.background = "var(--border-subtle)";
       }}
       onMouseLeave={(e) => {
-        if (!selected) e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+        if (!selected) e.currentTarget.style.background = "var(--bg-surface-sunken)";
       }}
       style={{
         flex: "1 1 260px",
         minWidth: 260,
         padding: 20,
-        background: "rgba(255,255,255,0.04)",
+        background: "var(--bg-surface-sunken)",
         border: selected ? "1px solid #00C48C" : "1px solid rgba(255,255,255,0.10)",
         borderInlineStart: `3px solid ${account.accentColor}`,
         borderRadius: 10,
@@ -52,7 +52,7 @@ export default function BankAccountCard({ account, selected = false, onSelect })
           <div
             style={{
               fontSize: 13,
-              color: "#E6EDF3",
+              color: "var(--text-primary)",
               fontWeight: 500,
               whiteSpace: "nowrap",
               overflow: "hidden",
@@ -65,7 +65,7 @@ export default function BankAccountCard({ account, selected = false, onSelect })
             style={{
               fontFamily: "'DM Mono', monospace",
               fontSize: 10,
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               marginTop: 2,
             }}
           >
@@ -78,7 +78,7 @@ export default function BankAccountCard({ account, selected = false, onSelect })
         style={{
           fontFamily: "'DM Mono', monospace",
           fontSize: 24,
-          color: "#E6EDF3",
+          color: "var(--text-primary)",
           fontWeight: 500,
           fontVariantNumeric: "tabular-nums",
           lineHeight: 1.1,
@@ -91,7 +91,7 @@ export default function BankAccountCard({ account, selected = false, onSelect })
           fontSize: 9,
           fontWeight: 600,
           letterSpacing: "0.15em",
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
           marginTop: 3,
         }}
       >
@@ -108,14 +108,14 @@ export default function BankAccountCard({ account, selected = false, onSelect })
         }}
       >
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.12em", color: "#5B6570" }}>
+          <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)" }}>
             {t("card.mtd_inflow")}
           </div>
           <div
             style={{
               fontFamily: "'DM Mono', monospace",
               fontSize: 12,
-              color: "#00C48C",
+              color: "var(--accent-primary)",
               marginTop: 2,
               fontVariantNumeric: "tabular-nums",
             }}
@@ -124,14 +124,14 @@ export default function BankAccountCard({ account, selected = false, onSelect })
           </div>
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.12em", color: "#5B6570" }}>
+          <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)" }}>
             {t("card.mtd_outflow")}
           </div>
           <div
             style={{
               fontFamily: "'DM Mono', monospace",
               fontSize: 12,
-              color: "#FF5A5F",
+              color: "var(--semantic-danger)",
               opacity: 0.85,
               marginTop: 2,
               fontVariantNumeric: "tabular-nums",
@@ -146,7 +146,7 @@ export default function BankAccountCard({ account, selected = false, onSelect })
         style={{
           fontFamily: "'DM Mono', monospace",
           fontSize: 10,
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
           marginTop: 10,
         }}
       >

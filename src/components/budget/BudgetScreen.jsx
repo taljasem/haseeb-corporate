@@ -31,7 +31,7 @@ function HeaderCell({ children, align = "left" }) {
         fontSize: 9,
         fontWeight: 600,
         letterSpacing: "0.15em",
-        color: "#5B6570",
+        color: "var(--text-tertiary)",
         textAlign: align,
       }}
     >
@@ -158,7 +158,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
               style={{
                 fontFamily: "'Bebas Neue', sans-serif",
                 fontSize: 28,
-                color: "#E6EDF3",
+                color: "var(--text-primary)",
                 letterSpacing: "-0.3px",
                 lineHeight: 1,
               }}
@@ -171,7 +171,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                   fontSize: 11,
                   fontWeight: 600,
                   letterSpacing: "0.15em",
-                  color: "#5B6570",
+                  color: "var(--text-tertiary)",
                   marginTop: 6,
                 }}
               >
@@ -185,7 +185,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                     display: "inline-flex",
                     alignItems: "center",
                     gap: 8,
-                    background: "rgba(255,255,255,0.02)",
+                    background: "var(--bg-surface)",
                     border: "1px solid rgba(255,255,255,0.10)",
                     borderRadius: 6,
                     padding: "6px 12px",
@@ -194,11 +194,11 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                     fontSize: 11,
                     fontWeight: 600,
                     letterSpacing: "0.12em",
-                    color: "#E6EDF3",
+                    color: "var(--text-primary)",
                   }}
                 >
                   {budget ? t("period_status", { period: budget.period.label.toUpperCase(), status: (budget.status || "").toUpperCase() }) : t("loading")}
-                  <ChevronDown size={12} color="#5B6570" />
+                  <ChevronDown size={12} color="var(--text-tertiary)" />
                 </button>
                 {periodOpen && (
                   <div
@@ -208,7 +208,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                       top: "calc(100% + 6px)",
                       left: 0,
                       width: 280,
-                      background: "#0C0E12",
+                      background: "var(--bg-surface-raised)",
                       border: "1px solid rgba(255,255,255,0.10)",
                       borderRadius: 10,
                       boxShadow: "0 12px 32px rgba(0,0,0,0.6)",
@@ -227,7 +227,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                             setPeriodOpen(false);
                           }}
                           onMouseEnter={(e) => {
-                            if (!on) e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+                            if (!on) e.currentTarget.style.background = "var(--bg-surface-sunken)";
                           }}
                           onMouseLeave={(e) => {
                             if (!on) e.currentTarget.style.background = "transparent";
@@ -238,7 +238,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                             justifyContent: "space-between",
                             width: "100%",
                             padding: "10px 14px",
-                            background: on ? "rgba(0,196,140,0.06)" : "transparent",
+                            background: on ? "var(--bg-selected)" : "transparent",
                             border: "none",
                             borderBottom: "1px solid rgba(255,255,255,0.04)",
                             cursor: "pointer",
@@ -246,7 +246,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                             textAlign: "start",
                           }}
                         >
-                          <span style={{ fontSize: 12, color: on ? "#00C48C" : "#E6EDF3", fontWeight: 500 }}>
+                          <span style={{ fontSize: 12, color: on ? "var(--accent-primary)" : "var(--text-primary)", fontWeight: 500 }}>
                             {b.label}
                           </span>
                           <BudgetStatusPill status={b.status} />
@@ -264,7 +264,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
               <>
                 <button
                   style={{
-                    background: "#00C48C",
+                    background: "var(--accent-primary)",
                     color: "#fff",
                     border: "none",
                     padding: "8px 14px",
@@ -280,7 +280,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                 <button
                   style={{
                     background: "transparent",
-                    color: "#D4A84B",
+                    color: "var(--semantic-warning)",
                     border: "1px solid rgba(212,168,75,0.30)",
                     padding: "8px 14px",
                     borderRadius: 6,
@@ -294,7 +294,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                 <button
                   style={{
                     background: "transparent",
-                    color: "#FF5A5F",
+                    color: "var(--semantic-danger)",
                     border: "1px solid rgba(255,90,95,0.30)",
                     padding: "8px 14px",
                     borderRadius: 6,
@@ -311,7 +311,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
               <button
                 style={{
                   background: "transparent",
-                  color: "#8B98A5",
+                  color: "var(--text-secondary)",
                   border: "1px solid rgba(255,255,255,0.15)",
                   padding: "8px 14px",
                   borderRadius: 6,
@@ -327,7 +327,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
               <button
                 style={{
                   background: "transparent",
-                  color: "#8B98A5",
+                  color: "var(--text-secondary)",
                   border: "1px solid rgba(255,255,255,0.15)",
                   padding: "8px 14px",
                   borderRadius: 6,
@@ -342,7 +342,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
             {role === "CFO" && (
               <button
                 style={{
-                  background: "#00C48C",
+                  background: "var(--accent-primary)",
                   color: "#fff",
                   border: "none",
                   padding: "8px 14px",
@@ -401,7 +401,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
         {/* Departments table */}
         <div
           style={{
-            background: "rgba(255,255,255,0.02)",
+            background: "var(--bg-surface)",
             border: "1px solid rgba(255,255,255,0.08)",
             borderRadius: 10,
             overflow: "hidden",
@@ -413,7 +413,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
               gridTemplateColumns: COLS_HEADER,
               gap: 12,
               padding: "12px 18px",
-              background: "rgba(255,255,255,0.03)",
+              background: "var(--bg-surface-sunken)",
               borderBottom: "1px solid rgba(255,255,255,0.08)",
             }}
           >
@@ -460,7 +460,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
           <div
             style={{
               marginTop: 18,
-              background: "rgba(255,255,255,0.02)",
+              background: "var(--bg-surface)",
               border: "1px solid rgba(255,255,255,0.06)",
               borderRadius: 10,
               padding: "14px 18px",
@@ -471,7 +471,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                 fontSize: 10,
                 fontWeight: 600,
                 letterSpacing: "0.15em",
-                color: "#5B6570",
+                color: "var(--text-tertiary)",
                 marginBottom: 10,
               }}
             >
@@ -489,14 +489,14 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                   fontSize: 12,
                 }}
               >
-                <span style={{ color: "#8B98A5" }}>{r.name}</span>
-                <span style={{ color: "#5B6570", flex: 1, textAlign: "end", marginInlineEnd: 18 }}>
+                <span style={{ color: "var(--text-secondary)" }}>{r.name}</span>
+                <span style={{ color: "var(--text-tertiary)", flex: 1, textAlign: "end", marginInlineEnd: 18 }}>
                   {t("owner_label", { name: ownerName(r.ownerUserId) })}
                 </span>
                 <span
                   style={{
                     fontFamily: "'DM Mono', monospace",
-                    color: "#E6EDF3",
+                    color: "var(--text-primary)",
                     fontVariantNumeric: "tabular-nums",
                     minWidth: 120,
                     textAlign: "end",
@@ -519,9 +519,9 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
             bottom: 20,
             left: "50%",
             transform: "translateX(-50%)",
-            background: "rgba(0,196,140,0.10)",
+            background: "var(--accent-primary-subtle)",
             border: "1px solid rgba(0,196,140,0.30)",
-            color: "#00C48C",
+            color: "var(--accent-primary)",
             padding: "10px 18px",
             borderRadius: 8,
             fontSize: 12,

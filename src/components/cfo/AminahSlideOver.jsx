@@ -8,7 +8,7 @@ function Bubble({ msg }) {
       <div
         style={{
           maxWidth: isUser ? "80%" : "92%",
-          background: isUser ? "rgba(0,196,140,0.12)" : "rgba(255,255,255,0.03)",
+          background: isUser ? "rgba(0,196,140,0.12)" : "var(--bg-surface-sunken)",
           border: isUser ? "1px solid rgba(0,196,140,0.20)" : "1px solid rgba(255,255,255,0.08)",
           borderRadius: 12,
           borderBottomRightRadius: isUser ? 4 : 12,
@@ -16,7 +16,7 @@ function Bubble({ msg }) {
           padding: "10px 14px",
           fontSize: 13,
           lineHeight: 1.55,
-          color: isUser ? "#E6EDF3" : "#8B98A5",
+          color: isUser ? "var(--text-primary)" : "var(--text-secondary)",
         }}
       >
         {renderBold(msg.text)}
@@ -35,7 +35,7 @@ function renderBold(text) {
         <span
           key={i}
           style={{
-            color: "#E6EDF3",
+            color: "var(--text-primary)",
             fontWeight: 500,
             fontFamily: isNum ? "'DM Mono', monospace" : "inherit",
           }}
@@ -107,7 +107,7 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
               style={{
                 fontFamily: "'Bebas Neue', sans-serif",
                 fontSize: 16,
-                color: "#E6EDF3",
+                color: "var(--text-primary)",
                 letterSpacing: "0.06em",
               }}
             >
@@ -120,7 +120,7 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
             style={{
               background: "transparent",
               border: "none",
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               cursor: "pointer",
               fontSize: 18,
               padding: 4,
@@ -135,8 +135,8 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
             <div
               style={{
                 fontSize: 11,
-                color: "#5B6570",
-                background: "rgba(255,255,255,0.02)",
+                color: "var(--text-tertiary)",
+                background: "var(--bg-surface)",
                 border: "1px solid rgba(255,255,255,0.08)",
                 borderRadius: 6,
                 padding: "8px 10px",
@@ -153,7 +153,7 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
               fontSize: 10,
               fontWeight: 600,
               letterSpacing: "0.15em",
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               marginTop: 14,
               marginBottom: 8,
             }}
@@ -168,10 +168,10 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
                 style={{
                   textAlign: "start",
                   padding: "8px 12px",
-                  background: "rgba(255,255,255,0.02)",
+                  background: "var(--bg-surface)",
                   border: "1px solid rgba(255,255,255,0.08)",
                   borderRadius: 8,
-                  color: "#8B98A5",
+                  color: "var(--text-secondary)",
                   fontSize: 12,
                   cursor: "pointer",
                   fontFamily: "inherit",
@@ -191,11 +191,11 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
             placeholder={t("input_placeholder")}
             style={{
               width: "100%",
-              background: "rgba(255,255,255,0.04)",
+              background: "var(--bg-surface-sunken)",
               border: "1px solid rgba(255,255,255,0.10)",
               borderRadius: 10,
               padding: "12px 14px",
-              color: "#E6EDF3",
+              color: "var(--text-primary)",
               fontSize: 13,
               fontFamily: "inherit",
               outline: "none",

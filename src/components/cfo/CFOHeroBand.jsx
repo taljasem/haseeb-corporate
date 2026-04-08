@@ -12,8 +12,8 @@ function StatusPill({ dotColor, label, pulse = false }) {
         fontSize: 10,
         fontWeight: 600,
         letterSpacing: "0.12em",
-        color: "#5B6570",
-        background: "rgba(255,255,255,0.02)",
+        color: "var(--text-tertiary)",
+        background: "var(--bg-surface)",
         border: "1px solid rgba(255,255,255,0.08)",
         padding: "5px 10px",
         borderRadius: 4,
@@ -36,7 +36,7 @@ function StatusPill({ dotColor, label, pulse = false }) {
 
 function AuditPill({ pass = 14, total = 15, label = "AUDIT" }) {
   const failing = total - pass;
-  const color = failing === 0 ? "#00C48C" : failing <= 2 ? "#D4A84B" : "#FF5A5F";
+  const color = failing === 0 ? "var(--accent-primary)" : failing <= 2 ? "var(--semantic-warning)" : "var(--semantic-danger)";
   return (
     <span
       style={{
@@ -87,7 +87,7 @@ export default function CFOHeroBand({ onOpenAminah }) {
           style={{
             fontFamily: "'Bebas Neue', sans-serif",
             fontSize: 28,
-            color: "#E6EDF3",
+            color: "var(--text-primary)",
             lineHeight: 0.95,
             letterSpacing: "-0.5px",
             fontWeight: 700,
@@ -110,7 +110,7 @@ export default function CFOHeroBand({ onOpenAminah }) {
             fontSize: 11,
             fontWeight: 600,
             letterSpacing: "0.12em",
-            color: "#5B6570",
+            color: "var(--text-tertiary)",
             marginTop: 10,
           }}
         >
@@ -119,8 +119,8 @@ export default function CFOHeroBand({ onOpenAminah }) {
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-        <StatusPill dotColor="#00C48C" label={t("status_pills.aminah_online")} pulse />
-        <StatusPill dotColor="#3B82F6" label={t("status_pills.engine_active")} pulse />
+        <StatusPill dotColor="var(--accent-primary)" label={t("status_pills.aminah_online")} pulse />
+        <StatusPill dotColor="var(--semantic-info)" label={t("status_pills.engine_active")} pulse />
         <AuditPill pass={14} total={15} label={t("status_pills.audit")} />
         <button
           onClick={onOpenAminah}
@@ -132,7 +132,7 @@ export default function CFOHeroBand({ onOpenAminah }) {
             fontWeight: 700,
             letterSpacing: "0.12em",
             color: "#fff",
-            background: "#00C48C",
+            background: "var(--accent-primary)",
             border: "none",
             padding: "6px 12px",
             borderRadius: 4,

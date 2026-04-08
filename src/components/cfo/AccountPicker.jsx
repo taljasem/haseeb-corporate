@@ -25,7 +25,7 @@ function AccountRow({ account, onPick, active = false }) {
       onClick={() => onPick(account)}
       onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
       onMouseLeave={(e) =>
-        (e.currentTarget.style.background = active ? "rgba(0,196,140,0.06)" : "transparent")
+        (e.currentTarget.style.background = active ? "var(--bg-selected)" : "transparent")
       }
       style={{
         display: "flex",
@@ -33,7 +33,7 @@ function AccountRow({ account, onPick, active = false }) {
         gap: 12,
         width: "100%",
         padding: "10px 12px",
-        background: active ? "rgba(0,196,140,0.06)" : "transparent",
+        background: active ? "var(--bg-selected)" : "transparent",
         border: "none",
         borderBottom: "1px solid rgba(255,255,255,0.04)",
         cursor: "pointer",
@@ -45,18 +45,18 @@ function AccountRow({ account, onPick, active = false }) {
         style={{
           fontFamily: "'DM Mono', monospace",
           fontSize: 12,
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
           minWidth: 44,
         }}
       >
         <LtrText>{account.code}</LtrText>
       </span>
-      <span style={{ flex: 1, fontSize: 13, color: "#E6EDF3" }}>{account.name}</span>
+      <span style={{ flex: 1, fontSize: 13, color: "var(--text-primary)" }}>{account.name}</span>
       <span
         style={{
           fontSize: 10,
           letterSpacing: "0.10em",
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
           fontWeight: 600,
           textTransform: "uppercase",
         }}
@@ -130,21 +130,21 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
           padding: "12px 14px",
         }}
       >
-        <div style={{ fontSize: 10, color: "#5B6570", letterSpacing: "0.12em", fontWeight: 600, marginBottom: 6 }}>
+        <div style={{ fontSize: 10, color: "var(--text-tertiary)", letterSpacing: "0.12em", fontWeight: 600, marginBottom: 6 }}>
           {t("account_picker.selected")}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "#5B6570" }}>
+          <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "var(--text-tertiary)" }}>
             <LtrText>{selected.code}</LtrText>
           </span>
-          <span style={{ flex: 1, fontSize: 14, color: "#E6EDF3", fontWeight: 500 }}>
+          <span style={{ flex: 1, fontSize: 14, color: "var(--text-primary)", fontWeight: 500 }}>
             {selected.name}
           </span>
           <button
             onClick={() => setSelected(null)}
             style={{
               fontSize: 11,
-              color: "#00C48C",
+              color: "var(--accent-primary)",
               background: "transparent",
               border: "none",
               cursor: "pointer",
@@ -161,7 +161,7 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
   return (
     <div
       style={{
-        background: "rgba(255,255,255,0.02)",
+        background: "var(--bg-surface)",
         border: "1px solid rgba(255,255,255,0.10)",
         borderRadius: 10,
         padding: 14,
@@ -180,11 +180,11 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
             className="chat-input"
             style={{
               width: "100%",
-              background: "rgba(255,255,255,0.04)",
+              background: "var(--bg-surface-sunken)",
               border: "1px solid rgba(255,255,255,0.10)",
               borderRadius: 10,
               padding: "12px 14px",
-              color: "#E6EDF3",
+              color: "var(--text-primary)",
               fontSize: 13,
               fontFamily: "inherit",
               outline: "none",
@@ -206,7 +206,7 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
                   <AccountRow key={a.code} account={a} onPick={pick} />
                 ))
               ) : (
-                <div style={{ padding: 14, fontSize: 12, color: "#5B6570" }}>{t("account_picker.no_matches")}</div>
+                <div style={{ padding: 14, fontSize: 12, color: "var(--text-tertiary)" }}>{t("account_picker.no_matches")}</div>
               )}
             </div>
           )}
@@ -218,7 +218,7 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
               }}
               style={{
                 fontSize: 12,
-                color: "#00C48C",
+                color: "var(--accent-primary)",
                 textDecoration: "underline",
                 cursor: "pointer",
               }}
@@ -252,18 +252,18 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
                     alignItems: "center",
                     justifyContent: "space-between",
                     padding: "12px 14px",
-                    background: "rgba(255,255,255,0.04)",
+                    background: "var(--bg-surface-sunken)",
                     border: "1px solid rgba(255,255,255,0.10)",
                     borderRadius: 8,
                     cursor: "pointer",
-                    color: "#E6EDF3",
+                    color: "var(--text-primary)",
                     fontFamily: "inherit",
                     fontSize: 13,
                     textAlign: "start",
                   }}
                 >
                   <span>{t(`account_picker.${cat.key}`)}</span>
-                  <span style={{ fontSize: 10, color: "#5B6570", fontFamily: "'DM Mono', monospace" }}>
+                  <span style={{ fontSize: 10, color: "var(--text-tertiary)", fontFamily: "'DM Mono', monospace" }}>
                     {count}
                   </span>
                 </button>
@@ -275,7 +275,7 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
               onClick={() => setMode("dropdown")}
               style={{
                 fontSize: 12,
-                color: "#00C48C",
+                color: "var(--accent-primary)",
                 textDecoration: "underline",
                 cursor: "pointer",
               }}
@@ -295,7 +295,7 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
             }}
             style={{
               fontSize: 12,
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               cursor: "pointer",
               display: "inline-block",
               marginBottom: 8,

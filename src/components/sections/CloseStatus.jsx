@@ -15,7 +15,7 @@ export default function CloseStatus() {
       <div
         style={{
           fontSize: 11,
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
           letterSpacing: "0.15em",
           fontWeight: 600,
           marginBottom: 8,
@@ -30,7 +30,7 @@ export default function CloseStatus() {
             fontFamily: "'DM Mono', monospace",
             fontSize: 22,
             fontWeight: 500,
-            color: "#E6EDF3",
+            color: "var(--text-primary)",
             fontVariantNumeric: "tabular-nums",
           }}
         >
@@ -39,7 +39,7 @@ export default function CloseStatus() {
         <span
           style={{
             fontSize: 10,
-            color: "#5B6570",
+            color: "var(--text-tertiary)",
             letterSpacing: "0.12em",
             fontWeight: 600,
           }}
@@ -62,7 +62,7 @@ export default function CloseStatus() {
           style={{
             width: `${d ? d.percentComplete : 0}%`,
             height: "100%",
-            background: "#00C48C",
+            background: "var(--accent-primary)",
             transition: "width 0.4s ease",
           }}
         />
@@ -78,7 +78,7 @@ export default function CloseStatus() {
                 alignItems: "center",
                 gap: 8,
                 fontSize: 13,
-                color: "#8B98A5",
+                color: "var(--text-secondary)",
               }}
             >
               <span
@@ -88,12 +88,12 @@ export default function CloseStatus() {
                   height: 8,
                   borderRadius: "50%",
                   border: "1px solid rgba(255,255,255,0.20)",
-                  background: t.complete ? "#00C48C" : "transparent",
+                  background: t.complete ? "var(--accent-primary)" : "transparent",
                   flexShrink: 0,
                 }}
               />
               <span style={{ flex: 1 }}>{t.task}</span>
-              <span style={{ fontSize: 11, color: "#5B6570" }}>{t.assignee}</span>
+              <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{t.assignee}</span>
             </div>
           ))}
         </div>

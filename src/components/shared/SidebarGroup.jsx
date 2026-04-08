@@ -21,7 +21,7 @@ export default function SidebarGroup({ label, defaultOpen = true, children }) {
           fontSize: 10,
           fontWeight: 600,
           letterSpacing: "0.15em",
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
           textAlign: "start",
         }}
       >

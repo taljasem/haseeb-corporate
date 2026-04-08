@@ -24,7 +24,7 @@ function MemberRow({ m }) {
           <div
             style={{
               fontSize: 13,
-              color: "#E6EDF3",
+              color: "var(--text-primary)",
               fontWeight: 500,
               whiteSpace: "nowrap",
               overflow: "hidden",
@@ -33,22 +33,22 @@ function MemberRow({ m }) {
           >
             {m.name}
           </div>
-          <div style={{ fontSize: 10, color: "#5B6570" }}>{m.initials}</div>
+          <div style={{ fontSize: 10, color: "var(--text-tertiary)" }}>{m.initials}</div>
         </div>
       </div>
-      <div style={{ fontSize: 12, color: "#8B98A5" }}>{m.role}</div>
-      <div style={{ fontSize: 12, color: "#8B98A5" }}>{m.accessLevel}</div>
+      <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>{m.role}</div>
+      <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>{m.accessLevel}</div>
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
         <span
           style={{
             width: 8,
             height: 8,
             borderRadius: "50%",
-            background: m.isOnline ? "#00C48C" : "rgba(255,255,255,0.15)",
+            background: m.isOnline ? "var(--accent-primary)" : "var(--border-strong)",
             boxShadow: m.isOnline ? "0 0 6px rgba(0,196,140,0.5)" : "none",
           }}
         />
-        <span style={{ fontSize: 11, color: m.isOnline ? "#00C48C" : "#5B6570" }}>
+        <span style={{ fontSize: 11, color: m.isOnline ? "var(--accent-primary)" : "var(--text-tertiary)" }}>
           {m.isOnline ? t("online") : t("offline")}
         </span>
       </div>
@@ -56,7 +56,7 @@ function MemberRow({ m }) {
         style={{
           fontFamily: "'DM Mono', monospace",
           fontSize: 11,
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
         }}
       >
         {formatRelativeTime(m.lastActive)}
@@ -65,7 +65,7 @@ function MemberRow({ m }) {
         <button
           style={{
             background: "transparent",
-            color: "#8B98A5",
+            color: "var(--text-secondary)",
             border: "1px solid rgba(255,255,255,0.12)",
             padding: "5px 10px",
             borderRadius: 5,
@@ -86,7 +86,7 @@ function ResponsibilityCard({ m }) {
   return (
     <div
       style={{
-        background: "rgba(255,255,255,0.02)",
+        background: "var(--bg-surface)",
         border: "1px solid rgba(255,255,255,0.08)",
         borderRadius: 8,
         padding: "14px 16px",
@@ -95,10 +95,10 @@ function ResponsibilityCard({ m }) {
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
         <Avatar person={m} size={28} />
         <div>
-          <div style={{ fontSize: 13, color: "#E6EDF3", fontWeight: 500 }}>
+          <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>
             {m.name}
           </div>
-          <div style={{ fontSize: 10, color: "#5B6570" }}>{m.role}</div>
+          <div style={{ fontSize: 10, color: "var(--text-tertiary)" }}>{m.role}</div>
         </div>
       </div>
       {m.responsibilities && m.responsibilities.length > 0 ? (
@@ -117,7 +117,7 @@ function ResponsibilityCard({ m }) {
               key={i}
               style={{
                 fontSize: 12,
-                color: "#8B98A5",
+                color: "var(--text-secondary)",
                 lineHeight: 1.4,
                 paddingInlineStart: 10,
                 position: "relative",
@@ -131,7 +131,7 @@ function ResponsibilityCard({ m }) {
                   width: 4,
                   height: 4,
                   borderRadius: "50%",
-                  background: "#00C48C",
+                  background: "var(--accent-primary)",
                 }}
               />
               {r}
@@ -139,7 +139,7 @@ function ResponsibilityCard({ m }) {
           ))}
         </ul>
       ) : (
-        <div style={{ fontSize: 11, color: "#5B6570", fontStyle: "italic" }}>
+        <div style={{ fontSize: 11, color: "var(--text-tertiary)", fontStyle: "italic" }}>
           {t("no_rules")}
         </div>
       )}
@@ -173,7 +173,7 @@ export default function TeamScreen() {
               style={{
                 fontFamily: "'Bebas Neue', sans-serif",
                 fontSize: 28,
-                color: "#E6EDF3",
+                color: "var(--text-primary)",
                 letterSpacing: "-0.3px",
                 lineHeight: 1,
               }}
@@ -185,7 +185,7 @@ export default function TeamScreen() {
                 fontSize: 11,
                 fontWeight: 600,
                 letterSpacing: "0.15em",
-                color: "#5B6570",
+                color: "var(--text-tertiary)",
                 marginTop: 6,
               }}
             >
@@ -197,7 +197,7 @@ export default function TeamScreen() {
               display: "inline-flex",
               alignItems: "center",
               gap: 6,
-              background: "#00C48C",
+              background: "var(--accent-primary)",
               color: "#fff",
               border: "none",
               padding: "9px 16px",
@@ -216,7 +216,7 @@ export default function TeamScreen() {
         {/* Table */}
         <div
           style={{
-            background: "rgba(255,255,255,0.02)",
+            background: "var(--bg-surface)",
             border: "1px solid rgba(255,255,255,0.08)",
             borderRadius: 10,
             overflow: "hidden",
@@ -229,12 +229,12 @@ export default function TeamScreen() {
               gridTemplateColumns: "180px 160px 1fr 90px 100px 100px",
               gap: 12,
               padding: "10px 18px",
-              background: "rgba(255,255,255,0.03)",
+              background: "var(--bg-surface-sunken)",
               borderBottom: "1px solid rgba(255,255,255,0.08)",
               fontSize: 9,
               fontWeight: 600,
               letterSpacing: "0.15em",
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
             }}
           >
             <div>{t("columns.name")}</div>
@@ -255,7 +255,7 @@ export default function TeamScreen() {
             fontSize: 10,
             fontWeight: 600,
             letterSpacing: "0.15em",
-            color: "#5B6570",
+            color: "var(--text-tertiary)",
             marginBottom: 10,
           }}
         >
@@ -279,7 +279,7 @@ export default function TeamScreen() {
           <a
             style={{
               fontSize: 12,
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               cursor: "not-allowed",
               fontStyle: "italic",
             }}

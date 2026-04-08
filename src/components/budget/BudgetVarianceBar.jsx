@@ -3,17 +3,17 @@
 
 const STATUS_COLOR = {
   // expense
-  under:      "#00C48C",
-  "on-track": "#00C48C",
-  over:       "#D4A84B",
-  critical:   "#FF5A5F",
+  under:      "var(--accent-primary)",
+  "on-track": "var(--accent-primary)",
+  over:       "var(--semantic-warning)",
+  critical:   "var(--semantic-danger)",
   // revenue
-  behind:     "#FF5A5F",
-  ahead:      "#00C48C",
+  behind:     "var(--semantic-danger)",
+  ahead:      "var(--accent-primary)",
 };
 
 export default function BudgetVarianceBar({ percent, status, showLabel = true, width = "100%" }) {
-  const color = STATUS_COLOR[status] || "#00C48C";
+  const color = STATUS_COLOR[status] || "var(--accent-primary)";
   const fill = Math.min(Math.max(percent, 0), 100);
   const overflow = percent > 100 ? Math.min(percent - 100, 30) : 0; // cap visual overflow
   return (

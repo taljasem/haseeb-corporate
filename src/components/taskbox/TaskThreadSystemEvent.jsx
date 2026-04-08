@@ -21,7 +21,7 @@ export default function TaskThreadSystemEvent({ event }) {
       <span
         style={{
           fontSize: 11,
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
           fontStyle: "italic",
           whiteSpace: "nowrap",
         }}
@@ -32,7 +32,7 @@ export default function TaskThreadSystemEvent({ event }) {
         style={{
           fontFamily: "'DM Mono', monospace",
           fontSize: 10,
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
           whiteSpace: "nowrap",
         }}
       >

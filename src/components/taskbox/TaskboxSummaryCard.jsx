@@ -23,7 +23,7 @@ export default function TaskboxSummaryCard({
     <div
       style={
         wrapperStyle || {
-          background: "rgba(255,255,255,0.02)",
+          background: "var(--bg-surface)",
           border: "1px solid rgba(255,255,255,0.06)",
           borderRadius: 8,
           padding: "18px 20px",
@@ -39,7 +39,7 @@ export default function TaskboxSummaryCard({
               <span
                 style={{
                   marginInlineStart: 8,
-                  color: "#8B98A5",
+                  color: "var(--text-secondary)",
                   fontWeight: 600,
                   fontSize: 10,
                   letterSpacing: "0.12em",
@@ -54,9 +54,9 @@ export default function TaskboxSummaryCard({
       />
       <div style={{ marginTop: 4, marginInline: -10 }}>
         {tasks === null ? (
-          <div style={{ padding: 16, color: "#5B6570", fontSize: 12 }}>{t("summary_card.loading")}</div>
+          <div style={{ padding: 16, color: "var(--text-tertiary)", fontSize: 12 }}>{t("summary_card.loading")}</div>
         ) : open.length === 0 ? (
-          <div style={{ padding: 16, color: "#5B6570", fontSize: 12 }}>
+          <div style={{ padding: 16, color: "var(--text-tertiary)", fontSize: 12 }}>
             {t("summary_card.inbox_zero")}
           </div>
         ) : (
@@ -70,7 +70,7 @@ export default function TaskboxSummaryCard({
           onClick={onViewAll}
           style={{
             fontSize: 12,
-            color: "#00C48C",
+            color: "var(--accent-primary)",
             cursor: "pointer",
             letterSpacing: "0.04em",
           }}

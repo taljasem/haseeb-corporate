@@ -10,6 +10,18 @@
     <title>Al Manara Trading Co — Haseeb Corporate</title>
   </head>
   <body>
+    <script>
+      // Apply saved theme before React hydrates to prevent flash of wrong theme.
+      (function () {
+        try {
+          var t = localStorage.getItem("haseeb-corporate-theme");
+          if (t !== "light" && t !== "dark") t = "dark";
+          document.documentElement.setAttribute("data-theme", t);
+        } catch (e) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

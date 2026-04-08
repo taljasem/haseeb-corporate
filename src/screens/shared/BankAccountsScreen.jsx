@@ -79,8 +79,8 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
           <div
             style={{
               fontSize: 11,
-              color: "#5B6570",
-              background: "rgba(255,255,255,0.02)",
+              color: "var(--text-tertiary)",
+              background: "var(--bg-surface)",
               border: "1px solid rgba(255,255,255,0.08)",
               borderInlineStart: "2px solid #5B6570",
               borderRadius: 6,
@@ -98,7 +98,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
             style={{
               fontFamily: "'Bebas Neue', sans-serif",
               fontSize: 28,
-              color: "#E6EDF3",
+              color: "var(--text-primary)",
               letterSpacing: "-0.3px",
               lineHeight: 1,
             }}
@@ -110,7 +110,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
               fontSize: 11,
               fontWeight: 600,
               letterSpacing: "0.15em",
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               marginTop: 6,
             }}
           >
@@ -155,7 +155,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
                   style={{
                     fontFamily: "'Bebas Neue', sans-serif",
                     fontSize: 20,
-                    color: "#E6EDF3",
+                    color: "var(--text-primary)",
                     letterSpacing: "-0.2px",
                     lineHeight: 1,
                   }}
@@ -166,7 +166,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
                   style={{
                     fontFamily: "'DM Mono', monospace",
                     fontSize: 11,
-                    color: "#5B6570",
+                    color: "var(--text-tertiary)",
                     marginTop: 4,
                   }}
                 >
@@ -176,7 +176,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
               <div
                 style={{
                   fontSize: 11,
-                  color: "#5B6570",
+                  color: "var(--text-tertiary)",
                 }}
               >
                 {t("last_updated", { time: formatRelativeTime(selected.lastUpdated) })}
@@ -210,9 +210,9 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
                         fontWeight: 600,
                         padding: "6px 12px",
                         borderRadius: 14,
-                        background: on ? "rgba(0,196,140,0.10)" : "rgba(255,255,255,0.02)",
+                        background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)",
                         border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
-                        color: on ? "#00C48C" : "#5B6570",
+                        color: on ? "var(--accent-primary)" : "var(--text-tertiary)",
                         cursor: "pointer",
                         fontFamily: "inherit",
                       }}
@@ -235,9 +235,9 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
                           fontWeight: 600,
                           padding: "6px 12px",
                           borderRadius: 14,
-                          background: on ? "rgba(0,196,140,0.10)" : "rgba(255,255,255,0.02)",
+                          background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)",
                           border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
-                          color: on ? "#00C48C" : "#5B6570",
+                          color: on ? "var(--accent-primary)" : "var(--text-tertiary)",
                           cursor: "pointer",
                           fontFamily: "inherit",
                         }}
@@ -250,7 +250,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
                 <div style={{ position: "relative", width: 260, marginInlineStart: 10 }}>
                   <Search
                     size={13}
-                    color="#5B6570"
+                    color="var(--text-tertiary)"
                     style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}
                   />
                   <input
@@ -259,11 +259,11 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
                     placeholder={t("search_placeholder")}
                     style={{
                       width: "100%",
-                      background: "rgba(255,255,255,0.04)",
+                      background: "var(--bg-surface-sunken)",
                       border: "1px solid rgba(255,255,255,0.10)",
                       borderRadius: 8,
                       padding: "8px 12px 8px 30px",
-                      color: "#E6EDF3",
+                      color: "var(--text-primary)",
                       fontSize: 12,
                       fontFamily: "inherit",
                       outline: "none",
@@ -293,7 +293,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
                   onClick={() => console.log(`[export] ${fmt} statement for ${selected.id}`)}
                   style={{
                     background: "transparent",
-                    color: "#8B98A5",
+                    color: "var(--text-secondary)",
                     border: "1px solid rgba(255,255,255,0.12)",
                     padding: "7px 14px",
                     borderRadius: 6,

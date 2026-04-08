@@ -32,7 +32,7 @@ export default function OwnerOverviewScreen({ setActiveScreen, onOpenBankAccount
             style={{
               fontFamily: "'Bebas Neue', sans-serif",
               fontSize: 28,
-              color: "#E6EDF3",
+              color: "var(--text-primary)",
               letterSpacing: "-0.3px",
               lineHeight: 1,
             }}
@@ -44,7 +44,7 @@ export default function OwnerOverviewScreen({ setActiveScreen, onOpenBankAccount
               fontSize: 11,
               fontWeight: 600,
               letterSpacing: "0.15em",
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               marginTop: 6,
             }}
           >

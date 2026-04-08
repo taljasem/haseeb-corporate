@@ -5,7 +5,7 @@ export default function RuleAuditTrail({ events = [] }) {
   const { t } = useTranslation("rules");
   if (!events || events.length === 0) {
     return (
-      <div style={{ fontSize: 12, color: "#5B6570", fontStyle: "italic" }}>
+      <div style={{ fontSize: 12, color: "var(--text-tertiary)", fontStyle: "italic" }}>
         {t("detail.no_audit_events")}
       </div>
     );
@@ -29,8 +29,8 @@ export default function RuleAuditTrail({ events = [] }) {
               fontSize: 9,
               fontWeight: 700,
               letterSpacing: "0.10em",
-              color: "#5B6570",
-              background: "rgba(255,255,255,0.03)",
+              color: "var(--text-tertiary)",
+              background: "var(--bg-surface-sunken)",
               border: "1px solid rgba(255,255,255,0.08)",
               padding: "2px 7px",
               borderRadius: 3,
@@ -41,12 +41,12 @@ export default function RuleAuditTrail({ events = [] }) {
           >
             {ev.type.replace("-", " ")}
           </span>
-          <span style={{ flex: 1, color: "#8B98A5" }}>{ev.detail}</span>
+          <span style={{ flex: 1, color: "var(--text-secondary)" }}>{ev.detail}</span>
           <span
             style={{
               fontFamily: "'DM Mono', monospace",
               fontSize: 10,
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
             }}
           >
             {formatRelativeTime(ev.timestamp)}

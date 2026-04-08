@@ -11,13 +11,13 @@ function Field({ label, children }) {
           fontSize: 9,
           fontWeight: 600,
           letterSpacing: "0.15em",
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
           marginBottom: 4,
         }}
       >
         {label}
       </div>
-      <div style={{ fontSize: 12, color: "#E6EDF3" }}>{children || "\u2014"}</div>
+      <div style={{ fontSize: 12, color: "var(--text-primary)" }}>{children || "\u2014"}</div>
     </div>
   );
 }
@@ -63,7 +63,7 @@ export default function RuleDetailExpanded({ rule, kind = "categorization", onEd
   return (
     <div
       style={{
-        background: "rgba(255,255,255,0.02)",
+        background: "var(--bg-surface)",
         borderTop: "1px solid rgba(255,255,255,0.06)",
         padding: "16px 18px 18px",
       }}
@@ -88,7 +88,7 @@ export default function RuleDetailExpanded({ rule, kind = "categorization", onEd
           fontSize: 10,
           fontWeight: 600,
           letterSpacing: "0.15em",
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
           marginBottom: 8,
         }}
       >
@@ -101,7 +101,7 @@ export default function RuleDetailExpanded({ rule, kind = "categorization", onEd
           onClick={() => onEdit && onEdit(rule)}
           style={{
             background: "transparent",
-            color: "#8B98A5",
+            color: "var(--text-secondary)",
             border: "1px solid rgba(255,255,255,0.15)",
             padding: "8px 14px",
             borderRadius: 6,
@@ -116,8 +116,8 @@ export default function RuleDetailExpanded({ rule, kind = "categorization", onEd
           onClick={() => onMute && onMute(rule)}
           style={{
             background: "transparent",
-            color: isMuted ? "#00C48C" : "#D4A84B",
-            border: `1px solid ${isMuted ? "rgba(0,196,140,0.30)" : "rgba(212,168,75,0.30)"}`,
+            color: isMuted ? "var(--accent-primary)" : "var(--semantic-warning)",
+            border: `1px solid ${isMuted ? "var(--accent-primary-border)" : "var(--semantic-warning-subtle)"}`,
             padding: "8px 14px",
             borderRadius: 6,
             cursor: "pointer",
@@ -131,7 +131,7 @@ export default function RuleDetailExpanded({ rule, kind = "categorization", onEd
           onClick={() => onDelete && onDelete(rule)}
           style={{
             background: "transparent",
-            color: "#FF5A5F",
+            color: "var(--semantic-danger)",
             border: "1px solid rgba(255,90,95,0.30)",
             padding: "8px 14px",
             borderRadius: 6,

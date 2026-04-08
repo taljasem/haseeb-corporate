@@ -52,13 +52,13 @@ export default function TransactionFeed() {
                 }}
               >
                 <div>
-                  <div style={{ fontSize: 14, color: "#8B98A5" }}>
+                  <div style={{ fontSize: 14, color: "var(--text-secondary)" }}>
                     {t.merchant}
                   </div>
                   <div
                     style={{
                       fontSize: 10,
-                      color: "#5B6570",
+                      color: "var(--text-tertiary)",
                       marginTop: 3,
                     }}
                   >
@@ -71,7 +71,7 @@ export default function TransactionFeed() {
                     fontSize: 15,
                     fontWeight: 500,
                     fontVariantNumeric: "tabular-nums",
-                    color: t.direction > 0 ? "#00C48C" : "#FF5A5F",
+                    color: t.direction > 0 ? "var(--accent-primary)" : "var(--semantic-danger)",
                     opacity: t.direction > 0 ? 1 : 0.7,
                   }}
                 >
@@ -85,7 +85,7 @@ export default function TransactionFeed() {
                 style={{
                   height: 40,
                   margin: "6px 0",
-                  background: "rgba(255,255,255,0.03)",
+                  background: "var(--bg-surface-sunken)",
                   borderRadius: 4,
                 }}
               />
@@ -104,7 +104,7 @@ export default function TransactionFeed() {
             display: "flex",
             justifyContent: "space-between",
             fontSize: 11,
-            color: "#5B6570",
+            color: "var(--text-tertiary)",
             letterSpacing: "0.05em",
           }}
         >
@@ -112,7 +112,7 @@ export default function TransactionFeed() {
           <span
             style={{
               fontFamily: "'DM Mono', monospace",
-              color: "#8B98A5",
+              color: "var(--text-secondary)",
             }}
           >
             {txs ? `${txs.length} entries` : "—"}

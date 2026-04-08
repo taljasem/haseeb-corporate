@@ -9,13 +9,13 @@ function HealthRing({ percent = 75 }) {
   const filled = (percent / 100) * c;
   return (
     <svg width="64" height="64" viewBox="0 0 64 64">
-      <circle cx="32" cy="32" r={r} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="4" />
+      <circle cx="32" cy="32" r={r} fill="none" stroke="var(--bg-surface-sunken)" strokeWidth="4" />
       <circle
         cx="32"
         cy="32"
         r={r}
         fill="none"
-        stroke="#00C48C"
+        stroke="var(--accent-primary)"
         strokeWidth="4"
         strokeDasharray={`${filled} ${c}`}
         strokeLinecap="round"
@@ -42,18 +42,18 @@ export default function FinancialHealthSection() {
               fontFamily: "'DM Mono', monospace",
               fontSize: 26,
               fontWeight: 500,
-              color: "#00C48C",
+              color: "var(--accent-primary)",
               fontVariantNumeric: "tabular-nums",
             }}
           >
             {h ? `${h.score}%` : "—"}
           </div>
-          <div style={{ fontSize: 10, color: "#5B6570", letterSpacing: "0.08em", marginTop: 2 }}>
+          <div style={{ fontSize: 10, color: "var(--text-tertiary)", letterSpacing: "0.08em", marginTop: 2 }}>
             {t("financial_health.this_month")}
           </div>
         </div>
       </div>
-      <div style={{ fontSize: 13, color: "#8B98A5", lineHeight: 1.65 }}>
+      <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.65 }}>
         {h ? `${h.status}. ${h.message}` : "—"}
       </div>
     </SectionCard>

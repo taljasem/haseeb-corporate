@@ -105,13 +105,13 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
                   fontSize: 10,
                   fontWeight: 600,
                   letterSpacing: "0.15em",
-                  color: "#5B6570",
+                  color: "var(--text-tertiary)",
                 }}
               >
                 {txs ? t("header.pending_count", { count: txs.length }) : t("header.pending_unknown")}
               </div>
               {filterByAssignee && (
-                <div style={{ fontSize: 11, color: "#5B6570", marginTop: 4, fontStyle: "italic" }}>
+                <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 4, fontStyle: "italic" }}>
                   {t("header.in_your_domain")}
                 </div>
               )}
@@ -120,7 +120,7 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
               onClick={onOpenBankAccounts}
               style={{
                 fontSize: 12,
-                color: "#00C48C",
+                color: "var(--accent-primary)",
                 cursor: "pointer",
                 fontWeight: 500,
                 letterSpacing: "0.02em",
@@ -142,9 +142,9 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
                     letterSpacing: "0.04em",
                     padding: "5px 12px",
                     borderRadius: 14,
-                    background: on ? "rgba(0,196,140,0.10)" : "rgba(255,255,255,0.02)",
+                    background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)",
                     border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
-                    color: on ? "#00C48C" : "#5B6570",
+                    color: on ? "var(--accent-primary)" : "var(--text-tertiary)",
                     cursor: "pointer",
                     fontFamily: "inherit",
                   }}

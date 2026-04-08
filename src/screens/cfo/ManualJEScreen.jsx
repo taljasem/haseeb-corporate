@@ -22,16 +22,16 @@ import {
 } from "../../engine/mockEngine";
 
 const COLORS = {
-  bg: "#05070A",
-  card: "rgba(255,255,255,0.02)",
-  border: "rgba(255,255,255,0.10)",
-  text: "#E6EDF3",
-  textDim: "#8B98A5",
-  textFaint: "#5B6570",
-  teal: "#00C48C",
-  amber: "#F5A524",
-  red: "#FF5A5F",
-  blue: "#3B82F6",
+  bg: "var(--bg-base)",
+  card: "var(--bg-surface)",
+  border: "var(--border-default)",
+  text: "var(--text-primary)",
+  textDim: "var(--text-secondary)",
+  textFaint: "var(--text-tertiary)",
+  teal: "var(--accent-primary)",
+  amber: "var(--semantic-warning)",
+  red: "var(--semantic-danger)",
+  blue: "var(--semantic-info)",
 };
 
 function fmtKWD(n) {
@@ -228,7 +228,7 @@ export default function ManualJEScreen({ onOpenAminah }) {
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("search_placeholder")}
             style={{
-              width: "100%", background: "rgba(255,255,255,0.04)", border: `1px solid ${COLORS.border}`,
+              width: "100%", background: "var(--bg-surface-sunken)", border: `1px solid ${COLORS.border}`,
               borderRadius: 6, padding: "7px 10px 7px 28px", color: COLORS.text, fontSize: 11,
               fontFamily: "inherit", outline: "none",
             }}
@@ -242,7 +242,7 @@ export default function ManualJEScreen({ onOpenAminah }) {
           <div
             style={{
               position: "absolute", top: 16, right: 16,
-              background: "rgba(0,196,140,0.10)", border: "1px solid rgba(0,196,140,0.30)",
+              background: "var(--accent-primary-subtle)", border: "1px solid rgba(0,196,140,0.30)",
               color: COLORS.teal, padding: "10px 14px", borderRadius: 8, fontSize: 12, fontWeight: 500, zIndex: 50,
             }}
           >
@@ -353,7 +353,7 @@ function ListItem({ item, tab, selected, onClick }) {
       onClick={onClick}
       style={{
         display: "block", width: "100%", textAlign: "start", padding: "12px 16px",
-        background: selected ? "rgba(0,196,140,0.06)" : "transparent",
+        background: selected ? "var(--bg-selected)" : "transparent",
         border: "none", borderBottom: `1px solid rgba(255,255,255,0.04)`,
         borderInlineStart: selected ? `2px solid ${COLORS.teal}` : "2px solid transparent",
         cursor: "pointer", fontFamily: "inherit", color: COLORS.text,
@@ -604,7 +604,7 @@ function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedul
       </div>
 
       {/* Sticky totals bar */}
-      <div style={{ borderTop: `1px solid ${COLORS.border}`, background: "#0C0E12", padding: "14px 24px", flexShrink: 0 }}>
+      <div style={{ borderTop: `1px solid ${COLORS.border}`, background: "var(--bg-surface-raised)", padding: "14px 24px", flexShrink: 0 }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: 18, alignItems: "center" }}>
           <TotalCell label={t("totals.total_debits")} value={fmtKWD(validation.totalDebits)} />
           <TotalCell label={t("totals.total_credits")} value={fmtKWD(validation.totalCredits)} />
@@ -612,7 +612,7 @@ function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedul
           <div style={{
             fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
             color: validation.isBalanced ? COLORS.teal : COLORS.red,
-            background: validation.isBalanced ? "rgba(0,196,140,0.10)" : "rgba(255,90,95,0.10)",
+            background: validation.isBalanced ? "var(--accent-primary-subtle)" : "var(--semantic-danger-subtle)",
             border: `1px solid ${(validation.isBalanced ? COLORS.teal : COLORS.red)}40`,
             padding: "8px 14px", borderRadius: 5,
           }}>
@@ -637,7 +637,7 @@ function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedul
 
 function inputStyle(disabled) {
   return {
-    width: "100%", background: disabled ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.04)",
+    width: "100%", background: disabled ? "var(--bg-surface)" : "var(--bg-surface-sunken)",
     border: `1px solid ${COLORS.border}`, borderRadius: 5, padding: "8px 10px",
     color: disabled ? COLORS.textDim : COLORS.text, fontSize: 12, fontFamily: "inherit", outline: "none",
   };
@@ -740,7 +740,7 @@ function CompactAccountPicker({ value, readOnly, onSelect, onClear }) {
     return (
       <div style={{
         display: "flex", alignItems: "center", gap: 6,
-        background: "rgba(0,196,140,0.06)", border: `1px solid rgba(0,196,140,0.30)`,
+        background: "var(--bg-selected)", border: `1px solid rgba(0,196,140,0.30)`,
         borderRadius: 5, padding: "7px 10px", fontSize: 12, color: COLORS.text,
       }}>
         <span style={{ fontFamily: "'DM Mono', monospace", color: COLORS.textDim }}>{value.code}</span>
@@ -772,7 +772,7 @@ function CompactAccountPicker({ value, readOnly, onSelect, onClear }) {
       {open && filtered.length > 0 && (
         <div style={{
           position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4,
-          background: "#0C0E12", border: `1px solid ${COLORS.border}`, borderRadius: 6,
+          background: "var(--bg-surface-raised)", border: `1px solid ${COLORS.border}`, borderRadius: 6,
           boxShadow: "0 12px 32px rgba(0,0,0,0.6)", zIndex: 100, maxHeight: 280, overflowY: "auto",
         }}>
           {filtered.map((a, i) => (
@@ -782,7 +782,7 @@ function CompactAccountPicker({ value, readOnly, onSelect, onClear }) {
               onMouseEnter={() => setHighlight(i)}
               style={{
                 padding: "8px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
-                background: i === highlight ? "rgba(0,196,140,0.08)" : "transparent",
+                background: i === highlight ? "var(--accent-primary-subtle)" : "transparent",
                 borderBottom: `1px solid rgba(255,255,255,0.04)`,
               }}
             >
@@ -813,7 +813,7 @@ function TemplateDetail({ template, onUse }) {
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: COLORS.textFaint, marginBottom: 8 }}>
           {t("template_detail.lines", { count: template.lines.length })}
         </div>
-        <div style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${COLORS.border}`, borderRadius: 6, marginBottom: 18 }}>
+        <div style={{ background: "var(--bg-surface)", border: `1px solid ${COLORS.border}`, borderRadius: 6, marginBottom: 18 }}>
           {template.lines.map((l, i) => (
             <div key={l.id} style={{
               display: "flex", justifyContent: "space-between", padding: "10px 14px",
@@ -853,7 +853,7 @@ function ModalShell({ title, sub, onCancel, children, footer }) {
       <div onClick={onCancel} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
       <div style={{
         position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
-        width: 480, maxWidth: "calc(100vw - 32px)", background: "#0C0E12",
+        width: 480, maxWidth: "calc(100vw - 32px)", background: "var(--bg-surface-raised)",
         border: `1px solid ${COLORS.border}`, borderRadius: 12, zIndex: 301,
         boxShadow: "0 24px 60px rgba(0,0,0,0.7)",
       }}>
@@ -894,7 +894,7 @@ function ReverseModal({ je, onCancel, onConfirm }) {
       <div style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.55, marginBottom: 14 }}
         dangerouslySetInnerHTML={{ __html: t("reverse_modal.body", { ref: je.reference }).replace(/<strong>/g, `<strong style="color: ${COLORS.amber}">`) }}
       />
-      <div style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${COLORS.border}`, borderRadius: 6, padding: 10, marginBottom: 14 }}>
+      <div style={{ background: "var(--bg-surface)", border: `1px solid ${COLORS.border}`, borderRadius: 6, padding: 10, marginBottom: 14 }}>
         {je.lines.map((l) => (
           <div key={l.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "3px 0" }}>
             <span style={{ color: COLORS.textDim }}>{l.accountCode} {l.accountName}</span>
@@ -910,7 +910,7 @@ function ReverseModal({ je, onCancel, onConfirm }) {
         </div>
         <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3}
           placeholder={t("reverse_modal.reason_placeholder")}
-          style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: `1px solid ${COLORS.border}`, borderRadius: 6, padding: "9px 12px", color: COLORS.text, fontSize: 12, fontFamily: "inherit", outline: "none", resize: "vertical" }} />
+          style={{ width: "100%", background: "var(--bg-surface-sunken)", border: `1px solid ${COLORS.border}`, borderRadius: 6, padding: "9px 12px", color: COLORS.text, fontSize: 12, fontFamily: "inherit", outline: "none", resize: "vertical" }} />
       </div>
     </ModalShell>
   );

@@ -18,7 +18,7 @@ function UserBubble({ children }) {
           padding: "10px 14px",
           fontSize: 13,
           lineHeight: 1.55,
-          color: "#E6EDF3",
+          color: "var(--text-primary)",
         }}
       >
         {children}
@@ -34,14 +34,14 @@ function AminahBubble({ children, wide = false }) {
         style={{
           maxWidth: wide ? "100%" : "88%",
           width: wide ? "100%" : "auto",
-          background: "rgba(255,255,255,0.03)",
+          background: "var(--bg-surface-sunken)",
           border: "1px solid rgba(255,255,255,0.08)",
           borderRadius: 12,
           borderBottomLeftRadius: 4,
           padding: "12px 14px",
           fontSize: 13,
           lineHeight: 1.6,
-          color: "#8B98A5",
+          color: "var(--text-secondary)",
         }}
       >
         {children}
@@ -81,7 +81,7 @@ function ExchangeOne() {
 
       {step >= 0 && !debit && (
         <AminahBubble wide>
-          <div style={{ marginBottom: 8, fontSize: 11, color: "#5B6570", letterSpacing: "0.10em", fontWeight: 600 }}>
+          <div style={{ marginBottom: 8, fontSize: 11, color: "var(--text-tertiary)", letterSpacing: "0.10em", fontWeight: 600 }}>
             {t("labels.expense_account")}
           </div>
           <AccountPicker
@@ -97,14 +97,14 @@ function ExchangeOne() {
       {debit && (
         <AminahBubble>
           {t("cfo.aminah_got_debit_prefix")}
-          <span style={{ color: "#E6EDF3", fontWeight: 500 }}>{debit.name}</span>
+          <span style={{ color: "var(--text-primary)", fontWeight: 500 }}>{debit.name}</span>
           {t("cfo.aminah_got_debit_suffix")}
         </AminahBubble>
       )}
 
       {debit && !credit && (
         <AminahBubble wide>
-          <div style={{ marginBottom: 8, fontSize: 11, color: "#5B6570", letterSpacing: "0.10em", fontWeight: 600 }}>
+          <div style={{ marginBottom: 8, fontSize: 11, color: "var(--text-tertiary)", letterSpacing: "0.10em", fontWeight: 600 }}>
             {t("labels.cash_account")}
           </div>
           <AccountPicker
@@ -154,7 +154,7 @@ function ExchangeTwo() {
         {t("cfo.aminah_2", { bank: bankName })}{" "}
         <a
           style={{
-            color: "#00C48C",
+            color: "var(--accent-primary)",
             fontWeight: 500,
             cursor: "pointer",
             textDecoration: "underline",
@@ -214,8 +214,8 @@ function JuniorExchangeOne() {
               fontSize: 11,
               fontWeight: 600,
               letterSpacing: "0.04em",
-              color: "#00C48C",
-              background: "rgba(0,196,140,0.06)",
+              color: "var(--accent-primary)",
+              background: "var(--bg-selected)",
               border: "1px dashed rgba(0,196,140,0.30)",
               padding: "8px 14px",
               borderRadius: 8,
@@ -236,7 +236,7 @@ function JuniorExchangeOne() {
       <AminahBubble>{t("junior.aminah_which_expense")}</AminahBubble>
       {!debit && (
         <AminahBubble wide>
-          <div style={{ marginBottom: 8, fontSize: 11, color: "#5B6570", letterSpacing: "0.10em", fontWeight: 600 }}>
+          <div style={{ marginBottom: 8, fontSize: 11, color: "var(--text-tertiary)", letterSpacing: "0.10em", fontWeight: 600 }}>
             {t("labels.expense_account")}
           </div>
           <AccountPicker filterCategories={["Operating Expenses"]} onSelect={setDebit} />
@@ -247,7 +247,7 @@ function JuniorExchangeOne() {
           <AminahBubble>{t("junior.aminah_which_petty")}</AminahBubble>
           {!credit && (
             <AminahBubble wide>
-              <div style={{ marginBottom: 8, fontSize: 11, color: "#5B6570", letterSpacing: "0.10em", fontWeight: 600 }}>
+              <div style={{ marginBottom: 8, fontSize: 11, color: "var(--text-tertiary)", letterSpacing: "0.10em", fontWeight: 600 }}>
                 {t("labels.petty_cash_account")}
               </div>
               <AccountPicker filterCategories={["Assets"]} onSelect={setCredit} />
@@ -265,12 +265,12 @@ function JuniorExchangeOne() {
           />
           {step !== 3 && (
             <AminahBubble>
-              <Trans i18nKey="junior.under_threshold" ns="conv-je" components={{ b: <strong style={{ color: "#E6EDF3", fontWeight: 500 }} /> }} />
+              <Trans i18nKey="junior.under_threshold" ns="conv-je" components={{ b: <strong style={{ color: "var(--text-primary)", fontWeight: 500 }} /> }} />
             </AminahBubble>
           )}
           {step === 3 && (
             <AminahBubble>
-              <Trans i18nKey="junior.posted_as" ns="conv-je" values={{ id: "JE-0421" }} components={{ b: <strong style={{ color: "#E6EDF3", fontWeight: 500 }} /> }} />
+              <Trans i18nKey="junior.posted_as" ns="conv-je" values={{ id: "JE-0421" }} components={{ b: <strong style={{ color: "var(--text-primary)", fontWeight: 500 }} /> }} />
             </AminahBubble>
           )}
         </>
@@ -311,7 +311,7 @@ function JuniorExchangeTwo({ onOpenTaskbox }) {
               fontSize: 11,
               fontWeight: 600,
               letterSpacing: "0.04em",
-              color: "#D4A84B",
+              color: "var(--semantic-warning)",
               background: "rgba(212,168,75,0.06)",
               border: "1px dashed rgba(212,168,75,0.30)",
               padding: "8px 14px",
@@ -332,7 +332,7 @@ function JuniorExchangeTwo({ onOpenTaskbox }) {
       <AminahBubble>{t("junior.aminah_which_expense_bonus")}</AminahBubble>
       {!debit && (
         <AminahBubble wide>
-          <div style={{ marginBottom: 8, fontSize: 11, color: "#5B6570", letterSpacing: "0.10em", fontWeight: 600 }}>
+          <div style={{ marginBottom: 8, fontSize: 11, color: "var(--text-tertiary)", letterSpacing: "0.10em", fontWeight: 600 }}>
             {t("labels.expense_account")}
           </div>
           <AccountPicker filterCategories={["Operating Expenses"]} onSelect={setDebit} />
@@ -343,7 +343,7 @@ function JuniorExchangeTwo({ onOpenTaskbox }) {
           <AminahBubble>{t("junior.aminah_which_liability")}</AminahBubble>
           {!credit && (
             <AminahBubble wide>
-              <div style={{ marginBottom: 8, fontSize: 11, color: "#5B6570", letterSpacing: "0.10em", fontWeight: 600 }}>
+              <div style={{ marginBottom: 8, fontSize: 11, color: "var(--text-tertiary)", letterSpacing: "0.10em", fontWeight: 600 }}>
                 {t("labels.liability_account")}
               </div>
               <AccountPicker filterCategories={["Liabilities"]} onSelect={setCredit} />
@@ -361,18 +361,18 @@ function JuniorExchangeTwo({ onOpenTaskbox }) {
           />
           {step !== 3 && (
             <AminahBubble>
-              <Trans i18nKey="junior.over_threshold" ns="conv-je" components={{ b: <strong style={{ color: "#E6EDF3", fontWeight: 500, fontFamily: "'DM Mono', monospace" }} /> }} />
+              <Trans i18nKey="junior.over_threshold" ns="conv-je" components={{ b: <strong style={{ color: "var(--text-primary)", fontWeight: 500, fontFamily: "'DM Mono', monospace" }} /> }} />
             </AminahBubble>
           )}
           {step === 3 && (
             <>
               <AminahBubble>
-                <Trans i18nKey="junior.sent_to_cfo" ns="conv-je" values={{ id: "TSK-0428" }} components={{ b: <strong style={{ color: "#E6EDF3", fontWeight: 500 }} /> }} />
+                <Trans i18nKey="junior.sent_to_cfo" ns="conv-je" values={{ id: "TSK-0428" }} components={{ b: <strong style={{ color: "var(--text-primary)", fontWeight: 500 }} /> }} />
               </AminahBubble>
               <div style={{ display: "flex", justifyContent: "flex-start", marginTop: 4 }}>
                 <a
                   onClick={onOpenTaskbox}
-                  style={{ fontSize: 11, color: "#00C48C", cursor: "pointer", marginInlineStart: 38 }}
+                  style={{ fontSize: 11, color: "var(--accent-primary)", cursor: "pointer", marginInlineStart: 38 }}
                 >
                   {t("junior.view_in_taskbox")}
                 </a>
@@ -400,8 +400,8 @@ function JuniorExchangeThree({ onOpenBankTx }) {
             fontSize: 11,
             fontWeight: 600,
             letterSpacing: "0.04em",
-            color: "#5B6570",
-            background: "rgba(255,255,255,0.02)",
+            color: "var(--text-tertiary)",
+            background: "var(--bg-surface)",
             border: "1px dashed rgba(255,255,255,0.15)",
             padding: "8px 14px",
             borderRadius: 8,
@@ -418,12 +418,12 @@ function JuniorExchangeThree({ onOpenBankTx }) {
     <div>
       <UserBubble>{t("junior.user_3")}</UserBubble>
       <AminahBubble>
-        <Trans i18nKey="junior.aminah_bank_refuse" ns="conv-je" values={{ account: accountName }} components={{ b: <strong style={{ color: "#E6EDF3", fontWeight: 500 }} /> }} />
+        <Trans i18nKey="junior.aminah_bank_refuse" ns="conv-je" values={{ account: accountName }} components={{ b: <strong style={{ color: "var(--text-primary)", fontWeight: 500 }} /> }} />
       </AminahBubble>
       <div style={{ display: "flex", justifyContent: "flex-start" }}>
         <a
           onClick={onOpenBankTx}
-          style={{ fontSize: 11, color: "#00C48C", cursor: "pointer", marginInlineStart: 38 }}
+          style={{ fontSize: 11, color: "var(--accent-primary)", cursor: "pointer", marginInlineStart: 38 }}
         >
           {t("junior.go_to_bank_tx")}
         </a>
@@ -449,13 +449,13 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
             fontSize: 10,
             fontWeight: 600,
             letterSpacing: "0.15em",
-            color: "#5B6570",
+            color: "var(--text-tertiary)",
             marginBottom: 4,
           }}
         >
           {t("header.label")}
         </div>
-        <div style={{ fontSize: 12, color: "#8B98A5", fontStyle: "italic" }}>
+        <div style={{ fontSize: 12, color: "var(--text-secondary)", fontStyle: "italic" }}>
           {t("header.sub")}
         </div>
       </div>
@@ -497,11 +497,11 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
             placeholder={t("input_placeholder")}
             style={{
               width: "100%",
-              background: "rgba(255,255,255,0.04)",
+              background: "var(--bg-surface-sunken)",
               border: "1px solid rgba(255,255,255,0.10)",
               borderRadius: 10,
               padding: "14px 50px 14px 16px",
-              color: "#E6EDF3",
+              color: "var(--text-primary)",
               fontSize: 13,
               fontFamily: "inherit",
               outline: "none",
@@ -516,7 +516,7 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
               transform: "translateY(-50%)",
               width: 34,
               height: 34,
-              background: "#00C48C",
+              background: "var(--accent-primary)",
               border: "none",
               borderRadius: 8,
               color: "#fff",

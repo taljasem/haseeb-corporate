@@ -25,8 +25,8 @@ function FieldDot({ filled }) {
         width: 8,
         height: 8,
         borderRadius: "50%",
-        background: filled ? "#00C48C" : "transparent",
-        border: `1px solid ${filled ? "#00C48C" : "rgba(255,255,255,0.20)"}`,
+        background: filled ? "var(--accent-primary)" : "transparent",
+        border: `1px solid ${filled ? "var(--accent-primary)" : "var(--border-strong)"}`,
         marginInlineEnd: 8,
         flexShrink: 0,
       }}
@@ -43,7 +43,7 @@ function FieldLabel({ filled, children }) {
         fontSize: 10,
         fontWeight: 600,
         letterSpacing: "0.15em",
-        color: "#5B6570",
+        color: "var(--text-tertiary)",
         marginBottom: 6,
       }}
     >
@@ -55,11 +55,11 @@ function FieldLabel({ filled, children }) {
 
 const inputStyle = {
   width: "100%",
-  background: "rgba(255,255,255,0.04)",
+  background: "var(--bg-surface-sunken)",
   border: "1px solid rgba(255,255,255,0.10)",
   borderRadius: 8,
   padding: "10px 12px",
-  color: "#E6EDF3",
+  color: "var(--text-primary)",
   fontSize: 13,
   fontFamily: "inherit",
   outline: "none",
@@ -156,7 +156,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
           width: 560,
           maxWidth: "calc(100vw - 32px)",
           maxHeight: "calc(100vh - 80px)",
-          background: "#0C0E12",
+          background: "var(--bg-surface-raised)",
           border: "1px solid rgba(255,255,255,0.10)",
           borderRadius: 12,
           zIndex: 301,
@@ -180,7 +180,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
                 fontSize: 10,
                 fontWeight: 600,
                 letterSpacing: "0.15em",
-                color: "#5B6570",
+                color: "var(--text-tertiary)",
               }}
             >
               {t("new_modal.label")}
@@ -189,7 +189,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
               style={{
                 fontFamily: "'Bebas Neue', sans-serif",
                 fontSize: 22,
-                color: "#E6EDF3",
+                color: "var(--text-primary)",
                 letterSpacing: "-0.2px",
                 marginTop: 2,
               }}
@@ -203,7 +203,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
             style={{
               background: "transparent",
               border: "none",
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               cursor: "pointer",
               padding: 4,
             }}
@@ -240,7 +240,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
                       alignItems: "center",
                       gap: 10,
                       padding: "8px 10px",
-                      background: active ? "rgba(0,196,140,0.08)" : "rgba(255,255,255,0.02)",
+                      background: active ? "var(--accent-primary-subtle)" : "var(--bg-surface)",
                       border: active ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
                       borderRadius: 8,
                       cursor: "pointer",
@@ -250,8 +250,8 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
                   >
                     <Avatar person={r} size={26} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12, color: "#E6EDF3" }}>{r.name}</div>
-                      <div style={{ fontSize: 10, color: "#5B6570", marginTop: 1 }}>{r.role}</div>
+                      <div style={{ fontSize: 12, color: "var(--text-primary)" }}>{r.name}</div>
+                      <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 1 }}>{r.role}</div>
                     </div>
                   </button>
                 );
@@ -352,7 +352,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
             onClick={onClose}
             style={{
               background: "transparent",
-              color: "#8B98A5",
+              color: "var(--text-secondary)",
               border: "1px solid rgba(255,255,255,0.15)",
               padding: "9px 16px",
               borderRadius: 6,
@@ -367,7 +367,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
             onClick={handleSend}
             disabled={!canSend || sending}
             style={{
-              background: canSend ? "#00C48C" : "rgba(0,196,140,0.25)",
+              background: canSend ? "var(--accent-primary)" : "rgba(0,196,140,0.25)",
               color: "#fff",
               border: "none",
               padding: "9px 18px",

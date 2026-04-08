@@ -31,7 +31,7 @@ function renderBold(text) {
         <span
           key={i}
           style={{
-            color: "#E6EDF3",
+            color: "var(--text-primary)",
             fontWeight: 500,
             fontFamily: isNumeric ? "'DM Mono', monospace" : "inherit",
           }}
@@ -57,7 +57,7 @@ function ChatBubble({ msg }) {
       <div
         style={{
           maxWidth: isUser ? "80%" : "90%",
-          background: isUser ? "rgba(0,196,140,0.12)" : "rgba(255,255,255,0.03)",
+          background: isUser ? "rgba(0,196,140,0.12)" : "var(--bg-surface-sunken)",
           border: isUser
             ? "1px solid rgba(0,196,140,0.20)"
             : "1px solid rgba(255,255,255,0.08)",
@@ -67,7 +67,7 @@ function ChatBubble({ msg }) {
           padding: "10px 14px",
           fontSize: 13,
           lineHeight: 1.55,
-          color: isUser ? "#E6EDF3" : "#8B98A5",
+          color: isUser ? "var(--text-primary)" : "var(--text-secondary)",
         }}
       >
         {renderBold(msg.text)}
@@ -141,7 +141,7 @@ export default function AminahChat() {
             fontSize: 14,
             fontStyle: "italic",
             lineHeight: 1.6,
-            color: "#5B6570",
+            color: "var(--text-tertiary)",
             marginBottom: 12,
           }}
         >
@@ -164,12 +164,12 @@ export default function AminahChat() {
                 alignItems: "center",
                 gap: 6,
                 padding: "7px 12px",
-                background: "rgba(255,255,255,0.02)",
+                background: "var(--bg-surface)",
                 border: "1px solid rgba(255,255,255,0.10)",
                 borderRadius: 14,
                 cursor: "pointer",
                 fontSize: 12,
-                color: "#5B6570",
+                color: "var(--text-tertiary)",
                 fontFamily: "inherit",
               }}
             >
@@ -178,7 +178,7 @@ export default function AminahChat() {
                   width: 5,
                   height: 5,
                   borderRadius: "50%",
-                  background: "#8B5CF6",
+                  background: "var(--role-owner)",
                 }}
               />
               {p}
@@ -226,11 +226,11 @@ export default function AminahChat() {
             placeholder="Talk to Aminah…"
             style={{
               width: "100%",
-              background: "rgba(255,255,255,0.04)",
+              background: "var(--bg-surface-sunken)",
               border: "1px solid rgba(255,255,255,0.10)",
               borderRadius: 10,
               padding: "14px 86px 14px 16px",
-              color: "#E6EDF3",
+              color: "var(--text-primary)",
               fontSize: 13,
               fontFamily: "inherit",
               outline: "none",
@@ -249,7 +249,7 @@ export default function AminahChat() {
               background: "transparent",
               border: "none",
               borderRadius: 8,
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
@@ -268,7 +268,7 @@ export default function AminahChat() {
               transform: "translateY(-50%)",
               width: 32,
               height: 32,
-              background: "#00C48C",
+              background: "var(--accent-primary)",
               border: "none",
               borderRadius: 8,
               color: "#fff",

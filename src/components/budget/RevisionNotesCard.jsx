@@ -19,14 +19,14 @@ export default function RevisionNotesCard({ notes, timestamp }) {
           fontSize: 10,
           fontWeight: 600,
           letterSpacing: "0.15em",
-          color: "#D4A84B",
+          color: "var(--semantic-warning)",
           marginBottom: 6,
         }}
       >
         {t("revision.label")}
       </div>
-      <div style={{ fontSize: 13, color: "#E6EDF3", lineHeight: 1.6 }}>{notes}</div>
-      <div style={{ fontSize: 10, color: "#5B6570", marginTop: 8, fontStyle: "italic" }}>
+      <div style={{ fontSize: 13, color: "var(--text-primary)", lineHeight: 1.6 }}>{notes}</div>
+      <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 8, fontStyle: "italic" }}>
         {timestamp ? t("revision.requested_at", { time: formatRelativeTime(timestamp) }) : ""}{t("revision.from_cfo")}
       </div>
     </div>

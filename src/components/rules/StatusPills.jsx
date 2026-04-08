@@ -3,9 +3,9 @@ import { useTranslation } from "react-i18next";
 export function StatusPill({ status }) {
   const { t } = useTranslation("rules");
   const map = {
-    active:  { fg: "#00C48C", bg: "rgba(0,196,140,0.08)",  border: "rgba(0,196,140,0.30)",  key: "active" },
-    muted:   { fg: "#D4A84B", bg: "rgba(212,168,75,0.08)", border: "rgba(212,168,75,0.30)", key: "muted" },
-    deleted: { fg: "#FF5A5F", bg: "rgba(255,90,95,0.08)",  border: "rgba(255,90,95,0.30)",  key: "deleted" },
+    active:  { fg: "var(--accent-primary)", bg: "var(--accent-primary-subtle)",  border: "var(--accent-primary-border)",  key: "active" },
+    muted:   { fg: "var(--semantic-warning)", bg: "var(--semantic-warning-subtle)", border: "var(--semantic-warning-subtle)", key: "muted" },
+    deleted: { fg: "var(--semantic-danger)", bg: "var(--semantic-danger-subtle)",  border: "var(--semantic-danger-subtle)",  key: "deleted" },
   };
   const s = map[status] || map.active;
   return (
@@ -29,9 +29,9 @@ export function StatusPill({ status }) {
 export function ModePill({ mode }) {
   const { t } = useTranslation("rules");
   const map = {
-    "auto-apply":    { fg: "#05070A", bg: "#00C48C",             border: "#00C48C",             key: "auto_apply" },
-    "suggest-only":  { fg: "#3B82F6", bg: "rgba(59,130,246,0.08)", border: "rgba(59,130,246,0.40)", key: "suggest" },
-    "ask-each-time": { fg: "#D4A84B", bg: "rgba(212,168,75,0.08)", border: "rgba(212,168,75,0.40)", key: "ask_each" },
+    "auto-apply":    { fg: "var(--bg-base)", bg: "var(--accent-primary)",             border: "var(--accent-primary)",             key: "auto_apply" },
+    "suggest-only":  { fg: "var(--semantic-info)", bg: "var(--semantic-info-subtle)", border: "rgba(59,130,246,0.40)", key: "suggest" },
+    "ask-each-time": { fg: "var(--semantic-warning)", bg: "var(--semantic-warning-subtle)", border: "rgba(212,168,75,0.40)", key: "ask_each" },
   };
   const s = map[mode] || map["suggest-only"];
   return (

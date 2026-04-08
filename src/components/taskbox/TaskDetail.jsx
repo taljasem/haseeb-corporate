@@ -8,12 +8,12 @@ import { formatRelativeTime } from "../../utils/relativeTime";
 import JournalEntryCard from "../cfo/JournalEntryCard";
 
 const STATUS_STYLE = {
-  open:             { bg: "rgba(0,196,140,0.10)",  fg: "#00C48C", key: "open" },
-  "in-progress":    { bg: "rgba(59,130,246,0.10)", fg: "#3B82F6", key: "in_progress" },
-  completed:        { bg: "rgba(91,101,112,0.14)", fg: "#8B98A5", key: "completed" },
-  cancelled:        { bg: "rgba(91,101,112,0.14)", fg: "#8B98A5", key: "cancelled" },
-  "needs-revision": { bg: "rgba(212,168,75,0.10)", fg: "#D4A84B", key: "needs_revision" },
-  rejected:         { bg: "rgba(255,90,95,0.10)",  fg: "#FF5A5F", key: "rejected" },
+  open:             { bg: "var(--accent-primary-subtle)",  fg: "var(--accent-primary)", key: "open" },
+  "in-progress":    { bg: "var(--semantic-info-subtle)", fg: "var(--semantic-info)", key: "in_progress" },
+  completed:        { bg: "rgba(91,101,112,0.14)", fg: "var(--text-secondary)", key: "completed" },
+  cancelled:        { bg: "rgba(91,101,112,0.14)", fg: "var(--text-secondary)", key: "cancelled" },
+  "needs-revision": { bg: "var(--semantic-warning-subtle)", fg: "var(--semantic-warning)", key: "needs_revision" },
+  rejected:         { bg: "var(--semantic-danger-subtle)",  fg: "var(--semantic-danger)", key: "rejected" },
 };
 
 function MetaItem({ label, children }) {
@@ -24,13 +24,13 @@ function MetaItem({ label, children }) {
           fontSize: 9,
           fontWeight: 600,
           letterSpacing: "0.15em",
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
           marginBottom: 5,
         }}
       >
         {label}
       </div>
-      <div style={{ fontSize: 12, color: "#E6EDF3", display: "flex", alignItems: "center", gap: 6 }}>
+      <div style={{ fontSize: 12, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 6 }}>
         {children}
       </div>
     </div>
@@ -71,7 +71,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
             gap: 6,
             background: "transparent",
             border: "none",
-            color: "#00C48C",
+            color: "var(--accent-primary)",
             fontSize: 11,
             fontWeight: 600,
             letterSpacing: "0.04em",
@@ -87,7 +87,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
             <button
               onClick={() => onComplete && onComplete(task)}
               style={{
-                background: "#00C48C",
+                background: "var(--accent-primary)",
                 color: "#fff",
                 border: "none",
                 padding: "8px 16px",
@@ -111,8 +111,8 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                   fontSize: 10,
                   fontWeight: 700,
                   letterSpacing: "0.12em",
-                  color: "#D4A84B",
-                  background: "rgba(212,168,75,0.08)",
+                  color: "var(--semantic-warning)",
+                  background: "var(--semantic-warning-subtle)",
                   border: "1px solid rgba(212,168,75,0.30)",
                   padding: "5px 10px",
                   borderRadius: 4,
@@ -128,7 +128,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                 onClick={() => onApprovalAction && onApprovalAction(task, "cancel")}
                 style={{
                   background: "transparent",
-                  color: "#8B98A5",
+                  color: "var(--text-secondary)",
                   border: "1px solid rgba(255,255,255,0.15)",
                   padding: "8px 14px",
                   borderRadius: 6,
@@ -150,7 +150,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                   onComplete && onComplete(task);
                 }}
                 style={{
-                  background: "#00C48C",
+                  background: "var(--accent-primary)",
                   color: "#fff",
                   border: "none",
                   padding: "8px 16px",
@@ -167,7 +167,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                 onClick={() => setApprovalMode(approvalMode === "request-changes" ? null : "request-changes")}
                 style={{
                   background: "transparent",
-                  color: "#D4A84B",
+                  color: "var(--semantic-warning)",
                   border: "1px solid rgba(212,168,75,0.30)",
                   padding: "8px 14px",
                   borderRadius: 6,
@@ -182,7 +182,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                 onClick={() => setApprovalMode(approvalMode === "reject" ? null : "reject")}
                 style={{
                   background: "transparent",
-                  color: "#FF5A5F",
+                  color: "var(--semantic-danger)",
                   border: "1px solid rgba(255,90,95,0.30)",
                   padding: "8px 14px",
                   borderRadius: 6,
@@ -197,7 +197,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                 onClick={() => onApprovalAction && onApprovalAction(task, "escalate")}
                 style={{
                   background: "transparent",
-                  color: "#8B5CF6",
+                  color: "var(--role-owner)",
                   border: "1px solid rgba(139,92,246,0.30)",
                   padding: "8px 14px",
                   borderRadius: 6,
@@ -214,7 +214,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
             aria-label={t("detail.more")}
             style={{
               background: "transparent",
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               border: "1px solid rgba(255,255,255,0.10)",
               padding: 7,
               borderRadius: 6,
@@ -245,7 +245,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
               style={{
                 fontFamily: "'Bebas Neue', sans-serif",
                 fontSize: 24,
-                color: "#E6EDF3",
+                color: "var(--text-primary)",
                 letterSpacing: "-0.2px",
                 margin: 0,
                 lineHeight: 1.1,
@@ -263,7 +263,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
               flexWrap: "wrap",
               gap: 24,
               padding: "14px 16px",
-              background: "rgba(255,255,255,0.02)",
+              background: "var(--bg-surface)",
               border: "1px solid rgba(255,255,255,0.06)",
               borderRadius: 8,
               marginBottom: 16,
@@ -308,7 +308,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
             <div
               style={{
                 fontSize: 12,
-                color: "#5B6570",
+                color: "var(--text-tertiary)",
                 marginBottom: 14,
                 fontStyle: "italic",
               }}
@@ -321,8 +321,8 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
           {isApproval && !isCompleted && approvalMode && (
             <div
               style={{
-                background: "rgba(255,255,255,0.02)",
-                border: `1px solid ${approvalMode === "reject" ? "rgba(255,90,95,0.30)" : "rgba(212,168,75,0.30)"}`,
+                background: "var(--bg-surface)",
+                border: `1px solid ${approvalMode === "reject" ? "var(--semantic-danger-subtle)" : "var(--semantic-warning-subtle)"}`,
                 borderRadius: 8,
                 padding: "12px 14px",
                 marginBottom: 16,
@@ -333,7 +333,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                   fontSize: 10,
                   fontWeight: 600,
                   letterSpacing: "0.15em",
-                  color: approvalMode === "reject" ? "#FF5A5F" : "#D4A84B",
+                  color: approvalMode === "reject" ? "var(--semantic-danger)" : "var(--semantic-warning)",
                   marginBottom: 8,
                 }}
               >
@@ -346,11 +346,11 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                 placeholder={approvalMode === "reject" ? t("detail.reject_placeholder") : t("detail.changes_placeholder")}
                 style={{
                   width: "100%",
-                  background: "rgba(255,255,255,0.04)",
+                  background: "var(--bg-surface-sunken)",
                   border: "1px solid rgba(255,255,255,0.10)",
                   borderRadius: 8,
                   padding: "10px 12px",
-                  color: "#E6EDF3",
+                  color: "var(--text-primary)",
                   fontSize: 13,
                   fontFamily: "inherit",
                   outline: "none",
@@ -363,7 +363,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                   onClick={() => { setApprovalMode(null); setApprovalNote(""); }}
                   style={{
                     background: "transparent",
-                    color: "#8B98A5",
+                    color: "var(--text-secondary)",
                     border: "1px solid rgba(255,255,255,0.15)",
                     padding: "7px 14px",
                     borderRadius: 6,
@@ -382,7 +382,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                   }}
                   disabled={!approvalNote.trim()}
                   style={{
-                    background: approvalNote.trim() ? "#00C48C" : "rgba(0,196,140,0.25)",
+                    background: approvalNote.trim() ? "var(--accent-primary)" : "rgba(0,196,140,0.25)",
                     color: "#fff",
                     border: "none",
                     padding: "7px 14px",
@@ -407,7 +407,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                   fontSize: 10,
                   fontWeight: 600,
                   letterSpacing: "0.15em",
-                  color: "#5B6570",
+                  color: "var(--text-tertiary)",
                   marginBottom: 6,
                 }}
               >
@@ -424,7 +424,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
           {task.linkedItem && !(isApproval && hasJELinked) && (
             <div
               style={{
-                background: "rgba(255,255,255,0.025)",
+                background: "var(--bg-surface)",
                 border: "1px solid rgba(255,255,255,0.10)",
                 borderInlineStart: "2px solid #3B82F6",
                 borderRadius: 6,
@@ -435,27 +435,27 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                 gap: 12,
               }}
             >
-              <Link2 size={14} color="#3B82F6" strokeWidth={2.2} />
+              <Link2 size={14} color="var(--semantic-info)" strokeWidth={2.2} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div
                   style={{
                     fontSize: 9,
                     fontWeight: 600,
                     letterSpacing: "0.15em",
-                    color: "#5B6570",
+                    color: "var(--text-tertiary)",
                     marginBottom: 2,
                   }}
                 >
                   {task.linkedItem.type.toUpperCase().replace("-", " ")}
                 </div>
-                <div style={{ fontSize: 13, color: "#E6EDF3" }}>
+                <div style={{ fontSize: 13, color: "var(--text-primary)" }}>
                   {task.linkedItem.preview}
                 </div>
               </div>
               <a
                 style={{
                   fontSize: 11,
-                  color: "#00C48C",
+                  color: "var(--accent-primary)",
                   cursor: "pointer",
                   fontWeight: 600,
                 }}
@@ -476,8 +476,8 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                     alignItems: "center",
                     gap: 6,
                     fontSize: 11,
-                    color: "#8B98A5",
-                    background: "rgba(255,255,255,0.03)",
+                    color: "var(--text-secondary)",
+                    background: "var(--bg-surface-sunken)",
                     border: "1px solid rgba(255,255,255,0.10)",
                     padding: "5px 10px",
                     borderRadius: 4,
@@ -485,7 +485,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                 >
                   <Paperclip size={11} strokeWidth={2.2} />
                   {a.name}
-                  <span style={{ color: "#5B6570", fontFamily: "'DM Mono', monospace" }}>
+                  <span style={{ color: "var(--text-tertiary)", fontFamily: "'DM Mono', monospace" }}>
                     · {a.size}
                   </span>
                 </span>
@@ -522,11 +522,11 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
               rows={3}
               style={{
                 width: "100%",
-                background: "rgba(255,255,255,0.04)",
+                background: "var(--bg-surface-sunken)",
                 border: "1px solid rgba(255,255,255,0.10)",
                 borderRadius: 10,
                 padding: "12px 14px",
-                color: "#E6EDF3",
+                color: "var(--text-primary)",
                 fontSize: 13,
                 fontFamily: "inherit",
                 outline: "none",
@@ -542,7 +542,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                   border: "1px solid rgba(255,255,255,0.10)",
                   borderRadius: 6,
                   padding: "8px 10px",
-                  color: "#5B6570",
+                  color: "var(--text-tertiary)",
                   cursor: "pointer",
                   display: "inline-flex",
                   alignItems: "center",
@@ -558,7 +558,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                   }
                 }}
                 style={{
-                  background: "#00C48C",
+                  background: "var(--accent-primary)",
                   color: "#fff",
                   border: "none",
                   padding: "8px 18px",

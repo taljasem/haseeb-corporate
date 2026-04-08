@@ -1,13 +1,13 @@
 import { useTranslation } from "react-i18next";
 
 const STYLES = {
-  draft:              { bg: "rgba(212,168,75,0.10)",  fg: "#D4A84B", key: "draft" },
-  "in-review":        { bg: "rgba(59,130,246,0.10)",  fg: "#3B82F6", key: "in_review" },
-  approved:           { bg: "rgba(0,196,140,0.10)",   fg: "#00C48C", key: "approved" },
-  active:             { bg: "rgba(0,196,140,0.10)",   fg: "#00C48C", key: "active" },
-  closed:             { bg: "rgba(91,101,112,0.14)",  fg: "#8B98A5", key: "closed" },
-  delegated:          { bg: "rgba(59,130,246,0.10)",  fg: "#3B82F6", key: "delegated" },
-  "pending-approval": { bg: "rgba(139,92,246,0.10)",  fg: "#8B5CF6", key: "pending_approval" },
+  draft:              { bg: "var(--semantic-warning-subtle)",  fg: "var(--semantic-warning)", key: "draft" },
+  "in-review":        { bg: "var(--semantic-info-subtle)",  fg: "var(--semantic-info)", key: "in_review" },
+  approved:           { bg: "var(--accent-primary-subtle)",   fg: "var(--accent-primary)", key: "approved" },
+  active:             { bg: "var(--accent-primary-subtle)",   fg: "var(--accent-primary)", key: "active" },
+  closed:             { bg: "rgba(91,101,112,0.14)",  fg: "var(--text-secondary)", key: "closed" },
+  delegated:          { bg: "var(--semantic-info-subtle)",  fg: "var(--semantic-info)", key: "delegated" },
+  "pending-approval": { bg: "rgba(139,92,246,0.10)",  fg: "var(--role-owner)", key: "pending_approval" },
 };
 export default function BudgetStatusPill({ status }) {
   const { t } = useTranslation("budget");

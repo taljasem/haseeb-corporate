@@ -7,10 +7,10 @@ import { getMonthEndCloseTasks } from "../../engine/mockEngine";
 import { formatRelativeTime } from "../../utils/relativeTime";
 
 const STATUS = {
-  complete:    { key: "complete",    color: "#5B6570",  Icon: Check,          iconColor: "#00C48C" },
-  "in-progress": { key: "in_progress", color: "#3B82F6", Icon: Clock,          iconColor: "#3B82F6" },
-  pending:     { key: "pending",     color: "#5B6570",  Icon: Circle,         iconColor: "#5B6570" },
-  blocked:     { key: "blocked",     color: "#FF5A5F",  Icon: AlertTriangle,  iconColor: "#FF5A5F" },
+  complete:    { key: "complete",    color: "var(--text-tertiary)",  Icon: Check,          iconColor: "var(--accent-primary)" },
+  "in-progress": { key: "in_progress", color: "var(--semantic-info)", Icon: Clock,          iconColor: "var(--semantic-info)" },
+  pending:     { key: "pending",     color: "var(--text-tertiary)",  Icon: Circle,         iconColor: "var(--text-tertiary)" },
+  blocked:     { key: "blocked",     color: "var(--semantic-danger)",  Icon: AlertTriangle,  iconColor: "var(--semantic-danger)" },
 };
 
 function ChecklistRow({ task, allTasksComplete }) {
@@ -34,7 +34,7 @@ function ChecklistRow({ task, allTasksComplete }) {
         <div
           style={{
             fontSize: 13,
-            color: "#E6EDF3",
+            color: "var(--text-primary)",
             textDecoration: isDone ? "line-through" : "none",
           }}
         >
@@ -42,7 +42,7 @@ function ChecklistRow({ task, allTasksComplete }) {
         </div>
       </div>
       <Avatar person={task.assignee} size={22} />
-      <div style={{ minWidth: 120, fontSize: 11, color: "#5B6570" }}>
+      <div style={{ minWidth: 120, fontSize: 11, color: "var(--text-tertiary)" }}>
         {task.assignee.name.replace("You (CFO)", t("you_cfo_self"))}
       </div>
       <div
@@ -60,7 +60,7 @@ function ChecklistRow({ task, allTasksComplete }) {
         style={{
           fontFamily: "'DM Mono', monospace",
           fontSize: 10,
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
           minWidth: 80,
           textAlign: "end",
         }}
@@ -89,18 +89,18 @@ function Validation({ v, onResolve }) {
       }}
     >
       {v.passing ? (
-        <Check size={14} color="#00C48C" strokeWidth={2.4} />
+        <Check size={14} color="var(--accent-primary)" strokeWidth={2.4} />
       ) : (
-        <AlertTriangle size={14} color="#FF5A5F" strokeWidth={2.4} />
+        <AlertTriangle size={14} color="var(--semantic-danger)" strokeWidth={2.4} />
       )}
-      <span style={{ color: v.passing ? "#8B98A5" : "#E6EDF3", flex: 1 }}>
+      <span style={{ color: v.passing ? "var(--text-secondary)" : "var(--text-primary)", flex: 1 }}>
         {v.name}
       </span>
-      <span style={{ fontSize: 11, color: "#5B6570" }}>{v.detail}</span>
+      <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{v.detail}</span>
       {!v.passing && v.resolveScreen && (
         <a
           onClick={() => onResolve && onResolve(v.resolveScreen)}
-          style={{ fontSize: 11, color: "#00C48C", cursor: "pointer" }}
+          style={{ fontSize: 11, color: "var(--accent-primary)", cursor: "pointer" }}
         >
           {t("resolve")}
         </a>
@@ -116,7 +116,7 @@ export default function MonthEndCloseScreen({ onNavigate }) {
     getMonthEndCloseTasks().then(setData);
   }, []);
 
-  if (!data) return <div style={{ padding: 28, color: "#5B6570" }}>{t("loading")}</div>;
+  if (!data) return <div style={{ padding: 28, color: "var(--text-tertiary)" }}>{t("loading")}</div>;
 
   const complete = data.tasks.filter((t) => t.status === "complete").length;
   const total = data.tasks.length;
@@ -128,10 +128,10 @@ export default function MonthEndCloseScreen({ onNavigate }) {
   const sorted = [...data.tasks].sort((a, b) => order[a.status] - order[b.status]);
 
   const statusPill = {
-    "in-progress": { key: "in_progress", color: "#00C48C" },
-    "ready":       { key: "ready", color: "#D4A84B" },
-    "closed":      { key: "closed", color: "#5B6570" },
-  }[data.status] || { key: "in_progress", color: "#00C48C" };
+    "in-progress": { key: "in_progress", color: "var(--accent-primary)" },
+    "ready":       { key: "ready", color: "var(--semantic-warning)" },
+    "closed":      { key: "closed", color: "var(--text-tertiary)" },
+  }[data.status] || { key: "in_progress", color: "var(--accent-primary)" };
 
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px 32px" }}>
@@ -152,7 +152,7 @@ export default function MonthEndCloseScreen({ onNavigate }) {
               style={{
                 fontFamily: "'Bebas Neue', sans-serif",
                 fontSize: 28,
-                color: "#E6EDF3",
+                color: "var(--text-primary)",
                 letterSpacing: "-0.3px",
                 lineHeight: 1,
               }}
@@ -164,7 +164,7 @@ export default function MonthEndCloseScreen({ onNavigate }) {
                 fontSize: 11,
                 fontWeight: 600,
                 letterSpacing: "0.15em",
-                color: "#5B6570",
+                color: "var(--text-tertiary)",
                 marginTop: 6,
               }}
             >
@@ -192,7 +192,7 @@ export default function MonthEndCloseScreen({ onNavigate }) {
         {/* Progress */}
         <div
           style={{
-            background: "rgba(255,255,255,0.02)",
+            background: "var(--bg-surface)",
             border: "1px solid rgba(255,255,255,0.08)",
             borderRadius: 10,
             padding: "16px 18px",
@@ -211,7 +211,7 @@ export default function MonthEndCloseScreen({ onNavigate }) {
               style={{
                 fontFamily: "'DM Mono', monospace",
                 fontSize: 22,
-                color: "#E6EDF3",
+                color: "var(--text-primary)",
                 fontWeight: 500,
               }}
             >
@@ -222,7 +222,7 @@ export default function MonthEndCloseScreen({ onNavigate }) {
                 fontSize: 10,
                 fontWeight: 600,
                 letterSpacing: "0.12em",
-                color: "#5B6570",
+                color: "var(--text-tertiary)",
               }}
             >
               {t("tasks_complete_label", { pct })}
@@ -237,14 +237,14 @@ export default function MonthEndCloseScreen({ onNavigate }) {
               overflow: "hidden",
             }}
           >
-            <div style={{ width: `${pct}%`, height: "100%", background: "#00C48C" }} />
+            <div style={{ width: `${pct}%`, height: "100%", background: "var(--accent-primary)" }} />
           </div>
         </div>
 
         {/* Checklist */}
         <div
           style={{
-            background: "rgba(255,255,255,0.02)",
+            background: "var(--bg-surface)",
             border: "1px solid rgba(255,255,255,0.08)",
             borderRadius: 10,
             overflow: "hidden",
@@ -257,7 +257,7 @@ export default function MonthEndCloseScreen({ onNavigate }) {
               fontSize: 10,
               fontWeight: 600,
               letterSpacing: "0.15em",
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               borderBottom: "1px solid rgba(255,255,255,0.06)",
             }}
           >
@@ -280,7 +280,7 @@ export default function MonthEndCloseScreen({ onNavigate }) {
           <button
             disabled={!allComplete}
             style={{
-              background: allComplete ? "#00C48C" : "rgba(0,196,140,0.25)",
+              background: allComplete ? "var(--accent-primary)" : "rgba(0,196,140,0.25)",
               color: "#fff",
               border: "none",
               padding: "10px 18px",
@@ -296,7 +296,7 @@ export default function MonthEndCloseScreen({ onNavigate }) {
           <button
             style={{
               background: "transparent",
-              color: "#8B98A5",
+              color: "var(--text-secondary)",
               border: "1px solid rgba(255,255,255,0.15)",
               padding: "10px 16px",
               borderRadius: 6,
@@ -311,7 +311,7 @@ export default function MonthEndCloseScreen({ onNavigate }) {
             disabled
             style={{
               background: "transparent",
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               border: "1px solid rgba(255,255,255,0.10)",
               padding: "10px 16px",
               borderRadius: 6,
@@ -328,7 +328,7 @@ export default function MonthEndCloseScreen({ onNavigate }) {
         {/* Validations */}
         <div
           style={{
-            background: "rgba(255,255,255,0.02)",
+            background: "var(--bg-surface)",
             border: "1px solid rgba(255,255,255,0.08)",
             borderRadius: 10,
             overflow: "hidden",
@@ -340,7 +340,7 @@ export default function MonthEndCloseScreen({ onNavigate }) {
               fontSize: 10,
               fontWeight: 600,
               letterSpacing: "0.15em",
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               borderBottom: "1px solid rgba(255,255,255,0.06)",
             }}
           >

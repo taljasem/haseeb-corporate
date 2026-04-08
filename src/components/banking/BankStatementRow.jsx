@@ -64,7 +64,7 @@ export default function BankStatementRow({ tx, expanded, onToggle, currency = "K
       <div
         onClick={() => onToggle && onToggle(tx)}
         onMouseEnter={(e) => {
-          if (!expanded) e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+          if (!expanded) e.currentTarget.style.background = "var(--bg-surface-sunken)";
         }}
         onMouseLeave={(e) => {
           if (!expanded) e.currentTarget.style.background = "transparent";
@@ -77,17 +77,17 @@ export default function BankStatementRow({ tx, expanded, onToggle, currency = "K
           padding: "12px 18px",
           cursor: "pointer",
           transition: "background 0.12s ease",
-          background: expanded ? "rgba(255,255,255,0.03)" : "transparent",
+          background: expanded ? "var(--bg-surface-sunken)" : "transparent",
         }}
       >
-        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "#5B6570" }}>
+        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "var(--text-tertiary)" }}>
           {fmtDate(tx.date)}
         </div>
         <div style={{ minWidth: 0 }}>
           <div
             style={{
               fontSize: 13,
-              color: "#E6EDF3",
+              color: "var(--text-primary)",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -98,7 +98,7 @@ export default function BankStatementRow({ tx, expanded, onToggle, currency = "K
           <div
             style={{
               fontSize: 11,
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               fontFamily: "'DM Mono', monospace",
               marginTop: 2,
             }}
@@ -108,13 +108,13 @@ export default function BankStatementRow({ tx, expanded, onToggle, currency = "K
         </div>
         <div>
           {cat.method === "MANUAL" ? (
-            <SimplePill label={tTx("confidence.manual")} color="#8B98A5" bg="rgba(255,255,255,0.04)" border="rgba(255,255,255,0.15)" />
+            <SimplePill label={tTx("confidence.manual")} color="var(--text-secondary)" bg="var(--bg-surface-sunken)" border="var(--border-strong)" />
           ) : cat.method === "PENDING" ? (
-            <SimplePill label={tTx("confidence.pending")} color="#FF5A5F" bg="rgba(255,90,95,0.08)" border="rgba(255,90,95,0.30)" />
+            <SimplePill label={tTx("confidence.pending")} color="var(--semantic-danger)" bg="var(--semantic-danger-subtle)" border="var(--semantic-danger-subtle)" />
           ) : (
             <EngineConfidencePill confidence={pillKey} />
           )}
-          <div style={{ fontSize: 10, color: "#5B6570", marginTop: 4 }}>
+          <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 4 }}>
             {cat.category || "—"}
           </div>
         </div>
@@ -124,7 +124,7 @@ export default function BankStatementRow({ tx, expanded, onToggle, currency = "K
             fontFamily: "'DM Mono', monospace",
             fontSize: 13,
             fontWeight: 500,
-            color: tx.amount < 0 ? "#FF5A5F" : "#00C48C",
+            color: tx.amount < 0 ? "var(--semantic-danger)" : "var(--accent-primary)",
             opacity: tx.amount < 0 ? 0.85 : 1,
             fontVariantNumeric: "tabular-nums",
           }}
@@ -136,7 +136,7 @@ export default function BankStatementRow({ tx, expanded, onToggle, currency = "K
             textAlign: "end",
             fontFamily: "'DM Mono', monospace",
             fontSize: 12,
-            color: "#8B98A5",
+            color: "var(--text-secondary)",
             fontVariantNumeric: "tabular-nums",
           }}
         >
@@ -145,7 +145,7 @@ export default function BankStatementRow({ tx, expanded, onToggle, currency = "K
             maximumFractionDigits: currency === "USD" ? 2 : 3,
           })}
         </div>
-        <div style={{ color: "#5B6570" }}>
+        <div style={{ color: "var(--text-tertiary)" }}>
           {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </div>
       </div>
@@ -166,7 +166,7 @@ export default function BankStatementRow({ tx, expanded, onToggle, currency = "K
               fontSize: 9,
               fontWeight: 600,
               letterSpacing: "0.15em",
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               width: 120,
               flexShrink: 0,
               paddingTop: 16,
@@ -180,15 +180,15 @@ export default function BankStatementRow({ tx, expanded, onToggle, currency = "K
                 <JournalEntryCard entry={je} state="posted" />
                 <div style={{ display: "flex", gap: 14, marginTop: 4, fontSize: 11 }}>
                   {cat.ruleId && (
-                    <a style={{ color: "#00C48C", cursor: "pointer" }}>
+                    <a style={{ color: "var(--accent-primary)", cursor: "pointer" }}>
                       {t("row.view_rule", { id: cat.ruleId })}
                     </a>
                   )}
-                  <a style={{ color: "#00C48C", cursor: "pointer" }}>{t("row.view_in_taskbox")}</a>
+                  <a style={{ color: "var(--accent-primary)", cursor: "pointer" }}>{t("row.view_in_taskbox")}</a>
                 </div>
               </>
             ) : (
-              <div style={{ color: "#5B6570", fontSize: 12, padding: 12 }}>{t("row.loading_je")}</div>
+              <div style={{ color: "var(--text-tertiary)", fontSize: 12, padding: 12 }}>{t("row.loading_je")}</div>
             )}
           </div>
         </div>

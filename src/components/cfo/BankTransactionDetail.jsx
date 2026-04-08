@@ -14,7 +14,7 @@ function Field({ label, value, mono = false }) {
           fontSize: 9,
           fontWeight: 600,
           letterSpacing: "0.15em",
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
           marginBottom: 4,
         }}
       >
@@ -23,7 +23,7 @@ function Field({ label, value, mono = false }) {
       <div
         style={{
           fontSize: 13,
-          color: "#E6EDF3",
+          color: "var(--text-primary)",
           fontFamily: mono ? "'DM Mono', monospace" : "inherit",
         }}
       >
@@ -54,7 +54,7 @@ export default function BankTransactionDetail({ tx, onOpenAminah, onConfirmed })
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
           fontSize: 13,
         }}
       >
@@ -70,7 +70,7 @@ export default function BankTransactionDetail({ tx, onOpenAminah, onConfirmed })
       {/* Bank facts */}
       <div
         style={{
-          background: "rgba(255,255,255,0.025)",
+          background: "var(--bg-surface)",
           border: "1px solid rgba(255,255,255,0.10)",
           borderRadius: 8,
           padding: "14px 16px",
@@ -82,7 +82,7 @@ export default function BankTransactionDetail({ tx, onOpenAminah, onConfirmed })
             fontSize: 10,
             fontWeight: 600,
             letterSpacing: "0.15em",
-            color: "#5B6570",
+            color: "var(--text-tertiary)",
             marginBottom: 12,
           }}
         >
@@ -103,7 +103,7 @@ export default function BankTransactionDetail({ tx, onOpenAminah, onConfirmed })
             label={t("detail.field_amount")}
             mono
             value={
-              <span style={{ color: tx.amount < 0 ? "#FF5A5F" : "#00C48C" }}>
+              <span style={{ color: tx.amount < 0 ? "var(--semantic-danger)" : "var(--accent-primary)" }}>
                 {formatKWD(Math.abs(tx.amount))}
               </span>
             }
@@ -126,7 +126,7 @@ export default function BankTransactionDetail({ tx, onOpenAminah, onConfirmed })
             fontSize: 10,
             fontWeight: 600,
             letterSpacing: "0.15em",
-            color: "#5B6570",
+            color: "var(--text-tertiary)",
           }}
         >
           {t("detail.engine_suggests")}
@@ -141,7 +141,7 @@ export default function BankTransactionDetail({ tx, onOpenAminah, onConfirmed })
           style={{
             fontSize: 12,
             fontStyle: "italic",
-            color: "#8B98A5",
+            color: "var(--text-secondary)",
             lineHeight: 1.55,
             marginBottom: 8,
           }}

@@ -5,6 +5,7 @@ import { useTenant } from "./shared/TenantContext";
 import { useLanguage } from "../i18n/LanguageContext";
 import LtrText from "./shared/LtrText";
 import DirArrow from "./shared/DirArrow";
+import { useTheme } from "../contexts/ThemeContext";
 
 // DEMO ONLY — production roles come from auth
 const ROLES = ["Owner", "CFO", "Junior"];
@@ -29,9 +30,9 @@ const NOTIFICATION_IDS = {
 };
 // Canonical role accent colors (match team member avatar colors)
 const ROLE_COLOR = {
-  Owner:  "#8B5CF6", // Tarek purple
-  CFO:    "#00C48C", // You teal
-  Junior: "#3B82F6", // Sara blue
+  Owner:  "var(--role-owner)", // Tarek purple
+  CFO:    "var(--accent-primary)", // You teal
+  Junior: "var(--semantic-info)", // Sara blue
 };
 
 function BellIcon() {
@@ -51,6 +52,22 @@ function MoonIcon() {
   );
 }
 
+function SunIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="5" />
+      <line x1="12" y1="1" x2="12" y2="3" />
+      <line x1="12" y1="21" x2="12" y2="23" />
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+      <line x1="1" y1="12" x2="3" y2="12" />
+      <line x1="21" y1="12" x2="23" y2="12" />
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+    </svg>
+  );
+}
+
 function Tooltip({ title, sub }) {
   return (
     <div
@@ -58,7 +75,7 @@ function Tooltip({ title, sub }) {
         position: "absolute",
         top: "calc(100% + 8px)",
         right: 0,
-        background: "#0C0E12",
+        background: "var(--bg-surface-raised)",
         border: "1px solid rgba(255,255,255,0.10)",
         borderRadius: 8,
         padding: "10px 12px",
@@ -67,8 +84,8 @@ function Tooltip({ title, sub }) {
         zIndex: 200,
       }}
     >
-      <div style={{ fontSize: 12, color: "#E6EDF3", fontWeight: 500 }}>{title}</div>
-      <div style={{ fontSize: 11, color: "#5B6570", marginTop: 3 }}>{sub}</div>
+      <div style={{ fontSize: 12, color: "var(--text-primary)", fontWeight: 500 }}>{title}</div>
+      <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 3 }}>{sub}</div>
     </div>
   );
 }
@@ -76,9 +93,9 @@ function Tooltip({ title, sub }) {
 export default function Header({ role, setRole }) {
   const { t } = useTranslation("header");
   const { language, toggleLanguage } = useLanguage();
+  const { toggleTheme, isLight } = useTheme();
   const [bellOpen, setBellOpen] = useState(false);
   const [unread, setUnread] = useState(true);
-  const [themeTip, setThemeTip] = useState(false);
   const bellRef = useRef(null);
   const nav = useNav();
   const { tenant, tenantId, setTenantId, allTenants } = useTenant();
@@ -142,7 +159,7 @@ export default function Header({ role, setRole }) {
         <div
           style={{
             width: 24, height: 24, borderRadius: 6,
-            background: "#00C48C",
+            background: "var(--accent-primary)",
             display: "flex", alignItems: "center", justifyContent: "center",
             position: "relative", overflow: "hidden",
           }}
@@ -162,7 +179,7 @@ export default function Header({ role, setRole }) {
           style={{
             fontFamily: "'Bebas Neue', sans-serif",
             fontSize: 19,
-            color: "#E6EDF3",
+            color: "var(--text-primary)",
             letterSpacing: "0.02em",
           }}
         >
@@ -181,8 +198,8 @@ export default function Header({ role, setRole }) {
             fontSize: 10,
             fontWeight: 600,
             letterSpacing: "0.12em",
-            color: "#5B6570",
-            background: "rgba(255,255,255,0.02)",
+            color: "var(--text-tertiary)",
+            background: "var(--bg-surface)",
             border: "1px dashed rgba(255,255,255,0.12)",
             borderRadius: 4,
             padding: "4px 10px",
@@ -204,7 +221,7 @@ export default function Header({ role, setRole }) {
               top: "calc(100% + 6px)",
               left: 0,
               width: 260,
-              background: "#0C0E12",
+              background: "var(--bg-surface-raised)",
               border: "1px solid rgba(255,255,255,0.10)",
               borderRadius: 10,
               boxShadow: "0 12px 32px rgba(0,0,0,0.6)",
@@ -217,7 +234,7 @@ export default function Header({ role, setRole }) {
                 fontSize: 9,
                 fontWeight: 600,
                 letterSpacing: "0.15em",
-                color: "#5B6570",
+                color: "var(--text-tertiary)",
                 padding: "10px 14px",
                 borderBottom: "1px solid rgba(255,255,255,0.06)",
               }}
@@ -235,7 +252,7 @@ export default function Header({ role, setRole }) {
                     setTenantOpen(false);
                   }}
                   onMouseEnter={(e) => {
-                    if (!on) e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+                    if (!on) e.currentTarget.style.background = "var(--bg-surface-sunken)";
                   }}
                   onMouseLeave={(e) => {
                     if (!on) e.currentTarget.style.background = "transparent";
@@ -246,7 +263,7 @@ export default function Header({ role, setRole }) {
                     gap: 10,
                     width: "100%",
                     padding: "10px 14px",
-                    background: on ? "rgba(0,196,140,0.06)" : "transparent",
+                    background: on ? "var(--bg-selected)" : "transparent",
                     border: "none",
                     borderBottom: "1px solid rgba(255,255,255,0.04)",
                     cursor: "pointer",
@@ -259,15 +276,15 @@ export default function Header({ role, setRole }) {
                       width: 8,
                       height: 8,
                       borderRadius: "50%",
-                      background: bank.brandColor || "rgba(255,255,255,0.20)",
+                      background: bank.brandColor || "var(--border-strong)",
                       flexShrink: 0,
                     }}
                   />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, color: on ? "#00C48C" : "#E6EDF3", fontWeight: 500 }}>
+                    <div style={{ fontSize: 12, color: on ? "var(--accent-primary)" : "var(--text-primary)", fontWeight: 500 }}>
                       <LtrText>{tn.company.name}</LtrText>
                     </div>
-                    <div style={{ fontSize: 10, color: "#5B6570", marginTop: 2 }}>
+                    <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 2 }}>
                       <LtrText>{bank.name || "Standalone"}</LtrText> · {t(`distribution_modes.${(tn.distributionMode || "").replace(/-/g, "_")}`, { defaultValue: tn.distributionMode })}
                     </div>
                   </div>
@@ -302,9 +319,9 @@ export default function Header({ role, setRole }) {
                   letterSpacing: "0.06em",
                   padding: "4px 10px",
                   borderRadius: 4,
-                  background: on ? `${color}14` : "rgba(255,255,255,0.02)",
+                  background: on ? `${color}14` : "var(--bg-surface)",
                   border: on ? `1px solid ${color}66` : "1px solid rgba(255,255,255,0.08)",
-                  color: on ? color : "#5B6570",
+                  color: on ? color : "var(--text-tertiary)",
                   cursor: "pointer",
                   fontFamily: "inherit",
                   transition: "all 0.15s ease",
@@ -326,7 +343,7 @@ export default function Header({ role, setRole }) {
               width: 28, height: 28,
               background: "transparent",
               border: "none",
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
@@ -341,7 +358,7 @@ export default function Header({ role, setRole }) {
                   top: 4, right: 4,
                   width: 6, height: 6,
                   borderRadius: "50%",
-                  background: "#FF5A5F",
+                  background: "var(--semantic-danger)",
                 }}
               />
             )}
@@ -355,7 +372,7 @@ export default function Header({ role, setRole }) {
                 right: 0,
                 width: 320,
                 maxHeight: 480,
-                background: "#0C0E12",
+                background: "var(--bg-surface-raised)",
                 border: "1px solid rgba(255,255,255,0.10)",
                 borderRadius: 10,
                 boxShadow: "0 12px 32px rgba(0,0,0,0.6)",
@@ -374,12 +391,12 @@ export default function Header({ role, setRole }) {
                   borderBottom: "1px solid rgba(255,255,255,0.06)",
                 }}
               >
-                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570" }}>
+                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>
                   {t("notifications.title")}
                 </div>
                 <a
                   onClick={() => setUnread(false)}
-                  style={{ fontSize: 11, color: "#00C48C", cursor: "pointer" }}
+                  style={{ fontSize: 11, color: "var(--accent-primary)", cursor: "pointer" }}
                 >
                   {t("notifications.mark_all_read")}
                 </a>
@@ -397,7 +414,7 @@ export default function Header({ role, setRole }) {
                         nav.setActiveScreen(dest.screen);
                       }
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-surface-sunken)")}
                     onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     style={{
                       padding: "10px 14px",
@@ -406,13 +423,13 @@ export default function Header({ role, setRole }) {
                       transition: "background 0.12s ease",
                     }}
                   >
-                    <div style={{ fontSize: 12, color: "#E6EDF3", fontWeight: 500 }}>
+                    <div style={{ fontSize: 12, color: "var(--text-primary)", fontWeight: 500 }}>
                       {n.title}
                     </div>
                     <div
                       style={{
                         fontSize: 10,
-                        color: "#5B6570",
+                        color: "var(--text-tertiary)",
                         marginTop: 2,
                         whiteSpace: "nowrap",
                         overflow: "hidden",
@@ -425,7 +442,7 @@ export default function Header({ role, setRole }) {
                       style={{
                         fontFamily: "'DM Mono', monospace",
                         fontSize: 9,
-                        color: "#5B6570",
+                        color: "var(--text-tertiary)",
                         marginTop: 2,
                       }}
                     >
@@ -441,7 +458,7 @@ export default function Header({ role, setRole }) {
                   textAlign: "center",
                 }}
               >
-                <a style={{ fontSize: 11, color: "#00C48C", cursor: "pointer" }}>
+                <a style={{ fontSize: 11, color: "var(--accent-primary)", cursor: "pointer" }}>
                   {t("notifications.view_all_in_taskbox")} <DirArrow />
                 </a>
               </div>
@@ -453,24 +470,20 @@ export default function Header({ role, setRole }) {
         <div style={{ position: "relative" }}>
           <button
             aria-label={t("notifications.aria_theme")}
-            onClick={() => {
-              setThemeTip(true);
-              setTimeout(() => setThemeTip(false), 3000);
-            }}
+            onClick={toggleTheme}
             style={{
               width: 28, height: 28,
               background: "transparent",
               border: "none",
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <MoonIcon />
+            {isLight ? <MoonIcon /> : <SunIcon />}
           </button>
-          {themeTip && <Tooltip title={t("tooltip_theme_coming")} sub={t("tooltip_theme_subtext")} />}
         </div>
 
         {/* Language toggle */}
@@ -482,8 +495,8 @@ export default function Header({ role, setRole }) {
               fontFamily: "'Noto Sans Arabic', sans-serif",
               fontSize: 12,
               fontWeight: 600,
-              color: language === "ar" ? "#00C48C" : "#5B6570",
-              background: language === "ar" ? "rgba(0,196,140,0.10)" : "rgba(255,255,255,0.03)",
+              color: language === "ar" ? "var(--accent-primary)" : "var(--text-tertiary)",
+              background: language === "ar" ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)",
               border: language === "ar" ? "1px solid rgba(0,196,140,0.40)" : "1px solid rgba(255,255,255,0.10)",
               borderRadius: 4,
               padding: "4px 10px",
@@ -499,11 +512,11 @@ export default function Header({ role, setRole }) {
           style={{
             width: 26, height: 26,
             borderRadius: "50%",
-            background: "rgba(255,255,255,0.04)",
+            background: "var(--bg-surface-sunken)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#5B6570",
+            color: "var(--text-tertiary)",
             fontSize: 11,
             fontWeight: 500,
             cursor: "pointer",

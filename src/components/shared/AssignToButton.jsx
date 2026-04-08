@@ -124,27 +124,27 @@ export default function AssignToButton({
           padding: compact ? "4px 8px" : "6px 10px",
           borderRadius: 6,
           background: confirmation
-            ? "rgba(0,196,140,0.10)"
+            ? "var(--accent-primary-subtle)"
             : isGhost
               ? "transparent"
               : "transparent",
           border: confirmation
             ? "1px solid rgba(0,196,140,0.30)"
             : "1px solid rgba(255,255,255,0.10)",
-          color: confirmation ? "#00C48C" : "#5B6570",
+          color: confirmation ? "var(--accent-primary)" : "var(--text-tertiary)",
           cursor: "pointer",
           fontFamily: "inherit",
           transition: "all 0.12s ease",
         }}
         onMouseEnter={(e) => {
           if (confirmation) return;
-          e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-          e.currentTarget.style.color = "#E6EDF3";
+          e.currentTarget.style.background = "var(--bg-surface-sunken)";
+          e.currentTarget.style.color = "var(--text-primary)";
         }}
         onMouseLeave={(e) => {
           if (confirmation) return;
           e.currentTarget.style.background = "transparent";
-          e.currentTarget.style.color = "#5B6570";
+          e.currentTarget.style.color = "var(--text-tertiary)";
         }}
       >
         <PersonPlusIcon />
@@ -160,7 +160,7 @@ export default function AssignToButton({
             top: "calc(100% + 6px)",
             right: 0,
             width: 280,
-            background: "#0C0E12",
+            background: "var(--bg-surface-raised)",
             border: "1px solid rgba(255,255,255,0.10)",
             borderRadius: 10,
             padding: 14,
@@ -173,7 +173,7 @@ export default function AssignToButton({
               fontSize: 10,
               fontWeight: 600,
               letterSpacing: "0.15em",
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               marginBottom: 10,
             }}
           >
@@ -185,11 +185,11 @@ export default function AssignToButton({
             placeholder={t("assign.search_placeholder")}
             style={{
               width: "100%",
-              background: "rgba(255,255,255,0.04)",
+              background: "var(--bg-surface-sunken)",
               border: "1px solid rgba(255,255,255,0.10)",
               borderRadius: 8,
               padding: "9px 12px",
-              color: "#E6EDF3",
+              color: "var(--text-primary)",
               fontSize: 12,
               fontFamily: "inherit",
               outline: "none",
@@ -217,7 +217,7 @@ export default function AssignToButton({
                     gap: 10,
                     width: "100%",
                     padding: "8px 10px",
-                    background: active ? "rgba(0,196,140,0.08)" : "transparent",
+                    background: active ? "var(--accent-primary-subtle)" : "transparent",
                     border: "none",
                     borderBottom: "1px solid rgba(255,255,255,0.04)",
                     cursor: "pointer",
@@ -225,7 +225,7 @@ export default function AssignToButton({
                     fontFamily: "inherit",
                   }}
                   onMouseEnter={(e) => {
-                    if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+                    if (!active) e.currentTarget.style.background = "var(--bg-surface-sunken)";
                   }}
                   onMouseLeave={(e) => {
                     if (!active) e.currentTarget.style.background = "transparent";
@@ -233,10 +233,10 @@ export default function AssignToButton({
                 >
                   <Avatar member={m} size={26} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, color: "#E6EDF3" }}>
+                    <div style={{ fontSize: 12, color: "var(--text-primary)" }}>
                       {m.id === "self" ? t("assign.assign_to_myself") : m.name}
                     </div>
-                    <div style={{ fontSize: 10, color: "#5B6570", marginTop: 1 }}>
+                    <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 1 }}>
                       {m.role}
                     </div>
                   </div>
@@ -250,11 +250,11 @@ export default function AssignToButton({
             placeholder={t("assign.note_placeholder")}
             style={{
               width: "100%",
-              background: "rgba(255,255,255,0.04)",
+              background: "var(--bg-surface-sunken)",
               border: "1px solid rgba(255,255,255,0.10)",
               borderRadius: 8,
               padding: "8px 12px",
-              color: "#E6EDF3",
+              color: "var(--text-primary)",
               fontSize: 12,
               fontFamily: "inherit",
               outline: "none",
@@ -267,7 +267,7 @@ export default function AssignToButton({
               disabled={!picked}
               style={{
                 flex: 1,
-                background: picked ? "#00C48C" : "rgba(0,196,140,0.25)",
+                background: picked ? "var(--accent-primary)" : "rgba(0,196,140,0.25)",
                 color: "#fff",
                 border: "none",
                 padding: "8px 12px",
@@ -288,7 +288,7 @@ export default function AssignToButton({
               }}
               style={{
                 background: "transparent",
-                color: "#8B98A5",
+                color: "var(--text-secondary)",
                 border: "1px solid rgba(255,255,255,0.15)",
                 padding: "8px 12px",
                 borderRadius: 6,

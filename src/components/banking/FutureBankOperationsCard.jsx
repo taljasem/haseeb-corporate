@@ -14,7 +14,7 @@ export default function FutureBankOperationsCard() {
       style={{
         marginTop: 20,
         padding: "18px 20px",
-        background: "rgba(255,255,255,0.02)",
+        background: "var(--bg-surface)",
         border: "1px dashed rgba(255,255,255,0.10)",
         borderRadius: 10,
       }}
@@ -24,7 +24,7 @@ export default function FutureBankOperationsCard() {
           fontSize: 10,
           fontWeight: 600,
           letterSpacing: "0.15em",
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
           marginBottom: 12,
         }}
       >
@@ -46,10 +46,10 @@ export default function FutureBankOperationsCard() {
               alignItems: "center",
               gap: 10,
               padding: "12px 14px",
-              background: "rgba(255,255,255,0.02)",
+              background: "var(--bg-surface)",
               border: "1px solid rgba(255,255,255,0.08)",
               borderRadius: 8,
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               fontSize: 12,
               fontFamily: "inherit",
               opacity: 0.5,
@@ -64,8 +64,8 @@ export default function FutureBankOperationsCard() {
                 fontSize: 8,
                 fontWeight: 700,
                 letterSpacing: "0.12em",
-                color: "#D4A84B",
-                background: "rgba(212,168,75,0.10)",
+                color: "var(--semantic-warning)",
+                background: "var(--semantic-warning-subtle)",
                 border: "1px solid rgba(212,168,75,0.30)",
                 padding: "2px 6px",
                 borderRadius: 3,

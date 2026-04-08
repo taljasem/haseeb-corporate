@@ -19,20 +19,20 @@ export default function SuggestionBanner({ suggestion, onApply, onDismiss }) {
         alignItems: "center",
         gap: 12,
         padding: "10px 16px",
-        background: "rgba(212,168,75,0.08)",
+        background: "var(--semantic-warning-subtle)",
         borderInlineStart: "2px solid #D4A84B",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
       }}
     >
-      <Repeat size={14} color="#D4A84B" strokeWidth={2.2} />
-      <div style={{ flex: 1, fontSize: 12, color: "#E6EDF3" }}>
+      <Repeat size={14} color="var(--semantic-warning)" strokeWidth={2.2} />
+      <div style={{ flex: 1, fontSize: 12, color: "var(--text-primary)" }}>
         {title}
-        <span style={{ color: "#5B6570", marginInlineStart: 8 }}>· {suggestion.context}</span>
+        <span style={{ color: "var(--text-tertiary)", marginInlineStart: 8 }}>· {suggestion.context}</span>
       </div>
       <button
         onClick={() => onApply && onApply(suggestion)}
         style={{
-          background: "#00C48C",
+          background: "var(--accent-primary)",
           color: "#fff",
           border: "none",
           padding: "6px 12px",
@@ -54,7 +54,7 @@ export default function SuggestionBanner({ suggestion, onApply, onDismiss }) {
         style={{
           background: "transparent",
           border: "none",
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
           cursor: "pointer",
           padding: 4,
           display: "flex",

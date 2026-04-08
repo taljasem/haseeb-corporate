@@ -3,21 +3,21 @@ import { useTranslation } from "react-i18next";
 import { getBudgetWorkflowSummary } from "../../engine/mockEngine";
 
 const STATE_STYLE = {
-  draft:              { key: "draft",             color: "#D4A84B" },
-  delegated:          { key: "delegated",         color: "#3B82F6" },
-  "in-review":        { key: "in_review",         color: "#D4A84B" },
-  "pending-approval": { key: "pending_approval",  color: "#8B5CF6" },
-  active:             { key: "active",            color: "#00C48C" },
-  closed:             { key: "closed",            color: "#5B6570" },
+  draft:              { key: "draft",             color: "var(--semantic-warning)" },
+  delegated:          { key: "delegated",         color: "var(--semantic-info)" },
+  "in-review":        { key: "in_review",         color: "var(--semantic-warning)" },
+  "pending-approval": { key: "pending_approval",  color: "var(--role-owner)" },
+  active:             { key: "active",            color: "var(--accent-primary)" },
+  closed:             { key: "closed",            color: "var(--text-tertiary)" },
 };
 
 const SEGMENT_COLOR = {
-  unassigned:       "rgba(255,255,255,0.08)",
-  assigned:         "#3B82F6",
+  unassigned:       "var(--border-default)",
+  assigned:         "var(--semantic-info)",
   "in-progress":    "#3B82F666",
   submitted:        "#00C48C99",
-  approved:         "#00C48C",
-  "needs-revision": "#D4A84B",
+  approved:         "var(--accent-primary)",
+  "needs-revision": "var(--semantic-warning)",
 };
 
 export default function BudgetWorkflowStatusStrip({ budget, role = "CFO", onDelegate, onSendForApproval, onApprove, onRequestChanges, refreshKey = 0 }) {
@@ -35,7 +35,7 @@ export default function BudgetWorkflowStatusStrip({ budget, role = "CFO", onDele
   return (
     <div
       style={{
-        background: "rgba(255,255,255,0.02)",
+        background: "var(--bg-surface)",
         border: "1px solid rgba(255,255,255,0.08)",
         borderRadius: 10,
         padding: "14px 18px",
@@ -71,7 +71,7 @@ export default function BudgetWorkflowStatusStrip({ budget, role = "CFO", onDele
             style={{
               flex: 1,
               height: 10,
-              background: SEGMENT_COLOR[d.workflowStatus] || "rgba(255,255,255,0.08)",
+              background: SEGMENT_COLOR[d.workflowStatus] || "var(--border-default)",
               border: "1px solid rgba(255,255,255,0.08)",
               borderRadius: 3,
             }}
@@ -79,7 +79,7 @@ export default function BudgetWorkflowStatusStrip({ budget, role = "CFO", onDele
         ))}
       </div>
 
-      <div style={{ fontSize: 11, color: "#5B6570", whiteSpace: "nowrap" }}>
+      <div style={{ fontSize: 11, color: "var(--text-tertiary)", whiteSpace: "nowrap" }}>
         {t("workflow_strip.submitted_count", { done: summary.approved + summary.submitted, total: summary.totalDepartments })}
       </div>
 
@@ -89,7 +89,7 @@ export default function BudgetWorkflowStatusStrip({ budget, role = "CFO", onDele
           <button
             onClick={onDelegate}
             style={{
-              background: "#00C48C",
+              background: "var(--accent-primary)",
               color: "#fff",
               border: "none",
               padding: "8px 14px",
@@ -107,7 +107,7 @@ export default function BudgetWorkflowStatusStrip({ budget, role = "CFO", onDele
           <button
             style={{
               background: "transparent",
-              color: "#8B98A5",
+              color: "var(--text-secondary)",
               border: "1px solid rgba(255,255,255,0.15)",
               padding: "8px 14px",
               borderRadius: 6,
@@ -123,7 +123,7 @@ export default function BudgetWorkflowStatusStrip({ budget, role = "CFO", onDele
           <button
             onClick={onSendForApproval}
             style={{
-              background: "#00C48C",
+              background: "var(--accent-primary)",
               color: "#fff",
               border: "none",
               padding: "8px 14px",
@@ -142,7 +142,7 @@ export default function BudgetWorkflowStatusStrip({ budget, role = "CFO", onDele
             <button
               onClick={onApprove}
               style={{
-                background: "#00C48C",
+                background: "var(--accent-primary)",
                 color: "#fff",
                 border: "none",
                 padding: "8px 14px",
@@ -159,7 +159,7 @@ export default function BudgetWorkflowStatusStrip({ budget, role = "CFO", onDele
               onClick={onRequestChanges}
               style={{
                 background: "transparent",
-                color: "#D4A84B",
+                color: "var(--semantic-warning)",
                 border: "1px solid rgba(212,168,75,0.30)",
                 padding: "8px 14px",
                 borderRadius: 6,

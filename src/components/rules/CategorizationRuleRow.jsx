@@ -10,13 +10,13 @@ export default function CategorizationRuleRow({ rule, expanded, onToggle, onEdit
     <div
       style={{
         borderBottom: "1px solid rgba(255,255,255,0.06)",
-        background: expanded ? "rgba(255,255,255,0.02)" : "transparent",
+        background: expanded ? "var(--bg-surface)" : "transparent",
       }}
     >
       <div
         onClick={() => onToggle && onToggle(rule)}
         onMouseEnter={(e) => {
-          if (!expanded) e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+          if (!expanded) e.currentTarget.style.background = "var(--bg-surface-sunken)";
         }}
         onMouseLeave={(e) => {
           if (!expanded) e.currentTarget.style.background = "transparent";
@@ -35,28 +35,28 @@ export default function CategorizationRuleRow({ rule, expanded, onToggle, onEdit
             width: 32,
             height: 32,
             borderRadius: 6,
-            background: "rgba(0,196,140,0.10)",
+            background: "var(--accent-primary-subtle)",
             border: "1px solid rgba(0,196,140,0.25)",
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#00C48C",
+            color: "var(--accent-primary)",
             flexShrink: 0,
           }}
         >
           <FileText size={15} strokeWidth={2.2} />
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, color: "#E6EDF3", fontWeight: 500, marginBottom: 3 }}>
+          <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500, marginBottom: 3 }}>
             {rule.name}
           </div>
-          <div style={{ fontSize: 12, color: "#8B98A5" }}>
-            <span style={{ color: "#5B6570" }}>→</span>{" "}
-            <span style={{ color: "#E6EDF3" }}>{rule.debitAccount.name}</span>{" "}
-            <span style={{ fontFamily: "'DM Mono', monospace", color: "#5B6570" }}>
+          <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+            <span style={{ color: "var(--text-tertiary)" }}>→</span>{" "}
+            <span style={{ color: "var(--text-primary)" }}>{rule.debitAccount.name}</span>{" "}
+            <span style={{ fontFamily: "'DM Mono', monospace", color: "var(--text-tertiary)" }}>
               ({rule.debitAccount.code})
             </span>
-            <span style={{ color: "#5B6570" }}>
+            <span style={{ color: "var(--text-tertiary)" }}>
               {" · "}
               {t("row.applied_times", { count: rule.appliedCount, time: formatRelativeTime(rule.createdAt) })}
             </span>
@@ -65,7 +65,7 @@ export default function CategorizationRuleRow({ rule, expanded, onToggle, onEdit
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
           <StatusPill status={rule.status} />
           <ModePill mode={rule.mode} />
-          {expanded ? <ChevronUp size={14} color="#5B6570" /> : <ChevronDown size={14} color="#5B6570" />}
+          {expanded ? <ChevronUp size={14} color="var(--text-tertiary)" /> : <ChevronDown size={14} color="var(--text-tertiary)" />}
         </div>
       </div>
       {expanded && (

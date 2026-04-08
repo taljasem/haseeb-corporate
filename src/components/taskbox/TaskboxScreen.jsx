@@ -141,7 +141,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
               style={{
                 fontFamily: "'Bebas Neue', sans-serif",
                 fontSize: 28,
-                color: "#E6EDF3",
+                color: "var(--text-primary)",
                 letterSpacing: "-0.3px",
                 lineHeight: 1,
               }}
@@ -153,7 +153,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
                 fontSize: 11,
                 fontWeight: 600,
                 letterSpacing: "0.15em",
-                color: "#5B6570",
+                color: "var(--text-tertiary)",
                 marginTop: 6,
               }}
             >
@@ -166,7 +166,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
               display: "inline-flex",
               alignItems: "center",
               gap: 6,
-              background: "#00C48C",
+              background: "var(--accent-primary)",
               color: "#fff",
               border: "none",
               padding: "9px 16px",
@@ -200,7 +200,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
                   style={{
                     background: "transparent",
                     border: "none",
-                    color: on ? "#00C48C" : "#5B6570",
+                    color: on ? "var(--accent-primary)" : "var(--text-tertiary)",
                     fontSize: 12,
                     fontWeight: 600,
                     letterSpacing: "0.04em",
@@ -211,10 +211,10 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
                     transition: "all 0.12s ease",
                   }}
                   onMouseEnter={(e) => {
-                    if (!on) e.currentTarget.style.color = "#8B98A5";
+                    if (!on) e.currentTarget.style.color = "var(--text-secondary)";
                   }}
                   onMouseLeave={(e) => {
-                    if (!on) e.currentTarget.style.color = "#5B6570";
+                    if (!on) e.currentTarget.style.color = "var(--text-tertiary)";
                   }}
                 >
                   {t(`filters.${f.key}`)}
@@ -223,7 +223,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
                       style={{
                         marginInlineStart: 6,
                         fontSize: 10,
-                        color: on ? "#00C48C" : "#5B6570",
+                        color: on ? "var(--accent-primary)" : "var(--text-tertiary)",
                         fontFamily: "'DM Mono', monospace",
                         letterSpacing: "0.05em",
                       }}
@@ -238,7 +238,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
           <div style={{ position: "relative", width: 260 }}>
             <Search
               size={13}
-              color="#5B6570"
+              color="var(--text-tertiary)"
               style={{
                 position: "absolute",
                 left: 10,
@@ -252,11 +252,11 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
               placeholder={t("search_placeholder")}
               style={{
                 width: "100%",
-                background: "rgba(255,255,255,0.04)",
+                background: "var(--bg-surface-sunken)",
                 border: "1px solid rgba(255,255,255,0.10)",
                 borderRadius: 8,
                 padding: "8px 12px 8px 30px",
-                color: "#E6EDF3",
+                color: "var(--text-primary)",
                 fontSize: 12,
                 fontFamily: "inherit",
                 outline: "none",
@@ -271,9 +271,9 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
         <div
           style={{
             margin: "12px 28px 0",
-            background: "rgba(0,196,140,0.10)",
+            background: "var(--accent-primary-subtle)",
             border: "1px solid rgba(0,196,140,0.30)",
-            color: "#00C48C",
+            color: "var(--accent-primary)",
             padding: "10px 14px",
             borderRadius: 8,
             fontSize: 12,
@@ -291,7 +291,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
             style={{
               padding: "60px 28px",
               textAlign: "center",
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
             }}
           >
             <Inbox size={28} strokeWidth={1.6} style={{ opacity: 0.5, marginBottom: 10 }} />

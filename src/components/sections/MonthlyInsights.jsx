@@ -10,7 +10,7 @@ function renderHighlighted(text) {
       const inner = part.slice(1, -1);
       const isPos = /^\+/.test(inner) && !/over/i.test(inner);
       const isNeg = /over|overdue/i.test(inner) || (/^\+/.test(inner) && /over/i.test(inner));
-      const color = isPos ? "#00C48C" : isNeg ? "#FF5A5F" : "#E6EDF3";
+      const color = isPos ? "var(--accent-primary)" : isNeg ? "var(--semantic-danger)" : "var(--text-primary)";
       return (
         <span key={i} style={{ color, fontWeight: 500 }}>
           {inner}
@@ -29,7 +29,7 @@ export default function MonthlyInsights() {
   }, []);
   return (
     <SectionCard label={t("sections.monthly_insights")} delay={0.2}>
-      <div style={{ fontSize: 13, color: "#8B98A5", lineHeight: 1.7 }}>
+      <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.7 }}>
         {data ? renderHighlighted(data.text) : "—"}
       </div>
     </SectionCard>

@@ -15,8 +15,8 @@ function StatusPill({ dotColor, label, pulse = false }) {
         fontSize: 10,
         fontWeight: 600,
         letterSpacing: "0.12em",
-        color: "#5B6570",
-        background: "rgba(255,255,255,0.02)",
+        color: "var(--text-tertiary)",
+        background: "var(--bg-surface)",
         border: "1px solid rgba(255,255,255,0.08)",
         padding: "5px 10px",
         borderRadius: 4,
@@ -38,7 +38,7 @@ function StatusPill({ dotColor, label, pulse = false }) {
 }
 
 function AccuracyPill({ value, previous = 91, label = "ACCURACY" }) {
-  const color = value >= 90 ? "#00C48C" : value >= 80 ? "#D4A84B" : "#FF5A5F";
+  const color = value >= 90 ? "var(--accent-primary)" : value >= 80 ? "var(--semantic-warning)" : "var(--semantic-danger)";
   const [hover, setHover] = useState(false);
   const [pinned, setPinned] = useState(false);
   const ref = useRef(null);
@@ -87,7 +87,7 @@ function AccuracyPill({ value, previous = 91, label = "ACCURACY" }) {
             top: "calc(100% + 8px)",
             right: 0,
             width: 280,
-            background: "#0C0E12",
+            background: "var(--bg-surface-raised)",
             border: "1px solid rgba(255,255,255,0.10)",
             borderRadius: 8,
             padding: "12px 14px",
@@ -100,7 +100,7 @@ function AccuracyPill({ value, previous = 91, label = "ACCURACY" }) {
               fontSize: 9,
               fontWeight: 600,
               letterSpacing: "0.15em",
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               marginBottom: 6,
             }}
           >
@@ -117,16 +117,16 @@ function AccuracyPill({ value, previous = 91, label = "ACCURACY" }) {
           >
             {value}% — up from {previous}% last week
           </div>
-          <div style={{ fontSize: 11, color: "#8B98A5", lineHeight: 1.5, marginBottom: 6 }}>
-            Most common correction: <span style={{ color: "#E6EDF3" }}>cost center allocation</span>
+          <div style={{ fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 6 }}>
+            Most common correction: <span style={{ color: "var(--text-primary)" }}>cost center allocation</span>
           </div>
-          <div style={{ fontSize: 11, color: "#5B6570", lineHeight: 1.5 }}>
-            Calculated from <span style={{ fontFamily: "'DM Mono', monospace", color: "#E6EDF3" }}>47</span>{" "}
+          <div style={{ fontSize: 11, color: "var(--text-tertiary)", lineHeight: 1.5 }}>
+            Calculated from <span style={{ fontFamily: "'DM Mono', monospace", color: "var(--text-primary)" }}>47</span>{" "}
             categorizations and{" "}
-            <span style={{ fontFamily: "'DM Mono', monospace", color: "#E6EDF3" }}>12</span> reconciliations
+            <span style={{ fontFamily: "'DM Mono', monospace", color: "var(--text-primary)" }}>12</span> reconciliations
           </div>
           <div style={{ marginTop: 10, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-            <a style={{ fontSize: 11, color: "#00C48C", cursor: "pointer" }}>
+            <a style={{ fontSize: 11, color: "var(--accent-primary)", cursor: "pointer" }}>
               How is this calculated? →
             </a>
           </div>
@@ -161,7 +161,7 @@ export default function JuniorHeroBand({ onOpenAminah }) {
           style={{
             fontFamily: "'Bebas Neue', sans-serif",
             fontSize: 28,
-            color: "#E6EDF3",
+            color: "var(--text-primary)",
             lineHeight: 0.95,
             letterSpacing: "-0.5px",
             fontWeight: 700,
@@ -184,7 +184,7 @@ export default function JuniorHeroBand({ onOpenAminah }) {
             fontSize: 11,
             fontWeight: 600,
             letterSpacing: "0.12em",
-            color: "#5B6570",
+            color: "var(--text-tertiary)",
             marginTop: 10,
           }}
         >
@@ -192,7 +192,7 @@ export default function JuniorHeroBand({ onOpenAminah }) {
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-        <StatusPill dotColor="#00C48C" label={t("status_pills.online")} pulse />
+        <StatusPill dotColor="var(--accent-primary)" label={t("status_pills.online")} pulse />
         {accuracy && <AccuracyPill value={accuracy.current} previous={accuracy.previous} label={t("status_pills.accuracy")} />}
         <button
           onClick={onOpenAminah}
@@ -204,7 +204,7 @@ export default function JuniorHeroBand({ onOpenAminah }) {
             fontWeight: 700,
             letterSpacing: "0.12em",
             color: "#fff",
-            background: "#00C48C",
+            background: "var(--accent-primary)",
             border: "none",
             padding: "6px 12px",
             borderRadius: 4,

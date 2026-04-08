@@ -23,7 +23,7 @@ export default function RoutingRuleReadOnlyCard({ rule }) {
   return (
     <div
       style={{
-        background: "rgba(255,255,255,0.02)",
+        background: "var(--bg-surface)",
         border: "1px solid rgba(255,255,255,0.08)",
         borderInlineStart: "2px solid #3B82F6",
         borderRadius: 8,
@@ -40,13 +40,13 @@ export default function RoutingRuleReadOnlyCard({ rule }) {
         }}
       >
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, color: "#E6EDF3", fontWeight: 500 }}>
+          <div style={{ fontSize: 14, color: "var(--text-primary)", fontWeight: 500 }}>
             {rule.name}
           </div>
           <div
             style={{
               fontSize: 11,
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               letterSpacing: "0.06em",
               marginTop: 4,
             }}
@@ -59,8 +59,8 @@ export default function RoutingRuleReadOnlyCard({ rule }) {
             fontSize: 9,
             fontWeight: 700,
             letterSpacing: "0.10em",
-            color: "#5B6570",
-            background: "rgba(255,255,255,0.04)",
+            color: "var(--text-tertiary)",
+            background: "var(--bg-surface-sunken)",
             border: "1px solid rgba(255,255,255,0.15)",
             padding: "3px 8px",
             borderRadius: 3,
@@ -87,7 +87,7 @@ export default function RoutingRuleReadOnlyCard({ rule }) {
               key={i}
               style={{
                 fontSize: 12,
-                color: "#8B98A5",
+                color: "var(--text-secondary)",
                 paddingInlineStart: 12,
                 position: "relative",
               }}
@@ -100,7 +100,7 @@ export default function RoutingRuleReadOnlyCard({ rule }) {
                   width: 4,
                   height: 4,
                   borderRadius: "50%",
-                  background: "#5B6570",
+                  background: "var(--text-tertiary)",
                 }}
               />
               {t}
@@ -117,13 +117,13 @@ export default function RoutingRuleReadOnlyCard({ rule }) {
           paddingTop: 10,
           borderTop: "1px solid rgba(255,255,255,0.06)",
           fontSize: 11,
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
           flexWrap: "wrap",
         }}
       >
         <span>
           {t("responsibilities.applied_times_prefix")}{" "}
-          <span style={{ color: "#E6EDF3", fontFamily: "'DM Mono', monospace", fontWeight: 500 }}>
+          <span style={{ color: "var(--text-primary)", fontFamily: "'DM Mono', monospace", fontWeight: 500 }}>
             {rule.appliedCount}
           </span>{" "}
           {t("responsibilities.applied_times_suffix")}

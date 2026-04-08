@@ -138,7 +138,7 @@ export default function RulesScreen({ initialTab = "categorization" }) {
               style={{
                 fontFamily: "'Bebas Neue', sans-serif",
                 fontSize: 28,
-                color: "#E6EDF3",
+                color: "var(--text-primary)",
                 letterSpacing: "-0.3px",
                 lineHeight: 1,
               }}
@@ -150,7 +150,7 @@ export default function RulesScreen({ initialTab = "categorization" }) {
                 fontSize: 11,
                 fontWeight: 600,
                 letterSpacing: "0.15em",
-                color: "#5B6570",
+                color: "var(--text-tertiary)",
                 marginTop: 6,
               }}
             >
@@ -166,7 +166,7 @@ export default function RulesScreen({ initialTab = "categorization" }) {
               display: "inline-flex",
               alignItems: "center",
               gap: 6,
-              background: "#00C48C",
+              background: "var(--accent-primary)",
               color: "#fff",
               border: "none",
               padding: "9px 16px",
@@ -194,7 +194,7 @@ export default function RulesScreen({ initialTab = "categorization" }) {
                 style={{
                   background: "transparent",
                   border: "none",
-                  color: on ? "#00C48C" : "#5B6570",
+                  color: on ? "var(--accent-primary)" : "var(--text-tertiary)",
                   fontSize: 12,
                   fontWeight: 600,
                   letterSpacing: "0.06em",
@@ -205,7 +205,7 @@ export default function RulesScreen({ initialTab = "categorization" }) {
                 }}
               >
                 {t(`tabs.${tb.key}`)}
-                <span style={{ color: "#5B6570", marginInlineStart: 6, fontWeight: 500 }}>({count})</span>
+                <span style={{ color: "var(--text-tertiary)", marginInlineStart: 6, fontWeight: 500 }}>({count})</span>
               </button>
             );
           })}
@@ -233,9 +233,9 @@ export default function RulesScreen({ initialTab = "categorization" }) {
                       fontWeight: 600,
                       padding: "5px 12px",
                       borderRadius: 14,
-                      background: on ? "rgba(0,196,140,0.10)" : "rgba(255,255,255,0.02)",
+                      background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)",
                       border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
-                      color: on ? "#00C48C" : "#5B6570",
+                      color: on ? "var(--accent-primary)" : "var(--text-tertiary)",
                       cursor: "pointer",
                       textTransform: "capitalize",
                       fontFamily: "inherit",
@@ -249,7 +249,7 @@ export default function RulesScreen({ initialTab = "categorization" }) {
             <div style={{ position: "relative", width: 260 }}>
               <Search
                 size={13}
-                color="#5B6570"
+                color="var(--text-tertiary)"
                 style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}
               />
               <input
@@ -258,11 +258,11 @@ export default function RulesScreen({ initialTab = "categorization" }) {
                 placeholder={t("search_placeholder")}
                 style={{
                   width: "100%",
-                  background: "rgba(255,255,255,0.04)",
+                  background: "var(--bg-surface-sunken)",
                   border: "1px solid rgba(255,255,255,0.10)",
                   borderRadius: 8,
                   padding: "8px 12px 8px 30px",
-                  color: "#E6EDF3",
+                  color: "var(--text-primary)",
                   fontSize: 12,
                   fontFamily: "inherit",
                   outline: "none",
@@ -278,9 +278,9 @@ export default function RulesScreen({ initialTab = "categorization" }) {
         <div
           style={{
             margin: "12px 28px 0",
-            background: "rgba(0,196,140,0.10)",
+            background: "var(--accent-primary-subtle)",
             border: "1px solid rgba(0,196,140,0.30)",
-            color: "#00C48C",
+            color: "var(--accent-primary)",
             padding: "10px 14px",
             borderRadius: 8,
             fontSize: 12,

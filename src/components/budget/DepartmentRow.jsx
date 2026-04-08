@@ -16,12 +16,12 @@ import Avatar from "../taskbox/Avatar";
 import { formatRelativeTime } from "../../utils/relativeTime";
 
 const STATUS_PILL = {
-  under:      { fg: "#00C48C", bg: "rgba(0,196,140,0.10)",  key: "under" },
-  "on-track": { fg: "#00C48C", bg: "rgba(0,196,140,0.10)",  key: "on_track" },
-  over:       { fg: "#D4A84B", bg: "rgba(212,168,75,0.10)", key: "approaching" },
-  critical:   { fg: "#FF5A5F", bg: "rgba(255,90,95,0.10)",  key: "over" },
-  behind:     { fg: "#FF5A5F", bg: "rgba(255,90,95,0.10)",  key: "behind" },
-  ahead:      { fg: "#00C48C", bg: "rgba(0,196,140,0.10)",  key: "ahead" },
+  under:      { fg: "var(--accent-primary)", bg: "var(--accent-primary-subtle)",  key: "under" },
+  "on-track": { fg: "var(--accent-primary)", bg: "var(--accent-primary-subtle)",  key: "on_track" },
+  over:       { fg: "var(--semantic-warning)", bg: "var(--semantic-warning-subtle)", key: "approaching" },
+  critical:   { fg: "var(--semantic-danger)", bg: "var(--semantic-danger-subtle)",  key: "over" },
+  behind:     { fg: "var(--semantic-danger)", bg: "var(--semantic-danger-subtle)",  key: "behind" },
+  ahead:      { fg: "var(--accent-primary)", bg: "var(--accent-primary-subtle)",  key: "ahead" },
 };
 
 const COLS = "minmax(160px, 1.4fr) minmax(140px, 1fr) 130px 130px 130px 130px 180px 110px 18px";
@@ -90,7 +90,7 @@ export default function DepartmentRow({
       <div
         onClick={() => onToggle && onToggle(row)}
         onMouseEnter={(e) => {
-          if (!expanded) e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+          if (!expanded) e.currentTarget.style.background = "var(--bg-surface-sunken)";
         }}
         onMouseLeave={(e) => {
           if (!expanded) e.currentTarget.style.background = "transparent";
@@ -102,17 +102,17 @@ export default function DepartmentRow({
           alignItems: "center",
           padding: "14px 18px",
           cursor: "pointer",
-          background: expanded ? "rgba(255,255,255,0.03)" : "transparent",
+          background: expanded ? "var(--bg-surface-sunken)" : "transparent",
           transition: "background 0.12s ease",
         }}
       >
-        <div style={{ fontSize: 13, color: "#E6EDF3", fontWeight: 500 }}>{row.name}</div>
-        <div style={{ fontSize: 12, color: "#5B6570" }}>{ownerName || "—"}</div>
+        <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>{row.name}</div>
+        <div style={{ fontSize: 12, color: "var(--text-tertiary)" }}>{ownerName || "—"}</div>
         <div
           style={{
             fontFamily: "'DM Mono', monospace",
             fontSize: 13,
-            color: "#E6EDF3",
+            color: "var(--text-primary)",
             textAlign: "end",
             fontVariantNumeric: "tabular-nums",
           }}
@@ -123,7 +123,7 @@ export default function DepartmentRow({
           style={{
             fontFamily: "'DM Mono', monospace",
             fontSize: 12,
-            color: "#5B6570",
+            color: "var(--text-tertiary)",
             textAlign: "end",
             fontVariantNumeric: "tabular-nums",
           }}
@@ -134,7 +134,7 @@ export default function DepartmentRow({
           style={{
             fontFamily: "'DM Mono', monospace",
             fontSize: 13,
-            color: "#E6EDF3",
+            color: "var(--text-primary)",
             textAlign: "end",
             fontVariantNumeric: "tabular-nums",
           }}
@@ -146,8 +146,8 @@ export default function DepartmentRow({
             fontFamily: "'DM Mono', monospace",
             fontSize: 12,
             color: row.category === "revenue"
-              ? (row.varianceAmount < 0 ? "#FF5A5F" : "#00C48C")
-              : (row.varianceAmount > 0 ? "#FF5A5F" : "#00C48C"),
+              ? (row.varianceAmount < 0 ? "var(--semantic-danger)" : "var(--accent-primary)")
+              : (row.varianceAmount > 0 ? "var(--semantic-danger)" : "var(--accent-primary)"),
             textAlign: "end",
             fontVariantNumeric: "tabular-nums",
           }}
@@ -170,7 +170,7 @@ export default function DepartmentRow({
         >
           {t(`row_status.${status.key}`)}
         </span>
-        <span style={{ color: "#5B6570" }}>
+        <span style={{ color: "var(--text-tertiary)" }}>
           {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </span>
       </div>
@@ -178,7 +178,7 @@ export default function DepartmentRow({
       {expanded && (isEdit || isReview) && department && (
         <div
           style={{
-            background: "rgba(255,255,255,0.02)",
+            background: "var(--bg-surface)",
             borderTop: "1px solid rgba(255,255,255,0.04)",
             padding: "14px 24px 16px 36px",
           }}
@@ -202,10 +202,10 @@ export default function DepartmentRow({
                 padding: "10px 14px",
                 marginBottom: 12,
                 fontSize: 12,
-                color: "#8B98A5",
+                color: "var(--text-secondary)",
               }}
             >
-              {t("dept_row.review_submitted")} <span style={{ color: "#E6EDF3", fontWeight: 500 }}>{ownerName}</span>
+              {t("dept_row.review_submitted")} <span style={{ color: "var(--text-primary)", fontWeight: 500 }}>{ownerName}</span>
               {department.submittedAt && (
                 <> · {formatRelativeTime(department.submittedAt)}</>
               )}
@@ -225,7 +225,7 @@ export default function DepartmentRow({
                   padding: "8px 10px",
                   borderRadius: 4,
                   background:
-                    flashLineId === l.id ? "rgba(0,196,140,0.10)" : "transparent",
+                    flashLineId === l.id ? "var(--accent-primary-subtle)" : "transparent",
                   transition: "background 0.4s ease",
                 }}
               >
@@ -233,12 +233,12 @@ export default function DepartmentRow({
                   style={{
                     fontFamily: "'DM Mono', monospace",
                     fontSize: 11,
-                    color: "#5B6570",
+                    color: "var(--text-tertiary)",
                   }}
                 >
                   {l.glAccountCode}
                 </span>
-                <span style={{ fontSize: 13, color: "#E6EDF3" }}>{l.glAccountName}</span>
+                <span style={{ fontSize: 13, color: "var(--text-primary)" }}>{l.glAccountName}</span>
                 {isEdit ? (
                   <input
                     type="number"
@@ -251,11 +251,11 @@ export default function DepartmentRow({
                       if (e.key === "Enter") e.currentTarget.blur();
                     }}
                     style={{
-                      background: "rgba(255,255,255,0.04)",
+                      background: "var(--bg-surface-sunken)",
                       border: "1px solid rgba(255,255,255,0.10)",
                       borderRadius: 5,
                       padding: "6px 10px",
-                      color: "#E6EDF3",
+                      color: "var(--text-primary)",
                       fontSize: 13,
                       fontFamily: "'DM Mono', monospace",
                       textAlign: "end",
@@ -268,7 +268,7 @@ export default function DepartmentRow({
                     style={{
                       fontFamily: "'DM Mono', monospace",
                       fontSize: 13,
-                      color: "#E6EDF3",
+                      color: "var(--text-primary)",
                       textAlign: "end",
                       fontVariantNumeric: "tabular-nums",
                     }}
@@ -298,11 +298,11 @@ export default function DepartmentRow({
                 placeholder={t("dept_row.note_placeholder")}
                 style={{
                   flex: 1,
-                  background: "rgba(255,255,255,0.04)",
+                  background: "var(--bg-surface-sunken)",
                   border: "1px solid rgba(255,255,255,0.10)",
                   borderRadius: 6,
                   padding: "8px 12px",
-                  color: "#E6EDF3",
+                  color: "var(--text-primary)",
                   fontSize: 12,
                   fontFamily: "inherit",
                   outline: "none",
@@ -314,7 +314,7 @@ export default function DepartmentRow({
                   setSubmitModalOpen(true);
                 }}
                 style={{
-                  background: "#00C48C",
+                  background: "var(--accent-primary)",
                   color: "#fff",
                   border: "none",
                   padding: "8px 16px",
@@ -340,7 +340,7 @@ export default function DepartmentRow({
                 paddingTop: 12,
                 borderTop: "1px solid rgba(255,255,255,0.06)",
                 fontSize: 12,
-                color: "#5B6570",
+                color: "var(--text-tertiary)",
                 fontStyle: "italic",
               }}
             >
@@ -365,7 +365,7 @@ export default function DepartmentRow({
                   handleApproveDept();
                 }}
                 style={{
-                  background: "#00C48C",
+                  background: "var(--accent-primary)",
                   color: "#fff",
                   border: "none",
                   padding: "8px 16px",
@@ -385,7 +385,7 @@ export default function DepartmentRow({
                 }}
                 style={{
                   background: "transparent",
-                  color: "#D4A84B",
+                  color: "var(--semantic-warning)",
                   border: "1px solid rgba(212,168,75,0.30)",
                   padding: "8px 14px",
                   borderRadius: 6,
@@ -416,7 +416,7 @@ export default function DepartmentRow({
                   fontSize: 10,
                   fontWeight: 600,
                   letterSpacing: "0.15em",
-                  color: "#D4A84B",
+                  color: "var(--semantic-warning)",
                   marginBottom: 8,
                 }}
               >
@@ -429,11 +429,11 @@ export default function DepartmentRow({
                 placeholder={t("dept_row.revision_placeholder")}
                 style={{
                   width: "100%",
-                  background: "rgba(255,255,255,0.04)",
+                  background: "var(--bg-surface-sunken)",
                   border: "1px solid rgba(255,255,255,0.10)",
                   borderRadius: 6,
                   padding: "8px 10px",
-                  color: "#E6EDF3",
+                  color: "var(--text-primary)",
                   fontSize: 12,
                   fontFamily: "inherit",
                   outline: "none",
@@ -449,7 +449,7 @@ export default function DepartmentRow({
                   }}
                   style={{
                     background: "transparent",
-                    color: "#8B98A5",
+                    color: "var(--text-secondary)",
                     border: "1px solid rgba(255,255,255,0.15)",
                     padding: "7px 14px",
                     borderRadius: 6,
@@ -464,7 +464,7 @@ export default function DepartmentRow({
                   onClick={handleRequestRevisions}
                   disabled={!revisionText.trim()}
                   style={{
-                    background: revisionText.trim() ? "#D4A84B" : "rgba(212,168,75,0.25)",
+                    background: revisionText.trim() ? "var(--semantic-warning)" : "rgba(212,168,75,0.25)",
                     color: "#fff",
                     border: "none",
                     padding: "7px 14px",
@@ -500,13 +500,13 @@ export default function DepartmentRow({
       {expanded && !isEdit && !isReview && (
         <div
           style={{
-            background: "rgba(255,255,255,0.02)",
+            background: "var(--bg-surface)",
             borderTop: "1px solid rgba(255,255,255,0.04)",
             padding: "8px 0 14px",
           }}
         >
           {!lines ? (
-            <div style={{ padding: "10px 32px", color: "#5B6570", fontSize: 12 }}>{t("dept_row.loading")}</div>
+            <div style={{ padding: "10px 32px", color: "var(--text-tertiary)", fontSize: 12 }}>{t("dept_row.loading")}</div>
           ) : (
             lines.map((l) => {
               const s = STATUS_PILL[l.status] || STATUS_PILL["on-track"];
@@ -522,8 +522,8 @@ export default function DepartmentRow({
                     fontSize: 12,
                   }}
                 >
-                  <div style={{ color: "#8B98A5" }}>
-                    <span style={{ fontFamily: "'DM Mono', monospace", color: "#5B6570", marginInlineEnd: 8 }}>
+                  <div style={{ color: "var(--text-secondary)" }}>
+                    <span style={{ fontFamily: "'DM Mono', monospace", color: "var(--text-tertiary)", marginInlineEnd: 8 }}>
                       {l.glAccountCode}
                     </span>
                     {l.glAccountName}
@@ -532,7 +532,7 @@ export default function DepartmentRow({
                   <div
                     style={{
                       fontFamily: "'DM Mono', monospace",
-                      color: "#8B98A5",
+                      color: "var(--text-secondary)",
                       textAlign: "end",
                       fontVariantNumeric: "tabular-nums",
                     }}
@@ -542,7 +542,7 @@ export default function DepartmentRow({
                   <div
                     style={{
                       fontFamily: "'DM Mono', monospace",
-                      color: "#5B6570",
+                      color: "var(--text-tertiary)",
                       textAlign: "end",
                       fontVariantNumeric: "tabular-nums",
                     }}
@@ -552,7 +552,7 @@ export default function DepartmentRow({
                   <div
                     style={{
                       fontFamily: "'DM Mono', monospace",
-                      color: "#8B98A5",
+                      color: "var(--text-secondary)",
                       textAlign: "end",
                       fontVariantNumeric: "tabular-nums",
                     }}
@@ -562,7 +562,7 @@ export default function DepartmentRow({
                   <div
                     style={{
                       fontFamily: "'DM Mono', monospace",
-                      color: l.varianceAmount > 0 ? "#FF5A5F" : "#00C48C",
+                      color: l.varianceAmount > 0 ? "var(--semantic-danger)" : "var(--accent-primary)",
                       textAlign: "end",
                       fontVariantNumeric: "tabular-nums",
                     }}

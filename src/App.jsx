@@ -8,6 +8,7 @@ import { NavContext } from "./components/shared/NavContext";
 import { TenantProvider, useTenant } from "./components/shared/TenantContext";
 import "./i18n";
 import { LanguageProvider } from "./i18n/LanguageContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 
 function AppInner() {
   const [role, setRole] = useState("Owner");
@@ -39,7 +40,9 @@ export default function App() {
   return (
     <TenantProvider>
       <LanguageProvider>
-        <AppInner />
+        <ThemeProvider>
+          <AppInner />
+        </ThemeProvider>
       </LanguageProvider>
     </TenantProvider>
   );

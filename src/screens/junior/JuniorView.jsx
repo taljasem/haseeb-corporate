@@ -30,7 +30,7 @@ function Placeholder({ label, sub }) {
         style={{
           maxWidth: 480,
           padding: "32px 36px",
-          background: "rgba(255,255,255,0.02)",
+          background: "var(--bg-surface)",
           border: "1px solid rgba(255,255,255,0.10)",
           borderRadius: 10,
           textAlign: "center",
@@ -40,18 +40,18 @@ function Placeholder({ label, sub }) {
           style={{
             fontFamily: "'Bebas Neue', sans-serif",
             fontSize: 28,
-            color: "#E6EDF3",
+            color: "var(--text-primary)",
             letterSpacing: "-0.3px",
             marginBottom: 8,
           }}
         >
           {label}
         </div>
-        <div style={{ fontSize: 13, color: "#8B98A5", marginBottom: 10 }}>
+        <div style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 10 }}>
           {t("placeholder.coming_next")}
         </div>
         {sub && (
-          <div style={{ fontSize: 12, color: "#5B6570", fontStyle: "italic", lineHeight: 1.55 }}>
+          <div style={{ fontSize: 12, color: "var(--text-tertiary)", fontStyle: "italic", lineHeight: 1.55 }}>
             {sub}
           </div>
         )}

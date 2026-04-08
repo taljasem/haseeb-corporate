@@ -71,7 +71,7 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
           transform: "translate(-50%, -50%)",
           width: 600, maxWidth: "calc(100vw - 32px)",
           maxHeight: "calc(100vh - 80px)",
-          background: "#0C0E12",
+          background: "var(--bg-surface-raised)",
           border: "1px solid rgba(255,255,255,0.10)",
           borderRadius: 12, zIndex: 301,
           display: "flex", flexDirection: "column",
@@ -85,19 +85,19 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
           }}
         >
           <div>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570" }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>
               {t("delegate_modal.label")}
             </div>
             <div
               style={{
                 fontFamily: "'Bebas Neue', sans-serif",
-                fontSize: 22, color: "#E6EDF3", letterSpacing: "-0.2px", marginTop: 2,
+                fontSize: 22, color: "var(--text-primary)", letterSpacing: "-0.2px", marginTop: 2,
               }}
             >
               {t("delegate_modal.title")}
             </div>
             {budget && (
-              <div style={{ fontSize: 11, color: "#5B6570", marginTop: 4 }}>
+              <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 4 }}>
                 {t("delegate_modal.sub", { period: budget.period.label, count: expenseDepts.length })}
               </div>
             )}
@@ -105,7 +105,7 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
           <button
             onClick={onClose}
             aria-label={t("delegate_modal.close")}
-            style={{ background: "transparent", border: "none", color: "#5B6570", cursor: "pointer", padding: 4 }}
+            style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}
           >
             <X size={18} />
           </button>
@@ -119,7 +119,7 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
                 key={d.id}
                 style={{
                   padding: "12px 14px",
-                  background: "rgba(255,255,255,0.02)",
+                  background: "var(--bg-surface)",
                   border: "1px solid rgba(255,255,255,0.08)",
                   borderRadius: 8,
                   marginBottom: 8,
@@ -127,11 +127,11 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, color: "#E6EDF3", fontWeight: 500 }}>{d.name}</div>
+                    <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>{d.name}</div>
                     <div
                       style={{
                         fontSize: 11,
-                        color: "#5B6570",
+                        color: "var(--text-tertiary)",
                         fontFamily: "'DM Mono', monospace",
                         marginTop: 2,
                       }}
@@ -143,11 +143,11 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
                     value={assignments[d.id] || ""}
                     onChange={(e) => setAssignments({ ...assignments, [d.id]: e.target.value })}
                     style={{
-                      background: "rgba(255,255,255,0.04)",
+                      background: "var(--bg-surface-sunken)",
                       border: "1px solid rgba(255,255,255,0.10)",
                       borderRadius: 6,
                       padding: "8px 10px",
-                      color: "#E6EDF3",
+                      color: "var(--text-primary)",
                       fontSize: 12,
                       fontFamily: "inherit",
                       minWidth: 160,
@@ -167,7 +167,7 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
                   style={{
                     background: "transparent",
                     border: "none",
-                    color: "#00C48C",
+                    color: "var(--accent-primary)",
                     fontSize: 11,
                     cursor: "pointer",
                     padding: "6px 0 0",
@@ -187,11 +187,11 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
                     style={{
                       width: "100%",
                       marginTop: 6,
-                      background: "rgba(255,255,255,0.04)",
+                      background: "var(--bg-surface-sunken)",
                       border: "1px solid rgba(255,255,255,0.10)",
                       borderRadius: 6,
                       padding: "8px 10px",
-                      color: "#E6EDF3",
+                      color: "var(--text-primary)",
                       fontSize: 12,
                       fontFamily: "inherit",
                       outline: "none",
@@ -213,7 +213,7 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
           <div
             style={{
               fontSize: 10,
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               marginBottom: 10,
               fontStyle: "italic",
             }}
@@ -225,7 +225,7 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
               onClick={onClose}
               style={{
                 background: "transparent",
-                color: "#8B98A5",
+                color: "var(--text-secondary)",
                 border: "1px solid rgba(255,255,255,0.15)",
                 padding: "9px 16px",
                 borderRadius: 6,
@@ -240,7 +240,7 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
               onClick={handleSend}
               disabled={!canSend || sending}
               style={{
-                background: canSend ? "#00C48C" : "rgba(0,196,140,0.25)",
+                background: canSend ? "var(--accent-primary)" : "rgba(0,196,140,0.25)",
                 color: "#fff",
                 border: "none",
                 padding: "9px 18px",

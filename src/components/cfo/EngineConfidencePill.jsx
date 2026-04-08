@@ -1,10 +1,10 @@
 import { useTranslation } from "react-i18next";
 
 const STYLES = {
-  RULE:    { bg: "#00C48C",            fg: "#05070A", border: "transparent",            key: "rule"    },
-  PATTERN: { bg: "#3B82F6",            fg: "#FFFFFF", border: "transparent",            key: "pattern" },
-  AI:      { bg: "rgba(212,168,75,0.18)", fg: "#D4A84B", border: "rgba(212,168,75,0.4)", key: "ai" },
-  NONE:    { bg: "transparent",        fg: "#FF5A5F", border: "rgba(255,90,95,0.5)",    key: "none" },
+  RULE:    { bg: "var(--accent-primary)",            fg: "var(--bg-base)", border: "transparent",            key: "rule"    },
+  PATTERN: { bg: "var(--semantic-info)",            fg: "#FFFFFF", border: "transparent",            key: "pattern" },
+  AI:      { bg: "rgba(212,168,75,0.18)", fg: "var(--semantic-warning)", border: "rgba(212,168,75,0.4)", key: "ai" },
+  NONE:    { bg: "transparent",        fg: "var(--semantic-danger)", border: "rgba(255,90,95,0.5)",    key: "none" },
 };
 
 export default function EngineConfidencePill({ confidence }) {

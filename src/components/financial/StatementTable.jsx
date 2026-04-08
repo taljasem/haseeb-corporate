@@ -23,22 +23,22 @@ function fmtPct(p) {
   return (p > 0 ? "+" : "") + p.toFixed(1) + "%";
 }
 function changeColor(n) {
-  if (!n) return "#8B98A5";
-  return n > 0 ? "#00C48C" : "#FF5A5F";
+  if (!n) return "var(--text-secondary)";
+  return n > 0 ? "var(--accent-primary)" : "var(--semantic-danger)";
 }
 
 const HL_BG = {
-  teal:  "rgba(0,196,140,0.06)",
+  teal:  "var(--bg-selected)",
   amber: "rgba(212,168,75,0.06)",
   red:   "rgba(255,90,95,0.06)",
 };
 const HL_FG = {
-  teal:  "#00C48C",
-  amber: "#D4A84B",
-  red:   "#FF5A5F",
+  teal:  "var(--accent-primary)",
+  amber: "var(--semantic-warning)",
+  red:   "var(--semantic-danger)",
 };
 
-function Cell({ children, align = "right", color = "#E6EDF3", size = 13, mono = true, weight = 400 }) {
+function Cell({ children, align = "right", color = "var(--text-primary)", size = 13, mono = true, weight = 400 }) {
   return (
     <div
       style={{
@@ -57,7 +57,7 @@ function Cell({ children, align = "right", color = "#E6EDF3", size = 13, mono = 
 
 function Row({ cols, label, current, prior, change, percent, indent = 0, bold = false, size = 13, hl = null, border = true, final = false }) {
   const bg = hl ? HL_BG[hl] : "transparent";
-  const labelColor = hl ? HL_FG[hl] : bold ? "#E6EDF3" : "#8B98A5";
+  const labelColor = hl ? HL_FG[hl] : bold ? "var(--text-primary)" : "var(--text-secondary)";
   return (
     <div
       style={{
@@ -83,13 +83,13 @@ function Row({ cols, label, current, prior, change, percent, indent = 0, bold = 
         {label}
       </div>
       <Cell
-        color={hl ? HL_FG[hl] : "#E6EDF3"}
+        color={hl ? HL_FG[hl] : "var(--text-primary)"}
         weight={bold || hl || final ? 500 : 400}
         size={final ? 15 : 13}
       >
         {fmtN(current)}
       </Cell>
-      <Cell color="#5B6570">{fmtN(prior)}</Cell>
+      <Cell color="var(--text-tertiary)">{fmtN(prior)}</Cell>
       <Cell color={changeColor(change)}>{fmtChange(change)}</Cell>
       <Cell color={changeColor(change)} size={12}>{fmtPct(percent)}</Cell>
     </div>
@@ -102,7 +102,7 @@ export default function StatementTable({ sections = [] }) {
   return (
     <div
       style={{
-        background: "rgba(255,255,255,0.02)",
+        background: "var(--bg-surface)",
         border: "1px solid rgba(255,255,255,0.08)",
         borderRadius: 10,
         overflow: "hidden",
@@ -115,12 +115,12 @@ export default function StatementTable({ sections = [] }) {
           gridTemplateColumns: cols,
           gap: 12,
           padding: "12px 18px",
-          background: "rgba(255,255,255,0.03)",
+          background: "var(--bg-surface-sunken)",
           borderBottom: "1px solid rgba(255,255,255,0.10)",
           fontSize: 9,
           fontWeight: 600,
           letterSpacing: "0.15em",
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
         }}
       >
         <div>{t("table.col_account")}</div>
@@ -158,8 +158,8 @@ export default function StatementTable({ sections = [] }) {
                 fontSize: 10,
                 fontWeight: 700,
                 letterSpacing: "0.18em",
-                color: "#E6EDF3",
-                background: "rgba(255,255,255,0.02)",
+                color: "var(--text-primary)",
+                background: "var(--bg-surface)",
                 borderTop: si > 0 ? "1px solid rgba(255,255,255,0.08)" : "none",
               }}
             >
@@ -177,7 +177,7 @@ export default function StatementTable({ sections = [] }) {
               fontSize: 10,
               fontWeight: 600,
               letterSpacing: "0.15em",
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               borderTop: si > 0 ? "1px solid rgba(255,255,255,0.04)" : "none",
             }}
           >

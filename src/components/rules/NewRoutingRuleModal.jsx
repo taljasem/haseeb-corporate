@@ -12,11 +12,11 @@ import TaskTypePill from "../taskbox/TaskTypePill";
 
 const inputStyle = {
   width: "100%",
-  background: "rgba(255,255,255,0.04)",
+  background: "var(--bg-surface-sunken)",
   border: "1px solid rgba(255,255,255,0.10)",
   borderRadius: 8,
   padding: "10px 12px",
-  color: "#E6EDF3",
+  color: "var(--text-primary)",
   fontSize: 13,
   fontFamily: "inherit",
   outline: "none",
@@ -30,8 +30,8 @@ function FieldDot({ filled }) {
         width: 8,
         height: 8,
         borderRadius: "50%",
-        background: filled ? "#00C48C" : "transparent",
-        border: `1px solid ${filled ? "#00C48C" : "rgba(255,255,255,0.20)"}`,
+        background: filled ? "var(--accent-primary)" : "transparent",
+        border: `1px solid ${filled ? "var(--accent-primary)" : "var(--border-strong)"}`,
         marginInlineEnd: 8,
         flexShrink: 0,
       }}
@@ -47,7 +47,7 @@ function FieldLabel({ filled, children }) {
         fontSize: 10,
         fontWeight: 600,
         letterSpacing: "0.15em",
-        color: "#5B6570",
+        color: "var(--text-tertiary)",
         marginBottom: 6,
       }}
     >
@@ -153,7 +153,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
           width: 560,
           maxWidth: "calc(100vw - 32px)",
           maxHeight: "calc(100vh - 80px)",
-          background: "#0C0E12",
+          background: "var(--bg-surface-raised)",
           border: "1px solid rgba(255,255,255,0.10)",
           borderRadius: 12,
           zIndex: 301,
@@ -172,14 +172,14 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
           }}
         >
           <div>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570" }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>
               {editingRule ? t("route_modal.edit_label") : t("route_modal.new_label")}
             </div>
             <div
               style={{
                 fontFamily: "'Bebas Neue', sans-serif",
                 fontSize: 22,
-                color: "#E6EDF3",
+                color: "var(--text-primary)",
                 letterSpacing: "-0.2px",
                 marginTop: 2,
               }}
@@ -190,7 +190,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
           <button
             onClick={onClose}
             aria-label={t("route_modal.close")}
-            style={{ background: "transparent", border: "none", color: "#5B6570", cursor: "pointer", padding: 4 }}
+            style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}
           >
             <X size={18} />
           </button>
@@ -215,9 +215,9 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
                 style={{
                   padding: "6px 12px",
                   borderRadius: 14,
-                  background: selectedTypes.includes("all") ? "rgba(0,196,140,0.10)" : "rgba(255,255,255,0.02)",
+                  background: selectedTypes.includes("all") ? "var(--accent-primary-subtle)" : "var(--bg-surface)",
                   border: selectedTypes.includes("all") ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
-                  color: selectedTypes.includes("all") ? "#00C48C" : "#8B98A5",
+                  color: selectedTypes.includes("all") ? "var(--accent-primary)" : "var(--text-secondary)",
                   fontSize: 11,
                   fontWeight: 600,
                   cursor: "pointer",
@@ -253,7 +253,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
             <summary
               style={{
                 fontSize: 11,
-                color: "#00C48C",
+                color: "var(--accent-primary)",
                 cursor: "pointer",
                 padding: "8px 0",
                 listStyle: "none",
@@ -293,7 +293,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
                       alignItems: "center",
                       gap: 10,
                       padding: "8px 10px",
-                      background: on ? "rgba(0,196,140,0.08)" : "rgba(255,255,255,0.02)",
+                      background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)",
                       border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
                       borderRadius: 8,
                       cursor: "pointer",
@@ -303,8 +303,8 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
                   >
                     <Avatar person={r} size={24} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12, color: "#E6EDF3" }}>{r.name}</div>
-                      <div style={{ fontSize: 10, color: "#5B6570" }}>{r.role}</div>
+                      <div style={{ fontSize: 12, color: "var(--text-primary)" }}>{r.name}</div>
+                      <div style={{ fontSize: 10, color: "var(--text-tertiary)" }}>{r.role}</div>
                     </div>
                   </button>
                 );
@@ -324,9 +324,9 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
                     style={{
                       flex: 1,
                       padding: "8px 10px",
-                      background: on ? "rgba(0,196,140,0.08)" : "transparent",
+                      background: on ? "var(--accent-primary-subtle)" : "transparent",
                       border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
-                      color: on ? "#00C48C" : "#8B98A5",
+                      color: on ? "var(--accent-primary)" : "var(--text-secondary)",
                       fontSize: 11,
                       fontWeight: 600,
                       letterSpacing: "0.06em",
@@ -357,7 +357,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
             onClick={onClose}
             style={{
               background: "transparent",
-              color: "#8B98A5",
+              color: "var(--text-secondary)",
               border: "1px solid rgba(255,255,255,0.15)",
               padding: "9px 16px",
               borderRadius: 6,
@@ -372,7 +372,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
             onClick={handleCreate}
             disabled={!canCreate || sending}
             style={{
-              background: canCreate ? "#00C48C" : "rgba(0,196,140,0.25)",
+              background: canCreate ? "var(--accent-primary)" : "rgba(0,196,140,0.25)",
               color: "#fff",
               border: "none",
               padding: "9px 18px",

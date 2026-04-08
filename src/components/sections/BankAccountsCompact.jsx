@@ -18,7 +18,7 @@ export default function BankAccountsCompact({ onViewAll, onAccountClick }) {
           <div
             key={a.id}
             onClick={() => onAccountClick && onAccountClick(a)}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-surface-sunken)")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             style={{
               display: "flex",
@@ -45,7 +45,7 @@ export default function BankAccountsCompact({ onViewAll, onAccountClick }) {
               <div
                 style={{
                   fontSize: 13,
-                  color: "#E6EDF3",
+                  color: "var(--text-primary)",
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -56,7 +56,7 @@ export default function BankAccountsCompact({ onViewAll, onAccountClick }) {
               <div
                 style={{
                   fontSize: 10,
-                  color: "#5B6570",
+                  color: "var(--text-tertiary)",
                   fontFamily: "'DM Mono', monospace",
                   marginTop: 2,
                 }}
@@ -68,7 +68,7 @@ export default function BankAccountsCompact({ onViewAll, onAccountClick }) {
               style={{
                 fontFamily: "'DM Mono', monospace",
                 fontSize: 13,
-                color: "#E6EDF3",
+                color: "var(--text-primary)",
                 fontWeight: 500,
                 fontVariantNumeric: "tabular-nums",
               }}
@@ -83,7 +83,7 @@ export default function BankAccountsCompact({ onViewAll, onAccountClick }) {
           onClick={onViewAll}
           style={{
             fontSize: 12,
-            color: "#00C48C",
+            color: "var(--accent-primary)",
             cursor: "pointer",
             letterSpacing: "0.04em",
           }}

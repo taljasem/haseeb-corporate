@@ -51,7 +51,7 @@ export default function IntelligenceStream() {
             console.log("[owner] task click — full taskbox coming in owner view restructure");
           }}
           wrapperStyle={{
-            background: "rgba(255,255,255,0.02)",
+            background: "var(--bg-surface)",
             border: "1px solid rgba(255,255,255,0.06)",
             borderRadius: 8,
             padding: "16px 18px",

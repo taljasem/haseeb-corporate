@@ -17,7 +17,7 @@ function SectionCard({ label, extra, aminah = true, children }) {
   return (
     <div
       style={{
-        background: "rgba(255,255,255,0.02)",
+        background: "var(--bg-surface)",
         border: "1px solid rgba(255,255,255,0.06)",
         borderRadius: 10,
         padding: "18px 20px",
@@ -34,7 +34,7 @@ function QueueRow({ count, label, onClick }) {
   return (
     <button
       onClick={onClick}
-      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-surface-sunken)")}
       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
       style={{
         display: "flex",
@@ -56,7 +56,7 @@ function QueueRow({ count, label, onClick }) {
         style={{
           fontFamily: "'DM Mono', monospace",
           fontSize: 18,
-          color: "#E6EDF3",
+          color: "var(--text-primary)",
           fontWeight: 500,
           minWidth: 32,
           textAlign: "end",
@@ -64,8 +64,8 @@ function QueueRow({ count, label, onClick }) {
       >
         {count}
       </span>
-      <span style={{ flex: 1, fontSize: 13, color: "#8B98A5" }}>{label}</span>
-      <span style={{ color: "#5B6570", fontSize: 14 }}><DirArrow /></span>
+      <span style={{ flex: 1, fontSize: 13, color: "var(--text-secondary)" }}>{label}</span>
+      <span style={{ color: "var(--text-tertiary)", fontSize: 14 }}><DirArrow /></span>
     </button>
   );
 }
@@ -77,7 +77,7 @@ function renderHighlighted(text) {
       const inner = p.slice(1, -1);
       const isPos = /^\+|%$|(\d+\s+open|\d+\s+due|\d+\s+transactions|\d+%)/.test(inner) && !/over|due today/i.test(inner);
       const isNeg = /over|overdue|due today/i.test(inner);
-      const color = isNeg ? "#FF5A5F" : isPos ? "#E6EDF3" : "#E6EDF3";
+      const color = isNeg ? "var(--semantic-danger)" : isPos ? "var(--text-primary)" : "var(--text-primary)";
       return (
         <span
           key={i}
@@ -129,9 +129,9 @@ export default function JuniorTodayScreen({ setActiveScreen, onOpenTask }) {
         >
           <div style={{ marginInline: -10 }}>
             {myTasks === null ? (
-              <div style={{ padding: 16, color: "#5B6570", fontSize: 12 }}>{t("loading")}</div>
+              <div style={{ padding: 16, color: "var(--text-tertiary)", fontSize: 12 }}>{t("loading")}</div>
             ) : myTasks.length === 0 ? (
-              <div style={{ padding: 16, color: "#5B6570", fontSize: 12 }}>{t("inbox_zero")}</div>
+              <div style={{ padding: 16, color: "var(--text-tertiary)", fontSize: 12 }}>{t("inbox_zero")}</div>
             ) : (
               myTasks.map((t) => (
                 <TaskRow key={t.id} task={t} compact onClick={(x) => onOpenTask && onOpenTask(x.id)} />
@@ -141,7 +141,7 @@ export default function JuniorTodayScreen({ setActiveScreen, onOpenTask }) {
           <div style={{ marginTop: 10 }}>
             <a
               onClick={() => setActiveScreen("taskbox")}
-              style={{ fontSize: 12, color: "#00C48C", cursor: "pointer" }}
+              style={{ fontSize: 12, color: "var(--accent-primary)", cursor: "pointer" }}
             >
               {t("view_all")}
             </a>
@@ -194,7 +194,7 @@ export default function JuniorTodayScreen({ setActiveScreen, onOpenTask }) {
                   key={r.id}
                   style={{
                     fontSize: 13,
-                    color: "#8B98A5",
+                    color: "var(--text-secondary)",
                     lineHeight: 1.5,
                     paddingInlineStart: 14,
                     position: "relative",
@@ -208,7 +208,7 @@ export default function JuniorTodayScreen({ setActiveScreen, onOpenTask }) {
                       width: 5,
                       height: 5,
                       borderRadius: "50%",
-                      background: "#00C48C",
+                      background: "var(--accent-primary)",
                     }}
                   />
                   {r.name}
@@ -219,7 +219,7 @@ export default function JuniorTodayScreen({ setActiveScreen, onOpenTask }) {
           <div style={{ marginTop: 12 }}>
             <a
               onClick={() => setActiveScreen("responsibilities")}
-              style={{ fontSize: 12, color: "#00C48C", cursor: "pointer" }}
+              style={{ fontSize: 12, color: "var(--accent-primary)", cursor: "pointer" }}
             >
               {t("view_full")}
             </a>
@@ -240,20 +240,20 @@ export default function JuniorTodayScreen({ setActiveScreen, onOpenTask }) {
                     padding: "10px 0",
                     borderBottom: "1px solid rgba(255,255,255,0.04)",
                     fontSize: 13,
-                    color: "#8B98A5",
+                    color: "var(--text-secondary)",
                   }}
                 >
                   {a.type === "completed" ? (
-                    <Check size={14} color="#00C48C" strokeWidth={2.4} />
+                    <Check size={14} color="var(--accent-primary)" strokeWidth={2.4} />
                   ) : (
-                    <Edit3 size={14} color="#D4A84B" strokeWidth={2.4} />
+                    <Edit3 size={14} color="var(--semantic-warning)" strokeWidth={2.4} />
                   )}
                   <span style={{ flex: 1 }}>{a.description}</span>
                   <span
                     style={{
                       fontFamily: "'DM Mono', monospace",
                       fontSize: 11,
-                      color: "#5B6570",
+                      color: "var(--text-tertiary)",
                     }}
                   >
                     {formatRelativeTime(a.timestamp)}
@@ -272,7 +272,7 @@ export default function JuniorTodayScreen({ setActiveScreen, onOpenTask }) {
                 key={n.id}
                 style={{
                   fontSize: 13,
-                  color: "#8B98A5",
+                  color: "var(--text-secondary)",
                   lineHeight: 1.8,
                   paddingBottom: 8,
                   marginBottom: 8,

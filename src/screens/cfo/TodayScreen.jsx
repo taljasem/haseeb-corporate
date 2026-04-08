@@ -21,7 +21,7 @@ function renderHighlighted(text) {
       const inner = part.slice(1, -1);
       const isPos = /^\+/.test(inner) && !/over/i.test(inner);
       const isNeg = /over|overdue/i.test(inner) || (/^\+/.test(inner) && /over/i.test(inner));
-      const color = isPos ? "#00C48C" : isNeg ? "#FF5A5F" : "#E6EDF3";
+      const color = isPos ? "var(--accent-primary)" : isNeg ? "var(--semantic-danger)" : "var(--text-primary)";
       const isNum = /KWD/.test(inner);
       return (
         <span
@@ -46,7 +46,7 @@ function QueueRow({ count, label, onClick, itemId }) {
     <div
       onClick={onClick}
       onMouseEnter={(e) => {
-        e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+        e.currentTarget.style.background = "var(--bg-surface-sunken)";
         setHover(true);
       }}
       onMouseLeave={(e) => {
@@ -73,7 +73,7 @@ function QueueRow({ count, label, onClick, itemId }) {
         style={{
           fontFamily: "'DM Mono', monospace",
           fontSize: 18,
-          color: "#E6EDF3",
+          color: "var(--text-primary)",
           fontWeight: 500,
           minWidth: 32,
           textAlign: "end",
@@ -81,7 +81,7 @@ function QueueRow({ count, label, onClick, itemId }) {
       >
         {count}
       </span>
-      <span style={{ flex: 1, fontSize: 13, color: "#8B98A5" }}>{label}</span>
+      <span style={{ flex: 1, fontSize: 13, color: "var(--text-secondary)" }}>{label}</span>
       <span
         style={{
           opacity: hover ? 1 : 0,
@@ -92,7 +92,7 @@ function QueueRow({ count, label, onClick, itemId }) {
       >
         <AssignToButton itemType="review-queue" itemId={itemId} compact onAssign={() => {}} />
       </span>
-      <span style={{ color: "#5B6570", fontSize: 14 }}><DirArrow /></span>
+      <span style={{ color: "var(--text-tertiary)", fontSize: 14 }}><DirArrow /></span>
     </div>
   );
 }
@@ -104,9 +104,9 @@ function Avatar({ initials }) {
         width: 28,
         height: 28,
         borderRadius: "50%",
-        background: "rgba(0,196,140,0.10)",
+        background: "var(--accent-primary-subtle)",
         border: "1px solid rgba(0,196,140,0.30)",
-        color: "#00C48C",
+        color: "var(--accent-primary)",
         fontSize: 11,
         fontWeight: 600,
         display: "inline-flex",
@@ -221,7 +221,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
             <div style={{ marginTop: 10 }}>
               <a
                 onClick={() => setActiveScreen("rules")}
-                style={{ fontSize: 12, color: "#00C48C", cursor: "pointer" }}
+                style={{ fontSize: 12, color: "var(--accent-primary)", cursor: "pointer" }}
               >
                 {t("suggestions.view_all")}
               </a>
@@ -239,7 +239,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                     fontFamily: "'DM Mono', monospace",
                     fontSize: 22,
                     fontWeight: 500,
-                    color: "#E6EDF3",
+                    color: "var(--text-primary)",
                     fontVariantNumeric: "tabular-nums",
                   }}
                 >
@@ -248,7 +248,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                 <span
                   style={{
                     fontSize: 10,
-                    color: "#5B6570",
+                    color: "var(--text-tertiary)",
                     letterSpacing: "0.12em",
                     fontWeight: 600,
                   }}
@@ -270,7 +270,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                   style={{
                     width: `${close.percentComplete}%`,
                     height: "100%",
-                    background: "#00C48C",
+                    background: "var(--accent-primary)",
                   }}
                 />
               </div>
@@ -285,7 +285,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                       padding: "8px 0",
                       borderBottom: i < close.nextTasks.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
                       fontSize: 13,
-                      color: "#8B98A5",
+                      color: "var(--text-secondary)",
                     }}
                   >
                     <span
@@ -333,7 +333,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                 key={n.id}
                 style={{
                   fontSize: 13,
-                  color: "#8B98A5",
+                  color: "var(--text-secondary)",
                   lineHeight: 1.8,
                   paddingBottom: 8,
                   marginBottom: 8,
@@ -362,15 +362,15 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                 >
                   <Avatar initials={t.initials} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, color: "#E6EDF3" }}>
+                    <div style={{ fontSize: 13, color: "var(--text-primary)" }}>
                       <span style={{ fontWeight: 500 }}>{t.name}</span>{" "}
-                      <span style={{ color: "#8B98A5" }}>· {t.action}</span>
+                      <span style={{ color: "var(--text-secondary)" }}>· {t.action}</span>
                     </div>
-                    <div style={{ fontSize: 11, color: "#5B6570", marginTop: 2 }}>
+                    <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>
                       {t.detail}
                     </div>
                   </div>
-                  <span style={{ fontSize: 11, color: "#5B6570" }}>{t.timeAgo}</span>
+                  <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{t.timeAgo}</span>
                 </div>
               ))}
             </div>
@@ -394,7 +394,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                     style={{
                       fontFamily: "'DM Mono', monospace",
                       fontSize: 26,
-                      color: "#00C48C",
+                      color: "var(--accent-primary)",
                       fontWeight: 500,
                       fontVariantNumeric: "tabular-nums",
                     }}
@@ -405,7 +405,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                     style={{
                       fontSize: 10,
                       letterSpacing: "0.12em",
-                      color: "#5B6570",
+                      color: "var(--text-tertiary)",
                       fontWeight: 600,
                       marginTop: 2,
                     }}
@@ -418,7 +418,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                     style={{
                       fontFamily: "'DM Mono', monospace",
                       fontSize: 26,
-                      color: "#E6EDF3",
+                      color: "var(--text-primary)",
                       fontWeight: 500,
                       fontVariantNumeric: "tabular-nums",
                     }}
@@ -429,7 +429,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                     style={{
                       fontSize: 10,
                       letterSpacing: "0.12em",
-                      color: "#5B6570",
+                      color: "var(--text-tertiary)",
                       fontWeight: 600,
                       marginTop: 2,
                     }}
@@ -441,28 +441,28 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
               <div
                 style={{
                   fontSize: 12,
-                  color: "#8B98A5",
+                  color: "var(--text-secondary)",
                   paddingTop: 12,
                   borderTop: "1px solid rgba(255,255,255,0.06)",
                 }}
               >
                 {t("engine.rule_based")}:{" "}
-                <span style={{ color: "#00C48C", fontWeight: 500, fontFamily: "'DM Mono', monospace" }}>
+                <span style={{ color: "var(--accent-primary)", fontWeight: 500, fontFamily: "'DM Mono', monospace" }}>
                   {engine.ruleBased}%
                 </span>
                 {"  ·  "}
                 {t("engine.pattern")}:{" "}
-                <span style={{ color: "#3B82F6", fontWeight: 500, fontFamily: "'DM Mono', monospace" }}>
+                <span style={{ color: "var(--semantic-info)", fontWeight: 500, fontFamily: "'DM Mono', monospace" }}>
                   {engine.patternBased}%
                 </span>
                 {"  ·  "}
                 {t("engine.ai")}:{" "}
-                <span style={{ color: "#D4A84B", fontWeight: 500, fontFamily: "'DM Mono', monospace" }}>
+                <span style={{ color: "var(--semantic-warning)", fontWeight: 500, fontFamily: "'DM Mono', monospace" }}>
                   {engine.aiSuggested}%
                 </span>
               </div>
               <div style={{ marginTop: 12 }}>
-                <a style={{ fontSize: 12, color: "#00C48C", cursor: "pointer" }}>
+                <a style={{ fontSize: 12, color: "var(--accent-primary)", cursor: "pointer" }}>
                   {t("engine.view_performance")}
                 </a>
               </div>

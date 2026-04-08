@@ -12,10 +12,10 @@ import {
 } from "../../engine/mockEngine";
 
 const STATUS_META = {
-  "completed":    { key: "completed",   color: "#00C48C", icon: CheckCircle2 },
-  "in-progress":  { key: "in_progress", color: "#F5A524", icon: Circle },
-  "not-started":  { key: "not_started", color: "#5B6570", icon: Circle },
-  "locked":       { key: "locked",      color: "#5B6570", icon: Lock },
+  "completed":    { key: "completed",   color: "var(--accent-primary)", icon: CheckCircle2 },
+  "in-progress":  { key: "in_progress", color: "var(--semantic-warning)", icon: Circle },
+  "not-started":  { key: "not_started", color: "var(--text-tertiary)", icon: Circle },
+  "locked":       { key: "locked",      color: "var(--text-tertiary)", icon: Lock },
 };
 
 const EXC_TYPE_KEY = {
@@ -95,17 +95,17 @@ export default function ReconciliationScreen({ role = "CFO" }) {
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <div style={{ padding: "20px 28px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
-        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: "#E6EDF3", letterSpacing: "-0.3px", lineHeight: 1 }}>
+        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: "var(--text-primary)", letterSpacing: "-0.3px", lineHeight: 1 }}>
           {t("title")}
         </div>
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570", marginTop: 6 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginTop: 6 }}>
           {t("period_label")}
         </div>
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "20px 28px" }}>
         {!dashboard ? (
-          <div style={{ color: "#5B6570", fontSize: 13 }}>{t("loading")}</div>
+          <div style={{ color: "var(--text-tertiary)", fontSize: 13 }}>{t("loading")}</div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 14 }}>
             {dashboard.map((row) => (
@@ -130,13 +130,13 @@ function ReconciliationAccountCard({ row, onOpen }) {
       disabled={!row.currentReconciliationId}
       style={{
         textAlign: "start",
-        background: "rgba(255,255,255,0.02)",
+        background: "var(--bg-surface)",
         border: "1px solid rgba(255,255,255,0.10)",
         borderRadius: 10,
         padding: "16px 18px",
         cursor: row.currentReconciliationId ? "pointer" : "default",
         fontFamily: "inherit",
-        color: "#E6EDF3",
+        color: "var(--text-primary)",
         transition: "all 0.15s",
       }}
       onMouseEnter={(e) => {
@@ -146,16 +146,16 @@ function ReconciliationAccountCard({ row, onOpen }) {
         }
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)";
-        e.currentTarget.style.background = "rgba(255,255,255,0.02)";
+        e.currentTarget.style.borderColor = "var(--border-default)";
+        e.currentTarget.style.background = "var(--bg-surface)";
       }}
     >
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 }}>
         <div>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570" }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>
             <LtrText>{row.bankName} · {row.accountNumberMasked}</LtrText>
           </div>
-          <div style={{ fontSize: 16, fontWeight: 600, color: "#E6EDF3", marginTop: 4 }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)", marginTop: 4 }}>
             {row.accountName}
           </div>
         </div>
@@ -200,21 +200,21 @@ function ReconciliationAccountCard({ row, onOpen }) {
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12 }}>
-        <div style={{ color: "#8B98A5" }}>
-          <span style={{ color: "#E6EDF3", fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>
+        <div style={{ color: "var(--text-secondary)" }}>
+          <span style={{ color: "var(--text-primary)", fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>
             {row.matchedCount}/{row.totalCount}
           </span>{" "}
           {t("card.matched")}
         </div>
         {row.exceptionCount > 0 ? (
-          <div style={{ color: "#F5A524", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}>
+          <div style={{ color: "var(--semantic-warning)", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}>
             <AlertCircle size={11} />
             {row.exceptionCount === 1 ? t("card.exception_one", { count: 1 }) : t("card.exception_other", { count: row.exceptionCount })}
           </div>
         ) : row.status === "completed" ? (
-          <div style={{ color: "#00C48C", fontWeight: 600 }}>{t("card.clean")}</div>
+          <div style={{ color: "var(--accent-primary)", fontWeight: 600 }}>{t("card.clean")}</div>
         ) : row.status === "not-started" ? (
-          <div style={{ color: "#5B6570" }}>{t("card.not_started")}</div>
+          <div style={{ color: "var(--text-tertiary)" }}>{t("card.not_started")}</div>
         ) : null}
       </div>
     </button>
@@ -227,7 +227,7 @@ function ReconciliationDetail({ rec, loading, role, onBack, onReload }) {
 
   if (loading || !rec) {
     return (
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#5B6570" }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-tertiary)" }}>
         {t("loading_detail")}
       </div>
     );
@@ -268,7 +268,7 @@ function ReconciliationDetail({ rec, loading, role, onBack, onReload }) {
             gap: 4,
             background: "transparent",
             border: "none",
-            color: "#8B98A5",
+            color: "var(--text-secondary)",
             fontSize: 12,
             cursor: "pointer",
             padding: "4px 0",
@@ -280,10 +280,10 @@ function ReconciliationDetail({ rec, loading, role, onBack, onReload }) {
         </button>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
-            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: "#E6EDF3", letterSpacing: "-0.3px", lineHeight: 1 }}>
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: "var(--text-primary)", letterSpacing: "-0.3px", lineHeight: 1 }}>
               <LtrText>{rec.id}</LtrText> · {rec.period.label}
             </div>
-            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570", marginTop: 6 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginTop: 6 }}>
               {t("detail.sub", { accountId: rec.accountId, matched: rec.matchedCount, total: rec.totalBankItems })}
             </div>
           </div>
@@ -307,8 +307,8 @@ function ReconciliationDetail({ rec, loading, role, onBack, onReload }) {
                 onClick={handleComplete}
                 disabled={!isClean}
                 style={{
-                  background: isClean ? "#00C48C" : "rgba(255,255,255,0.05)",
-                  color: isClean ? "#fff" : "#5B6570",
+                  background: isClean ? "var(--accent-primary)" : "rgba(255,255,255,0.05)",
+                  color: isClean ? "#fff" : "var(--text-tertiary)",
                   border: "none",
                   padding: "8px 14px",
                   borderRadius: 6,
@@ -331,7 +331,7 @@ function ReconciliationDetail({ rec, loading, role, onBack, onReload }) {
           display: "grid",
           gridTemplateColumns: "repeat(4, 1fr)",
           gap: 1,
-          background: "rgba(255,255,255,0.06)",
+          background: "var(--border-subtle)",
           margin: "14px 28px 0",
           border: "1px solid rgba(255,255,255,0.10)",
           borderRadius: 8,
@@ -344,7 +344,7 @@ function ReconciliationDetail({ rec, loading, role, onBack, onReload }) {
         <SummaryCell
           label={t("summary.difference")}
           value={fmtKWD(diff)}
-          highlight={diff === 0 ? "#00C48C" : "#F5A524"}
+          highlight={diff === 0 ? "var(--accent-primary)" : "var(--semantic-warning)"}
         />
       </div>
 
@@ -378,7 +378,7 @@ function ReconciliationDetail({ rec, loading, role, onBack, onReload }) {
                 fontSize: 11,
                 fontWeight: 700,
                 letterSpacing: "0.15em",
-                color: "#F5A524",
+                color: "var(--semantic-warning)",
                 marginBottom: 10,
                 display: "inline-flex",
                 alignItems: "center",
@@ -416,15 +416,15 @@ function ReconciliationDetail({ rec, loading, role, onBack, onReload }) {
 
 function SummaryCell({ label, value, highlight }) {
   return (
-    <div style={{ background: "#0C0E12", padding: "12px 16px" }}>
-      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: "#5B6570", marginBottom: 4 }}>
+    <div style={{ background: "var(--bg-surface-raised)", padding: "12px 16px" }}>
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 4 }}>
         {label}
       </div>
       <div
         style={{
           fontFamily: "'DM Mono', monospace",
           fontSize: 16,
-          color: highlight || "#E6EDF3",
+          color: highlight || "var(--text-primary)",
           fontWeight: 600,
           letterSpacing: "-0.5px",
         }}
@@ -440,7 +440,7 @@ function StatementColumn({ title, sub, matchedCount, unmatched, exceptions, isBa
   return (
     <div
       style={{
-        background: "rgba(255,255,255,0.02)",
+        background: "var(--bg-surface)",
         border: "1px solid rgba(255,255,255,0.10)",
         borderRadius: 8,
         overflow: "hidden",
@@ -450,13 +450,13 @@ function StatementColumn({ title, sub, matchedCount, unmatched, exceptions, isBa
         style={{
           padding: "12px 16px",
           borderBottom: "1px solid rgba(255,255,255,0.06)",
-          background: "rgba(255,255,255,0.02)",
+          background: "var(--bg-surface)",
         }}
       >
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "#8B98A5" }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-secondary)" }}>
           {title}
         </div>
-        <div style={{ fontSize: 11, color: "#5B6570", marginTop: 3 }}>
+        <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 3 }}>
           {sub}
         </div>
       </div>
@@ -468,19 +468,19 @@ function StatementColumn({ title, sub, matchedCount, unmatched, exceptions, isBa
             display: "flex",
             alignItems: "center",
             gap: 8,
-            color: "#5B6570",
+            color: "var(--text-tertiary)",
             fontSize: 11,
             borderBottom: "1px solid rgba(255,255,255,0.04)",
           }}
         >
-          <CheckCircle2 size={12} color="#00C48C" />
-          <span style={{ color: "#8B98A5" }}>
+          <CheckCircle2 size={12} color="var(--accent-primary)" />
+          <span style={{ color: "var(--text-secondary)" }}>
             {t("columns.matched_collapsed", { count: matchedCount })}
           </span>
-          <span style={{ color: "#5B6570" }}>{t("columns.collapsed")}</span>
+          <span style={{ color: "var(--text-tertiary)" }}>{t("columns.collapsed")}</span>
         </div>
         {unmatched.length === 0 ? (
-          <div style={{ padding: "16px", textAlign: "center", color: "#5B6570", fontSize: 12 }}>
+          <div style={{ padding: "16px", textAlign: "center", color: "var(--text-tertiary)", fontSize: 12 }}>
             {t("columns.no_unmatched")}
           </div>
         ) : (
@@ -497,11 +497,11 @@ function StatementColumn({ title, sub, matchedCount, unmatched, exceptions, isBa
 function StatementRow({ item, exception, isBank }) {
   const sev = exception
     ? exception.type === "amount-mismatch" || exception.type === "unidentified"
-      ? "#F5A524"
+      ? "var(--semantic-warning)"
       : exception.type === "missing-ledger-entry"
-      ? "#FF5A5F"
-      : "#3B82F6"
-    : "#5B6570";
+      ? "var(--semantic-danger)"
+      : "var(--semantic-info)"
+    : "var(--text-tertiary)";
 
   return (
     <div
@@ -525,14 +525,14 @@ function StatementRow({ item, exception, isBank }) {
       />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-          <div style={{ fontSize: 12, color: "#E6EDF3", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div style={{ fontSize: 12, color: "var(--text-primary)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {item.description}
           </div>
           <div
             style={{
               fontSize: 12,
               fontFamily: "'DM Mono', monospace",
-              color: item.amount < 0 ? "#FF5A5F" : "#E6EDF3",
+              color: item.amount < 0 ? "var(--semantic-danger)" : "var(--text-primary)",
               fontWeight: 600,
               flexShrink: 0,
             }}
@@ -540,7 +540,7 @@ function StatementRow({ item, exception, isBank }) {
             {fmtKWD(item.amount)}
           </div>
         </div>
-        <div style={{ fontSize: 10, color: "#5B6570", marginTop: 3, display: "flex", gap: 8 }}>
+        <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 3, display: "flex", gap: 8 }}>
           <span>{fmtDate(item.date)}</span>
           <span>·</span>
           <span style={{ fontFamily: "'DM Mono', monospace" }}>
@@ -555,20 +555,20 @@ function StatementRow({ item, exception, isBank }) {
 function ExceptionRow({ exc, onResolve, onOpenJE }) {
   const { t } = useTranslation("reconciliation");
   const typeColors = {
-    "unidentified":           "#F5A524",
-    "amount-mismatch":        "#F5A524",
-    "missing-ledger-entry":   "#FF5A5F",
-    "date-mismatch":          "#3B82F6",
+    "unidentified":           "var(--semantic-warning)",
+    "amount-mismatch":        "var(--semantic-warning)",
+    "missing-ledger-entry":   "var(--semantic-danger)",
+    "date-mismatch":          "var(--semantic-info)",
   };
-  const color = typeColors[exc.type] || "#8B98A5";
+  const color = typeColors[exc.type] || "var(--text-secondary)";
 
   return (
     <div
       style={{
         padding: "12px 16px",
-        background: exc.resolved ? "rgba(0,196,140,0.04)" : "rgba(255,255,255,0.02)",
-        border: `1px solid ${exc.resolved ? "rgba(0,196,140,0.2)" : "rgba(255,255,255,0.10)"}`,
-        borderInlineStart: `3px solid ${exc.resolved ? "#00C48C" : color}`,
+        background: exc.resolved ? "rgba(0,196,140,0.04)" : "var(--bg-surface)",
+        border: `1px solid ${exc.resolved ? "rgba(0,196,140,0.2)" : "var(--border-default)"}`,
+        borderInlineStart: `3px solid ${exc.resolved ? "var(--accent-primary)" : color}`,
         borderRadius: 6,
         display: "flex",
         alignItems: "flex-start",
@@ -590,14 +590,14 @@ function ExceptionRow({ exc, onResolve, onOpenJE }) {
           >
             {t(`exceptions.${EXC_TYPE_KEY[exc.type] || "type_unidentified"}`)}
           </span>
-          <span style={{ fontSize: 10, color: "#5B6570", fontFamily: "'DM Mono', monospace" }}><LtrText>{exc.id}</LtrText></span>
+          <span style={{ fontSize: 10, color: "var(--text-tertiary)", fontFamily: "'DM Mono', monospace" }}><LtrText>{exc.id}</LtrText></span>
           {exc.resolved && (
-            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: "#00C48C" }}>
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: "var(--accent-primary)" }}>
               {t("exceptions.resolved")}
             </span>
           )}
         </div>
-        <div style={{ fontSize: 12, color: "#E6EDF3", lineHeight: 1.5 }}>
+        <div style={{ fontSize: 12, color: "var(--text-primary)", lineHeight: 1.5 }}>
           {exc.description}
         </div>
       </div>
@@ -607,7 +607,7 @@ function ExceptionRow({ exc, onResolve, onOpenJE }) {
             <button
               onClick={onOpenJE}
               style={{
-                background: "#00C48C",
+                background: "var(--accent-primary)",
                 color: "#fff",
                 border: "none",
                 padding: "6px 12px",
@@ -628,7 +628,7 @@ function ExceptionRow({ exc, onResolve, onOpenJE }) {
             <button
               onClick={() => onResolve(exc.id, t("exceptions.resolution_accepted"))}
               style={{
-                background: "#00C48C",
+                background: "var(--accent-primary)",
                 color: "#fff",
                 border: "none",
                 padding: "6px 12px",
@@ -646,8 +646,8 @@ function ExceptionRow({ exc, onResolve, onOpenJE }) {
             <button
               onClick={() => onResolve(exc.id, t("exceptions.resolution_investigated"))}
               style={{
-                background: "rgba(255,255,255,0.06)",
-                color: "#E6EDF3",
+                background: "var(--border-subtle)",
+                color: "var(--text-primary)",
                 border: "1px solid rgba(255,255,255,0.15)",
                 padding: "6px 12px",
                 borderRadius: 5,
@@ -686,7 +686,7 @@ function InlineJEComposer({ exception, bankItem, onCancel, onConfirm }) {
           left: "50%",
           transform: "translate(-50%, -50%)",
           width: 480,
-          background: "#0C0E12",
+          background: "var(--bg-surface-raised)",
           border: "1px solid rgba(255,255,255,0.10)",
           borderRadius: 12,
           zIndex: 301,
@@ -703,23 +703,23 @@ function InlineJEComposer({ exception, bankItem, onCancel, onConfirm }) {
           }}
         >
           <div>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570" }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>
               {t("je_composer.label")}
             </div>
-            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "#E6EDF3", marginTop: 4 }}>
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)", marginTop: 4 }}>
               {t("je_composer.title")}
             </div>
           </div>
-          <button onClick={onCancel} style={{ background: "transparent", border: "none", color: "#5B6570", cursor: "pointer", padding: 4 }}>
+          <button onClick={onCancel} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}>
             <X size={18} />
           </button>
         </div>
         <div style={{ padding: "18px 22px" }}>
-          <div style={{ fontSize: 12, color: "#8B98A5", marginBottom: 14, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 14, lineHeight: 1.5 }}>
             {bankItem.description} · {fmtKWD(bankItem.amount)} · {fmtDate(bankItem.date)}
           </div>
           <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "#5B6570", marginBottom: 5 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 5 }}>
               {t("je_composer.debit_account")}
             </div>
             <input
@@ -727,11 +727,11 @@ function InlineJEComposer({ exception, bankItem, onCancel, onConfirm }) {
               onChange={(e) => setDebit(e.target.value)}
               style={{
                 width: "100%",
-                background: "rgba(255,255,255,0.04)",
+                background: "var(--bg-surface-sunken)",
                 border: "1px solid rgba(255,255,255,0.10)",
                 borderRadius: 6,
                 padding: "9px 12px",
-                color: "#E6EDF3",
+                color: "var(--text-primary)",
                 fontSize: 13,
                 fontFamily: "inherit",
                 outline: "none",
@@ -739,7 +739,7 @@ function InlineJEComposer({ exception, bankItem, onCancel, onConfirm }) {
             />
           </div>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "#5B6570", marginBottom: 5 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 5 }}>
               {t("je_composer.credit_account")}
             </div>
             <input
@@ -747,11 +747,11 @@ function InlineJEComposer({ exception, bankItem, onCancel, onConfirm }) {
               onChange={(e) => setCredit(e.target.value)}
               style={{
                 width: "100%",
-                background: "rgba(255,255,255,0.04)",
+                background: "var(--bg-surface-sunken)",
                 border: "1px solid rgba(255,255,255,0.10)",
                 borderRadius: 6,
                 padding: "9px 12px",
-                color: "#E6EDF3",
+                color: "var(--text-primary)",
                 fontSize: 13,
                 fontFamily: "inherit",
                 outline: "none",
@@ -772,7 +772,7 @@ function InlineJEComposer({ exception, bankItem, onCancel, onConfirm }) {
             onClick={onCancel}
             style={{
               background: "transparent",
-              color: "#8B98A5",
+              color: "var(--text-secondary)",
               border: "1px solid rgba(255,255,255,0.15)",
               padding: "9px 16px",
               borderRadius: 6,
@@ -786,7 +786,7 @@ function InlineJEComposer({ exception, bankItem, onCancel, onConfirm }) {
           <button
             onClick={() => onConfirm(exception.bankItemId, debit, credit)}
             style={{
-              background: "#00C48C",
+              background: "var(--accent-primary)",
               color: "#fff",
               border: "none",
               padding: "9px 18px",

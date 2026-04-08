@@ -28,7 +28,7 @@ export default function PendingApprovals({ onViewAll }) {
             fontFamily: "'DM Mono', monospace",
             fontSize: 32,
             fontWeight: 500,
-            color: "#E6EDF3",
+            color: "var(--text-primary)",
             fontVariantNumeric: "tabular-nums",
             lineHeight: 1,
           }}
@@ -38,7 +38,7 @@ export default function PendingApprovals({ onViewAll }) {
         <span
           style={{
             fontSize: 10,
-            color: "#5B6570",
+            color: "var(--text-tertiary)",
             letterSpacing: "0.15em",
             fontWeight: 600,
           }}
@@ -47,7 +47,7 @@ export default function PendingApprovals({ onViewAll }) {
         </span>
       </div>
       {breakdown && (
-        <div style={{ fontSize: 12, color: "#8B98A5", marginTop: 8 }}>
+        <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 8 }}>
           {breakdown}
         </div>
       )}
@@ -56,7 +56,7 @@ export default function PendingApprovals({ onViewAll }) {
           onClick={onViewAll}
           style={{
             fontSize: 12,
-            color: "#00C48C",
+            color: "var(--accent-primary)",
             cursor: "pointer",
             letterSpacing: "0.04em",
           }}

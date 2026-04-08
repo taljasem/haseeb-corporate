@@ -1,6 +1,6 @@
 export default function BankChip({ abbreviation, brandColor, show = true, size = "sm" }) {
   if (!show || !abbreviation) return null;
-  const color = brandColor || "#00C48C";
+  const color = brandColor || "var(--accent-primary)";
   const dim = size === "lg" ? 36 : 30;
   return (
     <span

@@ -26,13 +26,13 @@ export default function RoutingRuleRow({ rule, expanded, onToggle, onEdit, onMut
     <div
       style={{
         borderBottom: "1px solid rgba(255,255,255,0.06)",
-        background: expanded ? "rgba(255,255,255,0.02)" : "transparent",
+        background: expanded ? "var(--bg-surface)" : "transparent",
       }}
     >
       <div
         onClick={() => onToggle && onToggle(rule)}
         onMouseEnter={(e) => {
-          if (!expanded) e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+          if (!expanded) e.currentTarget.style.background = "var(--bg-surface-sunken)";
         }}
         onMouseLeave={(e) => {
           if (!expanded) e.currentTarget.style.background = "transparent";
@@ -51,25 +51,25 @@ export default function RoutingRuleRow({ rule, expanded, onToggle, onEdit, onMut
             width: 32,
             height: 32,
             borderRadius: 6,
-            background: "rgba(59,130,246,0.10)",
+            background: "var(--semantic-info-subtle)",
             border: "1px solid rgba(59,130,246,0.25)",
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#3B82F6",
+            color: "var(--semantic-info)",
             flexShrink: 0,
           }}
         >
           <UserPlus size={15} strokeWidth={2.2} />
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, color: "#E6EDF3", fontWeight: 500, marginBottom: 3 }}>
+          <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500, marginBottom: 3 }}>
             {rule.name}
           </div>
-          <div style={{ fontSize: 12, color: "#8B98A5" }}>
+          <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
             {t("row.auto_assigns_to")}{" "}
-            <span style={{ color: "#E6EDF3" }}>{rule.action.assignTo?.name || "—"}</span>
-            <span style={{ color: "#5B6570" }}>
+            <span style={{ color: "var(--text-primary)" }}>{rule.action.assignTo?.name || "—"}</span>
+            <span style={{ color: "var(--text-tertiary)" }}>
               {" · "}
               {t("row.applied_times", { count: rule.appliedCount, time: formatRelativeTime(rule.createdAt) })}
             </span>
@@ -78,7 +78,7 @@ export default function RoutingRuleRow({ rule, expanded, onToggle, onEdit, onMut
             <div
               style={{
                 fontSize: 11,
-                color: "#5B6570",
+                color: "var(--text-tertiary)",
                 fontStyle: "italic",
                 marginTop: 3,
               }}
@@ -89,7 +89,7 @@ export default function RoutingRuleRow({ rule, expanded, onToggle, onEdit, onMut
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
           <StatusPill status={rule.status} />
-          {expanded ? <ChevronUp size={14} color="#5B6570" /> : <ChevronDown size={14} color="#5B6570" />}
+          {expanded ? <ChevronUp size={14} color="var(--text-tertiary)" /> : <ChevronDown size={14} color="var(--text-tertiary)" />}
         </div>
       </div>
       {expanded && (

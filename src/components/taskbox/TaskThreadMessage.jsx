@@ -13,7 +13,7 @@ function renderBold(text) {
         <span
           key={i}
           style={{
-            color: "#E6EDF3",
+            color: "var(--text-primary)",
             fontWeight: 500,
             fontFamily: isNum ? "'DM Mono', monospace" : "inherit",
           }}
@@ -39,14 +39,14 @@ export default function TaskThreadMessage({ event }) {
             marginBottom: 4,
           }}
         >
-          <span style={{ fontSize: 13, color: "#E6EDF3", fontWeight: 500 }}>
+          <span style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>
             {event.author.name}
           </span>
           <span
             style={{
               fontFamily: "'DM Mono', monospace",
               fontSize: 10,
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               marginInlineStart: "auto",
             }}
           >
@@ -56,7 +56,7 @@ export default function TaskThreadMessage({ event }) {
         <div
           style={{
             fontSize: 13,
-            color: "#8B98A5",
+            color: "var(--text-secondary)",
             lineHeight: 1.6,
             whiteSpace: "pre-wrap",
           }}
@@ -73,8 +73,8 @@ export default function TaskThreadMessage({ event }) {
                   alignItems: "center",
                   gap: 6,
                   fontSize: 11,
-                  color: "#8B98A5",
-                  background: "rgba(255,255,255,0.03)",
+                  color: "var(--text-secondary)",
+                  background: "var(--bg-surface-sunken)",
                   border: "1px solid rgba(255,255,255,0.10)",
                   padding: "5px 9px",
                   borderRadius: 4,
@@ -82,7 +82,7 @@ export default function TaskThreadMessage({ event }) {
               >
                 <Paperclip size={11} strokeWidth={2.2} />
                 {a.name}
-                <span style={{ color: "#5B6570", fontFamily: "'DM Mono', monospace" }}>
+                <span style={{ color: "var(--text-tertiary)", fontFamily: "'DM Mono', monospace" }}>
                   · {a.size}
                 </span>
               </span>

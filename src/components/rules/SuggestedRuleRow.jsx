@@ -30,21 +30,21 @@ export default function SuggestedRuleRow({ suggestion, onCreate, onDismiss, comp
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "#D4A84B",
+          color: "var(--semantic-warning)",
           flexShrink: 0,
         }}
       >
         <Repeat size={14} strokeWidth={2.2} />
       </span>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, color: "#E6EDF3", fontWeight: 500 }}>{title}</div>
-        <div style={{ fontSize: 11, color: "#5B6570", marginTop: 2 }}>{suggestion.context}</div>
+        <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>{title}</div>
+        <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>{suggestion.context}</div>
       </div>
       <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
         <button
           onClick={() => onCreate && onCreate(suggestion)}
           style={{
-            background: "#00C48C",
+            background: "var(--accent-primary)",
             color: "#fff",
             border: "none",
             padding: "6px 12px",
@@ -61,7 +61,7 @@ export default function SuggestedRuleRow({ suggestion, onCreate, onDismiss, comp
           onClick={() => onDismiss && onDismiss(suggestion)}
           style={{
             background: "transparent",
-            color: "#5B6570",
+            color: "var(--text-tertiary)",
             border: "1px solid rgba(255,255,255,0.10)",
             padding: "6px 12px",
             borderRadius: 5,

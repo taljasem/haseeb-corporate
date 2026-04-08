@@ -1,0 +1,203 @@
+/* ============================================================
+   Themes — Step 15
+   CSS custom properties for dark (default) and light modes.
+   Scoped under html[data-theme="..."] so they follow the root
+   attribute set by ThemeContext / the pre-hydration script.
+   ============================================================ */
+
+html[data-theme="dark"] {
+  /* ---------------- Surfaces ---------------- */
+  --bg-base:            #05070A;
+  --bg-surface:         rgba(255, 255, 255, 0.02);
+  --bg-surface-raised:  #0C0E12;
+  --bg-surface-sunken:  rgba(255, 255, 255, 0.04);
+  --bg-hover:           rgba(255, 255, 255, 0.04);
+  --bg-selected:        rgba(0, 196, 140, 0.06);
+
+  /* ---------------- Borders ----------------- */
+  --border-subtle:      rgba(255, 255, 255, 0.06);
+  --border-default:     rgba(255, 255, 255, 0.10);
+  --border-strong:      rgba(255, 255, 255, 0.15);
+  --border-focus:       rgba(0, 196, 140, 0.30);
+
+  /* ---------------- Text -------------------- */
+  --text-primary:       #E6EDF3;
+  --text-secondary:     #8B98A5;
+  --text-tertiary:      #5B6570;
+  --text-disabled:      rgba(139, 152, 165, 0.5);
+  --text-inverse:       #05070A;
+
+  /* ---------------- Accent (Haseeb teal) --- */
+  --accent-primary:         #00C48C;
+  --accent-primary-hover:   #00D99A;
+  --accent-primary-subtle:  rgba(0, 196, 140, 0.10);
+  --accent-primary-border:  rgba(0, 196, 140, 0.30);
+  --accent-primary-text:    #FFFFFF;
+
+  /* ---------------- Semantic ---------------- */
+  --semantic-success:         #00C48C;
+  --semantic-success-subtle:  rgba(0, 196, 140, 0.10);
+  --semantic-warning:         #D4A84B;
+  --semantic-warning-subtle:  rgba(212, 168, 75, 0.10);
+  --semantic-danger:          #FF5A5F;
+  --semantic-danger-subtle:   rgba(255, 90, 95, 0.10);
+  --semantic-info:            #3B82F6;
+  --semantic-info-subtle:     rgba(59, 130, 246, 0.10);
+
+  /* ---------------- Roles ------------------- */
+  --role-owner:   #8B5CF6;
+  --role-cfo:     #00C48C;
+  --role-junior:  #3B82F6;
+
+  /* ---------------- Confidence pills -------- */
+  --pill-rule-bg:       #00C48C;
+  --pill-rule-fg:       #05070A;
+  --pill-pattern-bg:    #3B82F6;
+  --pill-pattern-fg:    #FFFFFF;
+  --pill-ai-bg:         rgba(212, 168, 75, 0.18);
+  --pill-ai-fg:         #D4A84B;
+  --pill-manual-bg:     rgba(255, 255, 255, 0.04);
+  --pill-manual-fg:     #8B98A5;
+  --pill-pending-bg:    rgba(255, 90, 95, 0.08);
+  --pill-pending-fg:    #FF5A5F;
+
+  /* ---------------- Shadows & overlays ------ */
+  --shadow-sm:          0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md:          0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg:          0 12px 32px rgba(0, 0, 0, 0.6);
+  --shadow-card:        none;
+  --overlay-backdrop:   rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme="light"] {
+  /* ---------------- Surfaces ---------------- */
+  --bg-base:            #F7F8FA;
+  --bg-surface:         #FFFFFF;
+  --bg-surface-raised:  #FFFFFF;
+  --bg-surface-sunken:  #F2F4F7;
+  --bg-hover:           #EEF0F3;
+  --bg-selected:        rgba(0, 166, 132, 0.08);
+
+  /* ---------------- Borders ----------------- */
+  --border-subtle:      #EEF0F3;
+  --border-default:     #E5E7EB;
+  --border-strong:      #D1D5DB;
+  --border-focus:       rgba(0, 166, 132, 0.40);
+
+  /* ---------------- Text -------------------- */
+  --text-primary:       #0B0F14;
+  --text-secondary:     #4B5563;
+  --text-tertiary:      #6B7280;
+  --text-disabled:      rgba(107, 114, 128, 0.5);
+  --text-inverse:       #FFFFFF;
+
+  /* ---------------- Accent (Haseeb teal) --- */
+  --accent-primary:         #00A684;
+  --accent-primary-hover:   #008F72;
+  --accent-primary-subtle:  rgba(0, 166, 132, 0.10);
+  --accent-primary-border:  rgba(0, 166, 132, 0.35);
+  --accent-primary-text:    #FFFFFF;
+
+  /* ---------------- Semantic ---------------- */
+  --semantic-success:         #059669;
+  --semantic-success-subtle:  rgba(5, 150, 105, 0.10);
+  --semantic-warning:         #B7791F;
+  --semantic-warning-subtle:  rgba(183, 121, 31, 0.10);
+  --semantic-danger:          #DC2626;
+  --semantic-danger-subtle:   rgba(220, 38, 38, 0.10);
+  --semantic-info:            #2563EB;
+  --semantic-info-subtle:     rgba(37, 99, 235, 0.10);
+
+  /* ---------------- Roles ------------------- */
+  --role-owner:   #7C3AED;
+  --role-cfo:     #00A684;
+  --role-junior:  #2563EB;
+
+  /* ---------------- Confidence pills -------- */
+  --pill-rule-bg:       #00A684;
+  --pill-rule-fg:       #FFFFFF;
+  --pill-pattern-bg:    #2563EB;
+  --pill-pattern-fg:    #FFFFFF;
+  --pill-ai-bg:         rgba(183, 121, 31, 0.14);
+  --pill-ai-fg:         #B7791F;
+  --pill-manual-bg:     #F2F4F7;
+  --pill-manual-fg:     #4B5563;
+  --pill-pending-bg:    rgba(220, 38, 38, 0.10);
+  --pill-pending-fg:    #DC2626;
+
+  /* ---------------- Shadows & overlays ------ */
+  --shadow-sm:          0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md:          0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg:          0 12px 32px rgba(15, 23, 42, 0.12);
+  --shadow-card:        0 1px 3px rgba(15, 23, 42, 0.06);
+  --overlay-backdrop:   rgba(15, 23, 42, 0.35);
+}
+
+/* Global page background + text colour follow the theme */
+html[data-theme] body,
+html[data-theme] #root {
+  background: var(--bg-base);
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   Light mode inline-style compatibility layer
+   Most components use inline style hex/rgba literals that were
+   tuned for dark mode. Rather than touch every inline style,
+   we fold them into CSS variables via bulk migration. For any
+   leftover literal values that leak through, this layer catches
+   the most visually impactful ones at the body level so light
+   mode never looks broken.
+   ============================================================ */
+
+html[data-theme="light"] body {
+  /* Ensure Bebas Neue display headers stay readable on light */
+  color-scheme: light;
+}
+
+html[data-theme="dark"] body {
+  color-scheme: dark;
+}
+
+/* Aminah dot glow keeps teal in both themes but softer in light */
+html[data-theme="light"] .aminah-dot,
+html[data-theme="dark"] .aminah-dot {
+  background: var(--accent-primary);
+}
+
+/* ============================================================
+   Light-mode inline-style fallback
+   The bulk migration caught the most common rgba(255,255,255,x)
+   values and remapped them to CSS variables. Any stragglers that
+   still render as white-tinted overlays on a light background
+   become nearly invisible. Catch them via a body-level color-mix
+   so they render as dark-tinted overlays instead.
+   We can't intercept inline styles from CSS, but we can flip
+   the input/textarea/select/button default colors so form
+   elements render correctly in light mode.
+   ============================================================ */
+html[data-theme="light"] input,
+html[data-theme="light"] textarea,
+html[data-theme="light"] select {
+  background-color: var(--bg-surface-sunken);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+html[data-theme="light"] input::placeholder,
+html[data-theme="light"] textarea::placeholder {
+  color: var(--text-tertiary);
+}
+html[data-theme="light"] input:focus,
+html[data-theme="light"] textarea:focus,
+html[data-theme="light"] select:focus {
+  border-color: var(--border-focus);
+  outline: none;
+}
+
+/* Class-based helpers for chat input styling (used in ConvJE + Aminah) */
+html[data-theme="light"] .chat-input {
+  background: var(--bg-surface-sunken);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+

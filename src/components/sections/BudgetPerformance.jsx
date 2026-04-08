@@ -4,10 +4,10 @@ import SectionCard from "./SectionCard";
 import { getBudgetVarianceByDepartment } from "../../engine/mockEngine";
 
 const STATUS_COLOR = {
-  under:      "#00C48C",
-  "on-track": "#00C48C",
-  over:       "#D4A84B",
-  critical:   "#FF5A5F",
+  under:      "var(--accent-primary)",
+  "on-track": "var(--accent-primary)",
+  over:       "var(--semantic-warning)",
+  critical:   "var(--semantic-danger)",
 };
 
 export default function BudgetPerformance({ onViewAll }) {
@@ -25,7 +25,7 @@ export default function BudgetPerformance({ onViewAll }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {rows
           ? rows.map((r) => {
-              const color = STATUS_COLOR[r.status] || "#00C48C";
+              const color = STATUS_COLOR[r.status] || "var(--accent-primary)";
               const used = r.variancePercent;
               return (
                 <div key={r.id}>
@@ -37,7 +37,7 @@ export default function BudgetPerformance({ onViewAll }) {
                       marginBottom: 6,
                     }}
                   >
-                    <span style={{ fontSize: 13, color: "#E6EDF3" }}>{r.name}</span>
+                    <span style={{ fontSize: 13, color: "var(--text-primary)" }}>{r.name}</span>
                     <span
                       style={{
                         fontFamily: "'DM Mono', monospace",
@@ -78,7 +78,7 @@ export default function BudgetPerformance({ onViewAll }) {
           onClick={onViewAll}
           style={{
             fontSize: 12,
-            color: "#00C48C",
+            color: "var(--accent-primary)",
             cursor: "pointer",
             letterSpacing: "0.04em",
           }}

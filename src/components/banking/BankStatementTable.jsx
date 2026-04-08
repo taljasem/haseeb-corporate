@@ -7,7 +7,7 @@ export default function BankStatementTable({ txs, currency = "KWD" }) {
   const [expandedId, setExpandedId] = useState(null);
 
   if (!txs) {
-    return <div style={{ padding: 24, color: "#5B6570", fontSize: 12 }}>{t("table.loading")}</div>;
+    return <div style={{ padding: 24, color: "var(--text-tertiary)", fontSize: 12 }}>{t("table.loading")}</div>;
   }
   if (txs.length === 0) {
     return (
@@ -15,7 +15,7 @@ export default function BankStatementTable({ txs, currency = "KWD" }) {
         style={{
           padding: "60px 24px",
           textAlign: "center",
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
           fontSize: 13,
         }}
       >
@@ -32,13 +32,13 @@ export default function BankStatementTable({ txs, currency = "KWD" }) {
           gridTemplateColumns: "72px 1fr 160px 140px 140px 20px",
           gap: 12,
           padding: "10px 18px",
-          background: "rgba(255,255,255,0.02)",
+          background: "var(--bg-surface)",
           borderTop: "1px solid rgba(255,255,255,0.06)",
           borderBottom: "1px solid rgba(255,255,255,0.06)",
           fontSize: 9,
           fontWeight: 600,
           letterSpacing: "0.15em",
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
         }}
       >
         <div>{t("table.col_date")}</div>

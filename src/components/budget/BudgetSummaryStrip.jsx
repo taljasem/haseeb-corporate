@@ -8,7 +8,7 @@ function Stat({ label, value, sub, accent = false, varianceColor = null }) {
         flex: "1 1 240px",
         minWidth: 240,
         padding: "16px 18px",
-        background: "rgba(255,255,255,0.02)",
+        background: "var(--bg-surface)",
         border: "1px solid rgba(255,255,255,0.08)",
         borderRadius: 10,
       }}
@@ -18,7 +18,7 @@ function Stat({ label, value, sub, accent = false, varianceColor = null }) {
           fontFamily: "'DM Mono', monospace",
           fontSize: 22,
           fontWeight: 500,
-          color: varianceColor || (accent ? "#00C48C" : "#E6EDF3"),
+          color: varianceColor || (accent ? "var(--accent-primary)" : "var(--text-primary)"),
           fontVariantNumeric: "tabular-nums",
           lineHeight: 1.1,
         }}
@@ -30,14 +30,14 @@ function Stat({ label, value, sub, accent = false, varianceColor = null }) {
           fontSize: 10,
           fontWeight: 600,
           letterSpacing: "0.12em",
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
           marginTop: 6,
         }}
       >
         {label}
       </div>
       {sub && (
-        <div style={{ fontSize: 11, color: "#8B98A5", marginTop: 4 }}>
+        <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 4 }}>
           {sub}
         </div>
       )}
@@ -56,15 +56,15 @@ export default function BudgetSummaryStrip({ summary, expenseVarianceTotal = nul
     const abs = Math.abs(expenseVarianceTotal);
     const fmt = formatKWD(abs).replace("KWD ", "");
     if (Math.abs(expenseVarianceTotal) < 1) {
-      varianceColor = "#8B98A5";
+      varianceColor = "var(--text-secondary)";
       varianceValue = `KWD 0.000`;
       varianceSub = t("summary.tracking_exact");
     } else if (expenseVarianceTotal < 0) {
-      varianceColor = "#00C48C";
+      varianceColor = "var(--accent-primary)";
       varianceValue = `−KWD ${fmt}`;
       varianceSub = t("summary.ahead_of_plan", { amount: fmt });
     } else {
-      varianceColor = "#FF5A5F";
+      varianceColor = "var(--semantic-danger)";
       varianceValue = `+KWD ${fmt}`;
       varianceSub = t("summary.over_plan", { amount: fmt });
     }

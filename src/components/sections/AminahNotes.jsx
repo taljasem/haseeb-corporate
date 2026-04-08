@@ -10,7 +10,7 @@ function renderHighlighted(text) {
       const inner = part.slice(1, -1);
       const isNumeric = /[\d,.]/.test(inner) && /KWD|days|%/.test(inner);
       const isNeg = /overdue|over|\+\d+%/i.test(inner);
-      const color = isNeg ? "#FF5A5F" : "#E6EDF3";
+      const color = isNeg ? "var(--semantic-danger)" : "var(--text-primary)";
       return (
         <span
           key={i}
@@ -47,7 +47,7 @@ export default function AminahNotes() {
               key={n.id}
               style={{
                 fontSize: 13,
-                color: "#8B98A5",
+                color: "var(--text-secondary)",
                 lineHeight: 1.8,
                 marginBottom: 6,
               }}

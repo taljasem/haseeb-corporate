@@ -25,7 +25,7 @@ export default function SubmitDraftConfirmationModal({ open, departmentName, not
           transform: "translate(-50%, -50%)",
           width: 480,
           maxWidth: "calc(100vw - 32px)",
-          background: "#0C0E12",
+          background: "var(--bg-surface-raised)",
           border: "1px solid rgba(255,255,255,0.10)",
           borderRadius: 12,
           zIndex: 301,
@@ -42,14 +42,14 @@ export default function SubmitDraftConfirmationModal({ open, departmentName, not
           }}
         >
           <div>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570" }}>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>
               {t("submit_modal.label")}
             </div>
             <div
               style={{
                 fontFamily: "'Bebas Neue', sans-serif",
                 fontSize: 20,
-                color: "#E6EDF3",
+                color: "var(--text-primary)",
                 letterSpacing: "-0.2px",
                 marginTop: 4,
               }}
@@ -60,17 +60,17 @@ export default function SubmitDraftConfirmationModal({ open, departmentName, not
           <button
             onClick={onClose}
             aria-label={t("submit_modal.close")}
-            style={{ background: "transparent", border: "none", color: "#5B6570", cursor: "pointer", padding: 4 }}
+            style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}
           >
             <X size={18} />
           </button>
         </div>
 
         <div style={{ padding: "18px 22px" }}>
-          <div style={{ fontSize: 14, color: "#E6EDF3", lineHeight: 1.6 }}>
-            {t("submit_modal.body_prefix")}<strong style={{ color: "#00C48C" }}>{departmentName}</strong>{t("submit_modal.body_suffix")}
+          <div style={{ fontSize: 14, color: "var(--text-primary)", lineHeight: 1.6 }}>
+            {t("submit_modal.body_prefix")}<strong style={{ color: "var(--accent-primary)" }}>{departmentName}</strong>{t("submit_modal.body_suffix")}
           </div>
-          <div style={{ fontSize: 12, color: "#8B98A5", marginTop: 8, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 8, lineHeight: 1.6 }}>
             {t("submit_modal.revise_note")}
           </div>
           {note && (
@@ -78,15 +78,15 @@ export default function SubmitDraftConfirmationModal({ open, departmentName, not
               style={{
                 marginTop: 14,
                 padding: "10px 12px",
-                background: "rgba(255,255,255,0.03)",
+                background: "var(--bg-surface-sunken)",
                 border: "1px solid rgba(255,255,255,0.08)",
                 borderInlineStart: "2px solid #00C48C",
                 borderRadius: 6,
                 fontSize: 12,
-                color: "#8B98A5",
+                color: "var(--text-secondary)",
               }}
             >
-              <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570", marginBottom: 4 }}>
+              <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 4 }}>
                 {t("submit_modal.your_note")}
               </div>
               {note}
@@ -107,7 +107,7 @@ export default function SubmitDraftConfirmationModal({ open, departmentName, not
             onClick={onClose}
             style={{
               background: "transparent",
-              color: "#8B98A5",
+              color: "var(--text-secondary)",
               border: "1px solid rgba(255,255,255,0.15)",
               padding: "9px 16px",
               borderRadius: 6,
@@ -121,7 +121,7 @@ export default function SubmitDraftConfirmationModal({ open, departmentName, not
           <button
             onClick={onConfirm}
             style={{
-              background: "#00C48C",
+              background: "var(--accent-primary)",
               color: "#fff",
               border: "none",
               padding: "9px 18px",

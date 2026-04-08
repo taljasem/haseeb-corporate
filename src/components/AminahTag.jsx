@@ -8,7 +8,7 @@ export default function AminahTag() {
         fontSize: 9,
         fontWeight: 600,
         letterSpacing: "0.08em",
-        color: "#8B5CF6",
+        color: "var(--role-owner)",
         background: "rgba(139,92,246,0.08)",
         padding: "2px 7px",
         borderRadius: 3,
@@ -19,7 +19,7 @@ export default function AminahTag() {
           width: 4,
           height: 4,
           borderRadius: "50%",
-          background: "#8B5CF6",
+          background: "var(--role-owner)",
           animation: "aminahAlive 2.5s ease-in-out infinite",
           display: "inline-block",
         }}

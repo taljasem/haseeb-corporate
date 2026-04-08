@@ -9,7 +9,7 @@ function NavItem({ icon: Icon, label, active, onClick, badge }) {
       onClick={onClick}
       data-nav-active={active ? "true" : undefined}
       onMouseEnter={(e) => {
-        if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+        if (!active) e.currentTarget.style.background = "var(--bg-surface-sunken)";
       }}
       onMouseLeave={(e) => {
         if (!active) e.currentTarget.style.background = "transparent";
@@ -21,10 +21,10 @@ function NavItem({ icon: Icon, label, active, onClick, badge }) {
         width: "100%",
         height: 36,
         padding: "0 16px 0 20px",
-        background: active ? "rgba(255,255,255,0.04)" : "transparent",
+        background: active ? "var(--bg-surface-sunken)" : "transparent",
         border: "none",
         cursor: "pointer",
-        color: active ? "#E6EDF3" : "#5B6570",
+        color: active ? "var(--text-primary)" : "var(--text-tertiary)",
         fontFamily: "inherit",
         fontSize: 12,
         fontWeight: 600,
@@ -39,7 +39,7 @@ function NavItem({ icon: Icon, label, active, onClick, badge }) {
       {badge && (
         <span
           style={{
-            background: badge.bg || "#FF5A5F",
+            background: badge.bg || "var(--semantic-danger)",
             color: badge.fg || "#fff",
             fontSize: 9,
             fontWeight: 700,
@@ -62,16 +62,16 @@ export default function JuniorSidebar({ active, setActive, taskStats = { open: 0
   const is = (k) => active === k;
   const taskboxBadge =
     taskStats.overdue > 0
-      ? { label: <LtrText>{taskStats.open}</LtrText>, bg: "#FF5A5F", fg: "#fff" }
+      ? { label: <LtrText>{taskStats.open}</LtrText>, bg: "var(--semantic-danger)", fg: "#fff" }
       : taskStats.open > 0
-        ? { label: <LtrText>{taskStats.open}</LtrText>, bg: "rgba(255,255,255,0.08)", fg: "#8B98A5", border: "1px solid rgba(255,255,255,0.12)" }
+        ? { label: <LtrText>{taskStats.open}</LtrText>, bg: "var(--border-default)", fg: "var(--text-secondary)", border: "1px solid rgba(255,255,255,0.12)" }
         : null;
   return (
     <aside
       style={{
         width: 220,
         flexShrink: 0,
-        background: "rgba(255,255,255,0.02)",
+        background: "var(--bg-surface)",
         borderInlineEnd: "1px solid rgba(255,255,255,0.10)",
         padding: "20px 0",
         overflowY: "auto",

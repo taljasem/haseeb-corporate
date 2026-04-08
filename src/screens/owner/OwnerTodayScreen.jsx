@@ -24,7 +24,7 @@ function SectionCard({ label, extra, aminah = true, children }) {
   return (
     <div
       style={{
-        background: "rgba(255,255,255,0.02)",
+        background: "var(--bg-surface)",
         border: "1px solid rgba(255,255,255,0.06)",
         borderRadius: 10,
         padding: "18px 20px",
@@ -42,7 +42,7 @@ function KpiBlock({ label, value, accent, sub, onClick }) {
     <div
       onClick={onClick}
       onMouseEnter={(e) => {
-        if (onClick) e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+        if (onClick) e.currentTarget.style.background = "var(--bg-surface-sunken)";
       }}
       onMouseLeave={(e) => {
         if (onClick) e.currentTarget.style.background = "transparent";
@@ -61,7 +61,7 @@ function KpiBlock({ label, value, accent, sub, onClick }) {
           fontFamily: "'DM Mono', monospace",
           fontSize: 22,
           fontWeight: 500,
-          color: accent ? "#00C48C" : "#E6EDF3",
+          color: accent ? "var(--accent-primary)" : "var(--text-primary)",
           fontVariantNumeric: "tabular-nums",
           lineHeight: 1.1,
         }}
@@ -73,14 +73,14 @@ function KpiBlock({ label, value, accent, sub, onClick }) {
           fontSize: 10,
           fontWeight: 600,
           letterSpacing: "0.12em",
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
           marginTop: 4,
         }}
       >
         {label}
       </div>
       {sub && (
-        <div style={{ fontSize: 11, color: "#8B98A5", marginTop: 4 }}>
+        <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 4 }}>
           {sub}
         </div>
       )}
@@ -92,7 +92,7 @@ function AttentionRow({ count, label, onClick }) {
   return (
     <button
       onClick={onClick}
-      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-surface-sunken)")}
       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
       style={{
         display: "flex",
@@ -114,7 +114,7 @@ function AttentionRow({ count, label, onClick }) {
         style={{
           fontFamily: "'DM Mono', monospace",
           fontSize: 18,
-          color: "#E6EDF3",
+          color: "var(--text-primary)",
           fontWeight: 500,
           minWidth: 32,
           textAlign: "end",
@@ -122,8 +122,8 @@ function AttentionRow({ count, label, onClick }) {
       >
         {count}
       </span>
-      <span style={{ flex: 1, fontSize: 13, color: "#8B98A5" }}>{label}</span>
-      <span style={{ color: "#5B6570", fontSize: 14 }}><DirArrow /></span>
+      <span style={{ flex: 1, fontSize: 13, color: "var(--text-secondary)" }}>{label}</span>
+      <span style={{ color: "var(--text-tertiary)", fontSize: 14 }}><DirArrow /></span>
     </button>
   );
 }
@@ -135,7 +135,7 @@ function renderHighlighted(text) {
       const inner = p.slice(1, -1);
       const isPos = /^\+/.test(inner) && !/over/i.test(inner);
       const isNeg = /over|overdue/i.test(inner);
-      const color = isPos ? "#00C48C" : isNeg ? "#FF5A5F" : "#E6EDF3";
+      const color = isPos ? "var(--accent-primary)" : isNeg ? "var(--semantic-danger)" : "var(--text-primary)";
       const isNum = /KWD|%/.test(inner);
       return (
         <span
@@ -177,9 +177,9 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
       const totalActual = expenses.reduce((s, r) => s + r.actualYtd, 0);
       const ratio = totalBudget === 0 ? 1 : totalActual / totalBudget;
       let label, color;
-      if (ratio <= 1.0) { label = t("variance.on_track"); color = "#00C48C"; }
-      else if (ratio <= 1.05) { label = t("variance.approaching"); color = "#D4A84B"; }
-      else { label = t("variance.over_plan", { pct: Math.round((ratio - 1) * 100) }); color = "#FF5A5F"; }
+      if (ratio <= 1.0) { label = t("variance.on_track"); color = "var(--accent-primary)"; }
+      else if (ratio <= 1.05) { label = t("variance.approaching"); color = "var(--semantic-warning)"; }
+      else { label = t("variance.over_plan", { pct: Math.round((ratio - 1) * 100) }); color = "var(--semantic-danger)"; }
       setBudgetVariance({ label, color });
     });
   }, []);
@@ -206,7 +206,7 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
               value={pulse ? fmtN(pulse.revenue.current) : "—"}
               sub={
                 pulse && (
-                  <span style={{ color: revDelta >= 0 ? "#00C48C" : "#FF5A5F" }}>
+                  <span style={{ color: revDelta >= 0 ? "var(--accent-primary)" : "var(--semantic-danger)" }}>
                     {revDelta >= 0 ? "▲" : "▼"} {t("kpi.vs_last_month", { delta: Math.abs(revDelta).toFixed(1) })}
                   </span>
                 )
@@ -218,7 +218,7 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
               value={pulse ? fmtN(pulse.expenses.current) : "—"}
               sub={
                 pulse && (
-                  <span style={{ color: (pulse.expenses.percentChange || 0) >= 0 ? "#FF5A5F" : "#00C48C" }}>
+                  <span style={{ color: (pulse.expenses.percentChange || 0) >= 0 ? "var(--semantic-danger)" : "var(--accent-primary)" }}>
                     {(pulse.expenses.percentChange || 0) >= 0 ? "▲" : "▼"}{" "}
                     {t("kpi.vs_last_month", { delta: Math.abs(pulse.expenses.percentChange || 0).toFixed(1) })}
                   </span>
@@ -307,7 +307,7 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
                   fontFamily: "'DM Mono', monospace",
                   fontSize: 22,
                   fontWeight: 500,
-                  color: "#E6EDF3",
+                  color: "var(--text-primary)",
                 }}
               >
                 {close.tasksComplete} / {close.tasksTotal}
@@ -315,7 +315,7 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
               <span
                 style={{
                   fontSize: 10,
-                  color: "#5B6570",
+                  color: "var(--text-tertiary)",
                   letterSpacing: "0.12em",
                   fontWeight: 600,
                 }}
@@ -337,11 +337,11 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
                 style={{
                   width: `${close.percentComplete}%`,
                   height: "100%",
-                  background: "#00C48C",
+                  background: "var(--accent-primary)",
                 }}
               />
             </div>
-            <div style={{ fontSize: 13, color: "#8B98A5", lineHeight: 1.7 }}>
+            <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.7 }}>
               {t("close.on_track_line")}
               <br />
               {t("close.cfo_request")}
@@ -351,7 +351,7 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
             <div style={{ marginTop: 12 }}>
               <a
                 onClick={() => setActiveScreen("month-end-close")}
-                style={{ fontSize: 12, color: "#00C48C", cursor: "pointer" }}
+                style={{ fontSize: 12, color: "var(--accent-primary)", cursor: "pointer" }}
               >
                 {t("close.view_details")}
               </a>
@@ -362,14 +362,14 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
         {/* 5. AMINAH'S TOP INSIGHT */}
         {insight && (
           <SectionCard label={t("sections.top_insight")}>
-            <div style={{ fontSize: 14, color: "#8B98A5", lineHeight: 1.7 }}>
+            <div style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.7 }}>
               {renderHighlighted(insight.text)}
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
               <button
                 onClick={() => onOpenAminah && onOpenAminah("Marketing variance")}
                 style={{
-                  background: "#00C48C",
+                  background: "var(--accent-primary)",
                   color: "#fff",
                   border: "none",
                   padding: "8px 14px",
@@ -386,7 +386,7 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
                 onClick={() => setActiveScreen("overview")}
                 style={{
                   fontSize: 12,
-                  color: "#00C48C",
+                  color: "var(--accent-primary)",
                   cursor: "pointer",
                   alignSelf: "center",
                 }}

@@ -26,7 +26,7 @@ export default function AuditReadiness() {
             fontFamily: "'DM Mono', monospace",
             fontSize: 18,
             fontWeight: 500,
-            color: "#E6EDF3",
+            color: "var(--text-primary)",
             fontVariantNumeric: "tabular-nums",
           }}
         >
@@ -35,7 +35,7 @@ export default function AuditReadiness() {
         <span
           style={{
             fontSize: 10,
-            color: "#5B6570",
+            color: "var(--text-tertiary)",
             letterSpacing: "0.12em",
             fontWeight: 600,
           }}
@@ -60,7 +60,7 @@ export default function AuditReadiness() {
               width: 10,
               height: 10,
               borderRadius: "50%",
-              background: ok ? "#00C48C" : "#FF5A5F",
+              background: ok ? "var(--accent-primary)" : "var(--semantic-danger)",
               boxShadow: ok ? "none" : "0 0 6px rgba(255,90,95,0.5)",
               display: "inline-block",
             }}
@@ -69,12 +69,12 @@ export default function AuditReadiness() {
       </div>
 
       {d && d.failing > 0 && (
-        <div style={{ fontSize: 13, color: "#8B98A5", lineHeight: 1.6 }}>
-          <span style={{ color: "#FF5A5F", fontWeight: 500 }}>
+        <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+          <span style={{ color: "var(--semantic-danger)", fontWeight: 500 }}>
             {t("audit_readiness.failing_line", { count: d.failing })}
           </span>{" "}
           {d.failingCheck} —{" "}
-          <span style={{ color: "#E6EDF3", fontWeight: 500 }}>
+          <span style={{ color: "var(--text-primary)", fontWeight: 500 }}>
             {d.failingDetail}
           </span>
         </div>

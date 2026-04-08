@@ -15,47 +15,47 @@ function ShieldIcon() {
 
 const STATE_STYLES = {
   suggested: {
-    accent: "#D4A84B",
-    pillFg: "#D4A84B",
-    pillBg: "rgba(212,168,75,0.10)",
-    pillBorder: "rgba(212,168,75,0.30)",
+    accent: "var(--semantic-warning)",
+    pillFg: "var(--semantic-warning)",
+    pillBg: "var(--semantic-warning-subtle)",
+    pillBorder: "var(--semantic-warning-subtle)",
     pillKey: "state_suggested_pill",
     headerKey: "header_suggested",
     hashKey: "hash_suggested",
-    cardBg: "rgba(255,255,255,0.04)",
+    cardBg: "var(--bg-surface-sunken)",
     opacity: 1,
   },
   "draft-validated": {
-    accent: "#00C48C",
-    pillFg: "#00C48C",
-    pillBg: "rgba(0,196,140,0.10)",
-    pillBorder: "rgba(0,196,140,0.30)",
+    accent: "var(--accent-primary)",
+    pillFg: "var(--accent-primary)",
+    pillBg: "var(--accent-primary-subtle)",
+    pillBorder: "var(--accent-primary-border)",
     pillKey: "state_draft_pill",
     headerKey: "header_draft",
     hashKey: "hash_draft",
-    cardBg: "rgba(255,255,255,0.04)",
+    cardBg: "var(--bg-surface-sunken)",
     opacity: 1,
   },
   "pending-approval": {
-    accent: "#D4A84B",
-    pillFg: "#D4A84B",
-    pillBg: "rgba(212,168,75,0.10)",
-    pillBorder: "rgba(212,168,75,0.30)",
+    accent: "var(--semantic-warning)",
+    pillFg: "var(--semantic-warning)",
+    pillBg: "var(--semantic-warning-subtle)",
+    pillBorder: "var(--semantic-warning-subtle)",
     pillKey: "state_pending_pill",
     headerKey: "header_je",
     hashKey: "hash_pending",
-    cardBg: "rgba(255,255,255,0.04)",
+    cardBg: "var(--bg-surface-sunken)",
     opacity: 0.95,
   },
   posted: {
-    accent: "#5B6570",
-    pillFg: "#8B98A5",
+    accent: "var(--text-tertiary)",
+    pillFg: "var(--text-secondary)",
     pillBg: "rgba(91,101,112,0.14)",
     pillBorder: "rgba(91,101,112,0.30)",
     pillKey: "state_posted_pill",
     headerKey: "header_je",
     hashKey: "hash_posted",
-    cardBg: "rgba(255,255,255,0.025)",
+    cardBg: "var(--bg-surface)",
     opacity: 0.85,
     postedWithId: true,
   },
@@ -151,7 +151,7 @@ export default function JournalEntryCard({
               fontSize: 10,
               fontWeight: 600,
               letterSpacing: "0.15em",
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
             }}
           >
             {headerLabel}
@@ -160,7 +160,7 @@ export default function JournalEntryCard({
             style={{
               fontFamily: "'DM Mono', monospace",
               fontSize: 13,
-              color: "#E6EDF3",
+              color: "var(--text-primary)",
               marginTop: 2,
             }}
           >
@@ -206,7 +206,7 @@ export default function JournalEntryCard({
             fontSize: 9,
             fontWeight: 600,
             letterSpacing: "0.12em",
-            color: "#5B6570",
+            color: "var(--text-tertiary)",
             paddingBottom: 8,
             borderBottom: "1px solid rgba(255,255,255,0.06)",
           }}
@@ -237,7 +237,7 @@ export default function JournalEntryCard({
                         background: "rgba(255,90,95,0.06)",
                         border: "1px dashed rgba(255,90,95,0.4)",
                         borderRadius: 4,
-                        color: "#FF5A5F",
+                        color: "var(--semantic-danger)",
                         fontSize: 12,
                         padding: "4px 10px",
                         cursor: "pointer",
@@ -248,11 +248,11 @@ export default function JournalEntryCard({
                     </button>
                   ) : (
                     <>
-                      <div style={{ fontSize: 13, color: "#E6EDF3" }}>{line.account}</div>
+                      <div style={{ fontSize: 13, color: "var(--text-primary)" }}>{line.account}</div>
                       <div
                         style={{
                           fontSize: 11,
-                          color: "#5B6570",
+                          color: "var(--text-tertiary)",
                           fontFamily: "'DM Mono', monospace",
                           marginTop: 2,
                         }}
@@ -267,7 +267,7 @@ export default function JournalEntryCard({
                     textAlign: "end",
                     fontFamily: "'DM Mono', monospace",
                     fontSize: 13,
-                    color: line.debit != null ? "#FF5A5F" : "#5B6570",
+                    color: line.debit != null ? "var(--semantic-danger)" : "var(--text-tertiary)",
                     opacity: line.debit != null ? 0.85 : 1,
                     fontVariantNumeric: "tabular-nums",
                   }}
@@ -279,7 +279,7 @@ export default function JournalEntryCard({
                     textAlign: "end",
                     fontFamily: "'DM Mono', monospace",
                     fontSize: 13,
-                    color: line.credit != null ? "#00C48C" : "#5B6570",
+                    color: line.credit != null ? "var(--accent-primary)" : "var(--text-tertiary)",
                     fontVariantNumeric: "tabular-nums",
                   }}
                 >
@@ -292,7 +292,7 @@ export default function JournalEntryCard({
                   <div style={{ marginTop: 6 }}>
                     <a
                       onClick={() => setPickerLineIdx(null)}
-                      style={{ fontSize: 11, color: "#5B6570", cursor: "pointer" }}
+                      style={{ fontSize: 11, color: "var(--text-tertiary)", cursor: "pointer" }}
                     >
                       {t("je_card.cancel_picker")}
                     </a>
@@ -314,7 +314,7 @@ export default function JournalEntryCard({
             fontSize: 11,
             fontWeight: 600,
             letterSpacing: "0.10em",
-            color: "#8B98A5",
+            color: "var(--text-secondary)",
           }}
         >
           <div>{t("je_card.total")}</div>
@@ -322,7 +322,7 @@ export default function JournalEntryCard({
             style={{
               textAlign: "end",
               fontFamily: "'DM Mono', monospace",
-              color: "#E6EDF3",
+              color: "var(--text-primary)",
               fontVariantNumeric: "tabular-nums",
             }}
           >
@@ -332,7 +332,7 @@ export default function JournalEntryCard({
             style={{
               textAlign: "end",
               fontFamily: "'DM Mono', monospace",
-              color: "#E6EDF3",
+              color: "var(--text-primary)",
               fontVariantNumeric: "tabular-nums",
             }}
           >
@@ -352,13 +352,13 @@ export default function JournalEntryCard({
           fontSize: 10,
           fontWeight: 600,
           letterSpacing: "0.10em",
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
           flexWrap: "wrap",
         }}
       >
         <span>{t("je_card.mapping", { version: live.mappingVersion })}</span>
         <span>·</span>
-        <span style={{ color: balanced ? "#00C48C" : "#FF5A5F" }}>
+        <span style={{ color: balanced ? "var(--accent-primary)" : "var(--semantic-danger)" }}>
           {balanced ? t("je_card.balanced") : t("je_card.incomplete")}
         </span>
         <span>·</span>
@@ -376,12 +376,12 @@ export default function JournalEntryCard({
             padding: "10px 16px",
             borderTop: "1px solid rgba(255,255,255,0.06)",
             fontSize: 11,
-            color: "#5B6570",
+            color: "var(--text-tertiary)",
           }}
         >
-          {t("je_card.posted_by")} <span style={{ color: "#8B98A5", fontWeight: 500 }}>{postedByLabel}</span>{" "}
+          {t("je_card.posted_by")} <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>{postedByLabel}</span>{" "}
           {t("je_card.posted_at_time", { time: fmtCreated(live.createdAt) })} ·{" "}
-          <a style={{ color: "#00C48C", cursor: "pointer" }}>{t("je_card.view_audit_trail")}</a>
+          <a style={{ color: "var(--accent-primary)", cursor: "pointer" }}>{t("je_card.view_audit_trail")}</a>
         </div>
       )}
 
@@ -400,7 +400,7 @@ export default function JournalEntryCard({
             onClick={() => canConfirm && onConfirm && onConfirm(live)}
             disabled={!canConfirm}
             style={{
-              background: canConfirm ? "#00C48C" : "rgba(0,196,140,0.25)",
+              background: canConfirm ? "var(--accent-primary)" : "rgba(0,196,140,0.25)",
               color: "#fff",
               border: "none",
               padding: "8px 16px",
@@ -424,7 +424,7 @@ export default function JournalEntryCard({
                 }}
                 style={{
                   background: "transparent",
-                  color: "#8B98A5",
+                  color: "var(--text-secondary)",
                   border: "1px solid rgba(255,255,255,0.15)",
                   padding: "8px 14px",
                   borderRadius: 6,
@@ -439,7 +439,7 @@ export default function JournalEntryCard({
                 onClick={onAskAminah}
                 style={{
                   background: "transparent",
-                  color: "#8B5CF6",
+                  color: "var(--role-owner)",
                   border: "1px solid rgba(139,92,246,0.30)",
                   padding: "8px 14px",
                   borderRadius: 6,
@@ -459,7 +459,7 @@ export default function JournalEntryCard({
                 onClick={onEdit}
                 style={{
                   background: "transparent",
-                  color: "#8B98A5",
+                  color: "var(--text-secondary)",
                   border: "1px solid rgba(255,255,255,0.15)",
                   padding: "8px 14px",
                   borderRadius: 6,
@@ -474,7 +474,7 @@ export default function JournalEntryCard({
                 onClick={onDiscard}
                 style={{
                   background: "transparent",
-                  color: "#8B98A5",
+                  color: "var(--text-secondary)",
                   border: "1px solid rgba(255,255,255,0.15)",
                   padding: "8px 14px",
                   borderRadius: 6,

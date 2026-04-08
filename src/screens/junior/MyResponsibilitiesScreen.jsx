@@ -8,7 +8,7 @@ function Stat({ label, value }) {
   return (
     <div
       style={{
-        background: "rgba(255,255,255,0.02)",
+        background: "var(--bg-surface)",
         border: "1px solid rgba(255,255,255,0.08)",
         borderRadius: 8,
         padding: "14px 16px",
@@ -19,7 +19,7 @@ function Stat({ label, value }) {
           fontFamily: "'DM Mono', monospace",
           fontSize: 24,
           fontWeight: 500,
-          color: "#E6EDF3",
+          color: "var(--text-primary)",
           fontVariantNumeric: "tabular-nums",
         }}
       >
@@ -30,7 +30,7 @@ function Stat({ label, value }) {
           fontSize: 10,
           fontWeight: 600,
           letterSpacing: "0.12em",
-          color: "#5B6570",
+          color: "var(--text-tertiary)",
           marginTop: 4,
         }}
       >
@@ -63,7 +63,7 @@ export default function MyResponsibilitiesScreen({ onContactCFO }) {
             style={{
               fontFamily: "'Bebas Neue', sans-serif",
               fontSize: 28,
-              color: "#E6EDF3",
+              color: "var(--text-primary)",
               letterSpacing: "-0.3px",
               lineHeight: 1,
             }}
@@ -75,7 +75,7 @@ export default function MyResponsibilitiesScreen({ onContactCFO }) {
               fontSize: 11,
               fontWeight: 600,
               letterSpacing: "0.15em",
-              color: "#5B6570",
+              color: "var(--text-tertiary)",
               marginTop: 6,
             }}
           >
@@ -103,7 +103,7 @@ export default function MyResponsibilitiesScreen({ onContactCFO }) {
             fontSize: 10,
             fontWeight: 600,
             letterSpacing: "0.15em",
-            color: "#5B6570",
+            color: "var(--text-tertiary)",
             marginBottom: 10,
           }}
         >
@@ -129,7 +129,7 @@ export default function MyResponsibilitiesScreen({ onContactCFO }) {
           onClick={onContactCFO}
           style={{
             background: "transparent",
-            color: "#00C48C",
+            color: "var(--accent-primary)",
             border: "1px solid rgba(0,196,140,0.30)",
             padding: "10px 16px",
             borderRadius: 6,

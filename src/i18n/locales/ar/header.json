@@ -4,7 +4,7 @@
   "tenant_dev_only": "مستأجر تجريبي · للتطوير فقط",
   "role_owner": "المالك",
   "role_cfo": "المدير المالي",
-  "role_junior": "محاسب مبتدئ",
+  "role_junior": "محاسب مساعد",
   "aminah_button": "أمينة",
   "tooltip_theme_coming": "الوضع الفاتح — قريباً",
   "tooltip_theme_subtext": "الوضع الفاتح قيد التطوير",
@@ -15,8 +15,8 @@
     "no_notifications": "لا توجد إشعارات"
   },
   "distribution_modes": {
-    "bank-embedded": "متكامل مع البنك",
-    "standalone-direct": "مستقل مباشر",
-    "white-label": "علامة تجارية مخصصة"
+    "bank_embedded": "متكامل مع البنك",
+    "standalone_direct": "مستقل مباشر",
+    "white_label": "علامة تجارية مخصصة"
   }
 }

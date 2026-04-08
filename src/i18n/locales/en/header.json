@@ -15,8 +15,8 @@
     "no_notifications": "No notifications"
   },
   "distribution_modes": {
-    "bank-embedded": "bank-embedded",
-    "standalone-direct": "standalone-direct",
-    "white-label": "white-label"
+    "bank_embedded": "bank-embedded",
+    "standalone_direct": "standalone-direct",
+    "white_label": "white-label"
   }
 }

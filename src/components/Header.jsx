@@ -258,7 +258,7 @@ export default function Header({ role, setRole }) {
                       <LtrText>{tn.company.name}</LtrText>
                     </div>
                     <div style={{ fontSize: 10, color: "#5B6570", marginTop: 2 }}>
-                      <LtrText>{bank.name || "Standalone"}</LtrText> · {t(`distribution_modes.${tn.distributionMode}`, { defaultValue: tn.distributionMode })}
+                      <LtrText>{bank.name || "Standalone"}</LtrText> · {t(`distribution_modes.${(tn.distributionMode || "").replace(/-/g, "_")}`, { defaultValue: tn.distributionMode })}
                     </div>
                   </div>
                 </button>

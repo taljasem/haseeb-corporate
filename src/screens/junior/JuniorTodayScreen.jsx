@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, Edit3 } from "lucide-react";
 import SectionHeader from "../../components/SectionHeader";
 import TaskRow from "../../components/taskbox/TaskRow";
@@ -94,6 +95,7 @@ function renderHighlighted(text) {
 }
 
 export default function JuniorTodayScreen({ setActiveScreen, onOpenTask }) {
+  const { t } = useTranslation("junior-today");
   const [myTasks, setMyTasks] = useState(null);
   const [queue, setQueue] = useState(null);
   const [activity, setActivity] = useState(null);
@@ -121,14 +123,14 @@ export default function JuniorTodayScreen({ setActiveScreen, onOpenTask }) {
       <div style={{ maxWidth: 1180, margin: "0 auto" }}>
         {/* 1. MY TASKS */}
         <SectionCard
-          label="MY TASKS"
+          label={t("sections.my_tasks")}
           extra={myTasks ? <span className="tension-dot tension-dot--info">{myTasks.length}</span> : null}
         >
           <div style={{ marginInline: -10 }}>
             {myTasks === null ? (
-              <div style={{ padding: 16, color: "#5B6570", fontSize: 12 }}>Loading…</div>
+              <div style={{ padding: 16, color: "#5B6570", fontSize: 12 }}>{t("loading")}</div>
             ) : myTasks.length === 0 ? (
-              <div style={{ padding: 16, color: "#5B6570", fontSize: 12 }}>Inbox zero.</div>
+              <div style={{ padding: 16, color: "#5B6570", fontSize: 12 }}>{t("inbox_zero")}</div>
             ) : (
               myTasks.map((t) => (
                 <TaskRow key={t.id} task={t} compact onClick={(x) => onOpenTask && onOpenTask(x.id)} />
@@ -140,33 +142,33 @@ export default function JuniorTodayScreen({ setActiveScreen, onOpenTask }) {
               onClick={() => setActiveScreen("taskbox")}
               style={{ fontSize: 12, color: "#00C48C", cursor: "pointer" }}
             >
-              View all in Taskbox →
+              {t("view_all")}
             </a>
           </div>
         </SectionCard>
 
         {/* 2. TODAY'S WORK QUEUE */}
-        <SectionCard label="TODAY'S WORK QUEUE">
+        <SectionCard label={t("sections.work_queue")}>
           {queue && (
             <div style={{ marginTop: 4 }}>
               <QueueRow
                 count={queue.bankTransactions}
-                label="bank transactions to categorize"
+                label={t("queue.bank_tx")}
                 onClick={() => setActiveScreen("bank-transactions")}
               />
               <QueueRow
                 count={queue.reconciliationExceptions}
-                label="reconciliation exceptions"
+                label={t("queue.recon_exceptions")}
                 onClick={() => setActiveScreen("reconciliation")}
               />
               <QueueRow
                 count={queue.jeAwaitingApproval}
-                label="JE drafts awaiting CFO approval"
+                label={t("queue.je_awaiting")}
                 onClick={() => setActiveScreen("taskbox")}
               />
               <QueueRow
                 count={queue.escalationsToRespond}
-                label="escalation response needed"
+                label={t("queue.escalations")}
                 onClick={() => setActiveScreen("taskbox")}
               />
             </div>
@@ -174,7 +176,7 @@ export default function JuniorTodayScreen({ setActiveScreen, onOpenTask }) {
         </SectionCard>
 
         {/* 3. MY RESPONSIBILITIES (summary) */}
-        <SectionCard label="MY RESPONSIBILITIES">
+        <SectionCard label={t("sections.my_responsibilities")}>
           {responsibilities && (
             <ul
               style={{
@@ -218,13 +220,13 @@ export default function JuniorTodayScreen({ setActiveScreen, onOpenTask }) {
               onClick={() => setActiveScreen("responsibilities")}
               style={{ fontSize: 12, color: "#00C48C", cursor: "pointer" }}
             >
-              View full details →
+              {t("view_full")}
             </a>
           </div>
         </SectionCard>
 
         {/* 4. RECENT ACTIVITY */}
-        <SectionCard label="TODAY'S ACTIVITY" aminah={false}>
+        <SectionCard label={t("sections.todays_activity")} aminah={false}>
           {activity && (
             <div style={{ display: "flex", flexDirection: "column", marginTop: 4 }}>
               {activity.map((a) => (
@@ -262,7 +264,7 @@ export default function JuniorTodayScreen({ setActiveScreen, onOpenTask }) {
         </SectionCard>
 
         {/* 5. AMINAH'S NOTES */}
-        <SectionCard label="AMINAH'S NOTES">
+        <SectionCard label={t("sections.aminahs_notes")}>
           {notes &&
             notes.map((n) => (
               <div

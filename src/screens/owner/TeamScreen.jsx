@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { UserPlus } from "lucide-react";
 import Avatar from "../../components/taskbox/Avatar";
 import { getTeamMembersWithResponsibilities } from "../../engine/mockEngine";
 import { formatRelativeTime } from "../../utils/relativeTime";
 
 function MemberRow({ m }) {
+  const { t } = useTranslation("team");
   return (
     <div
       style={{
@@ -47,7 +49,7 @@ function MemberRow({ m }) {
           }}
         />
         <span style={{ fontSize: 11, color: m.isOnline ? "#00C48C" : "#5B6570" }}>
-          {m.isOnline ? "online" : "offline"}
+          {m.isOnline ? t("online") : t("offline")}
         </span>
       </div>
       <div
@@ -72,7 +74,7 @@ function MemberRow({ m }) {
             fontFamily: "inherit",
           }}
         >
-          Edit
+          {t("edit")}
         </button>
       </div>
     </div>
@@ -80,6 +82,7 @@ function MemberRow({ m }) {
 }
 
 function ResponsibilityCard({ m }) {
+  const { t } = useTranslation("team");
   return (
     <div
       style={{
@@ -137,7 +140,7 @@ function ResponsibilityCard({ m }) {
         </ul>
       ) : (
         <div style={{ fontSize: 11, color: "#5B6570", fontStyle: "italic" }}>
-          No routing rules assigned
+          {t("no_rules")}
         </div>
       )}
     </div>
@@ -145,6 +148,7 @@ function ResponsibilityCard({ m }) {
 }
 
 export default function TeamScreen() {
+  const { t } = useTranslation("team");
   const [members, setMembers] = useState(null);
   useEffect(() => {
     getTeamMembersWithResponsibilities().then(setMembers);
@@ -174,7 +178,7 @@ export default function TeamScreen() {
                 lineHeight: 1,
               }}
             >
-              TEAM
+              {t("title")}
             </div>
             <div
               style={{
@@ -185,7 +189,7 @@ export default function TeamScreen() {
                 marginTop: 6,
               }}
             >
-              WHO HAS ACCESS TO HASEEB
+              {t("subtitle")}
             </div>
           </div>
           <button
@@ -205,7 +209,7 @@ export default function TeamScreen() {
             }}
           >
             <UserPlus size={14} strokeWidth={2.4} />
-            Invite team member
+            {t("invite")}
           </button>
         </div>
 
@@ -233,12 +237,12 @@ export default function TeamScreen() {
               color: "#5B6570",
             }}
           >
-            <div>NAME</div>
-            <div>ROLE</div>
-            <div>ACCESS LEVEL</div>
-            <div>STATUS</div>
-            <div>LAST ACTIVE</div>
-            <div>ACTIONS</div>
+            <div>{t("columns.name")}</div>
+            <div>{t("columns.role")}</div>
+            <div>{t("columns.access_level")}</div>
+            <div>{t("columns.status")}</div>
+            <div>{t("columns.last_active")}</div>
+            <div>{t("columns.actions")}</div>
           </div>
           {(members || []).map((m) => (
             <MemberRow key={m.id} m={m} />
@@ -255,7 +259,7 @@ export default function TeamScreen() {
             marginBottom: 10,
           }}
         >
-          WHO HANDLES WHAT
+          {t("who_handles_what")}
         </div>
         <div
           style={{
@@ -280,7 +284,7 @@ export default function TeamScreen() {
               fontStyle: "italic",
             }}
           >
-            Manage routing rules → (CFO only)
+            {t("manage_rules")}
           </a>
         </div>
       </div>

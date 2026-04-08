@@ -1,0 +1,45 @@
+{
+  "title": "النظرة العامة",
+  "subtitle": "{{tenant}} · {{period}}",
+  "period_march": "مارس 2026",
+  "sections": {
+    "monthly_insights": "رؤى الشهر",
+    "financial_health": "الصحة المالية",
+    "aminahs_notes": "ملاحظات أمينة",
+    "ai_insights": "رؤى الذكاء الاصطناعي",
+    "pending_approvals": "اعتمادات معلقة",
+    "budget_performance": "أداء الميزانية",
+    "audit_readiness": "جاهزية التدقيق",
+    "month_end_close": "إقفال نهاية الشهر",
+    "bank_accounts": "الحسابات البنكية"
+  },
+  "financial_health": {
+    "this_month": "هذا الشهر"
+  },
+  "ai_insights": {
+    "balance_up": "رصيد KIB التشغيلي ارتفع",
+    "vs_avg": "مقارنة بمتوسط آخر 30 يوماً. وضع السيولة قوي.",
+    "pifss_due": "استحقاق مساهمة التأمينات نهاية الشهر. التقدير:"
+  },
+  "pending_approvals": {
+    "label": "اعتمادات معلقة",
+    "from": "{{count}} من {{name}}",
+    "view_all": "عرض الكل في صندوق المهام ←"
+  },
+  "budget_performance": {
+    "used_pct": "{{pct}}% مستخدم",
+    "view_all": "عرض كل الأقسام ←"
+  },
+  "audit_readiness": {
+    "checks_passing": "فحوصات مجتازة",
+    "pass_title": "ناجح",
+    "fail_title": "غير مجتاز",
+    "failing_line": "{{count}} فحص غير مجتاز:"
+  },
+  "close": {
+    "tasks_complete": "مهام مكتملة"
+  },
+  "bank_accounts": {
+    "view_all": "عرض كل الحسابات ←"
+  }
+}

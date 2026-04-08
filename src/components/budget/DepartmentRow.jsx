@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { formatKWD } from "../../utils/format";
 import BudgetVarianceBar from "./BudgetVarianceBar";
@@ -15,14 +16,12 @@ import Avatar from "../taskbox/Avatar";
 import { formatRelativeTime } from "../../utils/relativeTime";
 
 const STATUS_PILL = {
-  // expense
-  under:      { fg: "#00C48C", bg: "rgba(0,196,140,0.10)",  label: "UNDER" },
-  "on-track": { fg: "#00C48C", bg: "rgba(0,196,140,0.10)",  label: "ON TRACK" },
-  over:       { fg: "#D4A84B", bg: "rgba(212,168,75,0.10)", label: "APPROACHING" },
-  critical:   { fg: "#FF5A5F", bg: "rgba(255,90,95,0.10)",  label: "OVER" },
-  // revenue
-  behind:     { fg: "#FF5A5F", bg: "rgba(255,90,95,0.10)",  label: "BEHIND" },
-  ahead:      { fg: "#00C48C", bg: "rgba(0,196,140,0.10)",  label: "AHEAD" },
+  under:      { fg: "#00C48C", bg: "rgba(0,196,140,0.10)",  key: "under" },
+  "on-track": { fg: "#00C48C", bg: "rgba(0,196,140,0.10)",  key: "on_track" },
+  over:       { fg: "#D4A84B", bg: "rgba(212,168,75,0.10)", key: "approaching" },
+  critical:   { fg: "#FF5A5F", bg: "rgba(255,90,95,0.10)",  key: "over" },
+  behind:     { fg: "#FF5A5F", bg: "rgba(255,90,95,0.10)",  key: "behind" },
+  ahead:      { fg: "#00C48C", bg: "rgba(0,196,140,0.10)",  key: "ahead" },
 };
 
 const COLS = "minmax(160px, 1.4fr) minmax(140px, 1fr) 130px 130px 130px 130px 180px 110px 18px";
@@ -46,6 +45,7 @@ export default function DepartmentRow({
   onRefresh,
   onToast,
 }) {
+  const { t } = useTranslation("budget");
   const [lines, setLines] = useState(null);
   const [flashLineId, setFlashLineId] = useState(null);
   const [showRevisionComposer, setShowRevisionComposer] = useState(false);
@@ -72,7 +72,7 @@ export default function DepartmentRow({
 
   const handleApproveDept = async () => {
     await approveDepartment(budget.id, row.id);
-    onToast && onToast(`${row.name} approved`);
+    onToast && onToast(t("toast.approved", { name: row.name }));
     onRefresh && onRefresh();
   };
 
@@ -81,7 +81,7 @@ export default function DepartmentRow({
     await requestDepartmentRevision(budget.id, row.id, revisionText.trim());
     setShowRevisionComposer(false);
     setRevisionText("");
-    onToast && onToast(`Revision request sent`);
+    onToast && onToast(t("toast.revision_sent"));
     onRefresh && onRefresh();
   };
 
@@ -168,7 +168,7 @@ export default function DepartmentRow({
             textAlign: "center",
           }}
         >
-          {status.label}
+          {t(`row_status.${status.key}`)}
         </span>
         <span style={{ color: "#5B6570" }}>
           {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -205,7 +205,7 @@ export default function DepartmentRow({
                 color: "#8B98A5",
               }}
             >
-              Submitted by <span style={{ color: "#E6EDF3", fontWeight: 500 }}>{ownerName}</span>
+              {t("dept_row.review_submitted")} <span style={{ color: "#E6EDF3", fontWeight: 500 }}>{ownerName}</span>
               {department.submittedAt && (
                 <> · {formatRelativeTime(department.submittedAt)}</>
               )}
@@ -295,7 +295,7 @@ export default function DepartmentRow({
               <input
                 value={submitNote}
                 onChange={(e) => setSubmitNote(e.target.value)}
-                placeholder="Add a note to the CFO (optional)"
+                placeholder={t("dept_row.note_placeholder")}
                 style={{
                   flex: 1,
                   background: "rgba(255,255,255,0.04)",
@@ -326,8 +326,8 @@ export default function DepartmentRow({
                 }}
               >
                 {department.workflowStatus === "needs-revision"
-                  ? "Submit revised draft"
-                  : "Submit to CFO"}
+                  ? t("dept_row.submit_revised")
+                  : t("dept_row.submit_to_cfo")}
               </button>
             </div>
           )}
@@ -344,7 +344,7 @@ export default function DepartmentRow({
                 fontStyle: "italic",
               }}
             >
-              Awaiting CFO review
+              {t("dept_row.awaiting_review")}
             </div>
           )}
 
@@ -376,7 +376,7 @@ export default function DepartmentRow({
                   fontFamily: "inherit",
                 }}
               >
-                Approve department
+                {t("dept_row.approve_department")}
               </button>
               <button
                 onClick={(e) => {
@@ -394,7 +394,7 @@ export default function DepartmentRow({
                   fontFamily: "inherit",
                 }}
               >
-                Request revisions
+                {t("dept_row.request_revisions")}
               </button>
             </div>
           )}
@@ -420,13 +420,13 @@ export default function DepartmentRow({
                   marginBottom: 8,
                 }}
               >
-                REVISION NOTES FOR {(ownerName || "").toUpperCase()}
+                {t("dept_row.revision_notes_for", { name: (ownerName || "").toUpperCase() })}
               </div>
               <textarea
                 value={revisionText}
                 onChange={(e) => setRevisionText(e.target.value)}
                 rows={3}
-                placeholder="Describe what needs to change…"
+                placeholder={t("dept_row.revision_placeholder")}
                 style={{
                   width: "100%",
                   background: "rgba(255,255,255,0.04)",
@@ -458,7 +458,7 @@ export default function DepartmentRow({
                     fontFamily: "inherit",
                   }}
                 >
-                  Cancel
+                  {t("dept_row.cancel")}
                 </button>
                 <button
                   onClick={handleRequestRevisions}
@@ -475,7 +475,7 @@ export default function DepartmentRow({
                     fontFamily: "inherit",
                   }}
                 >
-                  Send revision request
+                  {t("dept_row.send_revision_request")}
                 </button>
               </div>
             </div>
@@ -490,7 +490,7 @@ export default function DepartmentRow({
               await submitDepartment(budget.id, row.id, currentUserId, submitNote || null);
               setSubmitModalOpen(false);
               setSubmitNote("");
-              onToast && onToast(`Submitted ${row.name} to CFO`);
+              onToast && onToast(t("toast.submitted", { name: row.name }));
               onRefresh && onRefresh();
             }}
           />
@@ -506,7 +506,7 @@ export default function DepartmentRow({
           }}
         >
           {!lines ? (
-            <div style={{ padding: "10px 32px", color: "#5B6570", fontSize: 12 }}>Loading…</div>
+            <div style={{ padding: "10px 32px", color: "#5B6570", fontSize: 12 }}>{t("dept_row.loading")}</div>
           ) : (
             lines.map((l) => {
               const s = STATUS_PILL[l.status] || STATUS_PILL["on-track"];
@@ -583,7 +583,7 @@ export default function DepartmentRow({
                       textAlign: "center",
                     }}
                   >
-                    {s.label}
+                    {t(`row_status.${s.key}`)}
                   </span>
                   <span />
                 </div>

@@ -1,15 +1,20 @@
+import { useTranslation } from "react-i18next";
 import SectionCard from "./SectionCard";
+import LtrText from "../shared/LtrText";
 
 export default function AIInsights() {
+  const { t } = useTranslation("owner-overview");
   return (
-    <SectionCard label="AI INSIGHTS" delay={0.35}>
+    <SectionCard label={t("sections.ai_insights")} delay={0.35}>
       <div style={{ fontSize: 13, color: "#8B98A5", lineHeight: 1.7, marginBottom: 10 }}>
-        KIB Operating balance up{" "}
-        <span style={{ color: "#00C48C", fontWeight: 500 }}>+12%</span> vs.
-        trailing 30-day average. Liquidity posture strong.
+        {t("ai_insights.balance_up")}{" "}
+        <span style={{ color: "#00C48C", fontWeight: 500 }}>
+          <LtrText>+12%</LtrText>
+        </span>{" "}
+        {t("ai_insights.vs_avg")}
       </div>
       <div style={{ fontSize: 13, color: "#8B98A5", lineHeight: 1.7 }}>
-        PIFSS contribution due end of month. Estimated:{" "}
+        {t("ai_insights.pifss_due")}{" "}
         <span
           style={{
             fontFamily: "'DM Mono', monospace",
@@ -17,7 +22,7 @@ export default function AIInsights() {
             fontWeight: 500,
           }}
         >
-          4,862.500 KWD
+          <LtrText>4,862.500 KWD</LtrText>
         </span>
       </div>
     </SectionCard>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import SectionCard from "./SectionCard";
 import { getBudgetVarianceByDepartment } from "../../engine/mockEngine";
 
@@ -10,6 +11,7 @@ const STATUS_COLOR = {
 };
 
 export default function BudgetPerformance({ onViewAll }) {
+  const { t } = useTranslation("owner-overview");
   const [rows, setRows] = useState(null);
   useEffect(() => {
     getBudgetVarianceByDepartment().then((all) => {
@@ -19,7 +21,7 @@ export default function BudgetPerformance({ onViewAll }) {
   }, []);
 
   return (
-    <SectionCard label="BUDGET PERFORMANCE" delay={0.45}>
+    <SectionCard label={t("sections.budget_performance")} delay={0.45}>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {rows
           ? rows.map((r) => {
@@ -45,7 +47,7 @@ export default function BudgetPerformance({ onViewAll }) {
                         fontVariantNumeric: "tabular-nums",
                       }}
                     >
-                      {used.toFixed(0)}% used
+                      {t("budget_performance.used_pct", { pct: used.toFixed(0) })}
                     </span>
                   </div>
                   <div
@@ -81,7 +83,7 @@ export default function BudgetPerformance({ onViewAll }) {
             letterSpacing: "0.04em",
           }}
         >
-          View all departments →
+          {t("budget_performance.view_all")}
         </a>
       </div>
     </SectionCard>

@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, X, Shield, Lock } from "lucide-react";
+import LtrText from "../../components/shared/LtrText";
 import AminahNarrationCard from "../../components/financial/AminahNarrationCard";
 import { getAuditChecks } from "../../engine/mockEngine";
 import { formatRelativeTime } from "../../utils/relativeTime";
 
 function CheckCard({ check }) {
+  const { t } = useTranslation("audit");
   const passing = check.status === "passing";
   const color = passing ? "#00C48C" : "#FF5A5F";
   const Icon = passing ? Check : X;
@@ -45,7 +48,7 @@ function CheckCard({ check }) {
             color,
           }}
         >
-          {passing ? "PASSING" : "FAILING"}
+          {passing ? t("pill_passing") : t("pill_failing")}
         </span>
       </div>
       <div
@@ -77,19 +80,20 @@ function CheckCard({ check }) {
           color: "#5B6570",
         }}
       >
-        Verified {formatRelativeTime(check.lastVerified)}
+        {t("verified", { time: formatRelativeTime(check.lastVerified) })}
       </div>
     </div>
   );
 }
 
 export default function AuditBridgeScreen() {
+  const { t } = useTranslation("audit");
   const [data, setData] = useState(null);
   useEffect(() => {
     getAuditChecks().then(setData);
   }, []);
 
-  if (!data) return <div style={{ padding: 28, color: "#5B6570" }}>Loading…</div>;
+  if (!data) return <div style={{ padding: 28, color: "#5B6570" }}>{t("loading")}</div>;
 
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px 32px" }}>
@@ -104,7 +108,7 @@ export default function AuditBridgeScreen() {
               lineHeight: 1,
             }}
           >
-            AUDIT BRIDGE
+            {t("title")}
           </div>
           <div
             style={{
@@ -115,7 +119,7 @@ export default function AuditBridgeScreen() {
               marginTop: 6,
             }}
           >
-            CONTINUOUS AUDIT ASSURANCE
+            {t("subtitle")}
           </div>
         </div>
 
@@ -148,7 +152,7 @@ export default function AuditBridgeScreen() {
               color: "#5B6570",
             }}
           >
-            CHECKS PASSING
+            {t("checks_passing")}
           </div>
           {data.failing > 0 && (
             <div
@@ -163,7 +167,7 @@ export default function AuditBridgeScreen() {
                 borderRadius: 4,
               }}
             >
-              {data.failing} ATTENTION NEEDED
+              {t("attention_needed", { count: data.failing })}
             </div>
           )}
         </div>
@@ -212,7 +216,7 @@ export default function AuditBridgeScreen() {
                 color: "#5B6570",
               }}
             >
-              HASH CHAIN STATUS
+              {t("hash_chain.title")}
             </div>
           </div>
           <div
@@ -224,7 +228,7 @@ export default function AuditBridgeScreen() {
           >
             <div>
               <div style={{ fontSize: 9, color: "#5B6570", letterSpacing: "0.12em", fontWeight: 600 }}>
-                TOTAL POSTED ENTRIES
+                {t("hash_chain.total_entries")}
               </div>
               <div
                 style={{
@@ -235,12 +239,12 @@ export default function AuditBridgeScreen() {
                   fontVariantNumeric: "tabular-nums",
                 }}
               >
-                {data.hashChain.totalEntries.toLocaleString()}
+                <LtrText>{data.hashChain.totalEntries.toLocaleString()}</LtrText>
               </div>
             </div>
             <div>
               <div style={{ fontSize: 9, color: "#5B6570", letterSpacing: "0.12em", fontWeight: 600 }}>
-                CHAIN LENGTH
+                {t("hash_chain.chain_length")}
               </div>
               <div
                 style={{
@@ -250,12 +254,12 @@ export default function AuditBridgeScreen() {
                   marginTop: 4,
                 }}
               >
-                {data.hashChain.chainLength.toLocaleString()}
+                <LtrText>{data.hashChain.chainLength.toLocaleString()}</LtrText>
               </div>
             </div>
             <div>
               <div style={{ fontSize: 9, color: "#5B6570", letterSpacing: "0.12em", fontWeight: 600 }}>
-                LAST HASH
+                {t("hash_chain.last_hash")}
               </div>
               <div
                 style={{
@@ -265,12 +269,12 @@ export default function AuditBridgeScreen() {
                   marginTop: 4,
                 }}
               >
-                {data.hashChain.lastHash}
+                <LtrText>{data.hashChain.lastHash}</LtrText>
               </div>
             </div>
             <div>
               <div style={{ fontSize: 9, color: "#5B6570", letterSpacing: "0.12em", fontWeight: 600 }}>
-                STATUS
+                {t("hash_chain.status")}
               </div>
               <div
                 style={{
@@ -293,7 +297,7 @@ export default function AuditBridgeScreen() {
               marginTop: 12,
             }}
           >
-            Last verified {formatRelativeTime(data.hashChain.lastVerified)}
+            {t("hash_chain.last_verified", { time: formatRelativeTime(data.hashChain.lastVerified) })}
           </div>
         </div>
 
@@ -323,7 +327,7 @@ export default function AuditBridgeScreen() {
                 color: "#00C48C",
               }}
             >
-              EXTERNAL AUDITOR ACCESS
+              {t("auditor.title")}
             </div>
           </div>
           <div
@@ -334,8 +338,7 @@ export default function AuditBridgeScreen() {
               marginBottom: 14,
             }}
           >
-            Grant read-only access to an external auditor. They see the full ledger, hash-chained entries,
-            all approvals, and the audit trail — without any ability to modify.
+            {t("auditor.desc")}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <button
@@ -351,7 +354,7 @@ export default function AuditBridgeScreen() {
                 fontFamily: "inherit",
               }}
             >
-              Grant auditor access
+              {t("auditor.grant")}
             </button>
             <button
               style={{
@@ -365,7 +368,7 @@ export default function AuditBridgeScreen() {
                 fontFamily: "inherit",
               }}
             >
-              View audit trail
+              {t("auditor.view_trail")}
             </button>
           </div>
         </div>

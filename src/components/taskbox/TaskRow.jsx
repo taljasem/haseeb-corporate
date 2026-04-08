@@ -1,9 +1,11 @@
+import { useTranslation } from "react-i18next";
 import { Paperclip, Link2 } from "lucide-react";
 import Avatar from "./Avatar";
 import TaskTypePill from "./TaskTypePill";
 import { formatRelativeTime } from "../../utils/relativeTime";
 
-function dueDatePill(dueIso) {
+function DueDatePill({ dueIso }) {
+  const { t } = useTranslation("taskbox");
   if (!dueIso) return null;
   const due = new Date(dueIso);
   const now = new Date();
@@ -19,8 +21,8 @@ function dueDatePill(dueIso) {
   }
   const label =
     diffH < 0
-      ? "Overdue"
-      : `Due ${due.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+      ? t("row.overdue")
+      : t("row.due_date", { date: due.toLocaleDateString("en-US", { month: "short", day: "numeric" }) });
   return (
     <span
       style={{
@@ -138,7 +140,7 @@ export default function TaskRow({ task, onClick, compact = false }) {
         {hasAttachments && (
           <Paperclip size={12} color="#5B6570" strokeWidth={2.2} />
         )}
-        {task.dueDate && task.status !== "completed" && dueDatePill(task.dueDate)}
+        {task.dueDate && task.status !== "completed" && <DueDatePill dueIso={task.dueDate} />}
         <span
           style={{
             fontFamily: "'DM Mono', monospace",

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getTaskbox } from "../../engine/mockEngine";
 import SectionHeader from "../SectionHeader";
 import TaskRow from "./TaskRow";
@@ -9,6 +10,7 @@ export default function TaskboxSummaryCard({
   onTaskClick,
   wrapperStyle = null,
 }) {
+  const { t } = useTranslation("taskbox");
   const [tasks, setTasks] = useState(null);
   useEffect(() => {
     getTaskbox(role, "all").then(setTasks);
@@ -32,7 +34,7 @@ export default function TaskboxSummaryCard({
       <SectionHeader
         label={
           <>
-            TASKBOX
+            {t("summary_card.title")}
             {openCount > 0 && (
               <span
                 style={{
@@ -43,7 +45,7 @@ export default function TaskboxSummaryCard({
                   letterSpacing: "0.12em",
                 }}
               >
-                · {openCount} OPEN
+                · {t("summary_card.open_suffix", { count: openCount })}
               </span>
             )}
           </>
@@ -52,10 +54,10 @@ export default function TaskboxSummaryCard({
       />
       <div style={{ marginTop: 4, marginInline: -10 }}>
         {tasks === null ? (
-          <div style={{ padding: 16, color: "#5B6570", fontSize: 12 }}>Loading…</div>
+          <div style={{ padding: 16, color: "#5B6570", fontSize: 12 }}>{t("summary_card.loading")}</div>
         ) : open.length === 0 ? (
           <div style={{ padding: 16, color: "#5B6570", fontSize: 12 }}>
-            No open tasks. Inbox zero.
+            {t("summary_card.inbox_zero")}
           </div>
         ) : (
           open.map((t) => (
@@ -73,7 +75,7 @@ export default function TaskboxSummaryCard({
             letterSpacing: "0.04em",
           }}
         >
-          View all in Taskbox →
+          {t("summary_card.view_all")}
         </a>
       </div>
     </div>

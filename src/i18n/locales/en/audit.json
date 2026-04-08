@@ -1,1 +1,28 @@
-{}
+{
+  "title": "AUDIT BRIDGE",
+  "subtitle": "CONTINUOUS AUDIT ASSURANCE",
+  "checks_passing": "CHECKS PASSING",
+  "attention_needed": "{{count}} ATTENTION NEEDED",
+  "loading": "Loading…",
+  "pill_passing": "PASSING",
+  "pill_failing": "FAILING",
+  "verified": "Verified {{time}}",
+  "hash_chain": {
+    "title": "HASH CHAIN STATUS",
+    "total_entries": "TOTAL POSTED ENTRIES",
+    "chain_length": "CHAIN LENGTH",
+    "last_hash": "LAST HASH",
+    "status": "STATUS",
+    "last_verified": "Last verified {{time}}"
+  },
+  "auditor": {
+    "title": "EXTERNAL AUDITOR ACCESS",
+    "desc": "Grant read-only access to an external auditor. They see the full ledger, hash-chained entries, all approvals, and the audit trail — without any ability to modify.",
+    "grant": "Grant auditor access",
+    "view_trail": "View audit trail"
+  },
+  "readiness": {
+    "checks_passing": "CHECKS PASSING",
+    "failing_prefix": "{{count}} check failing:"
+  }
+}

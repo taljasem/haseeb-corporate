@@ -1,6 +1,8 @@
+import { useTranslation } from "react-i18next";
 import { formatRelativeTime } from "../../utils/relativeTime";
 
 export default function RevisionNotesCard({ notes, timestamp }) {
+  const { t } = useTranslation("budget");
   return (
     <div
       style={{
@@ -21,11 +23,11 @@ export default function RevisionNotesCard({ notes, timestamp }) {
           marginBottom: 6,
         }}
       >
-        REVISION REQUESTED BY CFO
+        {t("revision.label")}
       </div>
       <div style={{ fontSize: 13, color: "#E6EDF3", lineHeight: 1.6 }}>{notes}</div>
       <div style={{ fontSize: 10, color: "#5B6570", marginTop: 8, fontStyle: "italic" }}>
-        {timestamp ? `Requested ${formatRelativeTime(timestamp)} · ` : ""}From You (CFO)
+        {timestamp ? t("revision.requested_at", { time: formatRelativeTime(timestamp) }) : ""}{t("revision.from_cfo")}
       </div>
     </div>
   );

@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getBudgetWorkflowSummary } from "../../engine/mockEngine";
 
 const STATE_STYLE = {
-  draft:              { label: "DRAFT",             color: "#D4A84B" },
-  delegated:          { label: "DELEGATED",         color: "#3B82F6" },
-  "in-review":        { label: "IN REVIEW",         color: "#D4A84B" },
-  "pending-approval": { label: "PENDING APPROVAL",  color: "#8B5CF6" },
-  active:             { label: "ACTIVE",            color: "#00C48C" },
-  closed:             { label: "CLOSED",            color: "#5B6570" },
+  draft:              { key: "draft",             color: "#D4A84B" },
+  delegated:          { key: "delegated",         color: "#3B82F6" },
+  "in-review":        { key: "in_review",         color: "#D4A84B" },
+  "pending-approval": { key: "pending_approval",  color: "#8B5CF6" },
+  active:             { key: "active",            color: "#00C48C" },
+  closed:             { key: "closed",            color: "#5B6570" },
 };
 
 const SEGMENT_COLOR = {
@@ -20,6 +21,7 @@ const SEGMENT_COLOR = {
 };
 
 export default function BudgetWorkflowStatusStrip({ budget, role = "CFO", onDelegate, onSendForApproval, onApprove, onRequestChanges, refreshKey = 0 }) {
+  const { t } = useTranslation("budget");
   const [summary, setSummary] = useState(null);
   useEffect(() => {
     if (!budget) return;
@@ -57,7 +59,7 @@ export default function BudgetWorkflowStatusStrip({ budget, role = "CFO", onDele
           whiteSpace: "nowrap",
         }}
       >
-        {state.label}
+        {t(`status_pill.${state.key}`)}
       </span>
 
       {/* Segmented progress */}
@@ -78,7 +80,7 @@ export default function BudgetWorkflowStatusStrip({ budget, role = "CFO", onDele
       </div>
 
       <div style={{ fontSize: 11, color: "#5B6570", whiteSpace: "nowrap" }}>
-        {summary.approved + summary.submitted} / {summary.totalDepartments} submitted
+        {t("workflow_strip.submitted_count", { done: summary.approved + summary.submitted, total: summary.totalDepartments })}
       </div>
 
       {/* Action buttons */}
@@ -98,7 +100,7 @@ export default function BudgetWorkflowStatusStrip({ budget, role = "CFO", onDele
               fontFamily: "inherit",
             }}
           >
-            Delegate to team
+            {t("actions.delegate_team")}
           </button>
         )}
         {role === "CFO" && budget.status === "delegated" && (
@@ -114,7 +116,7 @@ export default function BudgetWorkflowStatusStrip({ budget, role = "CFO", onDele
               fontFamily: "inherit",
             }}
           >
-            Send reminders
+            {t("actions.send_reminders")}
           </button>
         )}
         {role === "CFO" && budget.status === "in-review" && (
@@ -132,7 +134,7 @@ export default function BudgetWorkflowStatusStrip({ budget, role = "CFO", onDele
               fontFamily: "inherit",
             }}
           >
-            Send for approval
+            {t("actions.send_for_approval")}
           </button>
         )}
         {role === "Owner" && budget.status === "pending-approval" && (
@@ -151,7 +153,7 @@ export default function BudgetWorkflowStatusStrip({ budget, role = "CFO", onDele
                 fontFamily: "inherit",
               }}
             >
-              Approve budget
+              {t("actions.approve_budget")}
             </button>
             <button
               onClick={onRequestChanges}
@@ -166,7 +168,7 @@ export default function BudgetWorkflowStatusStrip({ budget, role = "CFO", onDele
                 fontFamily: "inherit",
               }}
             >
-              Request changes
+              {t("actions.request_changes")}
             </button>
           </>
         )}

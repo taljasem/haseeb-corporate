@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
 import {
   getActiveBudget,
@@ -40,6 +41,7 @@ function HeaderCell({ children, align = "left" }) {
 }
 
 export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId = null }) {
+  const { t } = useTranslation("budget");
   const [allBudgets, setAllBudgets] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [budget, setBudget] = useState(null);
@@ -119,7 +121,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
   }, [periodOpen]);
 
   const ownerName = (id) => {
-    if (id === "cfo") return "You (CFO)";
+    if (id === "cfo") return t("you_cfo");
     const m = team.find((x) => x.id === id);
     return m ? m.name : id;
   };
@@ -161,7 +163,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                 lineHeight: 1,
               }}
             >
-              {role === "Junior" ? "MY BUDGET" : "BUDGET"}
+              {role === "Junior" ? t("my_title") : t("title")}
             </div>
             {role === "Junior" ? (
               <div
@@ -173,7 +175,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                   marginTop: 6,
                 }}
               >
-                DEPARTMENTS YOU OWN
+                {t("my_subtitle")}
               </div>
             ) : (
               <div ref={periodRef} style={{ position: "relative", marginTop: 6 }}>
@@ -195,7 +197,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                     color: "#E6EDF3",
                   }}
                 >
-                  {budget ? `${budget.period.label.toUpperCase()} · ${(budget.status || "").toUpperCase()}` : "LOADING"}
+                  {budget ? t("period_status", { period: budget.period.label.toUpperCase(), status: (budget.status || "").toUpperCase() }) : t("loading")}
                   <ChevronDown size={12} color="#5B6570" />
                 </button>
                 {periodOpen && (
@@ -272,7 +274,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                     fontFamily: "inherit",
                   }}
                 >
-                  Approve budget
+                  {t("actions.approve_budget")}
                 </button>
                 <button
                   style={{
@@ -286,7 +288,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                     fontFamily: "inherit",
                   }}
                 >
-                  Request changes
+                  {t("actions.request_changes")}
                 </button>
                 <button
                   style={{
@@ -300,7 +302,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                     fontFamily: "inherit",
                   }}
                 >
-                  Reject
+                  {t("actions.reject")}
                 </button>
               </>
             )}
@@ -317,7 +319,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                   fontFamily: "inherit",
                 }}
               >
-                Lock for FY 2026
+                {t("actions.lock_fy")}
               </button>
             )}
             {role !== "Junior" && (
@@ -333,7 +335,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                   fontFamily: "inherit",
                 }}
               >
-                Export PDF
+                {t("actions.export_pdf")}
               </button>
             )}
             {role === "CFO" && (
@@ -350,7 +352,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                   fontFamily: "inherit",
                 }}
               >
-                Edit budget
+                {t("actions.edit_budget")}
               </button>
             )}
           </div>
@@ -414,14 +416,14 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
               borderBottom: "1px solid rgba(255,255,255,0.08)",
             }}
           >
-            <HeaderCell>DEPARTMENT</HeaderCell>
-            <HeaderCell>OWNER</HeaderCell>
-            <HeaderCell align="right">ANNUAL</HeaderCell>
-            <HeaderCell align="right">YTD BUDGET</HeaderCell>
-            <HeaderCell align="right">YTD ACTUAL</HeaderCell>
-            <HeaderCell align="right">VARIANCE</HeaderCell>
-            <HeaderCell>% USED</HeaderCell>
-            <HeaderCell align="center">STATUS</HeaderCell>
+            <HeaderCell>{t("columns.department")}</HeaderCell>
+            <HeaderCell>{t("columns.owner")}</HeaderCell>
+            <HeaderCell align="right">{t("columns.annual")}</HeaderCell>
+            <HeaderCell align="right">{t("columns.ytd_budget")}</HeaderCell>
+            <HeaderCell align="right">{t("columns.ytd_actual")}</HeaderCell>
+            <HeaderCell align="right">{t("columns.variance")}</HeaderCell>
+            <HeaderCell>{t("columns.pct_used")}</HeaderCell>
+            <HeaderCell align="center">{t("columns.status")}</HeaderCell>
             <HeaderCell> </HeaderCell>
           </div>
           {displayedRows.map((row) => {
@@ -472,7 +474,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                 marginBottom: 10,
               }}
             >
-              OTHER DEPARTMENTS (READ-ONLY SUMMARY)
+              {t("other_depts")}
             </div>
             {otherRows.map((r) => (
               <div
@@ -488,7 +490,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
               >
                 <span style={{ color: "#8B98A5" }}>{r.name}</span>
                 <span style={{ color: "#5B6570", flex: 1, textAlign: "right", marginRight: 18 }}>
-                  Owner: {ownerName(r.ownerUserId)}
+                  {t("owner_label", { name: ownerName(r.ownerUserId) })}
                 </span>
                 <span
                   style={{
@@ -535,7 +537,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
         onClose={() => setDelegateOpen(false)}
         onDelegated={(count) => {
           refresh();
-          showToast(`Delegated to ${count} team members`);
+          showToast(t("toast.delegated", { count }));
         }}
       />
     </div>

@@ -1,1 +1,27 @@
-{}
+{
+  "title": "FINANCIAL STATEMENTS",
+  "period_default": "MARCH 2026",
+  "tabs": {
+    "income": "INCOME STATEMENT",
+    "balance": "BALANCE SHEET",
+    "cash-flow": "CASH FLOW STATEMENT"
+  },
+  "periods": {
+    "month": "This Month",
+    "quarter": "This Quarter",
+    "ytd": "YTD",
+    "custom": "Custom"
+  },
+  "table": {
+    "col_account": "ACCOUNT",
+    "col_current": "CURRENT",
+    "col_prior": "PRIOR",
+    "col_change": "CHANGE",
+    "col_pct": "% CHG"
+  },
+  "export": "Export {{format}}",
+  "aminah_card": {
+    "label": "AMINAH SAYS",
+    "ask_about": "Ask Aminah about any line item →"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "sections": {
+    "business_pulse": "BUSINESS PULSE",
+    "needs_attention": "NEEDS YOUR ATTENTION",
+    "close_with_period": "{{period}} CLOSE",
+    "top_insight": "AMINAH'S TOP INSIGHT"
+  },
+  "kpi": {
+    "revenue": "REVENUE THIS MONTH",
+    "expenses": "EXPENSES THIS MONTH",
+    "net_income": "NET INCOME THIS MONTH",
+    "cash_position": "CASH POSITION",
+    "vs_last_month": "{{delta}}% vs last month",
+    "gross_op_margin": "Gross {{gross}}% · Op {{op}}%",
+    "cash_default_sub": "across 4 {{bank}} accounts"
+  },
+  "variance": {
+    "on_track": "vs budget: on track",
+    "approaching": "vs budget: approaching plan",
+    "over_plan": "vs budget: {{pct}}% over plan"
+  },
+  "attention": {
+    "approvals_pending": "approvals pending your decision",
+    "audit_failing": "audit check failing — needs resolution",
+    "close_for_signoff": "March close tracking for your sign-off"
+  },
+  "close": {
+    "tasks_complete_label": "TASKS COMPLETE · {{pct}}%",
+    "on_track_line": "On track for April 3 close date.",
+    "cfo_request": "CFO will request your sign-off when ready.",
+    "last_update": "Last update: 45 min ago · Sara reconciled KIB Reserve.",
+    "view_details": "View close details →"
+  },
+  "insight": {
+    "ask_more": "Ask Aminah more →",
+    "see_all": "See all insights"
+  }
+}

@@ -1,1 +1,19 @@
-{}
+{
+  "title": "TEAM",
+  "subtitle": "WHO HAS ACCESS TO HASEEB",
+  "invite": "Invite team member",
+  "columns": {
+    "name": "NAME",
+    "role": "ROLE",
+    "access_level": "ACCESS LEVEL",
+    "status": "STATUS",
+    "last_active": "LAST ACTIVE",
+    "actions": "ACTIONS"
+  },
+  "online": "online",
+  "offline": "offline",
+  "edit": "Edit",
+  "who_handles_what": "WHO HANDLES WHAT",
+  "no_rules": "No routing rules assigned",
+  "manage_rules": "Manage routing rules → (CFO only)"
+}

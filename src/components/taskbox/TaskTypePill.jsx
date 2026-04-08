@@ -1,12 +1,15 @@
 import * as Lucide from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { getTaskTypeMeta } from "../../engine/mockEngine";
 
 export default function TaskTypePill({ type, size = "sm" }) {
+  const { t } = useTranslation("taskbox");
   const meta = getTaskTypeMeta(type);
   const Icon = Lucide[meta.icon] || Lucide.MessageSquare;
   const iconSize = size === "md" ? 13 : 11;
   const fontSize = size === "md" ? 11 : 10;
   const padding = size === "md" ? "5px 11px" : "4px 9px";
+  const label = t(`task_types.${meta.id}`, { defaultValue: meta.label });
 
   return (
     <span
@@ -28,7 +31,7 @@ export default function TaskTypePill({ type, size = "sm" }) {
       }}
     >
       <Icon size={iconSize} strokeWidth={2.2} />
-      {meta.label}
+      {label}
     </span>
   );
 }

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import SectionCard from "./SectionCard";
 import { getTaskbox } from "../../engine/mockEngine";
 
 export default function PendingApprovals({ onViewAll }) {
+  const { t } = useTranslation("owner-overview");
   const [tasks, setTasks] = useState(null);
   useEffect(() => {
     getTaskbox("Owner", "approvals").then(setTasks);
@@ -15,11 +17,11 @@ export default function PendingApprovals({ onViewAll }) {
     bySender[name] = (bySender[name] || 0) + 1;
   });
   const breakdown = Object.entries(bySender)
-    .map(([name, count]) => `${count} from ${name}`)
+    .map(([name, count]) => t("pending_approvals.from", { count, name }))
     .join(" · ");
 
   return (
-    <SectionCard label="PENDING APPROVALS" delay={0.4}>
+    <SectionCard label={t("pending_approvals.label")} delay={0.4}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 6 }}>
         <span
           style={{
@@ -41,7 +43,7 @@ export default function PendingApprovals({ onViewAll }) {
             fontWeight: 600,
           }}
         >
-          PENDING APPROVALS
+          {t("pending_approvals.label")}
         </span>
       </div>
       {breakdown && (
@@ -59,7 +61,7 @@ export default function PendingApprovals({ onViewAll }) {
             letterSpacing: "0.04em",
           }}
         >
-          View all in Taskbox →
+          {t("pending_approvals.view_all")}
         </a>
       </div>
     </SectionCard>

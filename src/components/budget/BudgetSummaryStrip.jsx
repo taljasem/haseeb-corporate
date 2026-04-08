@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { formatKWD } from "../../utils/format";
 
 function Stat({ label, value, sub, accent = false, varianceColor = null }) {
@@ -45,46 +46,46 @@ function Stat({ label, value, sub, accent = false, varianceColor = null }) {
 }
 
 export default function BudgetSummaryStrip({ summary, expenseVarianceTotal = null }) {
+  const { t } = useTranslation("budget");
   if (!summary) return null;
 
-  // expenseVarianceTotal: positive = over budget (bad), negative = under budget (good)
   let varianceColor = null;
   let varianceValue = "—";
-  let varianceSub = "vs YTD plan";
+  let varianceSub = "";
   if (expenseVarianceTotal != null) {
     const abs = Math.abs(expenseVarianceTotal);
     const fmt = formatKWD(abs).replace("KWD ", "");
     if (Math.abs(expenseVarianceTotal) < 1) {
       varianceColor = "#8B98A5";
       varianceValue = `KWD 0.000`;
-      varianceSub = "tracking exactly to plan";
+      varianceSub = t("summary.tracking_exact");
     } else if (expenseVarianceTotal < 0) {
       varianceColor = "#00C48C";
       varianceValue = `−KWD ${fmt}`;
-      varianceSub = `KWD ${fmt} ahead of plan`;
+      varianceSub = t("summary.ahead_of_plan", { amount: fmt });
     } else {
       varianceColor = "#FF5A5F";
       varianceValue = `+KWD ${fmt}`;
-      varianceSub = `KWD ${fmt} over plan`;
+      varianceSub = t("summary.over_plan", { amount: fmt });
     }
   }
 
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 18 }}>
-      <Stat label="TOTAL REVENUE BUDGET" value={formatKWD(summary.totalRevenue)} sub={summary.label} />
+      <Stat label={t("summary.total_revenue_budget")} value={formatKWD(summary.totalRevenue)} sub={summary.label} />
       <Stat
-        label="TOTAL EXPENSE BUDGET"
+        label={t("summary.total_expense_budget")}
         value={formatKWD(summary.totalExpenses)}
-        sub={`across ${summary.expenseDepartmentCount} departments`}
+        sub={t("summary.across_n_depts", { count: summary.expenseDepartmentCount })}
       />
       <Stat
-        label="PROJECTED NET INCOME"
+        label={t("summary.projected_net_income")}
         value={formatKWD(summary.netIncome)}
-        sub={`${summary.margin}% margin`}
+        sub={t("summary.margin_sub", { pct: summary.margin })}
         accent
       />
       <Stat
-        label="VS PLAN YTD"
+        label={t("summary.vs_plan_ytd")}
         value={varianceValue}
         sub={varianceSub}
         varianceColor={varianceColor}

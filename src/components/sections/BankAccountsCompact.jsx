@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import SectionCard from "./SectionCard";
 import { getBankAccounts } from "../../engine/mockEngine";
 import { formatMoney } from "../../utils/formatCurrency";
 
 export default function BankAccountsCompact({ onViewAll, onAccountClick }) {
+  const { t } = useTranslation("owner-overview");
   const [accounts, setAccounts] = useState(null);
   useEffect(() => {
     getBankAccounts().then(setAccounts);
   }, []);
 
   return (
-    <SectionCard label="BANK ACCOUNTS" delay={0.18}>
+    <SectionCard label={t("sections.bank_accounts")} delay={0.18}>
       <div style={{ display: "flex", flexDirection: "column", marginTop: 4 }}>
         {(accounts || []).map((a) => (
           <div
@@ -86,7 +88,7 @@ export default function BankAccountsCompact({ onViewAll, onAccountClick }) {
             letterSpacing: "0.04em",
           }}
         >
-          View all accounts →
+          {t("bank_accounts.view_all")}
         </a>
       </div>
     </SectionCard>

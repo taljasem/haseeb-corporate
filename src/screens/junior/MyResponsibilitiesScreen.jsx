@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import AminahNarrationCard from "../../components/financial/AminahNarrationCard";
 import RoutingRuleReadOnlyCard from "../../components/junior/RoutingRuleReadOnlyCard";
 import { getRoutingRules, getJuniorDomainStats } from "../../engine/mockEngine";
@@ -40,6 +41,7 @@ function Stat({ label, value }) {
 }
 
 export default function MyResponsibilitiesScreen({ onContactCFO }) {
+  const { t } = useTranslation("junior-today");
   const [rules, setRules] = useState(null);
   const [stats, setStats] = useState(null);
 
@@ -66,7 +68,7 @@ export default function MyResponsibilitiesScreen({ onContactCFO }) {
               lineHeight: 1,
             }}
           >
-            MY RESPONSIBILITIES
+            {t("responsibilities.title")}
           </div>
           <div
             style={{
@@ -77,12 +79,12 @@ export default function MyResponsibilitiesScreen({ onContactCFO }) {
               marginTop: 6,
             }}
           >
-            YOUR DOMAIN, SET BY THE CFO
+            {t("responsibilities.subtitle")}
           </div>
         </div>
 
         <AminahNarrationCard
-          text={`You currently own [${ruleCount} routing rules] covering expense categorization, bank reconciliation, audit responses, and marketing investigations. You've handled [${totalTasks} tasks] through these rules this period. The CFO can adjust these at any time.`}
+          text={t("responsibilities.aminah_summary", { rules: ruleCount, tasks: totalTasks })}
         />
 
         <div
@@ -105,7 +107,7 @@ export default function MyResponsibilitiesScreen({ onContactCFO }) {
             marginBottom: 10,
           }}
         >
-          YOUR DOMAIN STATS
+          {t("responsibilities.domain_stats")}
         </div>
         {stats && (
           <div
@@ -116,10 +118,10 @@ export default function MyResponsibilitiesScreen({ onContactCFO }) {
               marginBottom: 20,
             }}
           >
-            <Stat label="TASKS HANDLED" value={stats.tasksHandled} />
-            <Stat label="ACCURACY RATE" value={`${stats.accuracyRate}%`} />
-            <Stat label="AVG COMPLETION" value={`${stats.avgCompletionMinutes}m`} />
-            <Stat label="PENDING IN QUEUE" value={stats.pendingInQueue} />
+            <Stat label={t("responsibilities.tasks_handled")} value={stats.tasksHandled} />
+            <Stat label={t("responsibilities.accuracy_rate")} value={`${stats.accuracyRate}%`} />
+            <Stat label={t("responsibilities.avg_completion")} value={`${stats.avgCompletionMinutes}m`} />
+            <Stat label={t("responsibilities.pending_in_queue")} value={stats.pendingInQueue} />
           </div>
         )}
 
@@ -137,7 +139,7 @@ export default function MyResponsibilitiesScreen({ onContactCFO }) {
             fontFamily: "inherit",
           }}
         >
-          Contact CFO to adjust your responsibilities
+          {t("responsibilities.contact_cfo")}
         </button>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import { getBudgetById, delegateBudget, getTeamMembers } from "../../engine/mockEngine";
 import { formatKWD } from "../../utils/format";
@@ -12,6 +13,7 @@ const DEFAULT_ASSIGNMENTS = {
 };
 
 export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegated }) {
+  const { t } = useTranslation("budget");
   const [budget, setBudget] = useState(null);
   const [team, setTeam] = useState([]);
   const [assignments, setAssignments] = useState({}); // departmentId → juniorUserId
@@ -84,7 +86,7 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
         >
           <div>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570" }}>
-              DELEGATE BUDGET
+              {t("delegate_modal.label")}
             </div>
             <div
               style={{
@@ -92,17 +94,17 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
                 fontSize: 22, color: "#E6EDF3", letterSpacing: "-0.2px", marginTop: 2,
               }}
             >
-              ASSIGN DEPARTMENTS TO TEAM
+              {t("delegate_modal.title")}
             </div>
             {budget && (
               <div style={{ fontSize: 11, color: "#5B6570", marginTop: 4 }}>
-                {budget.period.label} · {expenseDepts.length} expense departments need owners
+                {t("delegate_modal.sub", { period: budget.period.label, count: expenseDepts.length })}
               </div>
             )}
           </div>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("delegate_modal.close")}
             style={{ background: "transparent", border: "none", color: "#5B6570", cursor: "pointer", padding: 4 }}
           >
             <X size={18} />
@@ -172,15 +174,15 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
                     fontFamily: "inherit",
                   }}
                 >
-                  {expanded ? "− Hide notes" : "+ Add notes (optional)"}
+                  {expanded ? t("delegate_modal.hide_notes") : t("delegate_modal.add_notes")}
                 </button>
                 {expanded && (
                   <textarea
                     value={notes[d.id] || ""}
                     onChange={(e) => setNotes({ ...notes, [d.id]: e.target.value })}
-                    placeholder={`Notes for ${
-                      (team.find((m) => m.id === assignments[d.id]) || {}).name || "recipient"
-                    }…`}
+                    placeholder={t("delegate_modal.notes_placeholder", {
+                      name: (team.find((m) => m.id === assignments[d.id]) || {}).name || t("delegate_modal.notes_fallback")
+                    })}
                     rows={2}
                     style={{
                       width: "100%",
@@ -216,7 +218,7 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
               fontStyle: "italic",
             }}
           >
-            {expenseDepts.length} Taskbox tasks will be created and sent to your team.
+            {t("delegate_modal.footnote", { count: expenseDepts.length })}
           </div>
           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
             <button
@@ -232,7 +234,7 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
                 fontFamily: "inherit",
               }}
             >
-              Cancel
+              {t("delegate_modal.cancel")}
             </button>
             <button
               onClick={handleSend}
@@ -249,7 +251,7 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
                 fontFamily: "inherit",
               }}
             >
-              {sending ? "Sending..." : "Send delegation tasks"}
+              {sending ? t("delegate_modal.sending") : t("delegate_modal.send")}
             </button>
           </div>
         </div>

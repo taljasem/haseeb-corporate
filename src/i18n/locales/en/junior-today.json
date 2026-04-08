@@ -1,0 +1,43 @@
+{
+  "sections": {
+    "my_tasks": "MY TASKS",
+    "work_queue": "TODAY'S WORK QUEUE",
+    "my_responsibilities": "MY RESPONSIBILITIES",
+    "todays_activity": "TODAY'S ACTIVITY",
+    "aminahs_notes": "AMINAH'S NOTES"
+  },
+  "inbox_zero": "Inbox zero.",
+  "loading": "Loading…",
+  "view_all": "View all in Taskbox →",
+  "view_full": "View full details →",
+  "queue": {
+    "bank_tx": "bank transactions to categorize",
+    "recon_exceptions": "reconciliation exceptions",
+    "je_awaiting": "JE drafts awaiting CFO approval",
+    "escalations": "escalation response needed"
+  },
+  "responsibilities": {
+    "title": "MY RESPONSIBILITIES",
+    "subtitle": "YOUR DOMAIN, SET BY THE CFO",
+    "domain_stats": "YOUR DOMAIN STATS",
+    "aminah_summary": "You currently own [{{rules}} routing rules] covering expense categorization, bank reconciliation, audit responses, and marketing investigations. You've handled [{{tasks}} tasks] through these rules this period. The CFO can adjust these at any time.",
+    "tasks_handled": "TASKS HANDLED",
+    "accuracy_rate": "ACCURACY RATE",
+    "avg_completion": "AVG COMPLETION",
+    "pending_in_queue": "PENDING IN QUEUE",
+    "contact_cfo": "Contact CFO to adjust your responsibilities",
+    "you_handle": "→ YOU HANDLE",
+    "read_only_pill": "READ-ONLY · MANAGED BY CFO",
+    "all_task_types": "All task types",
+    "task_types": "Task types: {{types}}",
+    "amount_min": "Amount ≥ {{amount}}",
+    "amount_max": "Amount ≤ {{amount}}",
+    "merchant": "Merchant ~ \"{{pattern}}\"",
+    "category": "Category: {{value}}",
+    "applied_times_prefix": "Applied",
+    "applied_times_suffix": "times this period",
+    "last_applied": "Last applied {{time}}",
+    "last_applied_never": "Last applied never",
+    "created_by": "Created by {{name}}"
+  }
+}

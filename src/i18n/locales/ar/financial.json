@@ -1,1 +1,27 @@
-{}
+{
+  "title": "القوائم المالية",
+  "period_default": "مارس 2026",
+  "tabs": {
+    "income": "قائمة الدخل",
+    "balance": "قائمة المركز المالي",
+    "cash-flow": "قائمة التدفقات النقدية"
+  },
+  "periods": {
+    "month": "هذا الشهر",
+    "quarter": "هذا الربع",
+    "ytd": "منذ بداية العام",
+    "custom": "مخصص"
+  },
+  "table": {
+    "col_account": "الحساب",
+    "col_current": "الفترة الحالية",
+    "col_prior": "الفترة السابقة",
+    "col_change": "التغير",
+    "col_pct": "% التغير"
+  },
+  "export": "تصدير {{format}}",
+  "aminah_card": {
+    "label": "أمينة تقول",
+    "ask_about": "اسأل أمينة عن أي بند ←"
+  }
+}

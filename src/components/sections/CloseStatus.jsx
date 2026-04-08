@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import SectionCard from "./SectionCard";
 import { getCloseStatus } from "../../engine/mockEngine";
 
 export default function CloseStatus() {
+  const { t } = useTranslation("owner-overview");
   const [d, setD] = useState(null);
   useEffect(() => {
     getCloseStatus().then(setD);
   }, []);
 
   return (
-    <SectionCard label="MONTH-END CLOSE" delay={0.55}>
+    <SectionCard label={t("sections.month_end_close")} delay={0.55}>
       <div
         style={{
           fontSize: 11,
@@ -42,7 +44,7 @@ export default function CloseStatus() {
             fontWeight: 600,
           }}
         >
-          TASKS COMPLETE
+          {t("close.tasks_complete")}
         </span>
       </div>
 

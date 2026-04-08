@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, Circle, Clock, AlertTriangle } from "lucide-react";
 import AminahNarrationCard from "../../components/financial/AminahNarrationCard";
 import Avatar from "../../components/taskbox/Avatar";
@@ -6,13 +7,14 @@ import { getMonthEndCloseTasks } from "../../engine/mockEngine";
 import { formatRelativeTime } from "../../utils/relativeTime";
 
 const STATUS = {
-  complete:    { label: "COMPLETE",    color: "#5B6570",  Icon: Check,          iconColor: "#00C48C" },
-  "in-progress": { label: "IN PROGRESS", color: "#3B82F6", Icon: Clock,          iconColor: "#3B82F6" },
-  pending:     { label: "PENDING",     color: "#5B6570",  Icon: Circle,         iconColor: "#5B6570" },
-  blocked:     { label: "BLOCKED",     color: "#FF5A5F",  Icon: AlertTriangle,  iconColor: "#FF5A5F" },
+  complete:    { key: "complete",    color: "#5B6570",  Icon: Check,          iconColor: "#00C48C" },
+  "in-progress": { key: "in_progress", color: "#3B82F6", Icon: Clock,          iconColor: "#3B82F6" },
+  pending:     { key: "pending",     color: "#5B6570",  Icon: Circle,         iconColor: "#5B6570" },
+  blocked:     { key: "blocked",     color: "#FF5A5F",  Icon: AlertTriangle,  iconColor: "#FF5A5F" },
 };
 
 function ChecklistRow({ task, allTasksComplete }) {
+  const { t } = useTranslation("close");
   const s = STATUS[task.status] || STATUS.pending;
   const Icon = s.Icon;
   const isDone = task.status === "complete";
@@ -41,7 +43,7 @@ function ChecklistRow({ task, allTasksComplete }) {
       </div>
       <Avatar person={task.assignee} size={22} />
       <div style={{ minWidth: 120, fontSize: 11, color: "#5B6570" }}>
-        {task.assignee.name.replace("You (CFO)", "You")}
+        {task.assignee.name.replace("You (CFO)", t("you_cfo_self"))}
       </div>
       <div
         style={{
@@ -52,7 +54,7 @@ function ChecklistRow({ task, allTasksComplete }) {
           minWidth: 100,
         }}
       >
-        {s.label}
+        {t(`task_status.${s.key}`)}
       </div>
       <div
         style={{
@@ -66,7 +68,7 @@ function ChecklistRow({ task, allTasksComplete }) {
         {task.completedAt
           ? formatRelativeTime(task.completedAt)
           : task.dueDate
-            ? `Due ${formatRelativeTime(task.dueDate).replace("ago", "")}`
+            ? t("due_label", { time: formatRelativeTime(task.dueDate).replace("ago", "") })
             : "—"}
       </div>
     </div>
@@ -74,6 +76,7 @@ function ChecklistRow({ task, allTasksComplete }) {
 }
 
 function Validation({ v, onResolve }) {
+  const { t } = useTranslation("close");
   return (
     <div
       style={{
@@ -99,7 +102,7 @@ function Validation({ v, onResolve }) {
           onClick={() => onResolve && onResolve(v.resolveScreen)}
           style={{ fontSize: 11, color: "#00C48C", cursor: "pointer" }}
         >
-          Resolve →
+          {t("resolve")}
         </a>
       )}
     </div>
@@ -107,12 +110,13 @@ function Validation({ v, onResolve }) {
 }
 
 export default function MonthEndCloseScreen({ onNavigate }) {
+  const { t } = useTranslation("close");
   const [data, setData] = useState(null);
   useEffect(() => {
     getMonthEndCloseTasks().then(setData);
   }, []);
 
-  if (!data) return <div style={{ padding: 28, color: "#5B6570" }}>Loading…</div>;
+  if (!data) return <div style={{ padding: 28, color: "#5B6570" }}>{t("loading")}</div>;
 
   const complete = data.tasks.filter((t) => t.status === "complete").length;
   const total = data.tasks.length;
@@ -124,10 +128,10 @@ export default function MonthEndCloseScreen({ onNavigate }) {
   const sorted = [...data.tasks].sort((a, b) => order[a.status] - order[b.status]);
 
   const statusPill = {
-    "in-progress": { label: "IN PROGRESS", color: "#00C48C" },
-    "ready":       { label: "READY FOR REVIEW", color: "#D4A84B" },
-    "closed":      { label: "CLOSED", color: "#5B6570" },
-  }[data.status] || { label: "IN PROGRESS", color: "#00C48C" };
+    "in-progress": { key: "in_progress", color: "#00C48C" },
+    "ready":       { key: "ready", color: "#D4A84B" },
+    "closed":      { key: "closed", color: "#5B6570" },
+  }[data.status] || { key: "in_progress", color: "#00C48C" };
 
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px 32px" }}>
@@ -153,7 +157,7 @@ export default function MonthEndCloseScreen({ onNavigate }) {
                 lineHeight: 1,
               }}
             >
-              MONTH-END CLOSE
+              {t("title")}
             </div>
             <div
               style={{
@@ -179,7 +183,7 @@ export default function MonthEndCloseScreen({ onNavigate }) {
               borderRadius: 4,
             }}
           >
-            {statusPill.label}
+            {t(`status_pill.${statusPill.key}`)}
           </span>
         </div>
 
@@ -221,7 +225,7 @@ export default function MonthEndCloseScreen({ onNavigate }) {
                 color: "#5B6570",
               }}
             >
-              TASKS COMPLETE · {pct}%
+              {t("tasks_complete_label", { pct })}
             </div>
           </div>
           <div
@@ -257,7 +261,7 @@ export default function MonthEndCloseScreen({ onNavigate }) {
               borderBottom: "1px solid rgba(255,255,255,0.06)",
             }}
           >
-            CLOSE CHECKLIST
+            {t("close_checklist")}
           </div>
           {sorted.map((t) => (
             <ChecklistRow key={t.id} task={t} allTasksComplete={allComplete} />
@@ -287,7 +291,7 @@ export default function MonthEndCloseScreen({ onNavigate }) {
               fontFamily: "inherit",
             }}
           >
-            Approve March close
+            {t("approve_close")}
           </button>
           <button
             style={{
@@ -301,7 +305,7 @@ export default function MonthEndCloseScreen({ onNavigate }) {
               fontFamily: "inherit",
             }}
           >
-            Request status update
+            {t("request_status_update")}
           </button>
           <button
             disabled
@@ -317,7 +321,7 @@ export default function MonthEndCloseScreen({ onNavigate }) {
               opacity: 0.6,
             }}
           >
-            Lock period
+            {t("lock_period")}
           </button>
         </div>
 
@@ -340,7 +344,7 @@ export default function MonthEndCloseScreen({ onNavigate }) {
               borderBottom: "1px solid rgba(255,255,255,0.06)",
             }}
           >
-            PRE-CLOSE VALIDATIONS
+            {t("preclose_validations")}
           </div>
           {data.validations.map((v, i) => (
             <Validation key={i} v={v} onResolve={onNavigate} />

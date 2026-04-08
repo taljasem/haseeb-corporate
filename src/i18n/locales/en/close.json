@@ -1,1 +1,26 @@
-{}
+{
+  "title": "MONTH-END CLOSE",
+  "loading": "Loading…",
+  "status_pill": {
+    "in_progress": "IN PROGRESS",
+    "ready": "READY FOR REVIEW",
+    "closed": "CLOSED"
+  },
+  "task_status": {
+    "complete": "COMPLETE",
+    "in_progress": "IN PROGRESS",
+    "pending": "PENDING",
+    "blocked": "BLOCKED"
+  },
+  "tasks_complete_label": "TASKS COMPLETE · {{pct}}%",
+  "tasks_complete_ratio": "{{done}} / {{total}}",
+  "close_checklist": "CLOSE CHECKLIST",
+  "preclose_validations": "PRE-CLOSE VALIDATIONS",
+  "approve_close": "Approve March close",
+  "request_status_update": "Request status update",
+  "lock_period": "Lock period",
+  "due_label": "Due {{time}}",
+  "resolve": "Resolve →",
+  "you_cfo_self": "You",
+  "section_label": "MONTH-END CLOSE"
+}

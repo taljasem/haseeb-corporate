@@ -20,6 +20,10 @@ import enConvJe from "./locales/en/conv-je.json";
 import enAminah from "./locales/en/aminah.json";
 import enNotifications from "./locales/en/notifications.json";
 import enCfoToday from "./locales/en/cfo-today.json";
+import enBudget from "./locales/en/budget.json";
+import enOwnerToday from "./locales/en/owner-today.json";
+import enJuniorToday from "./locales/en/junior-today.json";
+import enOwnerOverview from "./locales/en/owner-overview.json";
 
 import arCommon from "./locales/ar/common.json";
 import arHeader from "./locales/ar/header.json";
@@ -39,12 +43,17 @@ import arConvJe from "./locales/ar/conv-je.json";
 import arAminah from "./locales/ar/aminah.json";
 import arNotifications from "./locales/ar/notifications.json";
 import arCfoToday from "./locales/ar/cfo-today.json";
+import arBudget from "./locales/ar/budget.json";
+import arOwnerToday from "./locales/ar/owner-today.json";
+import arJuniorToday from "./locales/ar/junior-today.json";
+import arOwnerOverview from "./locales/ar/owner-overview.json";
 
 const namespaces = [
   "common", "header", "sidebar", "hero", "taskbox",
   "bank-accounts", "bank-transactions", "rules", "reconciliation",
   "financial", "audit", "close", "team", "manual-je", "conv-je",
   "aminah", "notifications", "cfo-today",
+  "budget", "owner-today", "junior-today", "owner-overview",
 ];
 
 i18n
@@ -71,6 +80,10 @@ i18n
         aminah: enAminah,
         notifications: enNotifications,
         "cfo-today": enCfoToday,
+        budget: enBudget,
+        "owner-today": enOwnerToday,
+        "junior-today": enJuniorToday,
+        "owner-overview": enOwnerOverview,
       },
       ar: {
         common: arCommon,
@@ -91,6 +104,10 @@ i18n
         aminah: arAminah,
         notifications: arNotifications,
         "cfo-today": arCfoToday,
+        budget: arBudget,
+        "owner-today": arOwnerToday,
+        "junior-today": arJuniorToday,
+        "owner-overview": arOwnerOverview,
       },
     },
     fallbackLng: "en",

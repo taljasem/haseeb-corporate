@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import AminahNarrationCard from "../../components/financial/AminahNarrationCard";
 import StatementTable from "../../components/financial/StatementTable";
 import {
@@ -7,19 +8,11 @@ import {
   getCashFlowStatement,
 } from "../../engine/mockEngine";
 
-const TABS = [
-  { id: "income",       label: "INCOME STATEMENT" },
-  { id: "balance",      label: "BALANCE SHEET" },
-  { id: "cash-flow",    label: "CASH FLOW STATEMENT" },
-];
-const PERIODS = [
-  { id: "month",   label: "This Month" },
-  { id: "quarter", label: "This Quarter" },
-  { id: "ytd",     label: "YTD" },
-  { id: "custom",  label: "Custom" },
-];
+const TAB_IDS = ["income", "balance", "cash-flow"];
+const PERIOD_IDS = ["month", "quarter", "ytd", "custom"];
 
 export default function FinancialStatementsScreen({ onOpenAminah }) {
+  const { t } = useTranslation("financial");
   const [tab, setTab] = useState("income");
   const [period, setPeriod] = useState("month");
   const [income, setIncome] = useState(null);
@@ -58,7 +51,7 @@ export default function FinancialStatementsScreen({ onOpenAminah }) {
                 lineHeight: 1,
               }}
             >
-              FINANCIAL STATEMENTS
+              {t("title")}
             </div>
             <div
               style={{
@@ -69,16 +62,16 @@ export default function FinancialStatementsScreen({ onOpenAminah }) {
                 marginTop: 6,
               }}
             >
-              {current?.period || "MARCH 2026"}
+              {current?.period || t("period_default")}
             </div>
           </div>
           <div style={{ display: "flex", gap: 4 }}>
-            {PERIODS.map((p) => {
-              const on = period === p.id;
+            {PERIOD_IDS.map((pid) => {
+              const on = period === pid;
               return (
                 <button
-                  key={p.id}
-                  onClick={() => setPeriod(p.id)}
+                  key={pid}
+                  onClick={() => setPeriod(pid)}
                   style={{
                     fontSize: 11,
                     fontWeight: 600,
@@ -91,7 +84,7 @@ export default function FinancialStatementsScreen({ onOpenAminah }) {
                     fontFamily: "inherit",
                   }}
                 >
-                  {p.label}
+                  {t(`periods.${pid}`)}
                 </button>
               );
             })}
@@ -107,12 +100,12 @@ export default function FinancialStatementsScreen({ onOpenAminah }) {
             borderBottom: "1px solid rgba(255,255,255,0.06)",
           }}
         >
-          {TABS.map((t) => {
-            const on = tab === t.id;
+          {TAB_IDS.map((tid) => {
+            const on = tab === tid;
             return (
               <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
+                key={tid}
+                onClick={() => setTab(tid)}
                 style={{
                   background: "transparent",
                   border: "none",
@@ -126,7 +119,7 @@ export default function FinancialStatementsScreen({ onOpenAminah }) {
                   boxShadow: on ? "inset 0 -2px 0 #00C48C" : "none",
                 }}
               >
-                {t.label}
+                {t(`tabs.${tid}`)}
               </button>
             );
           })}
@@ -137,7 +130,7 @@ export default function FinancialStatementsScreen({ onOpenAminah }) {
             <AminahNarrationCard
               text={current.aminahNarration}
               onAsk={() =>
-                onOpenAminah && onOpenAminah(`${TABS.find((t) => t.id === tab).label} — ${current.period}`)
+                onOpenAminah && onOpenAminah(`${t(`tabs.${tab}`)} — ${current.period}`)
               }
             />
             <StatementTable sections={current.sections} />
@@ -159,7 +152,7 @@ export default function FinancialStatementsScreen({ onOpenAminah }) {
                     fontFamily: "inherit",
                   }}
                 >
-                  Export {fmt}
+                  {t("export", { format: fmt })}
                 </button>
               ))}
             </div>

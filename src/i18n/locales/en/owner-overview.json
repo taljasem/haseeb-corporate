@@ -1,0 +1,45 @@
+{
+  "title": "OVERVIEW",
+  "subtitle": "{{tenant}} · {{period}}",
+  "period_march": "MARCH 2026",
+  "sections": {
+    "monthly_insights": "MONTHLY INSIGHTS",
+    "financial_health": "FINANCIAL HEALTH",
+    "aminahs_notes": "AMINAH'S NOTES",
+    "ai_insights": "AI INSIGHTS",
+    "pending_approvals": "PENDING APPROVALS",
+    "budget_performance": "BUDGET PERFORMANCE",
+    "audit_readiness": "AUDIT READINESS",
+    "month_end_close": "MONTH-END CLOSE",
+    "bank_accounts": "BANK ACCOUNTS"
+  },
+  "financial_health": {
+    "this_month": "THIS MONTH"
+  },
+  "ai_insights": {
+    "balance_up": "KIB Operating balance up",
+    "vs_avg": "vs. trailing 30-day average. Liquidity posture strong.",
+    "pifss_due": "PIFSS contribution due end of month. Estimated:"
+  },
+  "pending_approvals": {
+    "label": "PENDING APPROVALS",
+    "from": "{{count}} from {{name}}",
+    "view_all": "View all in Taskbox →"
+  },
+  "budget_performance": {
+    "used_pct": "{{pct}}% used",
+    "view_all": "View all departments →"
+  },
+  "audit_readiness": {
+    "checks_passing": "CHECKS PASSING",
+    "pass_title": "Pass",
+    "fail_title": "Fail",
+    "failing_line": "{{count}} check failing:"
+  },
+  "close": {
+    "tasks_complete": "TASKS COMPLETE"
+  },
+  "bank_accounts": {
+    "view_all": "View all accounts →"
+  }
+}

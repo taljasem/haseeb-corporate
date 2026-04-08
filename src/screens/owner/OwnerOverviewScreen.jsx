@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useTenant } from "../../components/shared/TenantContext";
+import LtrText from "../../components/shared/LtrText";
 import MonthlyInsights from "../../components/sections/MonthlyInsights";
 import FinancialHealthSection from "../../components/sections/FinancialHealthSection";
 import AminahNotes from "../../components/sections/AminahNotes";
@@ -10,6 +13,8 @@ import CloseStatus from "../../components/sections/CloseStatus";
 import BankAccountsCompact from "../../components/sections/BankAccountsCompact";
 
 export default function OwnerOverviewScreen({ setActiveScreen, onOpenBankAccount }) {
+  const { t } = useTranslation("owner-overview");
+  const { tenant } = useTenant();
   const [wide, setWide] = useState(
     typeof window !== "undefined" ? window.innerWidth > 1400 : false
   );
@@ -32,7 +37,7 @@ export default function OwnerOverviewScreen({ setActiveScreen, onOpenBankAccount
               lineHeight: 1,
             }}
           >
-            OVERVIEW
+            {t("title")}
           </div>
           <div
             style={{
@@ -43,7 +48,7 @@ export default function OwnerOverviewScreen({ setActiveScreen, onOpenBankAccount
               marginTop: 6,
             }}
           >
-            AL MANARA TRADING · MARCH 2026
+            <LtrText>{(tenant?.company?.name || "Al Manara Trading").toUpperCase()}</LtrText> · {t("period_march")}
           </div>
         </div>
         <div

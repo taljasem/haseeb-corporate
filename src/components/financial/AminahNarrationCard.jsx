@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import AminahTag from "../AminahTag";
 
 function renderHighlighted(text) {
@@ -27,6 +28,7 @@ function renderHighlighted(text) {
 }
 
 export default function AminahNarrationCard({ text, onAsk }) {
+  const { t } = useTranslation("financial");
   return (
     <div
       style={{
@@ -54,7 +56,7 @@ export default function AminahNarrationCard({ text, onAsk }) {
             color: "#5B6570",
           }}
         >
-          AMINAH SAYS
+          {t("aminah_card.label")}
         </div>
         <AminahTag />
       </div>
@@ -67,7 +69,7 @@ export default function AminahNarrationCard({ text, onAsk }) {
             onClick={onAsk}
             style={{ fontSize: 12, color: "#00C48C", cursor: "pointer" }}
           >
-            Ask Aminah about any line item →
+            {t("aminah_card.ask_about")}
           </a>
         </div>
       )}

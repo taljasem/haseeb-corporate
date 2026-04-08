@@ -1,0 +1,43 @@
+{
+  "sections": {
+    "my_tasks": "مهامي",
+    "work_queue": "قائمة عمل اليوم",
+    "my_responsibilities": "مسؤولياتي",
+    "todays_activity": "نشاط اليوم",
+    "aminahs_notes": "ملاحظات أمينة"
+  },
+  "inbox_zero": "الصندوق فارغ.",
+  "loading": "جارٍ التحميل…",
+  "view_all": "عرض الكل في صندوق المهام ←",
+  "view_full": "عرض التفاصيل الكاملة ←",
+  "queue": {
+    "bank_tx": "عمليات بنكية للتصنيف",
+    "recon_exceptions": "استثناءات التسويات",
+    "je_awaiting": "مسودات قيود بانتظار اعتماد المدير المالي",
+    "escalations": "ردود على تصعيدات مطلوبة"
+  },
+  "responsibilities": {
+    "title": "مسؤولياتي",
+    "subtitle": "نطاقك، يحدده المدير المالي",
+    "domain_stats": "إحصائيات نطاقك",
+    "aminah_summary": "تمتلكين حالياً [{{rules}} قاعدة توجيه] تغطي تصنيف المصروفات والتسويات البنكية والردود على التدقيق وتحقيقات التسويق. عالجتِ [{{tasks}} مهمة] عبر هذه القواعد في هذه الفترة. يمكن للمدير المالي تعديلها في أي وقت.",
+    "tasks_handled": "مهام معالجة",
+    "accuracy_rate": "معدل الدقة",
+    "avg_completion": "متوسط الإنجاز",
+    "pending_in_queue": "بانتظار المعالجة",
+    "contact_cfo": "تواصل مع المدير المالي لتعديل مسؤولياتك",
+    "you_handle": "← تتعاملين معها",
+    "read_only_pill": "للقراءة فقط · يديرها المدير المالي",
+    "all_task_types": "كل أنواع المهام",
+    "task_types": "أنواع المهام: {{types}}",
+    "amount_min": "المبلغ ≥ {{amount}}",
+    "amount_max": "المبلغ ≤ {{amount}}",
+    "merchant": "الجهة ~ \"{{pattern}}\"",
+    "category": "الفئة: {{value}}",
+    "applied_times_prefix": "طُبّقت",
+    "applied_times_suffix": "مرة في هذه الفترة",
+    "last_applied": "آخر تطبيق {{time}}",
+    "last_applied_never": "لم تُطبّق بعد",
+    "created_by": "أنشأها {{name}}"
+  }
+}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import SectionCard from "./SectionCard";
 import { getAminahNotes } from "../../engine/mockEngine";
 
@@ -28,6 +29,7 @@ function renderHighlighted(text) {
 }
 
 export default function AminahNotes() {
+  const { t } = useTranslation("owner-overview");
   const [notes, setNotes] = useState(null);
   useEffect(() => {
     getAminahNotes().then(setNotes);
@@ -35,7 +37,7 @@ export default function AminahNotes() {
 
   return (
     <SectionCard
-      label="AMINAH'S NOTES"
+      label={t("sections.aminahs_notes")}
       extra={notes ? <span className="tension-dot tension-dot--info">{notes.length}</span> : null}
       delay={0.3}
     >

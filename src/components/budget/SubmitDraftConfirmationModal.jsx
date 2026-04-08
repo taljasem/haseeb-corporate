@@ -1,6 +1,8 @@
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 
 export default function SubmitDraftConfirmationModal({ open, departmentName, note, onClose, onConfirm }) {
+  const { t } = useTranslation("budget");
   if (!open) return null;
   return (
     <>
@@ -41,7 +43,7 @@ export default function SubmitDraftConfirmationModal({ open, departmentName, not
         >
           <div>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570" }}>
-              SUBMIT BUDGET DRAFT
+              {t("submit_modal.label")}
             </div>
             <div
               style={{
@@ -52,12 +54,12 @@ export default function SubmitDraftConfirmationModal({ open, departmentName, not
                 marginTop: 4,
               }}
             >
-              SEND TO CFO
+              {t("submit_modal.title")}
             </div>
           </div>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("submit_modal.close")}
             style={{ background: "transparent", border: "none", color: "#5B6570", cursor: "pointer", padding: 4 }}
           >
             <X size={18} />
@@ -66,10 +68,10 @@ export default function SubmitDraftConfirmationModal({ open, departmentName, not
 
         <div style={{ padding: "18px 22px" }}>
           <div style={{ fontSize: 14, color: "#E6EDF3", lineHeight: 1.6 }}>
-            Submit your draft for <strong style={{ color: "#00C48C" }}>{departmentName}</strong> to the CFO?
+            {t("submit_modal.body_prefix")}<strong style={{ color: "#00C48C" }}>{departmentName}</strong>{t("submit_modal.body_suffix")}
           </div>
           <div style={{ fontSize: 12, color: "#8B98A5", marginTop: 8, lineHeight: 1.6 }}>
-            You can still make changes if they request revisions.
+            {t("submit_modal.revise_note")}
           </div>
           {note && (
             <div
@@ -85,7 +87,7 @@ export default function SubmitDraftConfirmationModal({ open, departmentName, not
               }}
             >
               <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.15em", color: "#5B6570", marginBottom: 4 }}>
-                YOUR NOTE
+                {t("submit_modal.your_note")}
               </div>
               {note}
             </div>
@@ -114,7 +116,7 @@ export default function SubmitDraftConfirmationModal({ open, departmentName, not
               fontFamily: "inherit",
             }}
           >
-            Cancel
+            {t("submit_modal.cancel")}
           </button>
           <button
             onClick={onConfirm}
@@ -130,7 +132,7 @@ export default function SubmitDraftConfirmationModal({ open, departmentName, not
               fontFamily: "inherit",
             }}
           >
-            Submit to CFO
+            {t("submit_modal.submit")}
           </button>
         </div>
       </div>

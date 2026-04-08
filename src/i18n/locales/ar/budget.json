@@ -1,0 +1,112 @@
+{
+  "title": "الميزانية",
+  "my_title": "ميزانيتي",
+  "my_subtitle": "الأقسام التي تملكينها",
+  "loading": "جارٍ التحميل",
+  "you_cfo": "أنت (المدير المالي)",
+  "period_status": "{{period}} · {{status}}",
+  "status_pill": {
+    "draft": "مسودة",
+    "in_review": "قيد المراجعة",
+    "approved": "معتمدة",
+    "active": "نشطة",
+    "closed": "مغلقة",
+    "delegated": "مفوضة",
+    "pending_approval": "بانتظار الاعتماد"
+  },
+  "row_status": {
+    "under": "تحت الخطة",
+    "on_track": "وفق الخطة",
+    "approaching": "يقترب من الحد",
+    "over": "تجاوز",
+    "behind": "متأخر",
+    "ahead": "متقدم"
+  },
+  "actions": {
+    "approve_budget": "اعتماد الميزانية",
+    "request_changes": "طلب تعديلات",
+    "reject": "رفض",
+    "lock_fy": "قفل للسنة المالية 2026",
+    "export_pdf": "تصدير PDF",
+    "edit_budget": "تعديل الميزانية",
+    "delegate_team": "تفويض للفريق",
+    "send_reminders": "إرسال تذكيرات",
+    "send_for_approval": "إرسال للاعتماد"
+  },
+  "columns": {
+    "department": "القسم",
+    "owner": "المسؤول",
+    "annual": "سنوي",
+    "ytd_budget": "الميزانية حتى اليوم",
+    "ytd_actual": "الفعلي حتى اليوم",
+    "variance": "الفرق",
+    "pct_used": "% مستخدم",
+    "status": "الحالة"
+  },
+  "other_depts": "أقسام أخرى (ملخص للعرض فقط)",
+  "owner_label": "المسؤول: {{name}}",
+  "workflow_strip": {
+    "submitted_count": "{{done}} / {{total}} مُرسَلة"
+  },
+  "dept_row": {
+    "review_submitted": "أرسله",
+    "approve_department": "اعتماد القسم",
+    "request_revisions": "طلب تعديلات",
+    "submit_revised": "إرسال المسودة المعدلة",
+    "submit_to_cfo": "إرسال إلى المدير المالي",
+    "awaiting_review": "بانتظار مراجعة المدير المالي",
+    "note_placeholder": "أضف ملاحظة للمدير المالي (اختياري)",
+    "revision_notes_for": "ملاحظات التعديل لـ {{name}}",
+    "revision_placeholder": "صف ما يحتاج إلى تغيير…",
+    "cancel": "إلغاء",
+    "send_revision_request": "إرسال طلب التعديل",
+    "loading": "جارٍ التحميل…"
+  },
+  "summary": {
+    "total_revenue_budget": "إجمالي ميزانية الإيرادات",
+    "total_expense_budget": "إجمالي ميزانية المصروفات",
+    "projected_net_income": "صافي الدخل المتوقع",
+    "vs_plan_ytd": "مقابل الخطة حتى اليوم",
+    "across_n_depts": "موزعة على {{count}} قسم",
+    "margin_sub": "{{pct}}% هامش",
+    "tracking_exact": "تسير بالضبط وفق الخطة",
+    "ahead_of_plan": "{{amount}} د.ك متقدم على الخطة",
+    "over_plan": "{{amount}} د.ك تجاوز الخطة"
+  },
+  "toast": {
+    "approved": "تم اعتماد {{name}}",
+    "revision_sent": "تم إرسال طلب التعديل",
+    "submitted": "تم إرسال {{name}} إلى المدير المالي",
+    "delegated": "تم التفويض إلى {{count}} من أعضاء الفريق"
+  },
+  "revision": {
+    "label": "المدير المالي طلب تعديلاً",
+    "requested_at": "طُلب {{time}} · ",
+    "from_cfo": "من المدير المالي"
+  },
+  "submit_modal": {
+    "label": "إرسال مسودة الميزانية",
+    "title": "إرسال إلى المدير المالي",
+    "body_prefix": "هل تريد إرسال مسودتك لـ",
+    "body_suffix": "إلى المدير المالي؟",
+    "revise_note": "يمكنك إجراء تغييرات لاحقاً إذا طلب تعديلات.",
+    "your_note": "ملاحظتك",
+    "cancel": "إلغاء",
+    "submit": "إرسال إلى المدير المالي",
+    "close": "إغلاق"
+  },
+  "delegate_modal": {
+    "label": "تفويض الميزانية",
+    "title": "إسناد الأقسام للفريق",
+    "sub": "{{period}} · {{count}} قسم مصروفات بحاجة لمسؤولين",
+    "hide_notes": "− إخفاء الملاحظات",
+    "add_notes": "+ إضافة ملاحظات (اختياري)",
+    "notes_placeholder": "ملاحظات لـ {{name}}…",
+    "notes_fallback": "المستلم",
+    "footnote": "سيتم إنشاء {{count}} مهمة في صندوق المهام وإرسالها للفريق.",
+    "cancel": "إلغاء",
+    "send": "إرسال مهام التفويض",
+    "sending": "جارٍ الإرسال...",
+    "close": "إغلاق"
+  }
+}

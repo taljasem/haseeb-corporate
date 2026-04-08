@@ -1,0 +1,112 @@
+{
+  "title": "BUDGET",
+  "my_title": "MY BUDGET",
+  "my_subtitle": "DEPARTMENTS YOU OWN",
+  "loading": "LOADING",
+  "you_cfo": "You (CFO)",
+  "period_status": "{{period}} · {{status}}",
+  "status_pill": {
+    "draft": "DRAFT",
+    "in_review": "IN REVIEW",
+    "approved": "APPROVED",
+    "active": "ACTIVE",
+    "closed": "CLOSED",
+    "delegated": "DELEGATED",
+    "pending_approval": "PENDING APPROVAL"
+  },
+  "row_status": {
+    "under": "UNDER",
+    "on_track": "ON TRACK",
+    "approaching": "APPROACHING",
+    "over": "OVER",
+    "behind": "BEHIND",
+    "ahead": "AHEAD"
+  },
+  "actions": {
+    "approve_budget": "Approve budget",
+    "request_changes": "Request changes",
+    "reject": "Reject",
+    "lock_fy": "Lock for FY 2026",
+    "export_pdf": "Export PDF",
+    "edit_budget": "Edit budget",
+    "delegate_team": "Delegate to team",
+    "send_reminders": "Send reminders",
+    "send_for_approval": "Send for approval"
+  },
+  "columns": {
+    "department": "DEPARTMENT",
+    "owner": "OWNER",
+    "annual": "ANNUAL",
+    "ytd_budget": "YTD BUDGET",
+    "ytd_actual": "YTD ACTUAL",
+    "variance": "VARIANCE",
+    "pct_used": "% USED",
+    "status": "STATUS"
+  },
+  "other_depts": "OTHER DEPARTMENTS (READ-ONLY SUMMARY)",
+  "owner_label": "Owner: {{name}}",
+  "workflow_strip": {
+    "submitted_count": "{{done}} / {{total}} submitted"
+  },
+  "dept_row": {
+    "review_submitted": "Submitted by",
+    "approve_department": "Approve department",
+    "request_revisions": "Request revisions",
+    "submit_revised": "Submit revised draft",
+    "submit_to_cfo": "Submit to CFO",
+    "awaiting_review": "Awaiting CFO review",
+    "note_placeholder": "Add a note to the CFO (optional)",
+    "revision_notes_for": "REVISION NOTES FOR {{name}}",
+    "revision_placeholder": "Describe what needs to change…",
+    "cancel": "Cancel",
+    "send_revision_request": "Send revision request",
+    "loading": "Loading…"
+  },
+  "summary": {
+    "total_revenue_budget": "TOTAL REVENUE BUDGET",
+    "total_expense_budget": "TOTAL EXPENSE BUDGET",
+    "projected_net_income": "PROJECTED NET INCOME",
+    "vs_plan_ytd": "VS PLAN YTD",
+    "across_n_depts": "across {{count}} departments",
+    "margin_sub": "{{pct}}% margin",
+    "tracking_exact": "tracking exactly to plan",
+    "ahead_of_plan": "KWD {{amount}} ahead of plan",
+    "over_plan": "KWD {{amount}} over plan"
+  },
+  "toast": {
+    "approved": "{{name}} approved",
+    "revision_sent": "Revision request sent",
+    "submitted": "Submitted {{name}} to CFO",
+    "delegated": "Delegated to {{count}} team members"
+  },
+  "revision": {
+    "label": "REVISION REQUESTED BY CFO",
+    "requested_at": "Requested {{time}} · ",
+    "from_cfo": "From You (CFO)"
+  },
+  "submit_modal": {
+    "label": "SUBMIT BUDGET DRAFT",
+    "title": "SEND TO CFO",
+    "body_prefix": "Submit your draft for ",
+    "body_suffix": " to the CFO?",
+    "revise_note": "You can still make changes if they request revisions.",
+    "your_note": "YOUR NOTE",
+    "cancel": "Cancel",
+    "submit": "Submit to CFO",
+    "close": "Close"
+  },
+  "delegate_modal": {
+    "label": "DELEGATE BUDGET",
+    "title": "ASSIGN DEPARTMENTS TO TEAM",
+    "sub": "{{period}} · {{count}} expense departments need owners",
+    "hide_notes": "− Hide notes",
+    "add_notes": "+ Add notes (optional)",
+    "notes_placeholder": "Notes for {{name}}…",
+    "notes_fallback": "recipient",
+    "footnote": "{{count}} Taskbox tasks will be created and sent to your team.",
+    "cancel": "Cancel",
+    "send": "Send delegation tasks",
+    "sending": "Sending...",
+    "close": "Close"
+  }
+}

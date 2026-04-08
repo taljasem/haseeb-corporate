@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import SectionHeader from "../../components/SectionHeader";
+import { useTenant } from "../../components/shared/TenantContext";
 import TaskboxSummaryCard from "../../components/taskbox/TaskboxSummaryCard";
 import {
   getBusinessPulse,
@@ -152,6 +154,9 @@ function renderHighlighted(text) {
 }
 
 export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAminah }) {
+  const { t } = useTranslation("owner-today");
+  const { tenant } = useTenant();
+  const bankAbbr = tenant?.banks?.[0]?.abbreviation || "KIB";
   const [pulse, setPulse] = useState(null);
   const [approvals, setApprovals] = useState(0);
   const [audit, setAudit] = useState(null);
@@ -171,9 +176,9 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
       const totalActual = expenses.reduce((s, r) => s + r.actualYtd, 0);
       const ratio = totalBudget === 0 ? 1 : totalActual / totalBudget;
       let label, color;
-      if (ratio <= 1.0) { label = "vs budget: on track"; color = "#00C48C"; }
-      else if (ratio <= 1.05) { label = "vs budget: approaching plan"; color = "#D4A84B"; }
-      else { label = `vs budget: ${Math.round((ratio - 1) * 100)}% over plan`; color = "#FF5A5F"; }
+      if (ratio <= 1.0) { label = t("variance.on_track"); color = "#00C48C"; }
+      else if (ratio <= 1.05) { label = t("variance.approaching"); color = "#D4A84B"; }
+      else { label = t("variance.over_plan", { pct: Math.round((ratio - 1) * 100) }); color = "#FF5A5F"; }
       setBudgetVariance({ label, color });
     });
   }, []);
@@ -186,7 +191,7 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
     <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px 32px" }}>
       <div style={{ maxWidth: 1180, margin: "0 auto" }}>
         {/* 1. BUSINESS PULSE */}
-        <SectionCard label="BUSINESS PULSE">
+        <SectionCard label={t("sections.business_pulse")}>
           <div
             style={{
               display: "flex",
@@ -196,39 +201,39 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
             }}
           >
             <KpiBlock
-              label="REVENUE THIS MONTH"
+              label={t("kpi.revenue")}
               value={pulse ? fmtN(pulse.revenue.current) : "—"}
               sub={
                 pulse && (
                   <span style={{ color: revDelta >= 0 ? "#00C48C" : "#FF5A5F" }}>
-                    {revDelta >= 0 ? "▲" : "▼"} {Math.abs(revDelta).toFixed(1)}% vs last month
+                    {revDelta >= 0 ? "▲" : "▼"} {t("kpi.vs_last_month", { delta: Math.abs(revDelta).toFixed(1) })}
                   </span>
                 )
               }
               onClick={() => setActiveScreen("financial-statements")}
             />
             <KpiBlock
-              label="EXPENSES THIS MONTH"
+              label={t("kpi.expenses")}
               value={pulse ? fmtN(pulse.expenses.current) : "—"}
               sub={
                 pulse && (
                   <span style={{ color: (pulse.expenses.percentChange || 0) >= 0 ? "#FF5A5F" : "#00C48C" }}>
                     {(pulse.expenses.percentChange || 0) >= 0 ? "▲" : "▼"}{" "}
-                    {Math.abs(pulse.expenses.percentChange || 0).toFixed(1)}% vs last month
+                    {t("kpi.vs_last_month", { delta: Math.abs(pulse.expenses.percentChange || 0).toFixed(1) })}
                   </span>
                 )
               }
               onClick={() => setActiveScreen("financial-statements")}
             />
             <KpiBlock
-              label="NET INCOME THIS MONTH"
+              label={t("kpi.net_income")}
               accent
               value={pulse ? fmtN(pulse.netIncome.current) : "—"}
               sub={
                 pulse && (
                   <>
                     <span>
-                      Gross {pulse.netIncome.grossMargin}% · Op {pulse.netIncome.operatingMargin}%
+                      {t("kpi.gross_op_margin", { gross: pulse.netIncome.grossMargin, op: pulse.netIncome.operatingMargin })}
                     </span>
                     {budgetVariance && (
                       <div
@@ -250,10 +255,10 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
               onClick={() => setActiveScreen("financial-statements")}
             />
             <KpiBlock
-              label="CASH POSITION"
+              label={t("kpi.cash_position")}
               accent
               value={pulse ? fmtN(pulse.cash.total) : "—"}
-              sub={<span>{pulse ? pulse.cash.subtext : "across 4 KIB accounts"}</span>}
+              sub={<span>{pulse ? pulse.cash.subtext : t("kpi.cash_default_sub", { bank: bankAbbr })}</span>}
               onClick={() => setActiveScreen("bank-accounts")}
             />
           </div>
@@ -261,26 +266,26 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
 
         {/* 2. NEEDS YOUR ATTENTION */}
         <SectionCard
-          label="NEEDS YOUR ATTENTION"
+          label={t("sections.needs_attention")}
           extra={<span className="tension-dot tension-dot--warning">{attentionCount}</span>}
         >
           {approvals > 0 && (
             <AttentionRow
               count={approvals}
-              label="approvals pending your decision"
+              label={t("attention.approvals_pending")}
               onClick={() => setActiveScreen("approvals")}
             />
           )}
           {audit && audit.failing > 0 && (
             <AttentionRow
               count={audit.failing}
-              label="audit check failing — needs resolution"
+              label={t("attention.audit_failing")}
               onClick={() => setActiveScreen("audit-bridge")}
             />
           )}
           <AttentionRow
             count={1}
-            label="March close tracking for your sign-off"
+            label={t("attention.close_for_signoff")}
             onClick={() => setActiveScreen("month-end-close")}
           />
         </SectionCard>
@@ -294,7 +299,7 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
 
         {/* 4. MARCH 2026 CLOSE */}
         {close && (
-          <SectionCard label={`${close.period.toUpperCase()} CLOSE`}>
+          <SectionCard label={t("sections.close_with_period", { period: close.period.toUpperCase() })}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 8 }}>
               <span
                 style={{
@@ -314,7 +319,7 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
                   fontWeight: 600,
                 }}
               >
-                TASKS COMPLETE · {close.percentComplete}%
+                {t("close.tasks_complete_label", { pct: close.percentComplete })}
               </span>
             </div>
             <div
@@ -336,18 +341,18 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
               />
             </div>
             <div style={{ fontSize: 13, color: "#8B98A5", lineHeight: 1.7 }}>
-              On track for April 3 close date.
+              {t("close.on_track_line")}
               <br />
-              CFO will request your sign-off when ready.
+              {t("close.cfo_request")}
               <br />
-              Last update: 45 min ago · Sara reconciled KIB Reserve.
+              {t("close.last_update")}
             </div>
             <div style={{ marginTop: 12 }}>
               <a
                 onClick={() => setActiveScreen("month-end-close")}
                 style={{ fontSize: 12, color: "#00C48C", cursor: "pointer" }}
               >
-                View close details →
+                {t("close.view_details")}
               </a>
             </div>
           </SectionCard>
@@ -355,7 +360,7 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
 
         {/* 5. AMINAH'S TOP INSIGHT */}
         {insight && (
-          <SectionCard label="AMINAH'S TOP INSIGHT">
+          <SectionCard label={t("sections.top_insight")}>
             <div style={{ fontSize: 14, color: "#8B98A5", lineHeight: 1.7 }}>
               {renderHighlighted(insight.text)}
             </div>
@@ -374,7 +379,7 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
                   fontFamily: "inherit",
                 }}
               >
-                Ask Aminah more →
+                {t("insight.ask_more")}
               </button>
               <a
                 onClick={() => setActiveScreen("overview")}
@@ -385,7 +390,7 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
                   alignSelf: "center",
                 }}
               >
-                See all insights
+                {t("insight.see_all")}
               </a>
             </div>
           </SectionCard>

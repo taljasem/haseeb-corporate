@@ -1,4 +1,4 @@
-import { formatKWD } from "../../utils/format";
+import { useTranslation } from "react-i18next";
 
 function fmtN(n) {
   if (n == null) return "—";
@@ -97,6 +97,7 @@ function Row({ cols, label, current, prior, change, percent, indent = 0, bold = 
 }
 
 export default function StatementTable({ sections = [] }) {
+  const { t } = useTranslation("financial");
   const cols = "1fr 150px 140px 140px 80px";
   return (
     <div
@@ -122,11 +123,11 @@ export default function StatementTable({ sections = [] }) {
           color: "#5B6570",
         }}
       >
-        <div>ACCOUNT</div>
-        <div style={{ textAlign: "right" }}>CURRENT</div>
-        <div style={{ textAlign: "right" }}>PRIOR</div>
-        <div style={{ textAlign: "right" }}>CHANGE</div>
-        <div style={{ textAlign: "right" }}>% CHG</div>
+        <div>{t("table.col_account")}</div>
+        <div style={{ textAlign: "right" }}>{t("table.col_current")}</div>
+        <div style={{ textAlign: "right" }}>{t("table.col_prior")}</div>
+        <div style={{ textAlign: "right" }}>{t("table.col_change")}</div>
+        <div style={{ textAlign: "right" }}>{t("table.col_pct")}</div>
       </div>
 
       {sections.map((s, si) => {

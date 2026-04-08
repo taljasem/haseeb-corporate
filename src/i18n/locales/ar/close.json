@@ -1,1 +1,26 @@
-{}
+{
+  "title": "إقفال نهاية الشهر",
+  "loading": "جارٍ التحميل…",
+  "status_pill": {
+    "in_progress": "قيد التنفيذ",
+    "ready": "جاهز للمراجعة",
+    "closed": "مقفل"
+  },
+  "task_status": {
+    "complete": "مكتملة",
+    "in_progress": "قيد التنفيذ",
+    "pending": "بانتظار",
+    "blocked": "متوقفة"
+  },
+  "tasks_complete_label": "مهام مكتملة · {{pct}}%",
+  "tasks_complete_ratio": "{{done}} / {{total}}",
+  "close_checklist": "قائمة مهام الإقفال",
+  "preclose_validations": "فحوصات ما قبل الإقفال",
+  "approve_close": "اعتماد إقفال مارس",
+  "request_status_update": "طلب تحديث الحالة",
+  "lock_period": "قفل الفترة",
+  "due_label": "الاستحقاق {{time}}",
+  "resolve": "معالجة ←",
+  "you_cfo_self": "أنت",
+  "section_label": "إقفال نهاية الشهر"
+}

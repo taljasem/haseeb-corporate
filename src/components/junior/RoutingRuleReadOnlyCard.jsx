@@ -1,23 +1,25 @@
+import { useTranslation } from "react-i18next";
 import { formatRelativeTime } from "../../utils/relativeTime";
 import { formatKWD } from "../../utils/format";
 
-function summarizeTrigger(t) {
+function buildTriggerLines(trigger, t) {
   const parts = [];
-  if (t.taskTypes && t.taskTypes.length && !t.taskTypes.includes("all")) {
-    parts.push(`Task types: ${t.taskTypes.join(", ")}`);
-  } else if (t.taskTypes?.includes("all")) {
-    parts.push("All task types");
+  if (trigger.taskTypes && trigger.taskTypes.length && !trigger.taskTypes.includes("all")) {
+    parts.push(t("responsibilities.task_types", { types: trigger.taskTypes.join(", ") }));
+  } else if (trigger.taskTypes?.includes("all")) {
+    parts.push(t("responsibilities.all_task_types"));
   }
-  const c = t.conditions || {};
-  if (c.amountMin != null) parts.push(`Amount ≥ ${formatKWD(c.amountMin)}`);
-  if (c.amountMax != null) parts.push(`Amount ≤ ${formatKWD(c.amountMax)}`);
-  if (c.merchantPattern) parts.push(`Merchant ~ "${c.merchantPattern}"`);
-  if (c.accountCategory) parts.push(`Category: ${c.accountCategory}`);
+  const c = trigger.conditions || {};
+  if (c.amountMin != null) parts.push(t("responsibilities.amount_min", { amount: formatKWD(c.amountMin) }));
+  if (c.amountMax != null) parts.push(t("responsibilities.amount_max", { amount: formatKWD(c.amountMax) }));
+  if (c.merchantPattern) parts.push(t("responsibilities.merchant", { pattern: c.merchantPattern }));
+  if (c.accountCategory) parts.push(t("responsibilities.category", { value: c.accountCategory }));
   return parts;
 }
 
 export default function RoutingRuleReadOnlyCard({ rule }) {
-  const triggerLines = summarizeTrigger(rule.trigger || {});
+  const { t } = useTranslation("junior-today");
+  const triggerLines = buildTriggerLines(rule.trigger || {}, t);
   return (
     <div
       style={{
@@ -49,7 +51,7 @@ export default function RoutingRuleReadOnlyCard({ rule }) {
               marginTop: 4,
             }}
           >
-            → YOU HANDLE
+            {t("responsibilities.you_handle")}
           </div>
         </div>
         <span
@@ -65,7 +67,7 @@ export default function RoutingRuleReadOnlyCard({ rule }) {
             whiteSpace: "nowrap",
           }}
         >
-          READ-ONLY · MANAGED BY CFO
+          {t("responsibilities.read_only_pill")}
         </span>
       </div>
 
@@ -120,18 +122,20 @@ export default function RoutingRuleReadOnlyCard({ rule }) {
         }}
       >
         <span>
-          Applied{" "}
+          {t("responsibilities.applied_times_prefix")}{" "}
           <span style={{ color: "#E6EDF3", fontFamily: "'DM Mono', monospace", fontWeight: 500 }}>
             {rule.appliedCount}
           </span>{" "}
-          times this period
+          {t("responsibilities.applied_times_suffix")}
         </span>
         <span>·</span>
         <span>
-          Last applied {rule.lastAppliedAt ? formatRelativeTime(rule.lastAppliedAt) : "never"}
+          {rule.lastAppliedAt
+            ? t("responsibilities.last_applied", { time: formatRelativeTime(rule.lastAppliedAt) })
+            : t("responsibilities.last_applied_never")}
         </span>
         <span>·</span>
-        <span>Created by {rule.createdBy?.name || "—"}</span>
+        <span>{t("responsibilities.created_by", { name: rule.createdBy?.name || "—" })}</span>
       </div>
     </div>
   );

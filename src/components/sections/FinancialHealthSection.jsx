@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import SectionCard from "./SectionCard";
 import { getHealthScore } from "../../engine/mockEngine";
 
@@ -25,13 +26,14 @@ function HealthRing({ percent = 75 }) {
 }
 
 export default function FinancialHealthSection() {
+  const { t } = useTranslation("owner-overview");
   const [h, setH] = useState(null);
   useEffect(() => {
     getHealthScore().then(setH);
   }, []);
 
   return (
-    <SectionCard label="FINANCIAL HEALTH" delay={0.25}>
+    <SectionCard label={t("sections.financial_health")} delay={0.25}>
       <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 12 }}>
         <HealthRing percent={h ? h.score : 75} />
         <div>
@@ -47,7 +49,7 @@ export default function FinancialHealthSection() {
             {h ? `${h.score}%` : "—"}
           </div>
           <div style={{ fontSize: 10, color: "#5B6570", letterSpacing: "0.08em", marginTop: 2 }}>
-            THIS MONTH
+            {t("financial_health.this_month")}
           </div>
         </div>
       </div>

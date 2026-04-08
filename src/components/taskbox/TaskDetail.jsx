@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Paperclip, ArrowLeft, MoreHorizontal, Link2 } from "lucide-react";
 import Avatar from "./Avatar";
 import TaskTypePill from "./TaskTypePill";
@@ -7,12 +8,12 @@ import { formatRelativeTime } from "../../utils/relativeTime";
 import JournalEntryCard from "../cfo/JournalEntryCard";
 
 const STATUS_STYLE = {
-  open:             { bg: "rgba(0,196,140,0.10)",  fg: "#00C48C", label: "OPEN" },
-  "in-progress":    { bg: "rgba(59,130,246,0.10)", fg: "#3B82F6", label: "IN PROGRESS" },
-  completed:        { bg: "rgba(91,101,112,0.14)", fg: "#8B98A5", label: "COMPLETED" },
-  cancelled:        { bg: "rgba(91,101,112,0.14)", fg: "#8B98A5", label: "CANCELLED" },
-  "needs-revision": { bg: "rgba(212,168,75,0.10)", fg: "#D4A84B", label: "NEEDS REVISION" },
-  rejected:         { bg: "rgba(255,90,95,0.10)",  fg: "#FF5A5F", label: "REJECTED" },
+  open:             { bg: "rgba(0,196,140,0.10)",  fg: "#00C48C", key: "open" },
+  "in-progress":    { bg: "rgba(59,130,246,0.10)", fg: "#3B82F6", key: "in_progress" },
+  completed:        { bg: "rgba(91,101,112,0.14)", fg: "#8B98A5", key: "completed" },
+  cancelled:        { bg: "rgba(91,101,112,0.14)", fg: "#8B98A5", key: "cancelled" },
+  "needs-revision": { bg: "rgba(212,168,75,0.10)", fg: "#D4A84B", key: "needs_revision" },
+  rejected:         { bg: "rgba(255,90,95,0.10)",  fg: "#FF5A5F", key: "rejected" },
 };
 
 function MetaItem({ label, children }) {
@@ -37,6 +38,7 @@ function MetaItem({ label, children }) {
 }
 
 export default function TaskDetail({ task, onBack, onComplete, onReply, onApprovalAction, currentUserId = "cfo" }) {
+  const { t } = useTranslation("taskbox");
   const [reply, setReply] = useState("");
   const [approvalMode, setApprovalMode] = useState(null); // "request-changes" | "reject" | null
   const [approvalNote, setApprovalNote] = useState("");
@@ -78,7 +80,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
           }}
         >
           <ArrowLeft size={13} strokeWidth={2.4} />
-          Back to Taskbox
+          {t("detail.back")}
         </button>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {!isCompleted && !isApproval && (
@@ -96,7 +98,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                 fontFamily: "inherit",
               }}
             >
-              Complete task
+              {t("detail.complete")}
             </button>
           )}
           {!isCompleted && isSender && (
@@ -120,7 +122,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                   <circle cx="12" cy="12" r="10" />
                   <polyline points="12 6 12 12 16 14" />
                 </svg>
-                AWAITING APPROVAL
+                {t("detail.awaiting_approval")}
               </span>
               <button
                 onClick={() => onApprovalAction && onApprovalAction(task, "cancel")}
@@ -135,7 +137,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                   fontFamily: "inherit",
                 }}
               >
-                Cancel request
+                {t("detail.cancel_request")}
               </button>
             </>
           )}
@@ -159,7 +161,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                   fontFamily: "inherit",
                 }}
               >
-                Approve
+                {t("detail.approve")}
               </button>
               <button
                 onClick={() => setApprovalMode(approvalMode === "request-changes" ? null : "request-changes")}
@@ -174,7 +176,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                   fontFamily: "inherit",
                 }}
               >
-                Request changes
+                {t("detail.request_changes")}
               </button>
               <button
                 onClick={() => setApprovalMode(approvalMode === "reject" ? null : "reject")}
@@ -189,7 +191,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                   fontFamily: "inherit",
                 }}
               >
-                Reject
+                {t("detail.reject")}
               </button>
               <button
                 onClick={() => onApprovalAction && onApprovalAction(task, "escalate")}
@@ -204,12 +206,12 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                   fontFamily: "inherit",
                 }}
               >
-                Escalate
+                {t("detail.escalate")}
               </button>
             </>
           )}
           <button
-            aria-label="More"
+            aria-label={t("detail.more")}
             style={{
               background: "transparent",
               color: "#5B6570",
@@ -267,15 +269,15 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
               marginBottom: 16,
             }}
           >
-            <MetaItem label="FROM">
+            <MetaItem label={t("detail.meta_from")}>
               <Avatar person={task.sender} size={20} />
               {task.sender.name}
             </MetaItem>
-            <MetaItem label="TO">
+            <MetaItem label={t("detail.meta_to")}>
               <Avatar person={task.recipient} size={20} />
               {task.recipient.name}
             </MetaItem>
-            <MetaItem label="STATUS">
+            <MetaItem label={t("detail.meta_status")}>
               <span
                 style={{
                   fontSize: 9,
@@ -288,18 +290,18 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                   borderRadius: 3,
                 }}
               >
-                {status.label}
+                {t(`status.${status.key}`)}
               </span>
             </MetaItem>
             {task.dueDate && (
-              <MetaItem label="DUE">
+              <MetaItem label={t("detail.meta_due")}>
                 {new Date(task.dueDate).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
                 })}
               </MetaItem>
             )}
-            <MetaItem label="CREATED">{formatRelativeTime(task.createdAt)}</MetaItem>
+            <MetaItem label={t("detail.meta_created")}>{formatRelativeTime(task.createdAt)}</MetaItem>
           </div>
 
           {isSender && !isCompleted && (
@@ -311,7 +313,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                 fontStyle: "italic",
               }}
             >
-              Waiting for <span style={{ color: "#8B98A5" }}>{task.recipient.name}</span> to respond.
+              {t("detail.waiting_for", { name: task.recipient.name })}
             </div>
           )}
 
@@ -335,13 +337,13 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                   marginBottom: 8,
                 }}
               >
-                {approvalMode === "reject" ? "REASON FOR REJECTION" : "DESCRIBE WHAT NEEDS TO CHANGE"}
+                {approvalMode === "reject" ? t("detail.reason_rejection") : t("detail.describe_changes")}
               </div>
               <textarea
                 value={approvalNote}
                 onChange={(e) => setApprovalNote(e.target.value)}
                 rows={3}
-                placeholder={approvalMode === "reject" ? "Why are you rejecting?" : "What should the requester change?"}
+                placeholder={approvalMode === "reject" ? t("detail.reject_placeholder") : t("detail.changes_placeholder")}
                 style={{
                   width: "100%",
                   background: "rgba(255,255,255,0.04)",
@@ -370,7 +372,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                     fontFamily: "inherit",
                   }}
                 >
-                  Cancel
+                  {t("detail.cancel")}
                 </button>
                 <button
                   onClick={() => {
@@ -391,7 +393,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                     fontFamily: "inherit",
                   }}
                 >
-                  Submit
+                  {t("detail.submit")}
                 </button>
               </div>
             </div>
@@ -409,7 +411,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                   marginBottom: 6,
                 }}
               >
-                LINKED JOURNAL ENTRY
+                {t("detail.linked_je")}
               </div>
               <JournalEntryCard
                 entry={task.linkedItem.entry}
@@ -458,7 +460,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                   fontWeight: 600,
                 }}
               >
-                Open →
+                {t("detail.open_link")}
               </a>
             </div>
           )}
@@ -516,7 +518,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
             <textarea
               value={reply}
               onChange={(e) => setReply(e.target.value)}
-              placeholder="Write a reply..."
+              placeholder={t("detail.reply_placeholder")}
               rows={3}
               style={{
                 width: "100%",
@@ -534,7 +536,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
             />
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
               <button
-                aria-label="Attach"
+                aria-label={t("detail.attach")}
                 style={{
                   background: "transparent",
                   border: "1px solid rgba(255,255,255,0.10)",
@@ -567,7 +569,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                   fontFamily: "inherit",
                 }}
               >
-                Reply
+                {t("detail.reply")}
               </button>
             </div>
           </div>

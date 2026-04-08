@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import SectionCard from "./SectionCard";
 import { getAuditReadiness } from "../../engine/mockEngine";
 
 export default function AuditReadiness() {
+  const { t } = useTranslation("owner-overview");
+  const { t: tAudit } = useTranslation("audit");
   const [d, setD] = useState(null);
   useEffect(() => {
     getAuditReadiness().then(setD);
   }, []);
 
   return (
-    <SectionCard label="AUDIT READINESS" delay={0.5}>
+    <SectionCard label={t("sections.audit_readiness")} delay={0.5}>
       <div
         style={{
           display: "flex",
@@ -37,7 +40,7 @@ export default function AuditReadiness() {
             fontWeight: 600,
           }}
         >
-          CHECKS PASSING
+          {t("audit_readiness.checks_passing")}
         </span>
       </div>
 
@@ -52,7 +55,7 @@ export default function AuditReadiness() {
         {(d ? d.checks : Array(15).fill(true)).map((ok, i) => (
           <span
             key={i}
-            title={ok ? "Pass" : "Fail"}
+            title={ok ? tAudit("pill_passing") : tAudit("pill_failing")}
             style={{
               width: 10,
               height: 10,
@@ -68,7 +71,7 @@ export default function AuditReadiness() {
       {d && d.failing > 0 && (
         <div style={{ fontSize: 13, color: "#8B98A5", lineHeight: 1.6 }}>
           <span style={{ color: "#FF5A5F", fontWeight: 500 }}>
-            {d.failing} check failing:
+            {t("audit_readiness.failing_line", { count: d.failing })}
           </span>{" "}
           {d.failingCheck} —{" "}
           <span style={{ color: "#E6EDF3", fontWeight: 500 }}>

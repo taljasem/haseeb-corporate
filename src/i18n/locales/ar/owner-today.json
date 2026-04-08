@@ -1,0 +1,38 @@
+{
+  "sections": {
+    "business_pulse": "نبض الأعمال",
+    "needs_attention": "بحاجة لاهتمامك",
+    "close_with_period": "إقفال {{period}}",
+    "top_insight": "أهم رؤى أمينة"
+  },
+  "kpi": {
+    "revenue": "إيرادات هذا الشهر",
+    "expenses": "مصروفات هذا الشهر",
+    "net_income": "صافي الدخل هذا الشهر",
+    "cash_position": "السيولة النقدية",
+    "vs_last_month": "{{delta}}% مقارنة بالشهر الماضي",
+    "gross_op_margin": "الهامش الإجمالي {{gross}}% · التشغيلي {{op}}%",
+    "cash_default_sub": "موزعة على 4 حسابات {{bank}}"
+  },
+  "variance": {
+    "on_track": "مقابل الميزانية: وفق الخطة",
+    "approaching": "مقابل الميزانية: يقترب من الحد",
+    "over_plan": "مقابل الميزانية: تجاوز بنسبة {{pct}}%"
+  },
+  "attention": {
+    "approvals_pending": "اعتمادات تنتظر قرارك",
+    "audit_failing": "فحص تدقيق غير مجتاز — يحتاج معالجة",
+    "close_for_signoff": "إقفال مارس بانتظار اعتمادك"
+  },
+  "close": {
+    "tasks_complete_label": "مهام مكتملة · {{pct}}%",
+    "on_track_line": "وفق الخطة لموعد الإقفال في 3 أبريل.",
+    "cfo_request": "سيطلب المدير المالي اعتمادك عند الجاهزية.",
+    "last_update": "آخر تحديث: قبل 45 دقيقة · سوّت سارة حساب KIB Reserve.",
+    "view_details": "عرض تفاصيل الإقفال ←"
+  },
+  "insight": {
+    "ask_more": "اسأل أمينة المزيد ←",
+    "see_all": "عرض كل الرؤى"
+  }
+}

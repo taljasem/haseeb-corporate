@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import SectionCard from "./SectionCard";
 import { getMonthlyInsights } from "../../engine/mockEngine";
 
@@ -21,12 +22,13 @@ function renderHighlighted(text) {
 }
 
 export default function MonthlyInsights() {
+  const { t } = useTranslation("owner-overview");
   const [data, setData] = useState(null);
   useEffect(() => {
     getMonthlyInsights().then(setData);
   }, []);
   return (
-    <SectionCard label="MONTHLY INSIGHTS" delay={0.2}>
+    <SectionCard label={t("sections.monthly_insights")} delay={0.2}>
       <div style={{ fontSize: 13, color: "#8B98A5", lineHeight: 1.7 }}>
         {data ? renderHighlighted(data.text) : "—"}
       </div>

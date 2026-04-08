@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import {
   getRecipientsForRole,
@@ -74,6 +75,7 @@ const LINK_OPTIONS = [
 ];
 
 export default function NewTaskModal({ open, role = "CFO", onClose, onSent, prefilledLinkedItem = null }) {
+  const { t } = useTranslation("taskbox");
   const [recipients, setRecipients] = useState([]);
   const [types, setTypes] = useState([]);
   const [recipient, setRecipient] = useState(null);
@@ -181,7 +183,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
                 color: "#5B6570",
               }}
             >
-              NEW TASK
+              {t("new_modal.label")}
             </div>
             <div
               style={{
@@ -192,12 +194,12 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
                 marginTop: 2,
               }}
             >
-              CREATE TASK
+              {t("new_modal.title")}
             </div>
           </div>
           <button
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("new_modal.close")}
             style={{
               background: "transparent",
               border: "none",
@@ -219,7 +221,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
         >
           {/* 1 — TO */}
           <div style={{ marginBottom: 14 }}>
-            <FieldLabel filled={!!recipient}>TO</FieldLabel>
+            <FieldLabel filled={!!recipient}>{t("new_modal.to")}</FieldLabel>
             <div
               style={{
                 display: "grid",
@@ -259,7 +261,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
 
           {/* 2 — TYPE (gated by recipient) */}
           <div style={{ marginBottom: 14, opacity: recipient ? 1 : 0.4, pointerEvents: recipient ? "auto" : "none" }}>
-            <FieldLabel filled={!!type}>TYPE</FieldLabel>
+            <FieldLabel filled={!!type}>{t("new_modal.type")}</FieldLabel>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {types.map((t) => (
                 <button
@@ -284,22 +286,22 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
 
           {/* 3 — SUBJECT (gated by type) */}
           <div style={{ marginBottom: 14, opacity: type ? 1 : 0.4, pointerEvents: type ? "auto" : "none" }}>
-            <FieldLabel filled={!!subject.trim()}>SUBJECT</FieldLabel>
+            <FieldLabel filled={!!subject.trim()}>{t("new_modal.subject")}</FieldLabel>
             <input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="Short, specific subject"
+              placeholder={t("new_modal.subject_placeholder")}
               style={inputStyle}
             />
           </div>
 
           {/* 4 — DETAILS */}
           <div style={{ marginBottom: 14, opacity: type ? 1 : 0.4, pointerEvents: type ? "auto" : "none" }}>
-            <FieldLabel filled={!!bodyText.trim()}>DETAILS</FieldLabel>
+            <FieldLabel filled={!!bodyText.trim()}>{t("new_modal.details")}</FieldLabel>
             <textarea
               value={bodyText}
               onChange={(e) => setBodyText(e.target.value)}
-              placeholder="What needs to happen, why it matters, and any context."
+              placeholder={t("new_modal.details_placeholder")}
               rows={5}
               style={{ ...inputStyle, resize: "vertical" }}
             />
@@ -307,7 +309,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
 
           {/* 5 — LINKED ITEM */}
           <div style={{ marginBottom: 14, opacity: type ? 1 : 0.4, pointerEvents: type ? "auto" : "none" }}>
-            <FieldLabel filled={!!linkedItem}>LINK TO ITEM (OPTIONAL)</FieldLabel>
+            <FieldLabel filled={!!linkedItem}>{t("new_modal.link_to_item")}</FieldLabel>
             <select
               value={linkedItem ? linkedItem.id : ""}
               onChange={(e) => {
@@ -316,7 +318,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
               }}
               style={{ ...inputStyle, appearance: "none" }}
             >
-              <option value="">No linked item</option>
+              <option value="">{t("new_modal.no_linked_item")}</option>
               {LINK_OPTIONS.map((o) => (
                 <option key={o.id} value={o.id}>
                   [{o.type}] {o.id} — {o.preview}
@@ -327,7 +329,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
 
           {/* 6 — DUE DATE */}
           <div style={{ marginBottom: 14, opacity: type ? 1 : 0.4, pointerEvents: type ? "auto" : "none" }}>
-            <FieldLabel filled={!!dueDate}>DUE DATE (OPTIONAL)</FieldLabel>
+            <FieldLabel filled={!!dueDate}>{t("new_modal.due_date")}</FieldLabel>
             <input
               type="date"
               value={dueDate}
@@ -359,7 +361,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
               fontFamily: "inherit",
             }}
           >
-            Cancel
+            {t("new_modal.cancel")}
           </button>
           <button
             onClick={handleSend}
@@ -376,7 +378,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
               fontFamily: "inherit",
             }}
           >
-            {sending ? "Sending..." : "Send task"}
+            {sending ? t("new_modal.sending") : t("new_modal.send")}
           </button>
         </div>
       </div>

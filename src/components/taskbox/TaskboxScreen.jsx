@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Search, Plus, Inbox } from "lucide-react";
 import {
   getTaskbox,
@@ -15,17 +16,18 @@ import TaskRow from "./TaskRow";
 import TaskDetail from "./TaskDetail";
 import NewTaskModal from "./NewTaskModal";
 
-const FILTERS = [
-  { id: "all",          label: "All" },
-  { id: "unread",       label: "Unread" },
-  { id: "approvals",    label: "Approvals" },
-  { id: "received",     label: "Received" },
-  { id: "sent",         label: "Sent" },
-  { id: "needs-action", label: "Needs action" },
-  { id: "completed",    label: "Completed" },
+const FILTER_IDS = [
+  { id: "all",          key: "all" },
+  { id: "unread",       key: "unread" },
+  { id: "approvals",    key: "approvals" },
+  { id: "received",     key: "received" },
+  { id: "sent",         key: "sent" },
+  { id: "needs-action", key: "needs_action" },
+  { id: "completed",    key: "completed" },
 ];
 
 export default function TaskboxScreen({ role = "CFO", initialTaskId = null, initialFilter = null }) {
+  const { t } = useTranslation("taskbox");
   const [tasks, setTasks] = useState(null);
   const [filter, setFilter] = useState(initialFilter || "all");
   useEffect(() => {
@@ -86,7 +88,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
             if (isBudgetApproval && budgetId) {
               await engineApproveBudget(budgetId, author);
               await engineCompleteTask(t.id, `Budget approved.`, author);
-              setToast(`Budget approved and activated`);
+              setToast(t("toast.budget_approved"));
               setTimeout(() => setToast(null), 2600);
             } else {
               await engineCompleteTask(t.id, "Approved.", author);
@@ -95,7 +97,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
             if (isBudgetApproval && budgetId) {
               await engineRequestBudgetChanges(budgetId, note);
               await engineCompleteTask(t.id, `Change request sent.`, author);
-              setToast(`Sent change request to CFO`);
+              setToast(t("toast.change_request_sent"));
               setTimeout(() => setToast(null), 2600);
             } else {
               await engineReplyToTask(t.id, `[Requested changes] ${note}`, author);
@@ -107,7 +109,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
           } else if (action === "cancel") {
             await engineCancelTask(t.id, author);
             setOpenTaskId(null);
-            setToast("Request cancelled");
+            setToast(t("toast.request_cancelled"));
             setTimeout(() => setToast(null), 2000);
           }
           refresh();
@@ -144,7 +146,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
                 lineHeight: 1,
               }}
             >
-              TASKBOX
+              {t("title")}
             </div>
             <div
               style={{
@@ -155,7 +157,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
                 marginTop: 6,
               }}
             >
-              {openCount} OPEN
+              {t("open_count", { count: openCount })}
             </div>
           </div>
           <button
@@ -176,7 +178,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
             }}
           >
             <Plus size={14} strokeWidth={2.4} />
-            New task
+            {t("new_task")}
           </button>
         </div>
 
@@ -189,7 +191,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
           }}
         >
           <div style={{ display: "flex", gap: 4 }}>
-            {FILTERS.map((f) => {
+            {FILTER_IDS.map((f) => {
               const on = filter === f.id;
               return (
                 <button
@@ -215,7 +217,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
                     if (!on) e.currentTarget.style.color = "#5B6570";
                   }}
                 >
-                  {f.label}
+                  {t(`filters.${f.key}`)}
                   {counts[f.id] != null && (
                     <span
                       style={{
@@ -247,7 +249,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search tasks..."
+              placeholder={t("search_placeholder")}
               style={{
                 width: "100%",
                 background: "rgba(255,255,255,0.04)",
@@ -293,7 +295,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
             }}
           >
             <Inbox size={28} strokeWidth={1.6} style={{ opacity: 0.5, marginBottom: 10 }} />
-            <div style={{ fontSize: 13 }}>No tasks in {filter}</div>
+            <div style={{ fontSize: 13 }}>{t("empty_in_filter", { filter: t(`filters.${(FILTER_IDS.find(f => f.id === filter) || {key: "all"}).key}`) })}</div>
           </div>
         ) : (
           filtered.map((t) => (
@@ -306,8 +308,8 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
         open={modalOpen}
         role={role}
         onClose={() => setModalOpen(false)}
-        onSent={(t) => {
-          setToast(`Task sent to ${t.recipient.name}`);
+        onSent={(newTask) => {
+          setToast(t("toast.task_sent", { name: newTask.recipient.name }));
           refresh();
           setTimeout(() => setToast(null), 3000);
         }}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
+import useEscapeKey from "../../hooks/useEscapeKey";
 import {
   createRoutingRule,
   updateRoutingRule,
@@ -61,6 +62,7 @@ const PRIORITIES = ["normal", "high", "urgent"];
 
 export default function NewRoutingRuleModal({ open, onClose, onCreated, editingRule = null }) {
   const { t } = useTranslation("rules");
+  useEscapeKey(onClose, open);
   const [name, setName] = useState("");
   const [types, setTypes] = useState([]);
   const [selectedTypes, setSelectedTypes] = useState(["all"]);

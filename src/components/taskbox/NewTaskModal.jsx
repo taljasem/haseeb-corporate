@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
+import useEscapeKey from "../../hooks/useEscapeKey";
 import {
   getRecipientsForRole,
   getTaskTypesForDirection,
@@ -76,6 +77,7 @@ const LINK_OPTIONS = [
 
 export default function NewTaskModal({ open, role = "CFO", onClose, onSent, prefilledLinkedItem = null }) {
   const { t } = useTranslation("taskbox");
+  useEscapeKey(onClose, open);
   const [recipients, setRecipients] = useState([]);
   const [types, setTypes] = useState([]);
   const [recipient, setRecipient] = useState(null);

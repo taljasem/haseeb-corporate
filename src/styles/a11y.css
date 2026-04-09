@@ -1,0 +1,40 @@
+/* ============================================================
+   Accessibility — Step 17
+   Focus rings + reset-button utility class
+   ============================================================ */
+
+/* Visible focus ring for keyboard users only.
+   :focus-visible avoids the ugly ring on mouse clicks. */
+*:focus {
+  outline: none;
+}
+*:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Reset-button utility — strips browser button defaults so we
+   can use semantic <button> tags everywhere without inheriting
+   the unwanted gray pill chrome. Combine with inline styles. */
+.reset-button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  text-decoration: inherit;
+}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
+import useEscapeKey from "../../hooks/useEscapeKey";
 import { getBudgetById, delegateBudget, getTeamMembers } from "../../engine/mockEngine";
 import { formatKWD } from "../../utils/format";
 
@@ -14,6 +15,7 @@ const DEFAULT_ASSIGNMENTS = {
 
 export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegated }) {
   const { t } = useTranslation("budget");
+  useEscapeKey(onClose, open);
   const [budget, setBudget] = useState(null);
   const [team, setTeam] = useState([]);
   const [assignments, setAssignments] = useState({}); // departmentId → juniorUserId

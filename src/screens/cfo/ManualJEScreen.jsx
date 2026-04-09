@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Trash2, Search, Lock, X, FileText, Clock, CheckCircle2, AlertCircle, RotateCcw, Save, Calendar, Sparkles } from "lucide-react";
 import LtrText from "../../components/shared/LtrText";
+import useEscapeKey from "../../hooks/useEscapeKey";
 import {
   getManualJEs,
   getManualJEById,
@@ -697,7 +698,7 @@ function LineRow({ line, idx, readOnly, onUpdate, onRemove, canRemove }) {
         style={inputStyle(readOnly)}
       />
       {!readOnly && canRemove ? (
-        <button onClick={onRemove}
+        <button type="button" onClick={onRemove} aria-label="Remove line"
           style={{ background: "transparent", border: "none", color: COLORS.textFaint, cursor: "pointer", padding: 4 }}>
           <Trash2 size={13} />
         </button>
@@ -746,7 +747,7 @@ function CompactAccountPicker({ value, readOnly, onSelect, onClear }) {
         <span style={{ fontFamily: "'DM Mono', monospace", color: COLORS.textDim }}>{value.code}</span>
         <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>· {value.name}</span>
         {!readOnly && (
-          <button onClick={onClear} style={{ background: "transparent", border: "none", color: COLORS.textFaint, cursor: "pointer", padding: 0, display: "flex" }}>
+          <button type="button" onClick={onClear} aria-label="Clear" style={{ background: "transparent", border: "none", color: COLORS.textFaint, cursor: "pointer", padding: 0, display: "flex" }}>
             <X size={12} />
           </button>
         )}
@@ -848,6 +849,7 @@ function TemplateDetail({ template, onUse }) {
 
 // Modals
 function ModalShell({ title, sub, onCancel, children, footer }) {
+  useEscapeKey(onCancel);
   return (
     <>
       <div onClick={onCancel} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />

@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronLeft, CheckCircle2, AlertCircle, Circle, Lock, FileWarning, Plus, X } from "lucide-react";
 import LtrText from "../shared/LtrText";
+import useEscapeKey from "../../hooks/useEscapeKey";
 import {
   getReconciliationDashboard,
   getReconciliationById,
@@ -668,6 +669,7 @@ function ExceptionRow({ exc, onResolve, onOpenJE }) {
 
 function InlineJEComposer({ exception, bankItem, onCancel, onConfirm }) {
   const { t } = useTranslation("reconciliation");
+  useEscapeKey(onCancel);
   const [debit, setDebit] = useState("6800 — Bank Charges");
   const [credit, setCredit] = useState("1010 — KIB Operating");
 
@@ -710,7 +712,7 @@ function InlineJEComposer({ exception, bankItem, onCancel, onConfirm }) {
               {t("je_composer.title")}
             </div>
           </div>
-          <button onClick={onCancel} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}>
+          <button type="button" onClick={onCancel} aria-label={t("je_composer.close")} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}>
             <X size={18} />
           </button>
         </div>

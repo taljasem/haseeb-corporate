@@ -3,6 +3,21 @@
     "title": "Haseeb Corporate is designed for desktop.",
     "subtext": "Open this app on a laptop or larger screen for the full experience. A mobile companion is coming soon."
   },
+  "aria": {
+    "notifications": "Notifications",
+    "toggle_theme": "Toggle theme",
+    "toggle_language": "Toggle language",
+    "profile_menu": "Profile menu",
+    "close": "Close",
+    "back": "Back",
+    "open_aminah": "Open Aminah",
+    "more_actions": "More actions",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "clear_search": "Clear search",
+    "tenant_switcher": "Switch tenant",
+    "open_menu": "Open menu"
+  },
   "actions": {
     "save": "Save",
     "save_changes": "Save Changes",

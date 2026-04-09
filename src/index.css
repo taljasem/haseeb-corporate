@@ -1,6 +1,7 @@
 @import "./styles/tokens.css";
 @import "./styles/themes.css";
 @import "./styles/rtl.css";
+@import "./styles/a11y.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

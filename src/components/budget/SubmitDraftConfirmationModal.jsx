@@ -1,8 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
+import useEscapeKey from "../../hooks/useEscapeKey";
 
 export default function SubmitDraftConfirmationModal({ open, departmentName, note, onClose, onConfirm }) {
   const { t } = useTranslation("budget");
+  useEscapeKey(onClose, open);
   if (!open) return null;
   return (
     <>

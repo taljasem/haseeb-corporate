@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import AccountPicker from "../cfo/AccountPicker";
 import { createCategorizationRule, updateCategorizationRule } from "../../engine/mockEngine";
+import useEscapeKey from "../../hooks/useEscapeKey";
 
 const inputStyle = {
   width: "100%",
@@ -83,6 +84,7 @@ const MODE_KEYS = {
 
 export default function NewCategorizationRuleModal({ open, onClose, onCreated, prefill = null, editingRule = null }) {
   const { t } = useTranslation("rules");
+  useEscapeKey(onClose, open);
   const [name, setName] = useState("");
   const [patternType, setPatternType] = useState("contains");
   const [patternValue, setPatternValue] = useState("");

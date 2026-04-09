@@ -42,13 +42,14 @@ function DueDatePill({ dueIso }) {
   );
 }
 
-export default function TaskRow({ task, onClick, compact = false }) {
+export default function TaskRow({ task, onClick, compact = false, selectable = false, selected = false, onToggleSelect }) {
   const hasAttachments = task.attachments && task.attachments.length > 0;
+  const attachmentCount = hasAttachments ? task.attachments.length : 0;
   return (
     <div
       onClick={() => onClick && onClick(task)}
-      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-surface-sunken)")}
-      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+      onMouseEnter={(e) => (e.currentTarget.style.background = selected ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = selected ? "var(--accent-primary-subtle)" : "transparent")}
       style={{
         display: "flex",
         alignItems: "center",
@@ -57,8 +58,18 @@ export default function TaskRow({ task, onClick, compact = false }) {
         borderBottom: "1px solid rgba(255,255,255,0.06)",
         cursor: "pointer",
         transition: "background 0.12s ease",
+        background: selected ? "var(--accent-primary-subtle)" : undefined,
       }}
     >
+      {selectable && (
+        <input
+          type="checkbox"
+          checked={selected}
+          onClick={(e) => e.stopPropagation()}
+          onChange={(e) => { e.stopPropagation(); onToggleSelect && onToggleSelect(task); }}
+          style={{ cursor: "pointer", flexShrink: 0 }}
+        />
+      )}
       <div style={{ position: "relative", flexShrink: 0 }}>
         <Avatar person={task.sender} size={compact ? 24 : 28} />
         {task.unread && (
@@ -139,7 +150,10 @@ export default function TaskRow({ task, onClick, compact = false }) {
         }}
       >
         {hasAttachments && (
-          <Paperclip size={12} color="var(--text-tertiary)" strokeWidth={2.2} />
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, color: "var(--text-tertiary)", fontFamily: "'DM Mono', monospace" }}>
+            <Paperclip size={12} strokeWidth={2.2} />
+            <LtrText>{attachmentCount}</LtrText>
+          </span>
         )}
         {task.dueDate && task.status !== "completed" && <DueDatePill dueIso={task.dueDate} />}
         <span

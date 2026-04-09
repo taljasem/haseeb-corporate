@@ -6097,3 +6097,343 @@ export async function updateEngineConfiguration(config) {
   Object.assign(cur, config);
   return { ...cur };
 }
+
+// ─────────────────────────────────────────
+// Step 20D-1 additions — Taskbox completeness. All additive.
+// NOTE: attachments are stored as in-memory data URLs. Phase B backend
+// must replace with real upload to S3/Supabase storage.
+// ─────────────────────────────────────────
+
+// ── Attachments ──────────────────────────────────────────────────
+let _attachmentSeq = 1;
+
+// Seed a tiny 1x1 green PNG and a minimal PDF stub as data URLs.
+const _MOCK_PNG_URL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4//8/AwAI/AL+X6Jz0AAAAABJRU5ErkJggg==";
+const _MOCK_PDF_URL = "data:application/pdf;base64,JVBERi0xLjMKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0NvdW50IDEvS2lkc1szIDAgUl0+PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXT4+CmVuZG9iagp4cmVmCjAgNAowMDAwMDAwMDAwIDY1NTM1IGYKMDAwMDAwMDAxMCAwMDAwMCBuCjAwMDAwMDAwNTMgMDAwMDAgbgowMDAwMDAwMDk0IDAwMDAwIG4KdHJhaWxlcgo8PC9TaXplIDQvUm9vdCAxIDAgUj4+CnN0YXJ0eHJlZgoxNDcKJSVFT0YK";
+
+function _seedAttachment(name, type, size, uploaderId, daysAgoN) {
+  let dataUrl = "";
+  if (type.startsWith("image/")) dataUrl = _MOCK_PNG_URL;
+  else if (type === "application/pdf") dataUrl = _MOCK_PDF_URL;
+  return {
+    id: `att-${_attachmentSeq++}`,
+    name,
+    size,
+    type,
+    uploadedBy: uploaderId,
+    uploadedAt: _daysAgo(daysAgoN),
+    dataUrl,
+  };
+}
+
+// Seed a handful of existing tasks with attachments to exercise the UI.
+(function seedTaskAttachments() {
+  const tsk113 = TASKBOX_DB.find((t) => t.id === "TSK-113");
+  if (tsk113) tsk113.attachments = [
+    _seedAttachment("PIFSS_March_payroll.pdf",   "application/pdf", 184320, "sara", 1),
+    _seedAttachment("Bayzat_export_March.xlsx",  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 52400, "sara", 1),
+  ];
+  const tsk120 = TASKBOX_DB.find((t) => t.id === "TSK-120");
+  if (tsk120) tsk120.attachments = [
+    _seedAttachment("Q1_PL_draft.pdf", "application/pdf", 248000, "cfo", 0),
+  ];
+  const tsk102 = TASKBOX_DB.find((t) => t.id === "TSK-102");
+  if (tsk102) tsk102.attachments = [
+    _seedAttachment("Boubyan_deposit_slip.png", "image/png", 88000, "sara", 2),
+    _seedAttachment("Boubyan_statement_Mar.pdf", "application/pdf", 312000, "sara", 2),
+    _seedAttachment("reconciliation_notes.txt", "text/plain", 4200, "cfo", 1),
+  ];
+  // Ensure every task has an attachments array so the UI can unconditionally read it.
+  for (const t of TASKBOX_DB) {
+    if (!Array.isArray(t.attachments)) t.attachments = [];
+  }
+})();
+
+export async function attachTaskFile(taskId, file) {
+  await delay();
+  const task = TASKBOX_DB.find((t) => t.id === taskId);
+  if (!task) return null;
+  // The caller is expected to have already converted the File to a data URL
+  // because FileReader is async and lives in the component. `file` here is
+  // the {name, size, type, dataUrl} shape.
+  const att = {
+    id: `att-${_attachmentSeq++}`,
+    name: file.name,
+    size: file.size,
+    type: file.type || "application/octet-stream",
+    uploadedBy: file.uploadedBy || "cfo",
+    uploadedAt: new Date().toISOString(),
+    dataUrl: file.dataUrl || "",
+  };
+  if (!Array.isArray(task.attachments)) task.attachments = [];
+  task.attachments.push(att);
+  task.messages.push(_msgEvent(TASKBOX_PEOPLE[att.uploadedBy] || P.cfo, `[System] Attached ${att.name}`, 0));
+  task.updatedAt = new Date().toISOString();
+  return { ...att };
+}
+
+export async function removeTaskAttachment(taskId, attachmentId) {
+  await delay();
+  const task = TASKBOX_DB.find((t) => t.id === taskId);
+  if (!task || !Array.isArray(task.attachments)) return { success: false };
+  const att = task.attachments.find((a) => a.id === attachmentId);
+  task.attachments = task.attachments.filter((a) => a.id !== attachmentId);
+  if (att) {
+    task.messages.push(_msgEvent(P.cfo, `[System] Removed ${att.name}`, 0));
+    task.updatedAt = new Date().toISOString();
+  }
+  return { success: true };
+}
+
+export async function getTaskAttachments(taskId) {
+  await delay();
+  const task = TASKBOX_DB.find((t) => t.id === taskId);
+  return task && Array.isArray(task.attachments) ? task.attachments.map((a) => ({ ...a })) : [];
+}
+
+// ── Escalation ───────────────────────────────────────────────────
+export async function escalateTask(taskId, toUserId, reason, priority) {
+  await delay();
+  const original = TASKBOX_DB.find((t) => t.id === taskId);
+  if (!original) return null;
+  const recipient = TASKBOX_PEOPLE[toUserId] || P.owner;
+  const newId = `TSK-ESC-${Math.floor(Math.random() * 900 + 100)}`;
+  const newTask = {
+    id: newId,
+    senderId: original.recipient.id,
+    sender: original.recipient,
+    recipient,
+    type: original.type,
+    subject: `[Escalated] ${original.subject}`,
+    body: `${reason}\n\nOriginal task: ${original.id}\n\n${original.body}`,
+    direction: "upward",
+    priority: priority || original.priority || "normal",
+    status: "open",
+    unread: true,
+    linkedItem: { type: "escalated_from", taskId: original.id },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    dueDate: original.dueDate,
+    messages: [_msgEvent(original.recipient, reason, 0)],
+    attachments: [],
+  };
+  TASKBOX_DB.unshift(newTask);
+  original.status = "escalated";
+  original.escalatedTo = { taskId: newId, at: new Date().toISOString() };
+  original.messages.push(_msgEvent(original.recipient, `[System] Escalated to ${recipient.name}: ${reason}`, 0));
+  original.updatedAt = new Date().toISOString();
+  return { originalTaskId: taskId, newTaskId: newId, status: "escalated" };
+}
+
+// ── Bulk operations ──────────────────────────────────────────────
+function _isApprovalType(t) {
+  return t.type === "request-approval" || t.type === "approve-budget";
+}
+
+export async function bulkApproveTasks(taskIds) {
+  await delay();
+  const ids = Array.isArray(taskIds) ? taskIds : [];
+  let approved = 0;
+  const skippedIds = [];
+  for (const id of ids) {
+    const task = TASKBOX_DB.find((t) => t.id === id);
+    if (!task) continue;
+    if (!_isApprovalType(task)) { skippedIds.push(id); continue; }
+    task.status = "completed";
+    task.updatedAt = new Date().toISOString();
+    task.messages.push(_msgEvent(P.cfo, "[System] Bulk approved.", 0));
+    approved += 1;
+  }
+  return { approved, skipped: skippedIds.length, skippedIds };
+}
+
+export async function bulkRejectTasks(taskIds, reason) {
+  await delay();
+  const ids = Array.isArray(taskIds) ? taskIds : [];
+  let rejected = 0;
+  let skipped = 0;
+  for (const id of ids) {
+    const task = TASKBOX_DB.find((t) => t.id === id);
+    if (!task) { skipped++; continue; }
+    task.status = "rejected";
+    task.updatedAt = new Date().toISOString();
+    task.messages.push(_msgEvent(P.cfo, `[System] Bulk rejected: ${reason || ""}`, 0));
+    rejected += 1;
+  }
+  return { rejected, skipped };
+}
+
+export async function bulkAssignTasks(taskIds, recipientId) {
+  await delay();
+  const ids = Array.isArray(taskIds) ? taskIds : [];
+  const recipient = TASKBOX_PEOPLE[recipientId] || P.sara;
+  let assigned = 0;
+  for (const id of ids) {
+    const task = TASKBOX_DB.find((t) => t.id === id);
+    if (!task) continue;
+    task.recipient = recipient;
+    task.updatedAt = new Date().toISOString();
+    task.messages.push(_msgEvent(P.cfo, `[System] Reassigned to ${recipient.name}`, 0));
+    assigned += 1;
+  }
+  return { assigned };
+}
+
+export async function bulkEscalateTasks(taskIds, toUserId, reason, priority) {
+  await delay();
+  const newTaskIds = [];
+  for (const id of taskIds) {
+    const r = await escalateTask(id, toUserId, reason, priority);
+    if (r?.newTaskId) newTaskIds.push(r.newTaskId);
+  }
+  return { escalated: newTaskIds.length, newTaskIds };
+}
+
+export async function bulkMarkAsRead(taskIds) {
+  await delay();
+  let marked = 0;
+  for (const id of taskIds) {
+    const task = TASKBOX_DB.find((t) => t.id === id);
+    if (task && task.unread) { task.unread = false; marked++; }
+  }
+  return { marked };
+}
+
+export async function bulkCompleteTasks(taskIds) {
+  await delay();
+  let completed = 0;
+  for (const id of taskIds) {
+    const task = TASKBOX_DB.find((t) => t.id === id);
+    if (task) { task.status = "completed"; task.updatedAt = new Date().toISOString(); completed++; }
+  }
+  return { completed };
+}
+
+export async function bulkArchiveTasks(taskIds) {
+  await delay();
+  let archived = 0;
+  for (const id of taskIds) {
+    const task = TASKBOX_DB.find((t) => t.id === id);
+    if (task) { task.archived = true; archived++; }
+  }
+  return { archived };
+}
+
+export async function exportTasks(taskIds, format) {
+  await delay();
+  return { filename: `tasks-export-${new Date().toISOString().slice(0, 10)}.${format || "csv"}`, rowCount: taskIds.length };
+}
+
+// ── Task Templates ───────────────────────────────────────────────
+let _templateSeq = 100;
+let _taskTemplates = [
+  { id: "tpl-1", name: "Monthly reconciliation review",  description: "Review month's bank reconciliations before close.", type: "request-review",       recipientId: "sara", priority: "normal", subject: "Monthly reconciliation review — {{period}}", body: "Please complete reconciliation review for all bank accounts before the close deadline. Flag any exceptions.",                    visibility: "role",    author: "cfo",  lastUsed: _daysAgo(7),  usageCount: 8 },
+  { id: "tpl-2", name: "Weekly budget check-in",         description: "Weekly variance review with department lead.",      type: "request-review",       recipientId: "sara", priority: "normal", subject: "Weekly budget check-in — {{week}}",           body: "Review weekly variance against the plan. Highlight any items over 10% variance for discussion.",                                visibility: "my",      author: "cfo",  lastUsed: _daysAgo(3),  usageCount: 14 },
+  { id: "tpl-3", name: "Request JE approval",            description: "Standard JE approval request template.",            type: "request-approval",    recipientId: "owner", priority: "high",   subject: "JE approval — {{je_id}}",                     body: "Please review and approve the attached journal entry. All supporting documentation is included.",                              visibility: "role",    author: "cfo",  lastUsed: _hoursAgo(6),  usageCount: 23 },
+  { id: "tpl-4", name: "Vendor invoice dispute",         description: "Escalate a disputed vendor invoice.",                type: "escalate",            recipientId: "owner", priority: "high",   subject: "Vendor invoice dispute — {{vendor}}",         body: "Disputing invoice from {{vendor}}. Reason attached. Please advise on next steps.",                                             visibility: "my",      author: "cfo",  lastUsed: _daysAgo(12), usageCount: 3 },
+  { id: "tpl-5", name: "Month-end close status",         description: "Weekly close status update to Owner.",               type: "general-question",    recipientId: "owner", priority: "normal", subject: "Month-end close status — {{period}}",         body: "Current status of month-end close: {{status}}. Pending items: {{pending}}. On track for {{deadline}}.",                         visibility: "role",    author: "cfo",  lastUsed: _daysAgo(5),  usageCount: 11 },
+  { id: "tpl-6", name: "Expense receipt match",          description: "Ask Senior Accountant to match receipts.",           type: "request-work",        recipientId: "sara", priority: "normal", subject: "Match expense receipts — {{period}}",         body: "Match the attached expense reports against bank statements for {{period}}. Flag any missing receipts.",                          visibility: "role",    author: "cfo",  lastUsed: _daysAgo(2),  usageCount: 18 },
+  { id: "tpl-7", name: "New customer onboarding",        description: "Set up new customer in the system.",                 type: "request-work",        recipientId: "sara", priority: "normal", subject: "Customer onboarding — {{customer}}",           body: "New customer {{customer}} needs a ledger entry, tax exemption verification, and payment terms setup.",                          visibility: "role",    author: "cfo",  lastUsed: _daysAgo(9),  usageCount: 6 },
+  { id: "tpl-8", name: "Weekly team 1:1",                description: "Recurring weekly sync.",                             type: "general-question",    recipientId: "sara", priority: "normal", subject: "Weekly 1:1 — {{week}}",                       body: "Topics:\n• Workload\n• Blockers\n• Process improvements\n• Questions",                                                         visibility: "my",      author: "cfo",  lastUsed: _hoursAgo(30), usageCount: 22 },
+];
+
+export async function getTaskTemplates(filter) {
+  await delay();
+  const f = filter || "all";
+  let list = _taskTemplates.slice();
+  if (f === "my") list = list.filter((t) => t.visibility === "my");
+  if (f === "role") list = list.filter((t) => t.visibility === "role");
+  return list.map((t) => ({ ...t }));
+}
+
+export async function createTaskTemplate(template) {
+  await delay();
+  const t = {
+    id: `tpl-${_templateSeq++}`,
+    lastUsed: null,
+    usageCount: 0,
+    author: "cfo",
+    visibility: "my",
+    ...template,
+  };
+  _taskTemplates.unshift(t);
+  return { ...t };
+}
+
+export async function updateTaskTemplate(id, updates) {
+  await delay();
+  const t = _taskTemplates.find((x) => x.id === id);
+  if (!t) return null;
+  Object.assign(t, updates);
+  return { ...t };
+}
+
+export async function deleteTaskTemplate(id) {
+  await delay();
+  _taskTemplates = _taskTemplates.filter((t) => t.id !== id);
+  return { success: true };
+}
+
+export async function duplicateTaskTemplate(id) {
+  await delay();
+  const src = _taskTemplates.find((x) => x.id === id);
+  if (!src) return null;
+  const copy = { ...src, id: `tpl-${_templateSeq++}`, name: `${src.name} (copy)`, lastUsed: null, usageCount: 0, visibility: "my" };
+  _taskTemplates.unshift(copy);
+  return { ...copy };
+}
+
+export async function shareTaskTemplate(id, scope) {
+  await delay();
+  const t = _taskTemplates.find((x) => x.id === id);
+  if (!t) return null;
+  t.visibility = scope === "role" ? "role" : "my";
+  return { ...t };
+}
+
+export async function createTaskFromTemplate(templateId, overrides) {
+  await delay();
+  const tpl = _taskTemplates.find((x) => x.id === templateId);
+  if (!tpl) return null;
+  tpl.usageCount += 1;
+  tpl.lastUsed = new Date().toISOString();
+  return {
+    type: tpl.type,
+    recipientId: tpl.recipientId,
+    subject: tpl.subject,
+    body: tpl.body,
+    priority: tpl.priority,
+    ...overrides,
+  };
+}
+
+// ── Search ──────────────────────────────────────────────────────
+// Client-side filter wrapped in an engine function so the backend can
+// implement server-side search later.
+export async function searchTasks(query, filters, role) {
+  await delay();
+  const all = await getTaskbox(role || "CFO", "all");
+  const q = (query || "").toLowerCase().trim();
+  const f = filters || {};
+  return all.filter((t) => {
+    if (q) {
+      const hay = [
+        t.subject, t.body, t.sender?.name, t.recipient?.name, t.type,
+        t.linkedItem?.id,
+        ...(t.messages || []).map((m) => m.body),
+        ...(t.attachments || []).map((a) => a.name),
+      ].filter(Boolean).join(" ").toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    if (f.senderIds?.length && !f.senderIds.includes(t.sender?.id)) return false;
+    if (f.recipientIds?.length && !f.recipientIds.includes(t.recipient?.id)) return false;
+    if (f.types?.length && !f.types.includes(t.type)) return false;
+    if (f.statuses?.length && !f.statuses.includes(t.status)) return false;
+    if (f.priorities?.length && !f.priorities.includes(t.priority)) return false;
+    if (f.hasAttachments && !(t.attachments && t.attachments.length > 0)) return false;
+    if (f.linkedType && t.linkedItem?.type !== f.linkedType) return false;
+    if (f.createdAfter && new Date(t.createdAt) < new Date(f.createdAfter)) return false;
+    if (f.createdBefore && new Date(t.createdAt) > new Date(f.createdBefore)) return false;
+    return true;
+  });
+}

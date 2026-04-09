@@ -8,10 +8,16 @@ import {
   getRecipientsForRole,
   getTaskTypesForDirection,
   createTask,
+  attachTaskFile,
+  removeTaskAttachment,
+  getTaskTemplates,
+  createTaskFromTemplate,
 } from "../../engine/mockEngine";
 import { emitTaskboxChange } from "../../utils/taskboxBus";
 import Avatar from "./Avatar";
 import TaskTypePill from "./TaskTypePill";
+import FileAttachment from "../shared/FileAttachment";
+import SaveTaskTemplateModal from "./SaveTaskTemplateModal";
 
 const ROLE_TO_SENDER_ID = { Owner: "owner", CFO: "cfo", Junior: "sara" };
 
@@ -119,11 +125,31 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
   const [linkedItem, setLinkedItem] = useState(prefilledLinkedItem);
   const [dueDate, setDueDate] = useState("");
   const [sending, setSending] = useState(false);
+  const [pendingAttachments, setPendingAttachments] = useState([]); // in-memory until send
+  const [templates, setTemplates] = useState([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     getRecipientsForRole(role).then(setRecipients);
+    getTaskTemplates("all").then(setTemplates);
   }, [open, role]);
+
+  const applyTemplate = async (templateId) => {
+    if (!templateId) { setSelectedTemplateId(""); return; }
+    setSelectedTemplateId(templateId);
+    const result = await createTaskFromTemplate(templateId);
+    if (!result) return;
+    setSubject(result.subject || "");
+    setBodyText(result.body || "");
+    if (result.type) setType(result.type);
+    if (result.recipientId) {
+      const list = await getRecipientsForRole(role);
+      const r = list.find((p) => p.id === result.recipientId);
+      if (r) setRecipient(r);
+    }
+  };
 
   useEffect(() => {
     if (!recipient) {
@@ -147,6 +173,19 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
     setBodyText("");
     setLinkedItem(null);
     setDueDate("");
+    setPendingAttachments([]);
+    setSelectedTemplateId("");
+  };
+
+  const handleLocalAttach = async (file) => {
+    // Attach locally — we'll persist against the new task id once it's created
+    setPendingAttachments((prev) => [
+      ...prev,
+      { ...file, id: `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, uploadedAt: new Date().toISOString() },
+    ]);
+  };
+  const handleLocalRemove = async (id) => {
+    setPendingAttachments((prev) => prev.filter((a) => a.id !== id));
   };
 
   const handleSend = async () => {
@@ -161,6 +200,18 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
       linkedItem,
       dueDate: dueDate ? new Date(dueDate).toISOString() : null,
     });
+    // Persist any pending attachments against the new task
+    if (task && pendingAttachments.length > 0) {
+      for (const att of pendingAttachments) {
+        await attachTaskFile(task.id, {
+          name: att.name,
+          size: att.size,
+          type: att.type,
+          dataUrl: att.dataUrl,
+          uploadedBy: ROLE_TO_SENDER_ID[role] || "cfo",
+        });
+      }
+    }
     setSending(false);
     emitTaskboxChange();
     onSent && onSent(task);
@@ -255,6 +306,30 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
             flex: 1,
           }}
         >
+          {/* 0 — TEMPLATE DROPDOWN */}
+          {templates.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <FieldLabel filled={!!selectedTemplateId}>{t("templates.create_from")}</FieldLabel>
+              <select
+                value={selectedTemplateId}
+                onChange={(e) => applyTemplate(e.target.value)}
+                style={{ ...inputStyle, appearance: "none" }}
+              >
+                <option value="">{t("templates.blank_task")}</option>
+                <optgroup label={t("templates.my_templates")}>
+                  {templates.filter((tp) => tp.visibility === "my").map((tp) => (
+                    <option key={tp.id} value={tp.id}>{tp.name}</option>
+                  ))}
+                </optgroup>
+                <optgroup label={t("templates.role_templates")}>
+                  {templates.filter((tp) => tp.visibility === "role").map((tp) => (
+                    <option key={tp.id} value={tp.id}>{tp.name}</option>
+                  ))}
+                </optgroup>
+              </select>
+            </div>
+          )}
+
           {/* 1 — TO */}
           <div style={{ marginBottom: 14 }}>
             <FieldLabel filled={!!recipient}>{t("new_modal.to")}</FieldLabel>
@@ -377,7 +452,46 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
               style={{ ...inputStyle, colorScheme: "dark" }}
             />
           </div>
+
+          {/* 7 — ATTACHMENTS */}
+          <div style={{ marginBottom: 14, opacity: type ? 1 : 0.4, pointerEvents: type ? "auto" : "none" }}>
+            <FieldLabel filled={pendingAttachments.length > 0}>{t("attachments.label")}</FieldLabel>
+            <FileAttachment
+              attachments={pendingAttachments}
+              onAttach={handleLocalAttach}
+              onRemove={handleLocalRemove}
+              currentUserId={ROLE_TO_SENDER_ID[role] || "cfo"}
+            />
+          </div>
+
+          {/* 8 — SAVE AS TEMPLATE */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setSaveTemplateOpen(true)}
+              disabled={!subject.trim() || !bodyText.trim()}
+              style={{
+                background: "transparent",
+                border: "none",
+                padding: 0,
+                color: (subject.trim() && bodyText.trim()) ? "var(--accent-primary)" : "var(--text-tertiary)",
+                cursor: (subject.trim() && bodyText.trim()) ? "pointer" : "not-allowed",
+                fontSize: 11,
+                fontFamily: "inherit",
+                fontWeight: 500,
+              }}
+            >
+              + {t("templates.save_as")}
+            </button>
+          </div>
         </div>
+
+        <SaveTaskTemplateModal
+          open={saveTemplateOpen}
+          taskDraft={{ type, recipientId: recipient?.id, subject, body: bodyText, priority: "normal" }}
+          onClose={() => setSaveTemplateOpen(false)}
+          onSaved={() => getTaskTemplates("all").then(setTemplates)}
+        />
 
         <div
           style={{

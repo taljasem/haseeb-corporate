@@ -1,11 +1,15 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Paperclip, ArrowLeft, MoreHorizontal, Link2 } from "lucide-react";
+import { Paperclip, ArrowLeft, MoreHorizontal, Link2, ChevronRight } from "lucide-react";
 import Avatar from "./Avatar";
 import TaskTypePill from "./TaskTypePill";
 import TaskThread from "./TaskThread";
 import { formatRelativeTime } from "../../utils/relativeTime";
 import JournalEntryCard from "../cfo/JournalEntryCard";
+import FileAttachment from "../shared/FileAttachment";
+import EscalateTaskModal from "./EscalateTaskModal";
+import { attachTaskFile, removeTaskAttachment } from "../../engine/mockEngine";
+import { emitTaskboxChange } from "../../utils/taskboxBus";
 
 const STATUS_STYLE = {
   open:             { bg: "var(--accent-primary-subtle)",  fg: "var(--accent-primary)", key: "open" },
@@ -37,13 +41,30 @@ function MetaItem({ label, children }) {
   );
 }
 
-export default function TaskDetail({ task, onBack, onComplete, onReply, onApprovalAction, currentUserId = "cfo" }) {
+export default function TaskDetail({ task, onBack, onComplete, onReply, onApprovalAction, onOpenTask, currentUserId = "cfo" }) {
   const { t } = useTranslation("taskbox");
   const [reply, setReply] = useState("");
   const [approvalMode, setApprovalMode] = useState(null); // "request-changes" | "reject" | null
   const [approvalNote, setApprovalNote] = useState("");
   const [jePosted, setJePosted] = useState(false);
+  const [localAttachments, setLocalAttachments] = useState(null);
+  const [escalateOpen, setEscalateOpen] = useState(false);
   if (!task) return null;
+
+  const attachments = localAttachments !== null ? localAttachments : (task.attachments || []);
+  const handleAttach = async (file) => {
+    const att = await attachTaskFile(task.id, file);
+    if (att) setLocalAttachments([...attachments, att]);
+    emitTaskboxChange();
+  };
+  const handleRemoveAtt = async (id) => {
+    await removeTaskAttachment(task.id, id);
+    setLocalAttachments(attachments.filter((a) => a.id !== id));
+    emitTaskboxChange();
+  };
+
+  const isEscalated = task.status === "escalated" || task.escalatedTo;
+  const isEscalatedFrom = task.linkedItem && task.linkedItem.type === "escalated_from";
   const status = STATUS_STYLE[task.status] || STATUS_STYLE.open;
   const isCompleted = task.status === "completed" || task.status === "rejected" || task.status === "cancelled";
   const isApproval = task.type === "request-approval" || task.type === "approve-budget";
@@ -194,7 +215,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                 {t("detail.reject")}
               </button>
               <button
-                onClick={() => onApprovalAction && onApprovalAction(task, "escalate")}
+                onClick={() => setEscalateOpen(true)}
                 style={{
                   background: "transparent",
                   color: "var(--role-owner)",
@@ -465,33 +486,53 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
             </div>
           )}
 
-          {/* Attachments row */}
-          {task.attachments && task.attachments.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
-              {task.attachments.map((a, i) => (
-                <span
-                  key={i}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                    fontSize: 11,
-                    color: "var(--text-secondary)",
-                    background: "var(--bg-surface-sunken)",
-                    border: "1px solid rgba(255,255,255,0.10)",
-                    padding: "5px 10px",
-                    borderRadius: 4,
-                  }}
-                >
-                  <Paperclip size={11} strokeWidth={2.2} />
-                  {a.name}
-                  <span style={{ color: "var(--text-tertiary)", fontFamily: "'DM Mono', monospace" }}>
-                    · {a.size}
-                  </span>
-                </span>
-              ))}
+          {/* Escalation chain breadcrumb */}
+          {(isEscalated || isEscalatedFrom) && (
+            <div style={{ marginBottom: 16, padding: "10px 12px", background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 6 }}>
+                {t("escalate.chain_label")}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, flexWrap: "wrap" }}>
+                {isEscalatedFrom && (
+                  <>
+                    <button
+                      onClick={() => onOpenTask && onOpenTask(task.linkedItem.taskId)}
+                      style={{ background: "transparent", border: "none", color: "var(--accent-primary)", cursor: "pointer", padding: 0, fontSize: 12, fontFamily: "inherit", textDecoration: "underline" }}
+                    >
+                      {t("escalate.chain_original")} ({task.linkedItem.taskId})
+                    </button>
+                    <ChevronRight size={12} color="var(--text-tertiary)" className="rtl-flip" />
+                  </>
+                )}
+                <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>{t("escalate.chain_current")}</span>
+                {isEscalated && task.escalatedTo?.taskId && (
+                  <>
+                    <ChevronRight size={12} color="var(--text-tertiary)" className="rtl-flip" />
+                    <button
+                      onClick={() => onOpenTask && onOpenTask(task.escalatedTo.taskId)}
+                      style={{ background: "transparent", border: "none", color: "var(--accent-primary)", cursor: "pointer", padding: 0, fontSize: 12, fontFamily: "inherit", textDecoration: "underline" }}
+                    >
+                      ({task.escalatedTo.taskId})
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           )}
+
+          {/* Attachments section — real FileAttachment component */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 8 }}>
+              {t("attachments.label")}
+            </div>
+            <FileAttachment
+              attachments={attachments}
+              onAttach={handleAttach}
+              onRemove={handleRemoveAtt}
+              readonly={isCompleted}
+              currentUserId={currentUserId}
+            />
+          </div>
 
           {/* Thread */}
           <div
@@ -575,6 +616,15 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
           </div>
         </div>
       )}
+      <EscalateTaskModal
+        open={escalateOpen}
+        task={task}
+        onClose={() => setEscalateOpen(false)}
+        onEscalated={() => {
+          emitTaskboxChange();
+          if (onBack) onBack();
+        }}
+      />
     </div>
   );
 }

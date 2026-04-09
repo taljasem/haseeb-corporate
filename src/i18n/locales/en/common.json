@@ -1,4 +1,8 @@
 {
+  "desktop_gate": {
+    "title": "Haseeb Corporate is designed for desktop.",
+    "subtext": "Open this app on a laptop or larger screen for the full experience. A mobile companion is coming soon."
+  },
   "actions": {
     "save": "Save",
     "save_changes": "Save Changes",

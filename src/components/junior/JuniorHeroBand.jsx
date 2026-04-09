@@ -82,7 +82,6 @@ function AccuracyPill({ value, previous = 91, label = "ACCURACY" }) {
       </button>
       {visible && (
         <div
-          data-popover-anchor="end"
           style={{
             position: "absolute",
             top: "calc(100% + 8px)",

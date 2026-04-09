@@ -80,7 +80,7 @@ function NavItem({ icon: Icon, label, active, onClick, badge }) {
 }
 
 
-export default function CFOSidebar({ active, setActive, pendingApprovals = 0, taskboxOpen = 0, mobile = false }) {
+export default function CFOSidebar({ active, setActive, pendingApprovals = 0, taskboxOpen = 0 }) {
   const { t } = useTranslation("sidebar");
   const isActive = (k) => active === k;
   // Taskbox badge color: red if approvals pending, tertiary if only non-approval tasks, none if empty
@@ -92,17 +92,7 @@ export default function CFOSidebar({ active, setActive, pendingApprovals = 0, ta
         : null;
   return (
     <aside
-      style={mobile ? {
-        width: "100%",
-        flex: "1 1 auto",
-        minWidth: 0,
-        background: "transparent",
-        borderInlineEnd: "none",
-        padding: "8px 0 16px",
-        overflowY: "visible",
-        position: "relative",
-        zIndex: 1,
-      } : {
+      style={{
         width: 220,
         flexShrink: 0,
         background: "var(--bg-surface)",

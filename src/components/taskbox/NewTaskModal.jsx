@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import useEscapeKey from "../../hooks/useEscapeKey";
+import Spinner from "../shared/Spinner";
 import {
   getRecipientsForRole,
   getTaskTypesForDirection,
@@ -380,7 +381,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
               fontFamily: "inherit",
             }}
           >
-            {sending ? t("new_modal.sending") : t("new_modal.send")}
+            {sending ? <><Spinner size={13} />&nbsp;{t("new_modal.sending")}</> : t("new_modal.send")}
           </button>
         </div>
       </div>

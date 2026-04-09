@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ChevronLeft, CheckCircle2, AlertCircle, Circle, Lock, FileWarning, Plus, X } from "lucide-react";
 import LtrText from "../shared/LtrText";
 import useEscapeKey from "../../hooks/useEscapeKey";
+import EmptyState from "../shared/EmptyState";
 import {
   getReconciliationDashboard,
   getReconciliationById,
@@ -40,6 +41,7 @@ function fmtDate(iso) {
 
 export default function ReconciliationScreen({ role = "CFO" }) {
   const { t } = useTranslation("reconciliation");
+  const { t: tc } = useTranslation("common");
   const [view, setView] = useState("dashboard"); // dashboard | detail
   const [dashboard, setDashboard] = useState(null);
   const [activeRecId, setActiveRecId] = useState(null);
@@ -107,6 +109,12 @@ export default function ReconciliationScreen({ role = "CFO" }) {
       <div style={{ flex: 1, overflowY: "auto", padding: "20px 28px" }}>
         {!dashboard ? (
           <div style={{ color: "var(--text-tertiary)", fontSize: 13 }}>{t("loading")}</div>
+        ) : dashboard.length === 0 ? (
+          <EmptyState
+            icon={CheckCircle2}
+            title={tc("empty_states.recon_dashboard_title")}
+            description={tc("empty_states.recon_dashboard_desc")}
+          />
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 14 }}>
             {dashboard.map((row) => (

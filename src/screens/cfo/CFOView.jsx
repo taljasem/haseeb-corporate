@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import CFOSidebar from "../../components/cfo/CFOSidebar";
+import ErrorBoundary from "../../components/shared/ErrorBoundary";
 import CFOHeroBand from "../../components/cfo/CFOHeroBand";
 import AminahSlideOver from "../../components/cfo/AminahSlideOver";
 import TodayScreen from "./TodayScreen";
@@ -130,7 +131,7 @@ export default function CFOView({ registerNav }) {
       />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
         <CFOHeroBand onOpenAminah={() => openAminah()} />
-        {renderScreen()}
+        <ErrorBoundary key={activeScreen}>{renderScreen()}</ErrorBoundary>
       </div>
       <AminahSlideOver
         open={aminahOpen}

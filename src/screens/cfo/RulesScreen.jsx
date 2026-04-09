@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, FileText, UserPlus, Sparkles } from "lucide-react";
+import EmptyState from "../../components/shared/EmptyState";
 import {
   getCategorizationRules,
   getRoutingRules,
@@ -28,6 +29,7 @@ const STATUS_FILTERS = ["all", "active", "muted", "deleted"];
 
 export default function RulesScreen({ initialTab = "categorization" }) {
   const { t } = useTranslation("rules");
+  const { t: tc } = useTranslation("common");
   const [tab, setTab] = useState(initialTab);
   const [statusFilter, setStatusFilter] = useState("active");
   const [query, setQuery] = useState("");
@@ -293,6 +295,15 @@ export default function RulesScreen({ initialTab = "categorization" }) {
 
       {/* List */}
       <div style={{ flex: 1, overflowY: "auto" }}>
+        {tab === "categorization" && rulesInTab().length === 0 && (
+          <EmptyState icon={FileText} title={tc("empty_states.rules_cat_title")} description={tc("empty_states.rules_cat_desc")} />
+        )}
+        {tab === "routing" && rulesInTab().length === 0 && (
+          <EmptyState icon={UserPlus} title={tc("empty_states.rules_route_title")} description={tc("empty_states.rules_route_desc")} />
+        )}
+        {tab === "suggested" && suggestionsInTab().length === 0 && (
+          <EmptyState icon={Sparkles} title={tc("empty_states.rules_suggested_title")} description={tc("empty_states.rules_suggested_desc")} />
+        )}
         {tab === "categorization" &&
           rulesInTab().map((r) => (
             <CategorizationRuleRow

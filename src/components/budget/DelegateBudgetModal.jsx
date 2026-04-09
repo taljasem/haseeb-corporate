@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import useEscapeKey from "../../hooks/useEscapeKey";
+import Spinner from "../shared/Spinner";
 import { getBudgetById, delegateBudget, getTeamMembers } from "../../engine/mockEngine";
 import { formatKWD } from "../../utils/format";
 
@@ -253,7 +254,7 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
                 fontFamily: "inherit",
               }}
             >
-              {sending ? t("delegate_modal.sending") : t("delegate_modal.send")}
+              {sending ? <><Spinner size={13} />&nbsp;{t("delegate_modal.sending")}</> : t("delegate_modal.send")}
             </button>
           </div>
         </div>

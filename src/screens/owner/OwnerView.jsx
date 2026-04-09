@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import OwnerSidebar from "../../components/owner/OwnerSidebar";
+import ErrorBoundary from "../../components/shared/ErrorBoundary";
 import OwnerHeroBand from "../../components/owner/OwnerHeroBand";
 import AminahSlideOver from "../../components/cfo/AminahSlideOver";
 import OwnerTodayScreen from "./OwnerTodayScreen";
@@ -182,7 +183,7 @@ export default function OwnerView({ registerNav }) {
         }}
       >
         <OwnerHeroBand onOpenAminah={() => openAminah()} />
-        {renderScreen()}
+        <ErrorBoundary key={activeScreen}>{renderScreen()}</ErrorBoundary>
       </div>
       <AminahSlideOver
         open={aminahOpen}

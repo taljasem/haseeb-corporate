@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import JuniorSidebar from "../../components/junior/JuniorSidebar";
+import ErrorBoundary from "../../components/shared/ErrorBoundary";
 import JuniorHeroBand from "../../components/junior/JuniorHeroBand";
 import AminahSlideOver from "../../components/cfo/AminahSlideOver";
 import JuniorTodayScreen from "./JuniorTodayScreen";
@@ -155,7 +156,7 @@ export default function JuniorView({ registerNav }) {
         }}
       >
         <JuniorHeroBand onOpenAminah={() => openAminah()} />
-        {renderScreen()}
+        <ErrorBoundary key={activeScreen}>{renderScreen()}</ErrorBoundary>
       </div>
       <AminahSlideOver
         open={aminahOpen}

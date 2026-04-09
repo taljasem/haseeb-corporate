@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Search, Plus, Inbox } from "lucide-react";
+import EmptyState from "../shared/EmptyState";
 import {
   getTaskbox,
   getTaskboxCounts,
@@ -28,6 +29,7 @@ const FILTER_IDS = [
 
 export default function TaskboxScreen({ role = "CFO", initialTaskId = null, initialFilter = null }) {
   const { t } = useTranslation("taskbox");
+  const { t: tc } = useTranslation("common");
   const [tasks, setTasks] = useState(null);
   const [filter, setFilter] = useState(initialFilter || "all");
   useEffect(() => {
@@ -287,16 +289,11 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
       {/* List */}
       <div style={{ flex: 1, overflowY: "auto" }}>
         {filtered.length === 0 ? (
-          <div
-            style={{
-              padding: "60px 28px",
-              textAlign: "center",
-              color: "var(--text-tertiary)",
-            }}
-          >
-            <Inbox size={28} strokeWidth={1.6} style={{ opacity: 0.5, marginBottom: 10 }} />
-            <div style={{ fontSize: 13 }}>{t("empty_in_filter", { filter: t(`filters.${(FILTER_IDS.find(f => f.id === filter) || {key: "all"}).key}`) })}</div>
-          </div>
+          <EmptyState
+            icon={Inbox}
+            title={tc("empty_states.taskbox_title")}
+            description={tc("empty_states.taskbox_desc")}
+          />
         ) : (
           filtered.map((t) => (
             <TaskRow key={t.id} task={t} onClick={(task) => setOpenTaskId(task.id)} />

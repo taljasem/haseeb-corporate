@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import AccountPicker from "../cfo/AccountPicker";
 import { createCategorizationRule, updateCategorizationRule } from "../../engine/mockEngine";
 import useEscapeKey from "../../hooks/useEscapeKey";
+import Spinner from "../shared/Spinner";
 
 const inputStyle = {
   width: "100%",
@@ -380,7 +381,7 @@ export default function NewCategorizationRuleModal({ open, onClose, onCreated, p
               fontFamily: "inherit",
             }}
           >
-            {sending ? t("cat_modal.saving") : editingRule ? t("cat_modal.save_changes") : t("cat_modal.create_rule")}
+            {sending ? <><Spinner size={13} />&nbsp;{t("cat_modal.saving")}</> : editingRule ? t("cat_modal.save_changes") : t("cat_modal.create_rule")}
           </button>
         </div>
       </div>

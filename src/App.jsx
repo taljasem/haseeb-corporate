@@ -112,13 +112,13 @@ function AppInner() {
       {role === "Junior" && <JuniorView key={viewKey} registerNav={registerNav} />}
       <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)}>
         {role === "Owner" && (
-          <OwnerSidebar active={drawerActiveScreen} setActive={setActiveScreen} />
+          <OwnerSidebar active={drawerActiveScreen} setActive={setActiveScreen} mobile />
         )}
         {role === "CFO" && (
-          <CFOSidebar active={drawerActiveScreen} setActive={setActiveScreen} />
+          <CFOSidebar active={drawerActiveScreen} setActive={setActiveScreen} mobile />
         )}
         {role === "Junior" && (
-          <JuniorSidebar active={drawerActiveScreen} setActive={setActiveScreen} />
+          <JuniorSidebar active={drawerActiveScreen} setActive={setActiveScreen} mobile />
         )}
         <DrawerRoleSwitcher role={role} setRole={setRole} onClose={() => setDrawerOpen(false)} />
       </MobileDrawer>

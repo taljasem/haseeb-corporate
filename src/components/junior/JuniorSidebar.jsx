@@ -57,7 +57,7 @@ function NavItem({ icon: Icon, label, active, onClick, badge }) {
 }
 
 
-export default function JuniorSidebar({ active, setActive, taskStats = { open: 0, overdue: 0 } }) {
+export default function JuniorSidebar({ active, setActive, taskStats = { open: 0, overdue: 0 }, mobile = false }) {
   const { t } = useTranslation("sidebar");
   const is = (k) => active === k;
   const taskboxBadge =
@@ -68,7 +68,17 @@ export default function JuniorSidebar({ active, setActive, taskStats = { open: 0
         : null;
   return (
     <aside
-      style={{
+      style={mobile ? {
+        width: "100%",
+        flex: "1 1 auto",
+        minWidth: 0,
+        background: "transparent",
+        borderInlineEnd: "none",
+        padding: "8px 0 16px",
+        overflowY: "visible",
+        position: "relative",
+        zIndex: 1,
+      } : {
         width: 220,
         flexShrink: 0,
         background: "var(--bg-surface)",

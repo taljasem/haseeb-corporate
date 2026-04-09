@@ -157,12 +157,20 @@
     min-height: unset !important;
   }
 
-  /* Popover dropdowns: full-width from viewport edge */
+  /* Popover dropdowns: clamp to viewport, internal scroll if tall.
+     Use position: fixed to escape any ancestor clipping context. */
   [data-popover-anchor="start"],
   [data-popover-anchor="end"] {
+    position: fixed !important;
+    top: 60px !important;
     left: 12px !important;
     right: 12px !important;
-    width: calc(100vw - 24px) !important;
+    width: auto !important;
+    max-width: calc(100vw - 24px) !important;
+    max-height: calc(100vh - 100px) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    z-index: 500 !important;
   }
 }
 
@@ -190,25 +198,35 @@
   background: var(--overlay-backdrop);
   z-index: 400;
 }
-.mobile-drawer {
+aside.mobile-drawer,
+aside[data-mobile-drawer="true"] {
   position: fixed !important;
   top: 0 !important;
   bottom: 0 !important;
-  width: 80% !important;
+  width: 80vw !important;
   min-width: 280px !important;
   max-width: 320px !important;
   background: var(--bg-surface-raised) !important;
-  z-index: 401;
+  z-index: 401 !important;
   display: flex !important;
   flex-direction: column !important;
-  overflow-y: auto;
+  overflow: hidden !important;
   -webkit-overflow-scrolling: touch;
   box-shadow: var(--shadow-lg);
   padding: 0 !important;
   border: none !important;
+  flex-shrink: 0 !important;
 }
-html[dir="ltr"] .mobile-drawer { left: 0; }
-html[dir="rtl"] .mobile-drawer { right: 0; }
+html[dir="ltr"] aside.mobile-drawer,
+html[dir="ltr"] aside[data-mobile-drawer="true"] {
+  left: 0 !important;
+  right: auto !important;
+}
+html[dir="rtl"] aside.mobile-drawer,
+html[dir="rtl"] aside[data-mobile-drawer="true"] {
+  right: 0 !important;
+  left: auto !important;
+}
 
 html[dir="ltr"] .mobile-drawer {
   animation: slideInLeft 0.2s ease-out;

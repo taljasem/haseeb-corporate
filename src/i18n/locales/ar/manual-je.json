@@ -127,5 +127,38 @@
     "desc_placeholder": "وصف مختصر",
     "cancel": "إلغاء",
     "confirm": "حفظ القالب"
+  },
+  "period_lock": {
+    "hard_closed_title": "هذه الفترة مقفلة",
+    "hard_closed_body": "الترحيل محظور حتى إعادة فتح الفترة.",
+    "soft_closed_title": "هذه الفترة مقفلة مبدئياً",
+    "soft_closed_body": "الترحيل يتطلب اعتماد المالك.",
+    "view_period": "عرض حالة الفترات ←",
+    "post_blocked": "لا يمكن الترحيل — الفترة مقفلة",
+    "post_for_approval": "ترحيل للاعتماد",
+    "approval_task_toast": "تم إرسال القيد لاعتماد المالك"
+  },
+  "je_attachments": {
+    "section_title": "المستندات الداعمة",
+    "count_label": "({{count}})",
+    "max_note": "حد أقصى 5 ملفات، 10 ميجابايت لكل ملف. PDF، صور، Excel، Word، CSV.",
+    "readonly_note": "قيد مُرحَّل — المرفقات للقراءة فقط."
+  },
+  "template_actions": {
+    "edit": "تعديل القالب",
+    "duplicate": "نسخ",
+    "delete": "حذف القالب",
+    "share_role": "مشاركة مع الدور",
+    "make_private": "جعل خاص",
+    "delete_confirm_title": "حذف القالب؟",
+    "delete_confirm_body": "سيتم حذف هذا القالب. القيود الموجودة المُنشأة منه لن تتأثر.",
+    "delete_confirm": "حذف",
+    "deleting": "جارٍ الحذف…",
+    "deleted_toast": "تم حذف القالب",
+    "duplicated_toast": "تم نسخ القالب",
+    "shared_toast": "تمت المشاركة مع الدور",
+    "private_toast": "تم جعله خاصاً",
+    "usage_format": "{{count}} استخدام · آخر {{time}}",
+    "created_by": "أنشأه {{name}}"
   }
 }

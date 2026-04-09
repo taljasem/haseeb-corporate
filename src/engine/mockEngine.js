@@ -6437,3 +6437,306 @@ export async function searchTasks(query, filters, role) {
     return true;
   });
 }
+
+// ─────────────────────────────────────────
+// Step 20D-2 additions — Rules + Manual JE completeness. All additive.
+// ─────────────────────────────────────────
+
+// ── Rule preview ────────────────────────────────────────────────
+// Runs an in-progress rule against the current tenant's bank transactions
+// and returns sample matches so the user can validate the logic before save.
+export async function previewRule(ruleType, ruleConfig) {
+  await delay();
+  const txs = await getBankTransactionsPending();
+  const cfg = ruleConfig || {};
+  const matches = [];
+
+  for (const tx of txs) {
+    let match = true;
+
+    // Pattern matching
+    if (cfg.merchantPattern?.value) {
+      const p = String(cfg.merchantPattern.value).toLowerCase();
+      const t = ruleType === "categorization" ? cfg.merchantPattern.type || "contains" : "contains";
+      const hay = String(tx.merchant || "").toLowerCase();
+      if (t === "contains" && !hay.includes(p)) match = false;
+      else if (t === "starts-with" && !hay.startsWith(p)) match = false;
+      else if (t === "exact" && hay !== p) match = false;
+      else if (t === "regex") {
+        try { if (!new RegExp(p, "i").test(hay)) match = false; } catch (e) { match = false; }
+      }
+    }
+
+    // Amount band
+    if (cfg.conditions?.amountMin != null && Math.abs(tx.amount) < Number(cfg.conditions.amountMin)) match = false;
+    if (cfg.conditions?.amountMax != null && Math.abs(tx.amount) > Number(cfg.conditions.amountMax)) match = false;
+
+    // Routing rules: taskTypes + linkedItemTypes don't filter txs — they just
+    // describe what would be routed. Skip to matching.
+    if (ruleType === "routing" && !cfg.merchantPattern?.value && !cfg.conditions?.amountMin && !cfg.conditions?.amountMax) {
+      // No filter criteria yet — don't spam matches
+      continue;
+    }
+
+    if (match) {
+      matches.push({
+        txId: tx.id,
+        date: tx.date,
+        merchant: tx.merchant,
+        amount: tx.amount,
+        currentCategory: tx.engineSuggestion?.account || "",
+        proposedCategory: ruleType === "categorization" ? (cfg.debitAccount?.name || "—") : tx.engineSuggestion?.account || "",
+        proposedRecipient: ruleType === "routing" ? (cfg.action?.assignTo?.name || "—") : null,
+      });
+    }
+    if (matches.length >= 10) break;
+  }
+
+  // Count total matches (run again without the 10-cap)
+  let total = 0;
+  for (const tx of txs) {
+    let ok = true;
+    if (cfg.merchantPattern?.value) {
+      const p = String(cfg.merchantPattern.value).toLowerCase();
+      const hay = String(tx.merchant || "").toLowerCase();
+      if (!hay.includes(p)) ok = false;
+    } else if (ruleType === "routing") {
+      ok = false;
+    }
+    if (ok && cfg.conditions?.amountMin != null && Math.abs(tx.amount) < Number(cfg.conditions.amountMin)) ok = false;
+    if (ok && cfg.conditions?.amountMax != null && Math.abs(tx.amount) > Number(cfg.conditions.amountMax)) ok = false;
+    if (ok) total += 1;
+  }
+
+  return _brandObj({ matchCount: total, matches });
+}
+
+// ── Suggested rule accept / dismiss ──────────────────────────────
+let _acceptedFromAiTimestamps = {}; // ruleId → acceptedAt
+const _dismissedSuggestions = new Set();
+
+export async function acceptSuggestedRule(suggestionId) {
+  await delay();
+  const catSugs = await getSuggestedCategorizationRules();
+  const routeSugs = await getSuggestedRoutingRules();
+  const catHit = catSugs.find((s) => s.id === suggestionId);
+  const routeHit = routeSugs.find((s) => s.id === suggestionId);
+
+  let acceptedRule = null;
+  if (catHit) {
+    acceptedRule = await createCategorizationRule({
+      name: `${catHit.merchant} auto-categorization`,
+      merchantPattern: { type: "contains", value: catHit.merchant },
+      debitAccount: catHit.suggestedAccount || { code: "6800", name: "Bank Charges" },
+      creditAccount: { code: "1120", name: "KIB Operating Account" },
+      mode: "auto-apply",
+      conditions: {},
+      approvalThreshold: null,
+    });
+  } else if (routeHit) {
+    acceptedRule = await createRoutingRule({
+      name: routeHit.description || "AI-suggested routing rule",
+      trigger: { taskTypes: ["all"], linkedItemTypes: [], conditions: { amountMin: routeHit.amountMin || null, merchantPattern: routeHit.merchantPattern || null } },
+      action: { assignTo: routeHit.suggestedAssignee || P.sara, alsoNotify: null, priority: "normal" },
+    });
+  }
+  _dismissedSuggestions.add(suggestionId);
+  if (acceptedRule?.id) _acceptedFromAiTimestamps[acceptedRule.id] = new Date().toISOString();
+  return { acceptedRule, suggestionId };
+}
+
+export async function dismissSuggestedRule(suggestionId) {
+  await delay();
+  _dismissedSuggestions.add(suggestionId);
+  return { success: true };
+}
+
+export function isSuggestionDismissed(id) {
+  return _dismissedSuggestions.has(id);
+}
+
+export function getAcceptedFromAiTimestamp(ruleId) {
+  return _acceptedFromAiTimestamps[ruleId] || null;
+}
+
+// ── Chart of accounts search (canonical picker path) ────────────
+// Consolidation note: getChartOfAccounts is legacy (20B engine), and
+// getSetupChartOfAccounts is the Setup tree (20C-4). This new function is
+// the canonical picker query — returns the rich shape from setup.
+export async function searchChartOfAccounts(query, filters) {
+  await delay();
+  const list = await getSetupChartOfAccounts();
+  const q = (query || "").toLowerCase().trim();
+  const f = filters || {};
+  let result = list;
+  if (f.types && f.types.length > 0) {
+    result = result.filter((a) => f.types.includes(a.type));
+  }
+  if (f.activeOnly) {
+    result = result.filter((a) => a.status === "active");
+  }
+  if (q) {
+    result = result.filter((a) =>
+      a.code.includes(q) ||
+      a.name.toLowerCase().includes(q) ||
+      (a.subtype || "").toLowerCase().includes(q)
+    );
+  }
+  return _brandObj(result.map((a) => ({ ...a })));
+}
+
+// ── Period status check (for Manual JE lock) ────────────────────
+export async function checkPeriodStatus(date) {
+  await delay();
+  const fy = await getFiscalYearConfig();
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) {
+    return { status: "open", period: { month: "", year: null }, requiresApproval: false, lockedAt: null };
+  }
+  const monthLabel = d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  const p = fy.periods.find((x) => x.month === monthLabel);
+  if (!p) {
+    return { status: "not-started", period: { month: monthLabel, year: d.getFullYear() }, requiresApproval: false, lockedAt: null };
+  }
+  return {
+    status: p.status === "hard_closed" ? "hard-closed" : p.status === "soft_closed" ? "soft-closed" : p.status === "open" ? "open" : "not-started",
+    period: { month: monthLabel, year: d.getFullYear() },
+    requiresApproval: p.status === "soft_closed",
+    lockedAt: p.status === "hard_closed" ? _daysAgo(7) : null,
+  };
+}
+
+// ── JE attachments ──────────────────────────────────────────────
+// Reuses the same in-memory data URL pattern as taskbox attachments.
+// Phase B backend replaces with real storage.
+let _jeAttachmentSeq = 1;
+
+function _seedJEAttachments() {
+  // Attach to a few posted JEs that already live in the engine history.
+  try {
+    const targets = ["JE-0417", "JE-0418", "JE-0420"];
+    for (const jeId of targets) {
+      // Find in adjusting entries (from 20C-2)
+      const adj = _adjustingEntries && _adjustingEntries.find((j) => j.id === jeId);
+      if (adj && !adj.attachments) {
+        adj.attachments = [{
+          id: `jea-${_jeAttachmentSeq++}`,
+          name: `${jeId}_support.pdf`,
+          size: 132000,
+          type: "application/pdf",
+          uploadedBy: "cfo",
+          uploadedAt: _daysAgo(2),
+          dataUrl: _MOCK_PDF_URL,
+        }];
+      }
+    }
+  } catch (e) { /* ignore — adjusting entries may not be present */ }
+}
+_seedJEAttachments();
+
+// Storage for draft / posted JE attachments, keyed by je id.
+const _jeAttachmentStore = {};
+
+export async function attachJEFile(jeId, file) {
+  await delay();
+  if (!_jeAttachmentStore[jeId]) _jeAttachmentStore[jeId] = [];
+  const att = {
+    id: `jea-${_jeAttachmentSeq++}`,
+    name: file.name,
+    size: file.size,
+    type: file.type || "application/octet-stream",
+    uploadedBy: file.uploadedBy || "cfo",
+    uploadedAt: new Date().toISOString(),
+    dataUrl: file.dataUrl || "",
+  };
+  _jeAttachmentStore[jeId].push(att);
+  // Also attempt to attach to the adjusting-entries list if the JE lives there.
+  if (typeof _adjustingEntries !== "undefined") {
+    const adj = _adjustingEntries.find((j) => j.id === jeId);
+    if (adj) {
+      if (!adj.attachments) adj.attachments = [];
+      adj.attachments.push(att);
+    }
+  }
+  return { ...att };
+}
+
+export async function removeJEAttachment(jeId, attachmentId) {
+  await delay();
+  if (_jeAttachmentStore[jeId]) {
+    _jeAttachmentStore[jeId] = _jeAttachmentStore[jeId].filter((a) => a.id !== attachmentId);
+  }
+  if (typeof _adjustingEntries !== "undefined") {
+    const adj = _adjustingEntries.find((j) => j.id === jeId);
+    if (adj && adj.attachments) {
+      adj.attachments = adj.attachments.filter((a) => a.id !== attachmentId);
+    }
+  }
+  return { success: true };
+}
+
+export async function getJEAttachments(jeId) {
+  await delay();
+  const direct = _jeAttachmentStore[jeId] || [];
+  let adjAtts = [];
+  if (typeof _adjustingEntries !== "undefined") {
+    const adj = _adjustingEntries.find((j) => j.id === jeId);
+    if (adj && adj.attachments) adjAtts = adj.attachments;
+  }
+  // Merge + de-dupe by id
+  const map = new Map();
+  [...direct, ...adjAtts].forEach((a) => map.set(a.id, a));
+  return Array.from(map.values());
+}
+
+// ── JE template metadata ────────────────────────────────────────
+// getManualJETemplates exists (earlier engine); augment with real metadata
+// tracking. Since the existing templates shape lives in a module-level
+// constant, we maintain a parallel `_jeTemplateMeta` map keyed by template id.
+const _jeTemplateMeta = {};
+function _ensureTemplateMeta(id) {
+  if (!_jeTemplateMeta[id]) {
+    _jeTemplateMeta[id] = {
+      usageCount: Math.floor(Math.random() * 20 + 2),
+      lastUsed: _daysAgo(Math.floor(Math.random() * 12 + 1)),
+      createdAt: _daysAgo(Math.floor(Math.random() * 60 + 10)),
+      createdBy: "cfo",
+      sharedWithRole: Math.random() > 0.5,
+    };
+  }
+  return _jeTemplateMeta[id];
+}
+
+export async function useJETemplate(templateId) {
+  await delay();
+  const meta = _ensureTemplateMeta(templateId);
+  meta.usageCount += 1;
+  meta.lastUsed = new Date().toISOString();
+  // Delegate to existing createFromTemplate for the actual draft creation
+  return createFromTemplate(templateId);
+}
+
+export async function getJETemplateMeta(templateId) {
+  await delay();
+  return { ..._ensureTemplateMeta(templateId) };
+}
+
+export async function updateJETemplate(templateId, updates) {
+  await delay();
+  const meta = _ensureTemplateMeta(templateId);
+  Object.assign(meta, updates);
+  return { ...meta };
+}
+
+export async function deleteJETemplateRecord(templateId) {
+  await delay();
+  delete _jeTemplateMeta[templateId];
+  return { success: true };
+}
+
+export async function shareJETemplate(templateId, sharedWithRole) {
+  await delay();
+  const meta = _ensureTemplateMeta(templateId);
+  meta.sharedWithRole = !!sharedWithRole;
+  return { ...meta };
+}

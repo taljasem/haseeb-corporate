@@ -5,6 +5,7 @@ import AccountPicker from "../cfo/AccountPicker";
 import { createCategorizationRule, updateCategorizationRule } from "../../engine/mockEngine";
 import useEscapeKey from "../../hooks/useEscapeKey";
 import Spinner from "../shared/Spinner";
+import RulePreviewPanel from "./RulePreviewPanel";
 
 const inputStyle = {
   width: "100%",
@@ -340,6 +341,21 @@ export default function NewCategorizationRuleModal({ open, onClose, onCreated, p
               style={inputStyle}
             />
           </div>
+
+          <RulePreviewPanel
+            ruleType="categorization"
+            ruleConfig={{
+              merchantPattern: { type: patternType, value: patternValue },
+              debitAccount,
+              creditAccount,
+              mode,
+              conditions: {
+                amountMin: amountMin ? Number(amountMin) : null,
+                amountMax: amountMax ? Number(amountMax) : null,
+              },
+              approvalThreshold: approvalThreshold ? Number(approvalThreshold) : null,
+            }}
+          />
         </div>
 
         <div

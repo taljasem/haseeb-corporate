@@ -13,6 +13,9 @@ import {
   muteRoutingRule,
   unmuteRoutingRule,
   deleteRoutingRule,
+  acceptSuggestedRule,
+  dismissSuggestedRule,
+  isSuggestionDismissed,
 } from "../../engine/mockEngine";
 import CategorizationRuleRow from "../../components/rules/CategorizationRuleRow";
 import RoutingRuleRow from "../../components/rules/RoutingRuleRow";
@@ -50,8 +53,8 @@ export default function RulesScreen({ initialTab = "categorization" }) {
   useEffect(() => {
     getCategorizationRules("all").then(setCatRules);
     getRoutingRules("all").then(setRouteRules);
-    getSuggestedCategorizationRules().then(setCatSuggestions);
-    getSuggestedRoutingRules().then(setRouteSuggestions);
+    getSuggestedCategorizationRules().then((list) => setCatSuggestions(list.filter((s) => !isSuggestionDismissed(s.id))));
+    getSuggestedRoutingRules().then((list) => setRouteSuggestions(list.filter((s) => !isSuggestionDismissed(s.id))));
   }, [tick]);
 
   const toast2 = (msg) => {
@@ -108,13 +111,19 @@ export default function RulesScreen({ initialTab = "categorization" }) {
     toast2(t("toast.rule_deleted"));
   };
 
-  const handleCreateSuggestion = (s) => {
-    if (s.kind === "categorization") {
-      setCatModalPrefill({ name: `${s.merchant} auto-categorization`, merchant: s.merchant });
-      setCatModalOpen(true);
-    } else {
-      setRouteModalOpen(true);
-    }
+  const handleCreateSuggestion = async (s) => {
+    // Real engine persistence: accept the suggestion → engine creates the
+    // rule and flags it as "accepted from AI" for the badge window.
+    const r = await acceptSuggestedRule(s.id);
+    refresh();
+    toast2(t("suggested_actions.accepted_toast"));
+    return r;
+  };
+
+  const handleDismissSuggestion = async (s) => {
+    await dismissSuggestedRule(s.id);
+    refresh();
+    toast2(t("suggested_actions.dismissed_toast"));
   };
 
   return (
@@ -334,7 +343,7 @@ export default function RulesScreen({ initialTab = "categorization" }) {
               key={s.id}
               suggestion={s}
               onCreate={handleCreateSuggestion}
-              onDismiss={() => toast2(t("suggested.suggestion_dismissed"))}
+              onDismiss={handleDismissSuggestion}
             />
           ))}
       </div>

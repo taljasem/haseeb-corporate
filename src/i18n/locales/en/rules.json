@@ -138,5 +138,29 @@
     "create_rule": "Create Rule",
     "saving": "Saving...",
     "close": "Close"
+  },
+  "preview": {
+    "title": "Preview matches",
+    "subtitle": "Transactions this rule would match",
+    "expand": "Show preview",
+    "collapse": "Hide preview",
+    "match_count": "{{count}} transaction matches",
+    "match_count_plural": "{{count}} transactions match",
+    "col_date": "DATE",
+    "col_merchant": "MERCHANT",
+    "col_amount": "AMOUNT",
+    "col_current": "CURRENT",
+    "col_proposed": "PROPOSED",
+    "col_recipient": "RECIPIENT",
+    "empty_title": "No matches yet",
+    "empty_desc": "Adjust the pattern to see matching transactions.",
+    "showing": "Showing {{shown}} of {{total}}"
+  },
+  "suggested_actions": {
+    "accepted_toast": "Suggestion accepted — rule created",
+    "dismissed_toast": "Suggestion dismissed",
+    "accepted_badge": "AI-SUGGESTED",
+    "accept": "Accept",
+    "dismiss": "Dismiss"
   }
 }

@@ -127,5 +127,38 @@
     "desc_placeholder": "Short description",
     "cancel": "Cancel",
     "confirm": "Save Template"
+  },
+  "period_lock": {
+    "hard_closed_title": "This period is closed",
+    "hard_closed_body": "Posting is blocked until the period is reopened.",
+    "soft_closed_title": "This period is soft-closed",
+    "soft_closed_body": "Posting requires Owner approval.",
+    "view_period": "View period status →",
+    "post_blocked": "Cannot post — period is closed",
+    "post_for_approval": "Post for approval",
+    "approval_task_toast": "JE submitted for Owner approval"
+  },
+  "je_attachments": {
+    "section_title": "Supporting documents",
+    "count_label": "({{count}})",
+    "max_note": "Max 5 files, 10 MB each. PDF, images, Excel, Word, CSV.",
+    "readonly_note": "Posted JE — attachments are read-only."
+  },
+  "template_actions": {
+    "edit": "Edit template",
+    "duplicate": "Duplicate",
+    "delete": "Delete template",
+    "share_role": "Share with role",
+    "make_private": "Make private",
+    "delete_confirm_title": "Delete template?",
+    "delete_confirm_body": "This template will be removed. Existing JEs created from it are not affected.",
+    "delete_confirm": "Delete",
+    "deleting": "Deleting…",
+    "deleted_toast": "Template deleted",
+    "duplicated_toast": "Template duplicated",
+    "shared_toast": "Shared with role",
+    "private_toast": "Made private",
+    "usage_format": "{{count}} uses · last {{time}}",
+    "created_by": "Created by {{name}}"
   }
 }

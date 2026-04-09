@@ -138,5 +138,29 @@
     "create_rule": "إنشاء القاعدة",
     "saving": "جارٍ الحفظ...",
     "close": "إغلاق"
+  },
+  "preview": {
+    "title": "معاينة المطابقات",
+    "subtitle": "العمليات التي ستطابق هذه القاعدة",
+    "expand": "عرض المعاينة",
+    "collapse": "إخفاء المعاينة",
+    "match_count": "{{count}} عملية مطابقة",
+    "match_count_plural": "{{count}} عملية مطابقة",
+    "col_date": "التاريخ",
+    "col_merchant": "التاجر",
+    "col_amount": "المبلغ",
+    "col_current": "الحالي",
+    "col_proposed": "المقترح",
+    "col_recipient": "المستلم",
+    "empty_title": "لا توجد مطابقات بعد",
+    "empty_desc": "عدّل النمط لرؤية العمليات المطابقة.",
+    "showing": "عرض {{shown}} من {{total}}"
+  },
+  "suggested_actions": {
+    "accepted_toast": "تم قبول الاقتراح — أُنشئت القاعدة",
+    "dismissed_toast": "تم رفض الاقتراح",
+    "accepted_badge": "من الذكاء الاصطناعي",
+    "accept": "قبول",
+    "dismiss": "رفض"
   }
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, Trash2, Search, Lock, X, FileText, Clock, CheckCircle2, AlertCircle, RotateCcw, Save, Calendar, Sparkles } from "lucide-react";
+import { Plus, Trash2, Search, Lock, X, FileText, Clock, CheckCircle2, AlertCircle, RotateCcw, Save, Calendar, Sparkles, AlertTriangle } from "lucide-react";
+import FileAttachment from "../../components/shared/FileAttachment";
 import LtrText from "../../components/shared/LtrText";
 import useEscapeKey from "../../hooks/useEscapeKey";
 import SharedEmptyState from "../../components/shared/EmptyState";
@@ -25,6 +26,14 @@ import {
   scheduleManualJE,
   postScheduledNow,
   getChartOfAccounts,
+  checkPeriodStatus,
+  attachJEFile,
+  removeJEAttachment,
+  getJEAttachments,
+  useJETemplate,
+  getJETemplateMeta,
+  deleteJETemplateRecord,
+  shareJETemplate,
 } from "../../engine/mockEngine";
 
 const COLORS = {
@@ -399,6 +408,32 @@ function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedul
   const [reverseModalOpen, setReverseModalOpen] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [tplModalOpen, setTplModalOpen] = useState(false);
+  const [periodStatus, setPeriodStatus] = useState(null);
+  const [jeAttachments, setJeAttachments] = useState([]);
+
+  // Check period status whenever the JE date changes.
+  useEffect(() => {
+    if (!je.date) { setPeriodStatus(null); return; }
+    checkPeriodStatus(je.date).then(setPeriodStatus);
+  }, [je.date]);
+
+  // Load attachments on mount and whenever je.id changes.
+  useEffect(() => {
+    if (!je.id) return;
+    getJEAttachments(je.id).then(setJeAttachments);
+  }, [je.id]);
+
+  const isHardClosed = periodStatus?.status === "hard-closed";
+  const isSoftClosed = periodStatus?.status === "soft-closed";
+
+  const handleAttach = async (file) => {
+    const att = await attachJEFile(je.id, file);
+    setJeAttachments((prev) => [...prev, att]);
+  };
+  const handleRemoveAtt = async (id) => {
+    await removeJEAttachment(je.id, id);
+    setJeAttachments((prev) => prev.filter((a) => a.id !== id));
+  };
 
   const validation = (() => {
     const td = je.lines.reduce((s, l) => s + (l.debit || 0), 0);
@@ -417,6 +452,9 @@ function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedul
     }
     return { totalDebits: td, totalCredits: totalCr, difference: Number((td - totalCr).toFixed(3)), isBalanced: Math.abs(td - totalCr) < 0.0001 && td > 0 && je.lines.length >= 2, errors };
   })();
+
+  const canPost = validation.isBalanced && !isHardClosed;
+  const postLabel = isSoftClosed ? t("period_lock.post_for_approval") : t("composer.post_entry");
 
   const updateField = async (field, value) => {
     await updateManualJEDraft(je.id, { [field]: value });
@@ -505,9 +543,13 @@ function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedul
                   style={{ background: "transparent", color: validation.isBalanced ? COLORS.text : COLORS.textFaint, border: `1px solid ${COLORS.border}`, padding: "7px 12px", borderRadius: 5, fontSize: 11, cursor: validation.isBalanced ? "pointer" : "not-allowed", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 4 }}>
                   <Save size={11} /> {t("composer.save_as_template")}
                 </button>
-                <button onClick={onPost} disabled={!validation.isBalanced}
-                  style={{ background: validation.isBalanced ? COLORS.teal : "rgba(255,255,255,0.05)", color: validation.isBalanced ? "#fff" : COLORS.textFaint, border: "none", padding: "8px 16px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: validation.isBalanced ? "pointer" : "not-allowed", fontFamily: "inherit" }}>
-                  {t("composer.post_entry")}
+                <button
+                  onClick={onPost}
+                  disabled={!canPost}
+                  title={isHardClosed ? t("period_lock.post_blocked") : undefined}
+                  style={{ background: canPost ? COLORS.teal : "rgba(255,255,255,0.05)", color: canPost ? "#fff" : COLORS.textFaint, border: "none", padding: "8px 16px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: canPost ? "pointer" : "not-allowed", fontFamily: "inherit" }}
+                >
+                  {postLabel}
                 </button>
               </>
             )}
@@ -538,6 +580,26 @@ function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedul
           </div>
         </div>
       </div>
+
+      {/* Period lock banner */}
+      {isHardClosed && (
+        <div style={{ margin: "12px 24px 0", padding: "12px 16px", background: "var(--semantic-danger-subtle)", border: "1px solid rgba(255,90,95,0.30)", borderRadius: 8, color: "var(--semantic-danger)", fontSize: 12, display: "flex", gap: 10, alignItems: "flex-start" }}>
+          <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 2 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, marginBottom: 2 }}>{t("period_lock.hard_closed_title")}</div>
+            <div style={{ fontWeight: 500 }}>{t("period_lock.hard_closed_body")}</div>
+          </div>
+        </div>
+      )}
+      {isSoftClosed && (
+        <div style={{ margin: "12px 24px 0", padding: "12px 16px", background: "var(--semantic-warning-subtle)", border: "1px solid rgba(212,168,75,0.30)", borderRadius: 8, color: "var(--semantic-warning)", fontSize: 12, display: "flex", gap: 10, alignItems: "flex-start" }}>
+          <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 2 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, marginBottom: 2 }}>{t("period_lock.soft_closed_title")}</div>
+            <div style={{ fontWeight: 500 }}>{t("period_lock.soft_closed_body")}</div>
+          </div>
+        </div>
+      )}
 
       {/* Body */}
       <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
@@ -608,6 +670,27 @@ function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedul
             ))}
           </div>
         )}
+
+        {/* Supporting documents */}
+        <div style={{ marginTop: 18 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: COLORS.textFaint, marginBottom: 8 }}>
+            {t("je_attachments.section_title")} {jeAttachments.length > 0 && t("je_attachments.count_label", { count: jeAttachments.length })}
+          </div>
+          <FileAttachment
+            attachments={jeAttachments}
+            onAttach={handleAttach}
+            onRemove={handleRemoveAtt}
+            readOnly={readOnly}
+            readonly={readOnly}
+            maxSize={10 * 1024 * 1024}
+            currentUserId="cfo"
+          />
+          {readOnly && (
+            <div style={{ fontSize: 10, color: COLORS.textFaint, marginTop: 6, fontStyle: "italic" }}>
+              {t("je_attachments.readonly_note")}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Sticky totals bar */}

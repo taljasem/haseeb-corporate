@@ -11,6 +11,7 @@ import {
 } from "../../engine/mockEngine";
 import Avatar from "../taskbox/Avatar";
 import TaskTypePill from "../taskbox/TaskTypePill";
+import RulePreviewPanel from "./RulePreviewPanel";
 
 const inputStyle = {
   width: "100%",
@@ -345,6 +346,17 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
               })}
             </div>
           </div>
+
+          <RulePreviewPanel
+            ruleType="routing"
+            ruleConfig={{
+              merchantPattern: merchantPattern ? { type: "contains", value: merchantPattern } : null,
+              conditions: {
+                amountMin: amountMin ? Number(amountMin) : null,
+              },
+              action: { assignTo: assignee, priority },
+            }}
+          />
         </div>
 
         <div

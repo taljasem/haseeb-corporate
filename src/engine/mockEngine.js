@@ -5481,3 +5481,619 @@ export async function rejectCloseAndSyncTask(period, reason) {
   }
   return { status: "in_progress", rejectionReason: reason || "", taskId: task?.id || null };
 }
+
+// ─────────────────────────────────────────
+// Step 20C-4 additions — Aging Reports + Setup. All additive.
+// ─────────────────────────────────────────
+
+// ── Aging Reports ───────────────────────────────────────────────
+const AR_CUSTOMERS = [
+  { id: "cu-1",  name: "Al Shaya Trading Co." },
+  { id: "cu-2",  name: "Boubyan Industries" },
+  { id: "cu-3",  name: "Gulf Cement Partners" },
+  { id: "cu-4",  name: "Kuwait Airways Catering" },
+  { id: "cu-5",  name: "Sultan Center Wholesale" },
+  { id: "cu-6",  name: "Al Ahli Holdings" },
+  { id: "cu-7",  name: "National Bank Corp." },
+  { id: "cu-8",  name: "Dubai Ports Holdings" },
+  { id: "cu-9",  name: "Zain Telecom B2B" },
+  { id: "cu-10", name: "Al Manshar Rotana" },
+  { id: "cu-11", name: "Kuwait Oil Tanker Co." },
+  { id: "cu-12", name: "AlGhanim Distribution" },
+  { id: "cu-13", name: "Gulf Bank Procurement" },
+  { id: "cu-14", name: "Saudi Aramco Supply" },
+  { id: "cu-15", name: "Emirates Airline Ops" },
+];
+const AP_VENDORS = [
+  { id: "vn-1",  name: "MEW Kuwait" },
+  { id: "vn-2",  name: "Kuwait Telecom KTC" },
+  { id: "vn-3",  name: "Talabat POS" },
+  { id: "vn-4",  name: "AWS Middle East" },
+  { id: "vn-5",  name: "Ooredoo Business" },
+  { id: "vn-6",  name: "Salary & Wages Payroll" },
+  { id: "vn-7",  name: "KIB Bank Charges" },
+  { id: "vn-8",  name: "Kuwait Fire Dept" },
+  { id: "vn-9",  name: "Office Cleaning Co." },
+  { id: "vn-10", name: "Al Rai Media Advertising" },
+  { id: "vn-11", name: "Trade Show Productions" },
+  { id: "vn-12", name: "Legal Firm Al-Sabah" },
+  { id: "vn-13", name: "Deloitte & Touche" },
+  { id: "vn-14", name: "Shamal Office Supplies" },
+];
+
+function _tenantAgingMultiplier(type) {
+  const m = ({ almanara: 0.8, almawred: 1.6, "demo-corporate": 1.1 })[_currentTenantId] || 1.0;
+  return type === "AP" ? m * 0.7 : m;
+}
+
+function _bucketForDays(days) {
+  if (days <= 0) return "current";
+  if (days <= 30) return "b1_30";
+  if (days <= 60) return "b31_60";
+  if (days <= 90) return "b61_90";
+  return "b90_plus";
+}
+
+function _seedInvoices(type) {
+  const pool = type === "AR" ? AR_CUSTOMERS : AP_VENDORS;
+  const mult = _tenantAgingMultiplier(type);
+  const count = type === "AR" ? 48 : 34;
+  const now = new Date();
+  const out = [];
+  const spread = [0, 0, -8, -14, -22, -35, -45, -52, -68, -75, -82, -95, -110, -125, 5, 10, -3, -18, -40, -62, -88, -102];
+  for (let i = 0; i < count; i++) {
+    const party = pool[i % pool.length];
+    const dueOffset = spread[i % spread.length];
+    const dueDate = new Date(now);
+    dueDate.setDate(now.getDate() + dueOffset);
+    const invoiceDate = new Date(dueDate);
+    invoiceDate.setDate(dueDate.getDate() - 30);
+    const daysOverdue = Math.max(0, Math.round((now - dueDate) / 86400000));
+    const bucket = _bucketForDays(daysOverdue);
+    const baseAmount = (180 + (i * 137) % 14000) * mult;
+    const amount = Math.round(baseAmount * 100) / 100;
+    let status = "outstanding";
+    let outstanding = amount;
+    let partialPayments = [];
+    if (i % 9 === 0 && daysOverdue > 0) {
+      const paid = Math.round(amount * 0.4 * 100) / 100;
+      outstanding = Math.round((amount - paid) * 100) / 100;
+      status = "partial";
+      partialPayments = [{ date: _daysAgo(Math.max(1, Math.floor(daysOverdue / 2))), amount: paid, method: "bank_transfer", reference: `PMT-${1000 + i}` }];
+    }
+    if (i % 17 === 0 && daysOverdue > 30) {
+      status = "disputed";
+    }
+    if (i % 23 === 0) {
+      status = "paid";
+      outstanding = 0;
+    }
+    const commHistory = [];
+    if (daysOverdue > 30 && type === "AR") {
+      commHistory.push({ type: "email_reminder", template: "friendly", sentAt: _daysAgo(Math.max(1, daysOverdue - 15)), sentBy: "cfo" });
+    }
+    if (daysOverdue > 60 && type === "AR") {
+      commHistory.push({ type: "email_reminder", template: "firm", sentAt: _daysAgo(Math.max(1, daysOverdue - 35)), sentBy: "cfo" });
+    }
+    if (daysOverdue > 90 && type === "AR" && i % 5 === 0) {
+      commHistory.push({ type: "call", notes: "Left voicemail, no response", at: _daysAgo(Math.max(1, daysOverdue - 50)), by: "sara" });
+    }
+    out.push({
+      id: `${type.toLowerCase()}-inv-${i + 1}`,
+      type,
+      partyId: party.id,
+      partyName: party.name,
+      invoiceNumber: `${type === "AR" ? "INV" : "BILL"}-2026-${String(1000 + i).padStart(4, "0")}`,
+      invoiceDate: invoiceDate.toISOString(),
+      dueDate: dueDate.toISOString(),
+      daysOverdue,
+      amount,
+      outstanding,
+      status,
+      bucket,
+      partialPayments,
+      communicationHistory: commHistory,
+      lineItems: [
+        { description: type === "AR" ? "Services rendered" : "Services purchased", qty: 1, unitPrice: amount * 0.9, total: amount * 0.9 },
+        { description: type === "AR" ? "Taxes & fees" : "Taxes", qty: 1, unitPrice: amount * 0.1, total: amount * 0.1 },
+      ],
+    });
+  }
+  return out;
+}
+
+let _agingInvoicesARByTenant = {};
+let _agingInvoicesAPByTenant = {};
+function _getAgingInvoices(type) {
+  const bag = type === "AR" ? _agingInvoicesARByTenant : _agingInvoicesAPByTenant;
+  if (!bag[_currentTenantId]) bag[_currentTenantId] = _seedInvoices(type);
+  return bag[_currentTenantId];
+}
+
+function _totalsFromInvoices(invoices) {
+  const t = { current: 0, b1_30: 0, b31_60: 0, b61_90: 0, b90_plus: 0, total: 0 };
+  const c = { current: 0, b1_30: 0, b31_60: 0, b61_90: 0, b90_plus: 0, total: 0 };
+  for (const inv of invoices) {
+    if (inv.status === "paid") continue;
+    t[inv.bucket] += inv.outstanding;
+    t.total += inv.outstanding;
+    c[inv.bucket] += 1;
+    c.total += 1;
+  }
+  const round = (n) => Math.round(n * 100) / 100;
+  Object.keys(t).forEach((k) => { t[k] = round(t[k]); });
+  return { totals: t, counts: c };
+}
+
+export async function getAgingReport(type, asOfDate) {
+  await delay();
+  const invoices = _getAgingInvoices(type || "AR");
+  const { totals, counts } = _totalsFromInvoices(invoices);
+  const mult = _tenantAgingMultiplier(type || "AR");
+  const trend = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(new Date().getFullYear(), new Date().getMonth() - (5 - i), 1);
+    const label = d.toLocaleDateString("en-US", { month: "short" });
+    const seed = (1 + i * 0.05) * mult;
+    return {
+      month: label,
+      current: Math.round(28000 * seed),
+      b1_30:   Math.round(16000 * seed),
+      b31_60:  Math.round(9000 * seed),
+      b61_90:  Math.round(5000 * seed),
+      b90_plus: Math.round(4000 * seed * (i > 3 ? 0.7 : 1)),
+      total:   0,
+    };
+  }).map((m) => ({ ...m, total: m.current + m.b1_30 + m.b31_60 + m.b61_90 + m.b90_plus }));
+  const dso = type === "AR" ? Math.round(42 * mult) : null;
+  const dpo = type === "AP" ? Math.round(38 * mult) : null;
+  const narrationMap = {
+    AR: `Receivables aging is ${mult > 1.2 ? "stretched" : "healthy"} — ${counts.b90_plus} invoices over 90 days totaling ${Math.round(totals.b90_plus).toLocaleString()} KWD. ${counts.b61_90 > 3 ? "Watch the 61-90 bucket trending up." : ""}`,
+    AP: `Payables are ${mult > 1.0 ? "slightly aged" : "current"} — DPO at ${dpo} days. Schedule payments for ${counts.b1_30 + counts.b31_60} invoices due or recently past due.`,
+  };
+  return _brandObj({
+    type: type || "AR",
+    asOfDate: asOfDate || new Date().toISOString(),
+    totals,
+    counts,
+    invoices: invoices.map((i) => ({ ...i, lineItems: i.lineItems.map((l) => ({ ...l })), partialPayments: i.partialPayments.map((p) => ({ ...p })), communicationHistory: i.communicationHistory.map((c) => ({ ...c })) })),
+    dso,
+    dpo,
+    trend,
+    narration: narrationMap[type || "AR"],
+  });
+}
+
+export async function getInvoiceDetail(invoiceId) {
+  await delay();
+  const all = [..._getAgingInvoices("AR"), ..._getAgingInvoices("AP")];
+  const inv = all.find((x) => x.id === invoiceId);
+  if (!inv) return null;
+  return _brandObj({ ...inv, lineItems: inv.lineItems.map((l) => ({ ...l })), partialPayments: inv.partialPayments.map((p) => ({ ...p })), communicationHistory: inv.communicationHistory.map((c) => ({ ...c })) });
+}
+
+export async function sendAgingReminder(invoiceIds, template, body, cc) {
+  await delay();
+  const ids = Array.isArray(invoiceIds) ? invoiceIds : [invoiceIds];
+  for (const id of ids) {
+    const all = [..._getAgingInvoices("AR"), ..._getAgingInvoices("AP")];
+    const inv = all.find((x) => x.id === id);
+    if (inv) {
+      inv.communicationHistory.unshift({
+        type: "email_reminder",
+        template: template || "friendly",
+        body: body || "",
+        cc: cc || "",
+        sentAt: new Date().toISOString(),
+        sentBy: "cfo",
+      });
+    }
+  }
+  return { sent: ids.length, success: true };
+}
+
+export async function logPayment(invoiceId, amount, date, method, reference, notes) {
+  await delay();
+  const all = [..._getAgingInvoices("AR"), ..._getAgingInvoices("AP")];
+  const inv = all.find((x) => x.id === invoiceId);
+  if (!inv) return null;
+  const pay = { date: date || new Date().toISOString(), amount: Number(amount), method: method || "bank_transfer", reference: reference || "", notes: notes || "" };
+  inv.partialPayments.unshift(pay);
+  inv.outstanding = Math.max(0, Math.round((inv.outstanding - Number(amount)) * 100) / 100);
+  inv.status = inv.outstanding <= 0 ? "paid" : "partial";
+  return _brandObj({ ...inv });
+}
+
+export async function scheduleVendorPayment(invoiceId, amount, date, method, fromAccount, notes) {
+  await delay();
+  const inv = _getAgingInvoices("AP").find((x) => x.id === invoiceId);
+  if (!inv) return null;
+  inv.scheduledPayment = { amount: Number(amount), date, method, fromAccount, notes, scheduledAt: new Date().toISOString() };
+  return _brandObj({ ...inv });
+}
+
+export async function markInvoiceDisputed(invoiceId, reason, expectedResolution, assignedTo) {
+  await delay();
+  const all = [..._getAgingInvoices("AR"), ..._getAgingInvoices("AP")];
+  const inv = all.find((x) => x.id === invoiceId);
+  if (!inv) return null;
+  inv.status = "disputed";
+  inv.dispute = { reason: reason || "", expectedResolution, assignedTo, at: new Date().toISOString() };
+  return _brandObj({ ...inv });
+}
+
+export async function resolveDispute(invoiceId, resolution) {
+  await delay();
+  const all = [..._getAgingInvoices("AR"), ..._getAgingInvoices("AP")];
+  const inv = all.find((x) => x.id === invoiceId);
+  if (!inv) return null;
+  inv.status = "outstanding";
+  inv.disputeResolution = { resolution, at: new Date().toISOString() };
+  return _brandObj({ ...inv });
+}
+
+export async function createWriteOffJE(invoiceId, amount, reason, glAccount) {
+  await delay();
+  const inv = _getAgingInvoices("AR").find((x) => x.id === invoiceId);
+  if (!inv) return null;
+  const jeId = `JE-WO-${Math.floor(Math.random() * 900 + 100)}`;
+  inv.status = "written_off";
+  inv.outstanding = 0;
+  inv.writeOff = { amount: Number(amount), reason, glAccount, jeId, at: new Date().toISOString() };
+  // Create approval task for Owner
+  const taskId = `TSK-WO-${Math.floor(Math.random() * 900 + 100)}`;
+  const task = {
+    id: taskId,
+    senderId: "cfo",
+    recipient: P.owner,
+    sender: P.cfo,
+    type: "request-approval",
+    subject: `Write-off approval — ${inv.invoiceNumber}`,
+    body: `Writing off ${Number(amount).toLocaleString()} KWD against ${inv.partyName}.\n\nReason: ${reason}\nGL account: ${glAccount}`,
+    direction: "upward",
+    priority: "high",
+    status: "open",
+    unread: true,
+    linkedItem: { type: "write-off", invoiceId, jeId },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    dueDate: _daysFromNow(2),
+    messages: [_msgEvent(P.cfo, reason, 0)],
+  };
+  TASKBOX_DB.unshift(task);
+  return _brandObj({ jeId, taskId, requiresApproval: true });
+}
+
+export async function logContactAttempt(invoiceId, type, notes) {
+  await delay();
+  const all = [..._getAgingInvoices("AR"), ..._getAgingInvoices("AP")];
+  const inv = all.find((x) => x.id === invoiceId);
+  if (!inv) return null;
+  inv.communicationHistory.unshift({ type: type || "call", notes: notes || "", at: new Date().toISOString(), by: "cfo" });
+  return _brandObj({ ...inv });
+}
+
+// ── Setup ────────────────────────────────────────────────────────
+const _setupChartOfAccounts = [
+  // Assets
+  { code: "1000", name: "Cash & Equivalents",          type: "Assets", subtype: "Current Assets", balance: 0,      status: "active", parent: null },
+  { code: "1110", name: "Petty Cash",                  type: "Assets", subtype: "Current Assets", balance: 850,    status: "active", parent: "1000" },
+  { code: "1120", name: "KIB Operating Account",       type: "Assets", subtype: "Current Assets", balance: 142100, status: "active", parent: "1000" },
+  { code: "1130", name: "KIB Reserve Account",         type: "Assets", subtype: "Current Assets", balance: 42135,  status: "active", parent: "1000" },
+  { code: "1140", name: "KIB Settlement Account",      type: "Assets", subtype: "Current Assets", balance: 0,      status: "active", parent: "1000" },
+  { code: "1200", name: "Accounts Receivable",         type: "Assets", subtype: "Current Assets", balance: 68400,  status: "active", parent: null },
+  { code: "1300", name: "Inventory",                   type: "Assets", subtype: "Current Assets", balance: 52100,  status: "active", parent: null },
+  { code: "1400", name: "Prepaid Expenses",            type: "Assets", subtype: "Current Assets", balance: 18200,  status: "active", parent: null },
+  { code: "1500", name: "Fixed Assets — Equipment",    type: "Assets", subtype: "Fixed Assets",   balance: 98000,  status: "active", parent: null },
+  { code: "1510", name: "Fixed Assets — Furniture",    type: "Assets", subtype: "Fixed Assets",   balance: 24300,  status: "active", parent: null },
+  { code: "1520", name: "Accumulated Depreciation",    type: "Assets", subtype: "Fixed Assets",   balance: -31200, status: "active", parent: null },
+  // Liabilities
+  { code: "2100", name: "Accounts Payable",            type: "Liabilities", subtype: "Current Liabilities", balance: 42800, status: "active", parent: null },
+  { code: "2200", name: "PIFSS Payable",               type: "Liabilities", subtype: "Current Liabilities", balance: 9500,  status: "active", parent: null },
+  { code: "2210", name: "Salaries Payable",            type: "Liabilities", subtype: "Current Liabilities", balance: 28400, status: "active", parent: null },
+  { code: "2300", name: "Tax Payable",                 type: "Liabilities", subtype: "Current Liabilities", balance: 4200,  status: "active", parent: null },
+  { code: "2400", name: "Accrued Expenses",            type: "Liabilities", subtype: "Current Liabilities", balance: 12600, status: "active", parent: null },
+  // Equity
+  { code: "3000", name: "Owner Equity",                type: "Equity", subtype: "Equity", balance: 180000, status: "active", parent: null },
+  { code: "3100", name: "Retained Earnings",           type: "Equity", subtype: "Equity", balance: 92400,  status: "active", parent: null },
+  // Revenue
+  { code: "4100", name: "Sales Revenue",               type: "Revenue", subtype: "Operating Revenue", balance: -185000, status: "active", parent: null },
+  { code: "4200", name: "Service Revenue",             type: "Revenue", subtype: "Operating Revenue", balance: -48000,  status: "active", parent: null },
+  // Expenses
+  { code: "5100", name: "Cost of Goods Sold",          type: "Expenses", subtype: "Cost of Goods Sold", balance: 84200, status: "active", parent: null },
+  { code: "5200", name: "Direct Labor",                type: "Expenses", subtype: "Cost of Goods Sold", balance: 18400, status: "active", parent: null },
+  { code: "6100", name: "Salaries & Wages",            type: "Expenses", subtype: "Operating Expenses", balance: 48000, status: "active", parent: null },
+  { code: "6110", name: "PIFSS Contributions",         type: "Expenses", subtype: "Operating Expenses", balance: 9500,  status: "active", parent: null },
+  { code: "6120", name: "Bonuses",                     type: "Expenses", subtype: "Operating Expenses", balance: 3200,  status: "active", parent: null },
+  { code: "6200", name: "Office Rent",                 type: "Expenses", subtype: "Operating Expenses", balance: 6200,  status: "active", parent: null },
+  { code: "6210", name: "Utilities",                   type: "Expenses", subtype: "Operating Expenses", balance: 1800,  status: "active", parent: null },
+  { code: "6220", name: "Internet & Phone",            type: "Expenses", subtype: "Operating Expenses", balance: 900,   status: "active", parent: null },
+  { code: "6300", name: "Marketing & Advertising",     type: "Expenses", subtype: "Operating Expenses", balance: 12400, status: "active", parent: null },
+  { code: "6310", name: "Trade Shows",                 type: "Expenses", subtype: "Operating Expenses", balance: 3100,  status: "active", parent: null },
+  { code: "6400", name: "Travel & Transport",          type: "Expenses", subtype: "Operating Expenses", balance: 2400,  status: "active", parent: null },
+  { code: "6500", name: "Professional Fees",           type: "Expenses", subtype: "Operating Expenses", balance: 3600,  status: "active", parent: null },
+  { code: "6510", name: "Audit Fees",                  type: "Expenses", subtype: "Operating Expenses", balance: 2100,  status: "active", parent: null },
+  { code: "6520", name: "Legal Fees",                  type: "Expenses", subtype: "Operating Expenses", balance: 1200,  status: "active", parent: null },
+  { code: "6600", name: "Office Supplies",             type: "Expenses", subtype: "Operating Expenses", balance: 820,   status: "active", parent: null },
+  { code: "6700", name: "Insurance",                   type: "Expenses", subtype: "Operating Expenses", balance: 3200,  status: "active", parent: null },
+  { code: "6800", name: "Bank Charges",                type: "Expenses", subtype: "Operating Expenses", balance: 420,   status: "active", parent: null },
+  { code: "7100", name: "Interest Income",             type: "Revenue", subtype: "Other Income", balance: -1200, status: "active", parent: null },
+  { code: "7200", name: "FX Gain",                     type: "Revenue", subtype: "Other Income", balance: -450,  status: "active", parent: null },
+  { code: "8100", name: "Interest Expense",            type: "Expenses", subtype: "Other Expense", balance: 340,  status: "active", parent: null },
+  { code: "8200", name: "FX Loss",                     type: "Expenses", subtype: "Other Expense", balance: 210,  status: "active", parent: null },
+  { code: "8300", name: "Bad Debt Write-off",          type: "Expenses", subtype: "Other Expense", balance: 0,    status: "active", parent: null },
+];
+
+export async function getSetupChartOfAccounts() {
+  await delay();
+  return _brandObj(_setupChartOfAccounts.map((a) => ({ ...a })));
+}
+
+export async function createAccount(account) {
+  await delay();
+  const exists = _setupChartOfAccounts.find((a) => a.code === account.code);
+  if (exists) return { success: false, error: "Code already exists" };
+  const a = { ...account, balance: 0, status: "active" };
+  _setupChartOfAccounts.push(a);
+  return _brandObj({ ...a, requiresApproval: !account.parent });
+}
+
+export async function updateAccount(code, updates) {
+  await delay();
+  const a = _setupChartOfAccounts.find((x) => x.code === code);
+  if (!a) return null;
+  if (updates.name != null) a.name = updates.name;
+  if (updates.subtype != null) a.subtype = updates.subtype;
+  if (updates.description != null) a.description = updates.description;
+  return _brandObj({ ...a });
+}
+
+export async function deactivateAccount(code) {
+  await delay();
+  const a = _setupChartOfAccounts.find((x) => x.code === code);
+  if (!a) return null;
+  const needsApproval = Math.abs(a.balance) > 0;
+  a.status = "inactive";
+  return _brandObj({ ...a, requiresApproval: needsApproval });
+}
+
+// Fiscal year + periods
+const _fiscalYearByTenant = {};
+function _initFY(tenantId) {
+  if (!_fiscalYearByTenant[tenantId]) {
+    _fiscalYearByTenant[tenantId] = {
+      currentFY: 2026,
+      startDate: "2026-01-01",
+      endDate: "2026-12-31",
+      periods: [
+        { month: "Jan 2026", status: "hard_closed" },
+        { month: "Feb 2026", status: "hard_closed" },
+        { month: "Mar 2026", status: "open" },
+        { month: "Apr 2026", status: "open" },
+        { month: "May 2026", status: "not_started" },
+        { month: "Jun 2026", status: "not_started" },
+        { month: "Jul 2026", status: "not_started" },
+        { month: "Aug 2026", status: "not_started" },
+        { month: "Sep 2026", status: "not_started" },
+        { month: "Oct 2026", status: "not_started" },
+        { month: "Nov 2026", status: "not_started" },
+        { month: "Dec 2026", status: "not_started" },
+      ],
+      milestones: [
+        { date: _daysFromNow(7),  label: "March close target" },
+        { date: _daysFromNow(30), label: "Q1 tax filing (KGT)" },
+        { date: _daysFromNow(60), label: "Q1 management review" },
+      ],
+    };
+  }
+  return _fiscalYearByTenant[tenantId];
+}
+
+export async function getFiscalYearConfig() {
+  await delay();
+  return _brandObj(JSON.parse(JSON.stringify(_initFY(_currentTenantId))));
+}
+
+export async function updateFiscalYearConfig(config) {
+  await delay();
+  const fy = _initFY(_currentTenantId);
+  Object.assign(fy, config);
+  return _brandObj(JSON.parse(JSON.stringify(fy)));
+}
+
+export async function openPeriod(month) {
+  await delay();
+  const fy = _initFY(_currentTenantId);
+  const p = fy.periods.find((x) => x.month === month);
+  if (p) p.status = "open";
+  return { success: true, period: p };
+}
+
+export async function closePeriod(month) {
+  await delay();
+  const fy = _initFY(_currentTenantId);
+  const p = fy.periods.find((x) => x.month === month);
+  if (p) p.status = "hard_closed";
+  return { success: true, period: p };
+}
+
+// Tax configuration
+const _taxConfigByTenant = {};
+function _initTax(tenantId) {
+  if (!_taxConfigByTenant[tenantId]) {
+    _taxConfigByTenant[tenantId] = {
+      regime: "kuwait",
+      zakatRate: 2.5,
+      zakatAccount: "2300",
+      corporateTaxRate: 15,
+      corporateTaxAppliesTo: "foreign",
+      pifssEnabled: true,
+      pifssRate: 11,
+      pifssAccount: "2200",
+      vatEnabled: false,
+      vatRate: 0,
+      vatRegistrationNumber: "",
+      vatAccount: null,
+      filingFrequency: "quarterly",
+      exemptions: [
+        { partyName: "Government entities", reason: "Statutory exemption" },
+        { partyName: "Export transactions", reason: "Zero-rated" },
+      ],
+    };
+  }
+  return _taxConfigByTenant[tenantId];
+}
+
+export async function getTaxConfiguration() {
+  await delay();
+  return _brandObj(JSON.parse(JSON.stringify(_initTax(_currentTenantId))));
+}
+export async function updateTaxConfiguration(config) {
+  await delay();
+  const cur = _initTax(_currentTenantId);
+  Object.assign(cur, config);
+  return _brandObj(JSON.parse(JSON.stringify(cur)));
+}
+
+// Currencies
+const _currencyConfigByTenant = {};
+function _initCurrency(tenantId) {
+  if (!_currencyConfigByTenant[tenantId]) {
+    _currencyConfigByTenant[tenantId] = {
+      base: "KWD",
+      enabled: { USD: true, EUR: true, GBP: false, SAR: true, AED: true, BHD: false, OMR: false, QAR: false },
+      rates: { USD: 0.3075, EUR: 0.3345, GBP: 0.3910, SAR: 0.0820, AED: 0.0837, BHD: 0.8147, OMR: 0.7979, QAR: 0.0844 },
+      rateSource: "central_bank_kuwait",
+      lastUpdated: _hoursAgo(4),
+    };
+  }
+  return _currencyConfigByTenant[tenantId];
+}
+
+export async function getCurrencyConfig() {
+  await delay();
+  return _brandObj(JSON.parse(JSON.stringify(_initCurrency(_currentTenantId))));
+}
+export async function updateCurrencyConfig(config) {
+  await delay();
+  const cur = _initCurrency(_currentTenantId);
+  Object.assign(cur, config);
+  return _brandObj(JSON.parse(JSON.stringify(cur)));
+}
+export async function updateExchangeRates() {
+  await delay();
+  const cur = _initCurrency(_currentTenantId);
+  const now = new Date().toISOString();
+  const updated = [];
+  Object.keys(cur.rates).forEach((k) => {
+    const drift = (Math.random() - 0.5) * 0.002;
+    cur.rates[k] = Math.round((cur.rates[k] + drift) * 10000) / 10000;
+    updated.push({ currency: k, rate: cur.rates[k], timestamp: now });
+  });
+  cur.lastUpdated = now;
+  return { updated };
+}
+
+// Integration status (monitoring view)
+export async function getIntegrationStatus() {
+  await delay();
+  return _brandObj([
+    { id: "int-bank",   name: "KIB Corporate Banking",  status: "connected",    lastSync: _hoursAgo(1),  syncFrequency: "hourly",  volumePerDay: 84,  recentErrors: [] },
+    { id: "int-pos",    name: "Talabat POS",            status: "connected",    lastSync: _hoursAgo(2),  syncFrequency: "hourly",  volumePerDay: 132, recentErrors: [] },
+    { id: "int-bayzat", name: "Bayzat HR & Payroll",    status: "connected",    lastSync: _hoursAgo(6),  syncFrequency: "daily",   volumePerDay: 4,   recentErrors: [] },
+    { id: "int-zid",    name: "Zid E-commerce",         status: "error",        lastSync: _daysAgo(1),   syncFrequency: "hourly",  volumePerDay: 0,   recentErrors: [
+      { timestamp: _hoursAgo(8),  message: "OAuth token expired" },
+      { timestamp: _hoursAgo(18), message: "Connection timeout" },
+    ] },
+    { id: "int-qb",     name: "QuickBooks Export",      status: "disconnected", lastSync: null,          syncFrequency: "daily",   volumePerDay: 0,   recentErrors: [] },
+    { id: "int-deliv",  name: "Deliveroo",              status: "disconnected", lastSync: null,          syncFrequency: "hourly",  volumePerDay: 0,   recentErrors: [] },
+  ]);
+}
+
+export async function forceSyncIntegration(id) {
+  await delay();
+  return { success: true, syncedAt: new Date().toISOString(), id };
+}
+
+export async function getIntegrationSyncLogs(id, limit) {
+  await delay();
+  return _brandObj(
+    Array.from({ length: Math.min(limit || 10, 10) }, (_, i) => ({
+      timestamp: _hoursAgo(i * 2 + 1),
+      status: i === 3 || i === 7 ? "error" : "success",
+      details: i === 3 || i === 7 ? "Transient network error" : `Synced ${Math.floor(Math.random() * 40 + 5)} records`,
+    }))
+  );
+}
+
+// Team access matrix
+const _teamAccessSeed = [
+  { memberId: "owner", name: "Tarek Aljasem",  role: "Owner",             permissions: { view_financials: true, post_je: true, approve_je: true, edit_budget: true, close_periods: true, configure_setup: true, approve_writeoffs: true } },
+  { memberId: "cfo",   name: "You (CFO)",      role: "CFO",               permissions: { view_financials: true, post_je: true, approve_je: true, edit_budget: true, close_periods: true, configure_setup: true, approve_writeoffs: false } },
+  { memberId: "sara",  name: "Sara Al-Ahmadi", role: "Senior Accountant", permissions: { view_financials: true, post_je: true, approve_je: false, edit_budget: false, close_periods: false, configure_setup: false, approve_writeoffs: false } },
+  { memberId: "noor",  name: "Noor",           role: "Senior Accountant", permissions: { view_financials: true, post_je: true, approve_je: false, edit_budget: false, close_periods: false, configure_setup: false, approve_writeoffs: false } },
+  { memberId: "jasem", name: "Jasem",          role: "Junior Accountant", permissions: { view_financials: false, post_je: true, approve_je: false, edit_budget: false, close_periods: false, configure_setup: false, approve_writeoffs: false } },
+  { memberId: "layla", name: "Layla",          role: "Junior Accountant", permissions: { view_financials: false, post_je: false, approve_je: false, edit_budget: false, close_periods: false, configure_setup: false, approve_writeoffs: false } },
+];
+
+export async function getTeamAccessMatrix() {
+  await delay();
+  return _brandObj(_teamAccessSeed.map((m) => ({ ...m, permissions: { ...m.permissions } })));
+}
+
+export async function updateTeamMemberPermissions(memberId, permissions) {
+  await delay();
+  const m = _teamAccessSeed.find((x) => x.memberId === memberId);
+  if (!m) return null;
+  Object.assign(m.permissions, permissions);
+  const sensitive = ["approve_je", "close_periods", "configure_setup", "approve_writeoffs"];
+  const requiresApproval = Object.keys(permissions).some((k) => sensitive.includes(k));
+  return _brandObj({ ...m, permissions: { ...m.permissions }, requiresApproval });
+}
+
+export async function getRoleTemplates() {
+  await delay();
+  return [
+    { id: "rt-junior",   name: "Junior Accountant",  permissions: { view_financials: false, post_je: true,  approve_je: false, edit_budget: false, close_periods: false, configure_setup: false, approve_writeoffs: false } },
+    { id: "rt-senior",   name: "Senior Accountant",  permissions: { view_financials: true,  post_je: true,  approve_je: false, edit_budget: false, close_periods: false, configure_setup: false, approve_writeoffs: false } },
+    { id: "rt-cfo",      name: "CFO",                permissions: { view_financials: true,  post_je: true,  approve_je: true,  edit_budget: true,  close_periods: true,  configure_setup: true,  approve_writeoffs: false } },
+    { id: "rt-auditor",  name: "Auditor (read-only)", permissions: { view_financials: true,  post_je: false, approve_je: false, edit_budget: false, close_periods: false, configure_setup: false, approve_writeoffs: false } },
+    { id: "rt-owner",    name: "Owner",              permissions: { view_financials: true,  post_je: true,  approve_je: true,  edit_budget: true,  close_periods: true,  configure_setup: true,  approve_writeoffs: true } },
+  ];
+}
+
+export async function applyRoleTemplate(memberId, templateId) {
+  await delay();
+  const templates = await getRoleTemplates();
+  const tpl = templates.find((x) => x.id === templateId);
+  const m = _teamAccessSeed.find((x) => x.memberId === memberId);
+  if (!tpl || !m) return null;
+  m.permissions = { ...tpl.permissions };
+  return _brandObj({ ...m, permissions: { ...m.permissions } });
+}
+
+// Engine configuration
+const _engineConfigByTenant = {};
+function _initEngineConfig(tenantId) {
+  if (!_engineConfigByTenant[tenantId]) {
+    _engineConfigByTenant[tenantId] = {
+      jeApprovalThreshold: 1000,
+      autoCategorizationConfidence: 85,
+      autoReconDateTolerance: 2,
+      materialityThreshold: 1000,
+      writeOffApprovalThreshold: 500,
+    };
+  }
+  return _engineConfigByTenant[tenantId];
+}
+
+export async function getEngineConfiguration() {
+  await delay();
+  return { ..._initEngineConfig(_currentTenantId) };
+}
+
+export async function updateEngineConfiguration(config) {
+  await delay();
+  const cur = _initEngineConfig(_currentTenantId);
+  Object.assign(cur, config);
+  return { ...cur };
+}

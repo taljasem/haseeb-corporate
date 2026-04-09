@@ -28,6 +28,8 @@ import enSettings from "./locales/en/settings.json";
 import enProfile from "./locales/en/profile.json";
 import enForecast from "./locales/en/forecast.json";
 import enVariance from "./locales/en/variance.json";
+import enAging from "./locales/en/aging.json";
+import enSetup from "./locales/en/setup.json";
 
 import arCommon from "./locales/ar/common.json";
 import arHeader from "./locales/ar/header.json";
@@ -55,6 +57,8 @@ import arSettings from "./locales/ar/settings.json";
 import arProfile from "./locales/ar/profile.json";
 import arForecast from "./locales/ar/forecast.json";
 import arVariance from "./locales/ar/variance.json";
+import arAging from "./locales/ar/aging.json";
+import arSetup from "./locales/ar/setup.json";
 
 const namespaces = [
   "common", "header", "sidebar", "hero", "taskbox",
@@ -62,7 +66,7 @@ const namespaces = [
   "financial", "audit", "close", "team", "manual-je", "conv-je",
   "aminah", "notifications", "cfo-today",
   "budget", "owner-today", "junior-today", "owner-overview",
-  "settings", "profile", "forecast", "variance",
+  "settings", "profile", "forecast", "variance", "aging", "setup",
 ];
 
 i18n
@@ -97,6 +101,8 @@ i18n
         profile: enProfile,
         forecast: enForecast,
         variance: enVariance,
+        aging: enAging,
+        setup: enSetup,
       },
       ar: {
         common: arCommon,
@@ -125,6 +131,8 @@ i18n
         profile: arProfile,
         forecast: arForecast,
         variance: arVariance,
+        aging: arAging,
+        setup: arSetup,
       },
     },
     fallbackLng: "en",

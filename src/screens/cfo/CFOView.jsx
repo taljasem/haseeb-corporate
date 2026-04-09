@@ -7,7 +7,6 @@ import AminahSlideOver from "../../components/cfo/AminahSlideOver";
 import TodayScreen from "./TodayScreen";
 import BankTransactionsScreen from "./BankTransactionsScreen";
 import ConversationalJEScreen from "./ConversationalJEScreen";
-import PlaceholderScreen from "./PlaceholderScreen";
 import TaskboxScreen from "../../components/taskbox/TaskboxScreen";
 import RulesScreen from "./RulesScreen";
 import BankAccountsScreen from "../shared/BankAccountsScreen";
@@ -21,6 +20,8 @@ import FinancialStatementsScreen from "../shared/FinancialStatementsScreen";
 import MonthEndCloseScreen from "../shared/MonthEndCloseScreen";
 import ForecastScreen from "./ForecastScreen";
 import VarianceAnalysisScreen from "./VarianceAnalysisScreen";
+import AgingReportsScreen from "./AgingReportsScreen";
+import SetupScreen from "./SetupScreen";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
 
@@ -121,8 +122,16 @@ export default function CFOView({ registerNav }) {
         return <ForecastScreen onOpenAminah={openAminah} />;
       case "variance-analysis":
         return <VarianceAnalysisScreen onOpenAminah={openAminah} />;
+      case "aging-reports":
+        return <AgingReportsScreen onOpenAminah={openAminah} />;
+      case "setup":
+        return <SetupScreen />;
       default:
-        return <PlaceholderScreen title={t(`placeholder.screens.${activeScreen}`, { defaultValue: activeScreen.toUpperCase() })} />;
+        return (
+          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-tertiary)", fontSize: 13 }}>
+            {activeScreen}
+          </div>
+        );
     }
   };
 

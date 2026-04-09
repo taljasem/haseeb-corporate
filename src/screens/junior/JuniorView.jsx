@@ -13,6 +13,8 @@ import ConversationalJEScreen from "../cfo/ConversationalJEScreen";
 import BudgetScreen from "../../components/budget/BudgetScreen";
 import ReconciliationScreen from "../../components/reconciliation/ReconciliationScreen";
 import NewTaskModal from "../../components/taskbox/NewTaskModal";
+import SettingsScreen from "../shared/SettingsScreen";
+import ProfileScreen from "../shared/ProfileScreen";
 import { getSaraTaskStats } from "../../engine/mockEngine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
 
@@ -128,12 +130,9 @@ export default function JuniorView({ registerNav }) {
       case "bank-accounts":
         return <BankAccountsScreen role="Junior" readOnly />;
       case "profile":
-        return (
-          <Placeholder
-            label={t("placeholder.profile_label")}
-            sub={t("placeholder.profile_sub")}
-          />
-        );
+        return <ProfileScreen role="Junior" />;
+      case "settings":
+        return <SettingsScreen role="Junior" />;
       default:
         return <Placeholder label={activeScreen.toUpperCase()} />;
     }

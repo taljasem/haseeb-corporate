@@ -1,4 +1,4 @@
-import { Home, Inbox, Landmark, MessageSquare, BarChart3, CheckCircle, ListChecks, Building2, User } from "lucide-react";
+import { Home, Inbox, Landmark, MessageSquare, BarChart3, CheckCircle, ListChecks, Building2, User, Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import SidebarGroup from "../shared/SidebarGroup";
 import LtrText from "../shared/LtrText";
@@ -95,7 +95,8 @@ export default function JuniorSidebar({ active, setActive, taskStats = { open: 0
       </SidebarGroup>
 
       <SidebarGroup label={t("groups.personal")}>
-        <NavItem icon={User} label={t("items.profile")} active={is("profile")} onClick={() => setActive("profile")} />
+        <NavItem icon={User}     label={t("items.profile")}  active={is("profile")}  onClick={() => setActive("profile")} />
+        <NavItem icon={Settings} label={t("items.settings")} active={is("settings")} onClick={() => setActive("settings")} />
       </SidebarGroup>
     </aside>
   );

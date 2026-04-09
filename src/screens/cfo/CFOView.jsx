@@ -15,6 +15,8 @@ import BudgetScreen from "../../components/budget/BudgetScreen";
 import ReconciliationScreen from "../../components/reconciliation/ReconciliationScreen";
 import ManualJEScreen from "./ManualJEScreen";
 import NewTaskModal from "../../components/taskbox/NewTaskModal";
+import SettingsScreen from "../shared/SettingsScreen";
+import ProfileScreen from "../shared/ProfileScreen";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
 
@@ -103,6 +105,10 @@ export default function CFOView({ registerNav }) {
             initialFilter={initialTaskboxFilter}
           />
         );
+      case "settings":
+        return <SettingsScreen role="CFO" />;
+      case "profile":
+        return <ProfileScreen role="CFO" />;
       default:
         return <PlaceholderScreen title={t(`placeholder.screens.${activeScreen}`, { defaultValue: activeScreen.toUpperCase() })} />;
     }

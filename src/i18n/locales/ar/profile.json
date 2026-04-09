@@ -1,0 +1,90 @@
+{
+  "title": "الملف الشخصي",
+  "loading": "جارٍ تحميل الملف الشخصي…",
+  "subtitle_owner": "المالك",
+  "subtitle_cfo": "المدير المالي",
+  "subtitle_junior": "محاسب أول",
+  "header_card": {
+    "label": "الملف الشخصي",
+    "email": "البريد الإلكتروني",
+    "tenant": "المستأجر",
+    "joined": "تاريخ الانضمام",
+    "edit_profile": "تعديل الملف"
+  },
+  "stats": {
+    "title": "الإحصاءات",
+    "subtitle": "هذا الشهر",
+    "primary": {
+      "decisions_month": "قرارات هذا الشهر",
+      "jes_approved_month": "قيود معتمدة هذا الشهر",
+      "accuracy_week": "الدقة هذا الأسبوع"
+    },
+    "cards": {
+      "approvals_processed": "اعتمادات منجزة",
+      "reports_reviewed": "تقارير مراجعة",
+      "audit_checks": "فحوصات التدقيق المحلولة",
+      "budget_reviews": "مراجعات الميزانية",
+      "budgets_reviewed": "ميزانيات مراجعة",
+      "reconciliations_done": "تسويات",
+      "tasks_managed": "مهام مُدارة",
+      "rules_created": "قواعد مُنشأة",
+      "tasks_completed_month": "مهام منجزة",
+      "jes_posted": "قيود مُرحّلة",
+      "transactions_coded": "عمليات مُصنّفة"
+    }
+  },
+  "responsibilities": {
+    "title": "المسؤوليات",
+    "subtitle": "ما تملكه وتُشرف عليه",
+    "manage": "إدارة المسؤوليات",
+    "scope": "النطاق",
+    "type_approval": "اعتماد",
+    "type_oversight": "إشراف",
+    "type_governance": "حوكمة",
+    "type_execution": "تنفيذ",
+    "empty": "لا توجد مسؤوليات مُسندة بعد."
+  },
+  "activity": {
+    "title": "النشاط الأخير",
+    "subtitle": "آخر 10 إجراءات",
+    "view_full": "عرض سجل النشاط الكامل",
+    "actions": {
+      "approved_je": "اعتمدت {{target}}",
+      "posted_je": "رحّلت {{target}}",
+      "posted_budget_rev": "رحّلت تعديل ميزانية — {{target}}",
+      "completed_recon": "أكملت التسوية — {{target}}",
+      "created_rule": "أنشأت قاعدة — {{target}}",
+      "replied_task": "ردّيت على {{target}}",
+      "approved_budget": "اعتمدت ميزانية — {{target}}",
+      "completed_task": "أنجزت {{target}}",
+      "coded_tx": "صنّفت العملية {{target}}",
+      "reviewed_report": "راجعت {{target}}"
+    },
+    "empty": "لا يوجد نشاط حديث."
+  },
+  "notes": {
+    "title": "الملاحظات",
+    "subtitle": "مفكّرتك الشخصية — لا يراها غيرك.",
+    "placeholder": "اكتب ملاحظاتك أو تذكيراتك هنا…",
+    "saved": "آخر حفظ {{time}}",
+    "saving": "جارٍ الحفظ…"
+  },
+  "edit_modal": {
+    "label": "الملف الشخصي",
+    "title": "تعديل الملف",
+    "field_name": "الاسم",
+    "field_email": "البريد الإلكتروني",
+    "field_bio": "نبذة",
+    "field_avatar_color": "لون الصورة الرمزية",
+    "bio_placeholder": "وصف قصير لدورك.",
+    "cancel": "إلغاء",
+    "save": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "saved": "تم تحديث الملف",
+    "close": "إغلاق"
+  },
+  "full_activity": {
+    "title": "سجل النشاط الكامل",
+    "close": "إغلاق"
+  }
+}

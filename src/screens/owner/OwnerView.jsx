@@ -13,6 +13,8 @@ import TeamScreen from "./TeamScreen";
 import BankAccountsScreen from "../shared/BankAccountsScreen";
 import BudgetScreen from "../../components/budget/BudgetScreen";
 import TaskboxScreen from "../../components/taskbox/TaskboxScreen";
+import SettingsScreen from "../shared/SettingsScreen";
+import ProfileScreen from "../shared/ProfileScreen";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
 
@@ -151,7 +153,9 @@ export default function OwnerView({ registerNav }) {
       case "budget":
         return <BudgetScreen role="Owner" onOpenAminah={openAminah} />;
       case "settings":
-        return <Placeholder label={tc("placeholder.screens.settings")} />;
+        return <SettingsScreen role="Owner" />;
+      case "profile":
+        return <ProfileScreen role="Owner" />;
       default:
         return <Placeholder label={activeScreen.toUpperCase()} />;
     }

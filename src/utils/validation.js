@@ -17,6 +17,29 @@ export const required = (key = "validation.required") => (value) => {
   return null;
 };
 
+// Simple email format check (not RFC-5322 perfect, but sufficient for demo).
+export const email = (key = "validation.invalid_email") => (value) => {
+  if (value == null || value === "") return null;
+  if (typeof value !== "string") return { key };
+  const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+  return ok ? null : { key };
+};
+
+// Confirms that value matches another field's value (for password confirm).
+export const matches = (otherValue, key = "validation.mismatch") => (value) => {
+  if (value == null || value === "") return null;
+  if (value !== otherValue) return { key };
+  return null;
+};
+
+// Exact-length check, e.g. 6-digit 2FA code.
+export const exactLength = (len, key = "validation.invalid_code") => (value) => {
+  if (value == null) return { key };
+  if (typeof value !== "string") return { key };
+  if (value.trim().length !== len) return { key };
+  return null;
+};
+
 export const minLength = (min, key = "validation.too_short") => (value) => {
   if (value == null) return null;
   if (typeof value !== "string") return null;

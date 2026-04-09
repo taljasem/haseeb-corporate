@@ -1,0 +1,90 @@
+{
+  "title": "Profile",
+  "loading": "Loading profile…",
+  "subtitle_owner": "Owner",
+  "subtitle_cfo": "CFO",
+  "subtitle_junior": "Senior Accountant",
+  "header_card": {
+    "label": "PROFILE",
+    "email": "Email",
+    "tenant": "Tenant",
+    "joined": "Joined",
+    "edit_profile": "Edit profile"
+  },
+  "stats": {
+    "title": "Stats",
+    "subtitle": "This month",
+    "primary": {
+      "decisions_month": "Decisions this month",
+      "jes_approved_month": "JEs approved this month",
+      "accuracy_week": "Accuracy this week"
+    },
+    "cards": {
+      "approvals_processed": "Approvals processed",
+      "reports_reviewed": "Reports reviewed",
+      "audit_checks": "Audit checks resolved",
+      "budget_reviews": "Budget reviews",
+      "budgets_reviewed": "Budgets reviewed",
+      "reconciliations_done": "Reconciliations",
+      "tasks_managed": "Tasks managed",
+      "rules_created": "Rules created",
+      "tasks_completed_month": "Tasks completed",
+      "jes_posted": "JEs posted",
+      "transactions_coded": "Transactions coded"
+    }
+  },
+  "responsibilities": {
+    "title": "Responsibilities",
+    "subtitle": "What you own and oversee",
+    "manage": "Manage responsibilities",
+    "scope": "Scope",
+    "type_approval": "Approval",
+    "type_oversight": "Oversight",
+    "type_governance": "Governance",
+    "type_execution": "Execution",
+    "empty": "No responsibilities assigned yet."
+  },
+  "activity": {
+    "title": "Recent activity",
+    "subtitle": "Last 10 actions",
+    "view_full": "View full activity log",
+    "actions": {
+      "approved_je": "Approved {{target}}",
+      "posted_je": "Posted {{target}}",
+      "posted_budget_rev": "Posted budget revision — {{target}}",
+      "completed_recon": "Completed reconciliation — {{target}}",
+      "created_rule": "Created rule — {{target}}",
+      "replied_task": "Replied to {{target}}",
+      "approved_budget": "Approved budget — {{target}}",
+      "completed_task": "Completed {{target}}",
+      "coded_tx": "Coded transaction {{target}}",
+      "reviewed_report": "Reviewed {{target}}"
+    },
+    "empty": "No recent activity."
+  },
+  "notes": {
+    "title": "Notes",
+    "subtitle": "Your personal scratchpad — only you can see this.",
+    "placeholder": "Write notes, reminders, or shortcuts you want to remember…",
+    "saved": "Last saved {{time}}",
+    "saving": "Saving…"
+  },
+  "edit_modal": {
+    "label": "PROFILE",
+    "title": "Edit profile",
+    "field_name": "Name",
+    "field_email": "Email",
+    "field_bio": "Bio",
+    "field_avatar_color": "Avatar color",
+    "bio_placeholder": "A short description of your role.",
+    "cancel": "Cancel",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "saved": "Profile updated",
+    "close": "Close"
+  },
+  "full_activity": {
+    "title": "Full activity log",
+    "close": "Close"
+  }
+}

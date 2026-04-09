@@ -4536,3 +4536,334 @@ export async function markAllNotificationsRead(role) {
   _notificationsUnread[role] = false;
   return true;
 }
+
+// ─────────────────────────────────────────
+// Step 20C-1 additions — Settings + Profile. All additive.
+// ─────────────────────────────────────────
+
+const _notificationPreferences = {
+  Owner: {
+    email_enabled: true,
+    in_app_enabled: true,
+    categories: {
+      task_assignments: true,
+      approval_requests: true,
+      mentions: true,
+      daily_digest: true,
+      weekly_summary: true,
+      audit_alerts: true,
+      reconciliation_alerts: false,
+      budget_alerts: true,
+    },
+  },
+  CFO: {
+    email_enabled: true,
+    in_app_enabled: true,
+    categories: {
+      task_assignments: true,
+      approval_requests: true,
+      mentions: true,
+      daily_digest: false,
+      weekly_summary: true,
+      audit_alerts: true,
+      reconciliation_alerts: true,
+      budget_alerts: true,
+    },
+  },
+  Junior: {
+    email_enabled: true,
+    in_app_enabled: true,
+    categories: {
+      task_assignments: true,
+      approval_requests: false,
+      mentions: true,
+      daily_digest: true,
+      weekly_summary: false,
+      audit_alerts: false,
+      reconciliation_alerts: true,
+      budget_alerts: false,
+    },
+  },
+};
+
+export async function getNotificationPreferences(role) {
+  await delay();
+  const r = _notificationPreferences[role] || _notificationPreferences.CFO;
+  return JSON.parse(JSON.stringify(r));
+}
+
+export async function updateNotificationPreferences(role, prefs) {
+  await delay();
+  _notificationPreferences[role] = JSON.parse(JSON.stringify(prefs));
+  return JSON.parse(JSON.stringify(_notificationPreferences[role]));
+}
+
+// Active sessions
+let _sessions = [
+  { id: "s-current", device: "MacBook Pro", browser: "Chrome 126", location: "Kuwait City, KW", lastActive: new Date().toISOString(), isCurrent: true },
+  { id: "s-2",       device: "iPhone 15",  browser: "Safari Mobile", location: "Kuwait City, KW", lastActive: _hoursAgo(3), isCurrent: false },
+  { id: "s-3",       device: "iPad Pro",   browser: "Safari 17",     location: "Salmiya, KW",     lastActive: _hoursAgo(22), isCurrent: false },
+  { id: "s-4",       device: "Windows 11", browser: "Edge 125",      location: "Jabriya, KW",     lastActive: _daysAgo(2),   isCurrent: false },
+  { id: "s-5",       device: "MacBook Air", browser: "Firefox 127",  location: "Dubai, AE",       lastActive: _daysAgo(5),   isCurrent: false },
+];
+
+export async function getActiveSessions() {
+  await delay();
+  return _sessions.map((s) => ({ ...s }));
+}
+export async function signOutSession(sessionId) {
+  await delay();
+  _sessions = _sessions.filter((s) => s.id !== sessionId || s.isCurrent);
+  return { success: true };
+}
+export async function signOutAllOtherSessions() {
+  await delay();
+  const count = _sessions.filter((s) => !s.isCurrent).length;
+  _sessions = _sessions.filter((s) => s.isCurrent);
+  return { success: true, count };
+}
+
+// 2FA
+let _twoFactor = { enabled: false, method: null };
+export async function getTwoFactorStatus() {
+  await delay();
+  return { ...(_twoFactor) };
+}
+export async function enableTwoFactor(method, code) {
+  await delay();
+  if (!code || code.length !== 6) return { success: false, error: "validation.invalid_code" };
+  _twoFactor = { enabled: true, method: method || "totp" };
+  return {
+    success: true,
+    backupCodes: [
+      "A1B2-C3D4", "E5F6-G7H8", "J9K0-L1M2", "N3P4-Q5R6",
+      "S7T8-U9V0", "W1X2-Y3Z4", "A5B6-C7D8", "E9F0-G1H2",
+    ],
+  };
+}
+export async function disableTwoFactor(code) {
+  await delay();
+  if (!code || code.length !== 6) return { success: false, error: "validation.invalid_code" };
+  _twoFactor = { enabled: false, method: null };
+  return { success: true };
+}
+export async function changePassword(oldPassword, newPassword) {
+  await delay();
+  if (!oldPassword) return { success: false, error: "validation.old_password_required" };
+  if (!newPassword || newPassword.length < 8) return { success: false, error: "validation.password_too_short" };
+  return { success: true };
+}
+
+// Integrations — tenant-aware via _brandObj (bank name substitution)
+let _integrations = [
+  { id: "int-bank",    name: "KIB Corporate Banking", category: "Banking",    status: "connected",    lastSync: _hoursAgo(1),  config: { syncFrequency: "hourly" } },
+  { id: "int-pos",     name: "Talabat POS",           category: "POS",        status: "connected",    lastSync: _hoursAgo(2),  config: { storeId: "TLB-KW-0412" } },
+  { id: "int-deliv",   name: "Deliveroo",             category: "Delivery",   status: "disconnected", lastSync: null,          config: {} },
+  { id: "int-qb",      name: "QuickBooks Export",     category: "Accounting", status: "disconnected", lastSync: null,          config: {} },
+  { id: "int-bayzat",  name: "Bayzat HR & Payroll",   category: "HR",         status: "connected",    lastSync: _hoursAgo(6),  config: { companyId: "BZT-00421" } },
+  { id: "int-zid",     name: "Zid E-commerce",        category: "E-commerce", status: "error",        lastSync: _daysAgo(1),   config: { errorMsg: "Token expired" } },
+];
+
+export async function getIntegrations() {
+  await delay();
+  return _brandObj(_integrations.map((i) => ({ ...i, config: { ...i.config } })));
+}
+export async function configureIntegration(integrationId, config) {
+  await delay();
+  const i = _integrations.find((x) => x.id === integrationId);
+  if (!i) return null;
+  i.config = { ...i.config, ...config };
+  i.status = "connected";
+  i.lastSync = new Date().toISOString();
+  return _brandObj({ ...i });
+}
+export async function addIntegration(integrationId) {
+  await delay();
+  const i = _integrations.find((x) => x.id === integrationId);
+  if (i) {
+    i.status = "connected";
+    i.lastSync = new Date().toISOString();
+    return _brandObj({ ...i });
+  }
+  return null;
+}
+export async function removeIntegration(integrationId) {
+  await delay();
+  const i = _integrations.find((x) => x.id === integrationId);
+  if (i) {
+    i.status = "disconnected";
+    i.lastSync = null;
+  }
+  return { success: true };
+}
+
+// Audit log
+export async function getAccountAuditLog(filters = {}) {
+  await delay();
+  const all = [
+    { id: "al-1",  timestamp: _hoursAgo(1),  actor: "Tarek Aljasem",  action: "login",           target: "MacBook Pro · Chrome 126",  ipAddress: "156.0.12.44",  details: "Kuwait City, KW" },
+    { id: "al-2",  timestamp: _hoursAgo(2),  actor: "Tarek Aljasem",  action: "settings_change", target: "Notifications",              ipAddress: "156.0.12.44",  details: "Disabled weekly summary" },
+    { id: "al-3",  timestamp: _hoursAgo(4),  actor: "You (CFO)",      action: "approval",        target: "JE-0418",                     ipAddress: "156.0.12.40",  details: "Approved journal entry" },
+    { id: "al-4",  timestamp: _hoursAgo(6),  actor: "Sara Al-Ahmadi", action: "post_je",         target: "JE-0417",                     ipAddress: "156.0.12.42",  details: "Posted reconciliation adjustment" },
+    { id: "al-5",  timestamp: _hoursAgo(22), actor: "Tarek Aljasem",  action: "login",           target: "iPhone 15 · Safari Mobile",   ipAddress: "77.88.1.12",   details: "Kuwait City, KW" },
+    { id: "al-6",  timestamp: _daysAgo(1),   actor: "You (CFO)",      action: "rule_create",     target: "Talabat auto-categorization", ipAddress: "156.0.12.40",  details: "Created categorization rule" },
+    { id: "al-7",  timestamp: _daysAgo(1),   actor: "Tarek Aljasem",  action: "role_change",     target: "Noor",                        ipAddress: "156.0.12.44",  details: "Promoted to Senior Accountant" },
+    { id: "al-8",  timestamp: _daysAgo(2),   actor: "Sara Al-Ahmadi", action: "reconciliation",  target: "REC-2026-03 / KIB Operating", ipAddress: "156.0.12.42",  details: "Completed reconciliation" },
+    { id: "al-9",  timestamp: _daysAgo(2),   actor: "Tarek Aljasem",  action: "settings_change", target: "Language",                    ipAddress: "156.0.12.44",  details: "Switched to Arabic" },
+    { id: "al-10", timestamp: _daysAgo(3),   actor: "You (CFO)",      action: "budget_approve",  target: "Q2-2026 / Marketing",         ipAddress: "156.0.12.40",  details: "Approved departmental budget" },
+    { id: "al-11", timestamp: _daysAgo(3),   actor: "Sara Al-Ahmadi", action: "login",           target: "Windows 11 · Edge 125",       ipAddress: "77.88.1.14",   details: "Jabriya, KW" },
+    { id: "al-12", timestamp: _daysAgo(4),   actor: "Tarek Aljasem",  action: "integration",     target: "Bayzat",                      ipAddress: "156.0.12.44",  details: "Reconnected integration" },
+    { id: "al-13", timestamp: _daysAgo(5),   actor: "You (CFO)",      action: "post_je",         target: "JE-0410",                     ipAddress: "156.0.12.40",  details: "Posted manual journal entry" },
+    { id: "al-14", timestamp: _daysAgo(6),   actor: "Tarek Aljasem",  action: "login",           target: "MacBook Air · Firefox 127",   ipAddress: "92.211.88.3",  details: "Dubai, AE" },
+    { id: "al-15", timestamp: _daysAgo(7),   actor: "Sara Al-Ahmadi", action: "approval",        target: "TSK-107",                     ipAddress: "156.0.12.42",  details: "Completed approval task" },
+    { id: "al-16", timestamp: _daysAgo(8),   actor: "You (CFO)",      action: "settings_change", target: "Notifications",              ipAddress: "156.0.12.40",  details: "Enabled audit alerts" },
+    { id: "al-17", timestamp: _daysAgo(9),   actor: "Tarek Aljasem",  action: "approval",        target: "TSK-098",                     ipAddress: "156.0.12.44",  details: "Approved budget request" },
+    { id: "al-18", timestamp: _daysAgo(10),  actor: "Sara Al-Ahmadi", action: "rule_create",     target: "Kuwait Utilities routing",    ipAddress: "156.0.12.42",  details: "Created routing rule" },
+    { id: "al-19", timestamp: _daysAgo(12),  actor: "Tarek Aljasem",  action: "settings_change", target: "Security",                    ipAddress: "156.0.12.44",  details: "Updated password" },
+    { id: "al-20", timestamp: _daysAgo(14),  actor: "You (CFO)",      action: "login",           target: "MacBook Pro · Chrome 125",    ipAddress: "156.0.12.40",  details: "Kuwait City, KW" },
+    { id: "al-21", timestamp: _daysAgo(18),  actor: "Tarek Aljasem",  action: "role_change",     target: "Jasem",                       ipAddress: "156.0.12.44",  details: "Granted Bookkeeping access" },
+    { id: "al-22", timestamp: _daysAgo(21),  actor: "Tarek Aljasem",  action: "integration",     target: "QuickBooks",                  ipAddress: "156.0.12.44",  details: "Attempted to connect" },
+  ];
+  let result = all;
+  if (filters.action && filters.action !== "all") {
+    result = result.filter((e) => e.action === filters.action);
+  }
+  return _brandObj(result);
+}
+
+// Profile
+let _userProfile = {
+  id: "cfo",
+  name: "You (CFO)",
+  email: "cfo@almanara.com",
+  role: "CFO",
+  tenantId: _currentTenantId,
+  avatarColor: "#00C48C",
+  bio: "Finance leader overseeing daily operations, approvals, and month-end close.",
+  joinedAt: _daysAgo(420),
+};
+
+export async function getUserProfile() {
+  await delay();
+  return _brandObj({ ...(_userProfile) });
+}
+
+export async function updateUserProfile(updates) {
+  await delay();
+  _userProfile = { ..._userProfile, ...updates };
+  return _brandObj({ ..._userProfile });
+}
+
+export async function getUserStats(role, period = "month") {
+  await delay();
+  const map = {
+    Owner:  {
+      primary: { label: "decisions_month", value: 47,  trend: "up",   delta: "+12%" },
+      cards: [
+        { key: "approvals_processed", value: 124, unit: "tasks" },
+        { key: "reports_reviewed",    value: 18,  unit: "reports" },
+        { key: "audit_checks",        value: 15,  unit: "checks" },
+        { key: "budget_reviews",      value: 9,   unit: "reviews" },
+      ],
+    },
+    CFO:    {
+      primary: { label: "jes_approved_month", value: 86, trend: "up", delta: "+8%" },
+      cards: [
+        { key: "budgets_reviewed",       value: 11,  unit: "budgets" },
+        { key: "reconciliations_done",   value: 14,  unit: "reconciliations" },
+        { key: "tasks_managed",          value: 62,  unit: "tasks" },
+        { key: "rules_created",          value: 7,   unit: "rules" },
+      ],
+    },
+    Junior: {
+      primary: { label: "accuracy_week", value: 94, trend: "up", delta: "+3%", unit: "pct" },
+      cards: [
+        { key: "tasks_completed_month", value: 138, unit: "tasks" },
+        { key: "reconciliations_done",  value: 9,   unit: "reconciliations" },
+        { key: "jes_posted",            value: 42,  unit: "entries" },
+        { key: "transactions_coded",    value: 237, unit: "transactions" },
+      ],
+    },
+  };
+  return map[role] || map.CFO;
+}
+
+export async function getUserResponsibilities(role) {
+  await delay();
+  const map = {
+    Owner: [
+      { id: "r1",  type: "approval",   label: "Budget approvals",          scope: "All departments",      description: "Final sign-off on budgets above 50,000 KWD" },
+      { id: "r2",  type: "approval",   label: "Strategic hires",           scope: "All departments",      description: "Personnel additions and role changes" },
+      { id: "r3",  type: "oversight",  label: "Month-end close",           scope: "Whole company",        description: "Review and approve each close cycle" },
+      { id: "r4",  type: "oversight",  label: "Audit readiness",           scope: "Whole company",        description: "Review all 15 audit checks monthly" },
+      { id: "r5",  type: "governance", label: "Board reporting",           scope: "Quarterly",            description: "P&L, Balance Sheet, KPI dashboards" },
+      { id: "r6",  type: "oversight",  label: "Vendor relationships",      scope: "Top-tier vendors",     description: "Contract renewals and major changes" },
+      { id: "r7",  type: "approval",   label: "Bank account changes",      scope: "All banks",            description: "New account openings and closures" },
+      { id: "r8",  type: "governance", label: "Compliance sign-off",       scope: "PIFSS, Tax authority", description: "Quarterly filings review" },
+    ],
+    CFO: [
+      { id: "r1",  type: "oversight",  label: "Accounts Payable",          scope: "6100-6800 series",     description: "Operating expense categorization and approvals" },
+      { id: "r2",  type: "oversight",  label: "Accounts Receivable",       scope: "1200 series",          description: "Customer receivables and collections" },
+      { id: "r3",  type: "approval",   label: "Manual journal entries",    scope: "> 1,000 KWD",          description: "Approve non-routine entries" },
+      { id: "r4",  type: "approval",   label: "Budget revisions",          scope: "All departments",      description: "Mid-cycle reallocations and changes" },
+      { id: "r5",  type: "oversight",  label: "Bank reconciliations",      scope: "Operating + Reserve",  description: "Review and sign off each period" },
+      { id: "r6",  type: "oversight",  label: "Team supervision",          scope: "Junior accountants",   description: "Direct report management and reviews" },
+      { id: "r7",  type: "governance", label: "Close coordination",        scope: "Monthly close",        description: "Drive the 15-task close checklist" },
+      { id: "r8",  type: "oversight",  label: "Payroll review",            scope: "All staff",            description: "PIFSS and tax withholding verification" },
+      { id: "r9",  type: "governance", label: "Audit check resolution",    scope: "Failing checks",       description: "Investigate and clear audit issues" },
+    ],
+    Junior: [
+      { id: "r1",  type: "execution",  label: "Bank transaction coding",   scope: "All incoming tx",      description: "Categorize and post daily bank activity" },
+      { id: "r2",  type: "execution",  label: "Talabat reconciliation",    scope: "Weekly",               description: "Match POS settlements to bank deposits" },
+      { id: "r3",  type: "execution",  label: "PIFSS accrual",             scope: "Monthly",              description: "Draft the month-end PIFSS entry" },
+      { id: "r4",  type: "execution",  label: "Expense report processing", scope: "All staff",            description: "Code and post employee expense claims" },
+      { id: "r5",  type: "execution",  label: "Vendor invoice entry",      scope: "< 5,000 KWD",          description: "Enter and match vendor invoices" },
+      { id: "r6",  type: "execution",  label: "Petty cash reconciliation", scope: "Weekly",               description: "Reconcile petty cash against receipts" },
+      { id: "r7",  type: "execution",  label: "Utilities categorization",  scope: "MEW, ISP, telco",      description: "Match recurring utility transactions" },
+      { id: "r8",  type: "execution",  label: "Bank fees posting",         scope: "All banks",            description: "Post monthly bank charges" },
+    ],
+  };
+  return map[role] || map.Junior;
+}
+
+export async function getUserRecentActivity(limit = 10) {
+  await delay();
+  const all = [
+    { id: "ua-1",  timestamp: _hoursAgo(2),  action: "approved_je",        target: "JE-0418",                targetType: "je",           link: "manual-je"        },
+    { id: "ua-2",  timestamp: _hoursAgo(5),  action: "posted_budget_rev",  target: "Marketing Q2",           targetType: "budget",       link: "budget"           },
+    { id: "ua-3",  timestamp: _hoursAgo(8),  action: "completed_recon",    target: "REC-2026-03",            targetType: "reconciliation", link: "reconciliation" },
+    { id: "ua-4",  timestamp: _hoursAgo(22), action: "created_rule",       target: "Talabat auto-categorize", targetType: "rule",         link: "rules"            },
+    { id: "ua-5",  timestamp: _daysAgo(1),   action: "replied_task",       target: "TSK-113",                targetType: "task",         link: "taskbox"          },
+    { id: "ua-6",  timestamp: _daysAgo(1),   action: "approved_budget",    target: "Operations Q2",          targetType: "budget",       link: "budget"           },
+    { id: "ua-7",  timestamp: _daysAgo(2),   action: "posted_je",          target: "JE-0415",                targetType: "je",           link: "manual-je"        },
+    { id: "ua-8",  timestamp: _daysAgo(3),   action: "completed_task",     target: "TSK-104",                targetType: "task",         link: "taskbox"          },
+    { id: "ua-9",  timestamp: _daysAgo(3),   action: "coded_tx",           target: "BT-4521",                targetType: "bank-tx",      link: "bank-transactions" },
+    { id: "ua-10", timestamp: _daysAgo(4),   action: "reviewed_report",    target: "Q1 P&L",                 targetType: "report",       link: "financial-statements" },
+    { id: "ua-11", timestamp: _daysAgo(5),   action: "approved_je",        target: "JE-0410",                targetType: "je",           link: "manual-je"        },
+    { id: "ua-12", timestamp: _daysAgo(6),   action: "replied_task",       target: "TSK-099",                targetType: "task",         link: "taskbox"          },
+  ];
+  return _brandObj(all.slice(0, limit));
+}
+
+export async function getUserFullActivity() {
+  await delay();
+  const all = await getUserRecentActivity(50);
+  return all;
+}
+
+let _userNotes = {
+  content:
+    "KIB reconciliation pattern: always match against the settlement sweep first, then residuals to the operating account.\n\nPIFSS accrual: use the payroll export from Bayzat, NOT the manual HR sheet.\n\nWatch Talabat POS settlement timing — 2-day lag during weekends.",
+  lastSaved: _hoursAgo(3),
+};
+
+export async function getUserNotes() {
+  await delay();
+  return { ..._userNotes };
+}
+
+export async function updateUserNotes(content) {
+  await delay();
+  _userNotes = { content, lastSaved: new Date().toISOString() };
+  return { ..._userNotes };
+}

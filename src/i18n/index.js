@@ -24,6 +24,8 @@ import enBudget from "./locales/en/budget.json";
 import enOwnerToday from "./locales/en/owner-today.json";
 import enJuniorToday from "./locales/en/junior-today.json";
 import enOwnerOverview from "./locales/en/owner-overview.json";
+import enSettings from "./locales/en/settings.json";
+import enProfile from "./locales/en/profile.json";
 
 import arCommon from "./locales/ar/common.json";
 import arHeader from "./locales/ar/header.json";
@@ -47,6 +49,8 @@ import arBudget from "./locales/ar/budget.json";
 import arOwnerToday from "./locales/ar/owner-today.json";
 import arJuniorToday from "./locales/ar/junior-today.json";
 import arOwnerOverview from "./locales/ar/owner-overview.json";
+import arSettings from "./locales/ar/settings.json";
+import arProfile from "./locales/ar/profile.json";
 
 const namespaces = [
   "common", "header", "sidebar", "hero", "taskbox",
@@ -54,6 +58,7 @@ const namespaces = [
   "financial", "audit", "close", "team", "manual-je", "conv-je",
   "aminah", "notifications", "cfo-today",
   "budget", "owner-today", "junior-today", "owner-overview",
+  "settings", "profile",
 ];
 
 i18n
@@ -84,6 +89,8 @@ i18n
         "owner-today": enOwnerToday,
         "junior-today": enJuniorToday,
         "owner-overview": enOwnerOverview,
+        settings: enSettings,
+        profile: enProfile,
       },
       ar: {
         common: arCommon,
@@ -108,6 +115,8 @@ i18n
         "owner-today": arOwnerToday,
         "junior-today": arJuniorToday,
         "owner-overview": arOwnerOverview,
+        settings: arSettings,
+        profile: arProfile,
       },
     },
     fallbackLng: "en",

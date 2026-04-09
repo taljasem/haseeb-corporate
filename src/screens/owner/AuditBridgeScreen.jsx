@@ -249,7 +249,7 @@ export default function AuditBridgeScreen() {
                   fontVariantNumeric: "tabular-nums",
                 }}
               >
-                <LtrText>{data.hashChain.totalEntries.toLocaleString()}</LtrText>
+                <LtrText>{(data?.hashChain?.totalEntries ?? 0).toLocaleString()}</LtrText>
               </div>
             </div>
             <div>
@@ -264,7 +264,7 @@ export default function AuditBridgeScreen() {
                   marginTop: 4,
                 }}
               >
-                <LtrText>{data.hashChain.chainLength.toLocaleString()}</LtrText>
+                <LtrText>{(data?.hashChain?.chainLength ?? 0).toLocaleString()}</LtrText>
               </div>
             </div>
             <div>
@@ -279,7 +279,7 @@ export default function AuditBridgeScreen() {
                   marginTop: 4,
                 }}
               >
-                <LtrText>{data.hashChain.lastHash}</LtrText>
+                <LtrText>{data?.hashChain?.lastHash ?? "—"}</LtrText>
               </div>
             </div>
             <div>
@@ -295,7 +295,7 @@ export default function AuditBridgeScreen() {
                   marginTop: 4,
                 }}
               >
-                ✓ {data.hashChain.status}
+                ✓ {data?.hashChain?.status ?? t("hash_chain.status_unknown", { defaultValue: "unknown" })}
               </div>
             </div>
           </div>
@@ -307,7 +307,7 @@ export default function AuditBridgeScreen() {
               marginTop: 12,
             }}
           >
-            {t("hash_chain.last_verified", { time: formatRelativeTime(data.hashChain.lastVerified) })}
+            {t("hash_chain.last_verified", { time: formatRelativeTime(data?.hashChain?.lastVerified) })}
           </div>
         </div>
 

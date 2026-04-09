@@ -11,7 +11,9 @@ import {
   createMissingJournalEntry,
   manualMatch,
   completeReconciliation,
+  getPrimaryOperatingAccount,
 } from "../../engine/mockEngine";
+import { formatKWDAmount, formatDate } from "../../utils/format";
 
 const STATUS_META = {
   "completed":    { key: "completed",   color: "var(--accent-primary)", icon: CheckCircle2 },
@@ -27,17 +29,10 @@ const EXC_TYPE_KEY = {
   "date-mismatch": "type_date_mismatch",
 };
 
-function fmtKWD(n) {
-  if (n == null) return "—";
-  const sign = n < 0 ? "-" : "";
-  return `${sign}${Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`;
-}
-
-function fmtDate(iso) {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
+// Local aliases for back-compat with existing JSX call sites. Both now route
+// through src/utils/format.js so KWD and date formatting stay consistent.
+const fmtKWD = formatKWDAmount;
+const fmtDate = (iso) => formatDate(iso);
 
 export default function ReconciliationScreen({ role = "CFO" }) {
   const { t } = useTranslation("reconciliation");
@@ -679,7 +674,17 @@ function InlineJEComposer({ exception, bankItem, onCancel, onConfirm }) {
   const { t } = useTranslation("reconciliation");
   useEscapeKey(onCancel);
   const [debit, setDebit] = useState("6800 — Bank Charges");
-  const [credit, setCredit] = useState("1010 — KIB Operating");
+  const [credit, setCredit] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    getPrimaryOperatingAccount().then((acc) => {
+      if (!cancelled && acc?.label) setCredit(acc.label);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (!bankItem) return null;
 

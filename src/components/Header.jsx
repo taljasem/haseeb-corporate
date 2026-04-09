@@ -8,6 +8,7 @@ import DirArrow from "./shared/DirArrow";
 import { useTheme } from "../contexts/ThemeContext";
 import EmptyState from "./shared/EmptyState";
 import { BellOff } from "lucide-react";
+import { getNotificationsUnread, markAllNotificationsRead } from "../engine/mockEngine";
 
 // DEMO ONLY — production roles come from auth
 const ROLES = ["Owner", "CFO", "Junior"];
@@ -99,6 +100,18 @@ export default function Header({ role, setRole }) {
   const { toggleTheme, isLight } = useTheme();
   const [bellOpen, setBellOpen] = useState(false);
   const [unread, setUnread] = useState(true);
+
+  // Pull the unread badge state from the engine so "mark all read" persists
+  // beyond local header state.
+  useEffect(() => {
+    let cancelled = false;
+    getNotificationsUnread(role).then((u) => {
+      if (!cancelled) setUnread(u);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [role]);
   const bellRef = useRef(null);
   const nav = useNav();
   const { tenant, tenantId, setTenantId, allTenants } = useTenant();
@@ -123,7 +136,7 @@ export default function Header({ role, setRole }) {
   }, [bellOpen]);
 
   const notificationIds = NOTIFICATION_IDS[role] || NOTIFICATION_IDS.CFO;
-  const bankAbbr = tenant?.banks?.[0]?.abbreviation || "KIB";
+  const bankAbbr = tenant?.banks?.[0]?.abbreviation || "";
   const notifications = notificationIds.map((n) => ({
     id: n.id,
     title: t(`notifications.items.${n.id}_title`),
@@ -397,12 +410,24 @@ export default function Header({ role, setRole }) {
                 <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>
                   {t("notifications.title")}
                 </div>
-                <a
-                  onClick={() => setUnread(false)}
-                  style={{ fontSize: 11, color: "var(--accent-primary)", cursor: "pointer" }}
+                <button
+                  onClick={async () => {
+                    await markAllNotificationsRead(role);
+                    const u = await getNotificationsUnread(role);
+                    setUnread(u);
+                  }}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    padding: 0,
+                    fontSize: 11,
+                    color: "var(--accent-primary)",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                  }}
                 >
                   {t("notifications.mark_all_read")}
-                </a>
+                </button>
               </div>
               <div style={{ overflowY: "auto", flex: 1 }}>
                 {notifications.length === 0 && (
@@ -464,9 +489,23 @@ export default function Header({ role, setRole }) {
                   textAlign: "center",
                 }}
               >
-                <a style={{ fontSize: 11, color: "var(--accent-primary)", cursor: "pointer" }}>
+                <button
+                  onClick={() => {
+                    setBellOpen(false);
+                    if (nav.setActiveScreen) nav.setActiveScreen("taskbox");
+                  }}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    padding: 0,
+                    fontSize: 11,
+                    color: "var(--accent-primary)",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                  }}
+                >
                   {t("notifications.view_all_in_taskbox")} <DirArrow />
-                </a>
+                </button>
               </div>
             </div>
           )}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Receipt } from "lucide-react";
 import BankTransactionRow from "../../components/cfo/BankTransactionRow";
@@ -25,6 +25,8 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
   const [suggestion, setSuggestion] = useState(null);
   const [catModalOpen, setCatModalOpen] = useState(false);
   const [catModalPrefill, setCatModalPrefill] = useState(null);
+  const [version, setVersion] = useState(0);
+  const refresh = useCallback(() => setVersion((v) => v + 1), []);
 
   useEffect(() => {
     const loader = filterByAssignee
@@ -32,10 +34,13 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
       : getBankTransactionsPending();
     loader.then((rows) => {
       setTxs(rows);
-      if (rows.length > 0) setSelectedId(rows[0].id);
+      setSelectedId((prev) => {
+        if (prev && rows.some((r) => r.id === prev)) return prev;
+        return rows.length > 0 ? rows[0].id : null;
+      });
     });
     getSuggestedCategorizationRules().then((s) => setSuggestion(s[0] || null));
-  }, [filterByAssignee]);
+  }, [filterByAssignee, version]);
 
   const filtered = (txs || []).filter((t) => {
     if (filter === "All") return true;
@@ -62,6 +67,9 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
       }
       return next;
     });
+    // Re-pull from engine so any server-side derived fields (category label,
+    // suggestion state) are fresh on both the list and the detail panel.
+    refresh();
   };
 
   return (
@@ -185,7 +193,10 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
         open={catModalOpen}
         onClose={() => setCatModalOpen(false)}
         prefill={catModalPrefill}
-        onCreated={() => setSuggestion(null)}
+        onCreated={() => {
+          setSuggestion(null);
+          refresh();
+        }}
       />
     </div>
   );

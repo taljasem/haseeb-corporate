@@ -11,6 +11,7 @@ import {
   requestBudgetChanges as engineRequestBudgetChanges,
   cancelTask as engineCancelTask,
 } from "../../engine/mockEngine";
+import { emitTaskboxChange } from "../../utils/taskboxBus";
 
 const ROLE_TO_USER_ID = { CFO: "cfo", Owner: "owner", Junior: "sara" };
 import TaskRow from "./TaskRow";
@@ -41,7 +42,10 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
   const [toast, setToast] = useState(null);
   const [refreshTick, setRefreshTick] = useState(0);
 
-  const refresh = useCallback(() => setRefreshTick((t) => t + 1), []);
+  const refresh = useCallback(() => {
+    setRefreshTick((t) => t + 1);
+    emitTaskboxChange();
+  }, []);
   const [counts, setCounts] = useState({});
 
   useEffect(() => {

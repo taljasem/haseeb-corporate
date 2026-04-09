@@ -146,7 +146,7 @@ function ExchangeOne() {
 function ExchangeTwo() {
   const { t } = useTranslation("conv-je");
   const { tenant } = useTenant();
-  const bankName = tenant?.banks?.[0]?.abbreviation || "KIB";
+  const bankName = tenant?.banks?.[0]?.abbreviation || "";
   return (
     <div>
       <UserBubble>{t("cfo.user_2")}</UserBubble>
@@ -388,7 +388,7 @@ function JuniorExchangeTwo({ onOpenTaskbox }) {
 function JuniorExchangeThree({ onOpenBankTx }) {
   const { t } = useTranslation("conv-je");
   const { tenant } = useTenant();
-  const bankName = tenant?.banks?.[0]?.abbreviation || "KIB";
+  const bankName = tenant?.banks?.[0]?.abbreviation || "";
   const accountName = `${bankName} Operating Account`;
   const [played, setPlayed] = useState(false);
   if (!played) {

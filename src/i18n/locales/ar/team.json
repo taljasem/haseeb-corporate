@@ -15,5 +15,28 @@
   "edit": "تعديل",
   "who_handles_what": "من يتولى ماذا",
   "no_rules": "لا توجد قواعد توجيه مُسندة",
-  "manage_rules": "إدارة قواعد التوجيه ← (المدير المالي فقط)"
+  "manage_rules": "إدارة قواعد التوجيه ← (المدير المالي فقط)",
+  "edit_modal": {
+    "label": "الفريق",
+    "title": "تعديل عضو",
+    "close": "إغلاق",
+    "field_name": "الاسم",
+    "field_name_placeholder": "الاسم الكامل",
+    "field_email": "البريد الإلكتروني",
+    "field_email_placeholder": "name@example.com",
+    "field_role": "الدور",
+    "field_access": "مستوى الوصول",
+    "field_access_placeholder": "مثلاً: مسك دفاتر + اعتمادات",
+    "field_status": "الحالة",
+    "role_owner": "المالك",
+    "role_cfo": "المدير المالي",
+    "role_senior": "محاسب أول",
+    "role_junior": "محاسب مساعد",
+    "status_active": "نشط",
+    "status_inactive": "غير نشط",
+    "cancel": "إلغاء",
+    "save": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "toast_saved": "تم تحديث العضو"
+  }
 }

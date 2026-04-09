@@ -4490,3 +4490,49 @@ export async function postScheduledNow(jeId, postedBy = "cfo") {
   j.hashChain = `h:${Math.random().toString(36).slice(2, 8)}`;
   return _brandObj({ ...j, lines: j.lines.map((l) => ({ ...l })) });
 }
+
+// ─────────────────────────────────────────
+// Step 20B additions — all additive, no existing signatures modified.
+// ─────────────────────────────────────────
+
+// Returns the tenant's primary operating bank account (GL code + display
+// label) with `_brandObj` tenant-brand substitution applied so the label
+// reads correctly on every tenant. Used by reconciliation inline JE composer
+// to replace the hardcoded "1010 — KIB Operating" initial value.
+export async function getPrimaryOperatingAccount() {
+  await delay();
+  return _brandObj({
+    code: "1120",
+    name: "KIB Operating Account",
+    label: "1120 — KIB Operating Account",
+  });
+}
+
+// Updates an existing team member. Additive stub that mutates the in-memory
+// people records so the UI can reflect changes immediately after the modal
+// saves. Backend will replace this with a real PATCH call.
+export async function updateTeamMember(memberId, updates) {
+  await delay();
+  const person = P[memberId];
+  if (!person) return null;
+  if (updates.name != null) person.name = updates.name;
+  if (updates.email != null) person.email = updates.email;
+  if (updates.role != null) person.role = updates.role;
+  if (updates.accessLevel != null) person.accessLevel = updates.accessLevel;
+  if (updates.status != null) person.status = updates.status;
+  return _brandObj({ ...person });
+}
+
+// Marks all notifications for the given role as read. Stub — the header
+// currently renders a fixed demo notification list, so this just flips a
+// module-level map that the header reads to decide whether to show the dot.
+const _notificationsUnread = { Owner: true, CFO: true, Junior: true };
+export async function getNotificationsUnread(role) {
+  await delay();
+  return !!_notificationsUnread[role];
+}
+export async function markAllNotificationsRead(role) {
+  await delay();
+  _notificationsUnread[role] = false;
+  return true;
+}

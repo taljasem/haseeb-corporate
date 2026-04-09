@@ -6,6 +6,8 @@ import useEscapeKey from "../../hooks/useEscapeKey";
 import SharedEmptyState from "../../components/shared/EmptyState";
 import Spinner from "../../components/shared/Spinner";
 import { mustBalance } from "../../utils/validation";
+import { formatDate } from "../../utils/format";
+import { formatRelativeTime } from "../../utils/relativeTime";
 import {
   getManualJEs,
   getManualJEById,
@@ -38,26 +40,16 @@ const COLORS = {
   blue: "var(--semantic-info)",
 };
 
+// KWD amount with 3 decimals and no currency prefix — the composer columns
+// already carry a KWD header. 0 renders as "0.000".
 function fmtKWD(n) {
   if (n == null || n === 0) return "0.000";
   return Number(n).toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 }
-
-function fmtRelative(iso) {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  const diff = Date.now() - d.getTime();
-  const h = Math.floor(diff / 3600000);
-  if (h < 1) return "just now";
-  if (h < 24) return `${h}h ago`;
-  const days = Math.floor(h / 24);
-  if (days < 30) return `${days}d ago`;
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-function fmtDate(iso) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-}
+// Time helpers routed through the shared i18n-aware utilities so Arabic
+// renders localized strings and we stop duplicating format logic.
+const fmtRelative = (iso) => (iso ? formatRelativeTime(iso) : "—");
+const fmtDate = (iso) => formatDate(iso, { withYear: true });
 
 const TABS = [
   { id: "drafts",   key: "drafts" },

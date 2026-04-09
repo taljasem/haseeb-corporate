@@ -15,5 +15,28 @@
   "edit": "Edit",
   "who_handles_what": "WHO HANDLES WHAT",
   "no_rules": "No routing rules assigned",
-  "manage_rules": "Manage routing rules → (CFO only)"
+  "manage_rules": "Manage routing rules → (CFO only)",
+  "edit_modal": {
+    "label": "TEAM",
+    "title": "Edit member",
+    "close": "Close",
+    "field_name": "Name",
+    "field_name_placeholder": "Full name",
+    "field_email": "Email",
+    "field_email_placeholder": "name@example.com",
+    "field_role": "Role",
+    "field_access": "Access level",
+    "field_access_placeholder": "e.g. Bookkeeping + Approvals",
+    "field_status": "Status",
+    "role_owner": "Owner",
+    "role_cfo": "CFO",
+    "role_senior": "Senior Accountant",
+    "role_junior": "Junior Accountant",
+    "status_active": "Active",
+    "status_inactive": "Inactive",
+    "cancel": "Cancel",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "toast_saved": "Member updated"
+  }
 }

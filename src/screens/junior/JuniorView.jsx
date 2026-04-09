@@ -14,6 +14,7 @@ import BudgetScreen from "../../components/budget/BudgetScreen";
 import ReconciliationScreen from "../../components/reconciliation/ReconciliationScreen";
 import NewTaskModal from "../../components/taskbox/NewTaskModal";
 import { getSaraTaskStats } from "../../engine/mockEngine";
+import { subscribeTaskbox } from "../../utils/taskboxBus";
 
 function Placeholder({ label, sub }) {
   const { t } = useTranslation("common");
@@ -71,7 +72,12 @@ export default function JuniorView({ registerNav }) {
   const [newTaskOpen, setNewTaskOpen] = useState(false);
 
   useEffect(() => {
-    getSaraTaskStats().then(setTaskStats);
+    const reload = () => {
+      getSaraTaskStats().then(setTaskStats);
+    };
+    reload();
+    const unsub = subscribeTaskbox(reload);
+    return unsub;
   }, [activeScreen]);
 
   useEffect(() => {

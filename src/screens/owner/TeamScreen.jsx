@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { UserPlus, Users } from "lucide-react";
 import EmptyState from "../../components/shared/EmptyState";
 import Avatar from "../../components/taskbox/Avatar";
+import EditMemberModal from "../../components/team/EditMemberModal";
 import { getTeamMembersWithResponsibilities } from "../../engine/mockEngine";
 import { formatRelativeTime } from "../../utils/relativeTime";
 
-function MemberRow({ m }) {
+function MemberRow({ m, onEdit }) {
   const { t } = useTranslation("team");
   return (
     <div
@@ -64,6 +65,7 @@ function MemberRow({ m }) {
       </div>
       <div style={{ display: "flex", gap: 6 }}>
         <button
+          onClick={() => onEdit && onEdit(m)}
           style={{
             background: "transparent",
             color: "var(--text-secondary)",
@@ -152,9 +154,21 @@ export default function TeamScreen() {
   const { t } = useTranslation("team");
   const { t: tc } = useTranslation("common");
   const [members, setMembers] = useState(null);
-  useEffect(() => {
+  const [editing, setEditing] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const refresh = useCallback(() => {
     getTeamMembersWithResponsibilities().then(setMembers);
   }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  };
 
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px 32px" }}>
@@ -250,9 +264,26 @@ export default function TeamScreen() {
             <EmptyState icon={Users} title={tc("empty_states.team_title")} description={tc("empty_states.team_desc")} />
           )}
           {(members || []).map((m) => (
-            <MemberRow key={m.id} m={m} />
+            <MemberRow key={m.id} m={m} onEdit={setEditing} />
           ))}
         </div>
+
+        {toast && (
+          <div
+            style={{
+              marginBottom: 16,
+              background: "var(--accent-primary-subtle)",
+              border: "1px solid rgba(0,196,140,0.30)",
+              color: "var(--accent-primary)",
+              padding: "10px 14px",
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: 500,
+            }}
+          >
+            {toast}
+          </div>
+        )}
 
         {/* Responsibilities */}
         <div
@@ -293,6 +324,15 @@ export default function TeamScreen() {
           </a>
         </div>
       </div>
+      <EditMemberModal
+        open={!!editing}
+        member={editing}
+        onClose={() => setEditing(null)}
+        onSaved={() => {
+          refresh();
+          showToast(t("edit_modal.toast_saved"));
+        }}
+      />
     </div>
   );
 }

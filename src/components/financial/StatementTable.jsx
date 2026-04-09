@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import LtrText from "../shared/LtrText";
 
 function fmtN(n) {
   if (n == null) return "—";
@@ -87,11 +88,11 @@ function Row({ cols, label, current, prior, change, percent, indent = 0, bold = 
         weight={bold || hl || final ? 500 : 400}
         size={final ? 15 : 13}
       >
-        {fmtN(current)}
+        <LtrText>{fmtN(current)}</LtrText>
       </Cell>
-      <Cell color="var(--text-tertiary)">{fmtN(prior)}</Cell>
-      <Cell color={changeColor(change)}>{fmtChange(change)}</Cell>
-      <Cell color={changeColor(change)} size={12}>{fmtPct(percent)}</Cell>
+      <Cell color="var(--text-tertiary)"><LtrText>{fmtN(prior)}</LtrText></Cell>
+      <Cell color={changeColor(change)}><LtrText>{fmtChange(change)}</LtrText></Cell>
+      <Cell color={changeColor(change)} size={12}><LtrText>{fmtPct(percent)}</LtrText></Cell>
     </div>
   );
 }

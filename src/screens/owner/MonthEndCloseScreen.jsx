@@ -120,14 +120,15 @@ export default function MonthEndCloseScreen({ onNavigate }) {
 
   if (!data) return <div style={{ padding: 28, color: "var(--text-tertiary)" }}>{t("loading")}</div>;
 
-  const complete = data.tasks.filter((t) => t.status === "complete").length;
-  const total = data.tasks.length;
-  const pct = Math.round((complete / total) * 100);
-  const allComplete = complete === total;
+  const tasks = Array.isArray(data?.tasks) ? data.tasks : [];
+  const complete = tasks.filter((t) => t.status === "complete").length;
+  const total = tasks.length;
+  const pct = total > 0 ? Math.round((complete / total) * 100) : 0;
+  const allComplete = total > 0 && complete === total;
 
   // Sort: complete first, in-progress next, pending last
   const order = { complete: 0, "in-progress": 1, pending: 2, blocked: 3 };
-  const sorted = [...data.tasks].sort((a, b) => order[a.status] - order[b.status]);
+  const sorted = [...tasks].sort((a, b) => order[a.status] - order[b.status]);
 
   const statusPill = {
     "in-progress": { key: "in_progress", color: "var(--accent-primary)" },
@@ -265,7 +266,7 @@ export default function MonthEndCloseScreen({ onNavigate }) {
           >
             {t("close_checklist")}
           </div>
-          {data.tasks.length === 0 && (
+          {tasks.length === 0 && (
             <EmptyState
               icon={CheckCircle2}
               title={tc("empty_states.close_no_tasks_title")}
@@ -355,7 +356,7 @@ export default function MonthEndCloseScreen({ onNavigate }) {
           >
             {t("preclose_validations")}
           </div>
-          {data.validations.map((v, i) => (
+          {(data?.validations || []).map((v, i) => (
             <Validation key={i} v={v} onResolve={onNavigate} />
           ))}
         </div>

@@ -14,6 +14,7 @@ import BankAccountsScreen from "../shared/BankAccountsScreen";
 import BudgetScreen from "../../components/budget/BudgetScreen";
 import TaskboxScreen from "../../components/taskbox/TaskboxScreen";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
+import { subscribeTaskbox } from "../../utils/taskboxBus";
 
 function Placeholder({ label }) {
   const { t } = useTranslation("common");
@@ -71,8 +72,15 @@ export default function OwnerView({ registerNav }) {
   };
 
   useEffect(() => {
-    getOpenTaskCount("Owner").then(setTaskboxOpen);
-    getOpenApprovalCount("Owner").then(setPendingApprovals);
+    const reload = () => {
+      getOpenTaskCount("Owner").then(setTaskboxOpen);
+      getOpenApprovalCount("Owner").then(setPendingApprovals);
+    };
+    reload();
+    // Refresh counts whenever any taskbox mutation happens anywhere in the
+    // app, not just on screen change.
+    const unsub = subscribeTaskbox(reload);
+    return unsub;
   }, [activeScreen]);
 
   const openAminah = (context = null) => {

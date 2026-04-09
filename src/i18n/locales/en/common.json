@@ -1,7 +1,14 @@
 {
   "desktop_gate": {
     "title": "Haseeb Corporate is designed for desktop.",
-    "subtext": "Open this app on a laptop or larger screen for the full experience. A mobile companion is coming soon."
+    "subtext": "Open this app on a laptop or larger screen for the full experience."
+  },
+  "time": {
+    "just_now": "just now",
+    "minutes_ago": "{{count}}m ago",
+    "hours_ago": "{{count}}h ago",
+    "yesterday": "yesterday",
+    "days_ago": "{{count}}d ago"
   },
   "empty_states": {
     "taskbox_title": "No tasks match your filter",

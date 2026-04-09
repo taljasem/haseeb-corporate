@@ -16,6 +16,7 @@ import ReconciliationScreen from "../../components/reconciliation/Reconciliation
 import ManualJEScreen from "./ManualJEScreen";
 import NewTaskModal from "../../components/taskbox/NewTaskModal";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
+import { subscribeTaskbox } from "../../utils/taskboxBus";
 
 export default function CFOView({ registerNav }) {
   const { t } = useTranslation("common");
@@ -35,8 +36,13 @@ export default function CFOView({ registerNav }) {
   };
 
   useEffect(() => {
-    getOpenApprovalCount("CFO").then(setPendingApprovals);
-    getOpenTaskCount("CFO").then(setTaskboxOpen);
+    const reload = () => {
+      getOpenApprovalCount("CFO").then(setPendingApprovals);
+      getOpenTaskCount("CFO").then(setTaskboxOpen);
+    };
+    reload();
+    const unsub = subscribeTaskbox(reload);
+    return unsub;
   }, [activeScreen]);
 
   const openAminah = (context = null) => {

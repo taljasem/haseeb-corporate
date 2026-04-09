@@ -9,6 +9,7 @@ import {
   getTaskTypesForDirection,
   createTask,
 } from "../../engine/mockEngine";
+import { emitTaskboxChange } from "../../utils/taskboxBus";
 import Avatar from "./Avatar";
 import TaskTypePill from "./TaskTypePill";
 
@@ -161,6 +162,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
       dueDate: dueDate ? new Date(dueDate).toISOString() : null,
     });
     setSending(false);
+    emitTaskboxChange();
     onSent && onSent(task);
     reset();
     onClose && onClose();

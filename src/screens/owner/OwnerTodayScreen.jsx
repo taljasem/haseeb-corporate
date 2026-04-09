@@ -160,7 +160,7 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
   const { t } = useTranslation("owner-today");
   const { t: tc } = useTranslation("common");
   const { tenant } = useTenant();
-  const bankAbbr = tenant?.banks?.[0]?.abbreviation || "KIB";
+  const bankAbbr = tenant?.banks?.[0]?.abbreviation || "";
   const [pulse, setPulse] = useState(null);
   const [approvals, setApprovals] = useState(0);
   const [audit, setAudit] = useState(null);

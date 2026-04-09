@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { formatKWD } from "../../utils/format";
+import { formatKWD, formatDate } from "../../utils/format";
 import EngineConfidencePill from "./EngineConfidencePill";
 import JournalEntryCard from "./JournalEntryCard";
 import AminahTag from "../AminahTag";
@@ -95,7 +95,7 @@ export default function BankTransactionDetail({ tx, onOpenAminah, onConfirmed })
             gap: 12,
           }}
         >
-          <Field label={t("detail.field_date")} value={tx.date} />
+          <Field label={t("detail.field_date")} value={formatDate(tx.date)} />
           <Field label={t("detail.field_source")} value={tx.source} />
           <Field label={t("detail.field_merchant")} value={tx.merchant} />
           <Field label={t("detail.field_terminal")} value={tx.terminal || t("detail.none")} />

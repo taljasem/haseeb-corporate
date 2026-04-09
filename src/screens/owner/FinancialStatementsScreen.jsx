@@ -138,7 +138,7 @@ export default function FinancialStatementsScreen({ onOpenAminah }) {
               {["PDF", "Excel"].map((fmt) => (
                 <button
                   key={fmt}
-                  onClick={() => console.log(`[export] ${fmt} ${tab} ${period}`)}
+                  onClick={() => {}}
                   style={{
                     background: "transparent",
                     color: "var(--text-secondary)",

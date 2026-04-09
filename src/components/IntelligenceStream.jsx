@@ -43,13 +43,8 @@ export default function IntelligenceStream() {
         <PendingApprovals />
         <TaskboxSummaryCard
           role="Owner"
-          onViewAll={() => {
-            // Owner full Taskbox screen comes in the owner restructure step
-            console.log("[owner] full taskbox coming in owner view restructure");
-          }}
-          onTaskClick={() => {
-            console.log("[owner] task click — full taskbox coming in owner view restructure");
-          }}
+          onViewAll={() => {}}
+          onTaskClick={() => {}}
           wrapperStyle={{
             background: "var(--bg-surface)",
             border: "1px solid rgba(255,255,255,0.06)",

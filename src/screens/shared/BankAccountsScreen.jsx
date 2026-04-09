@@ -295,7 +295,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
               {["PDF", "CSV", "Excel"].map((fmt) => (
                 <button
                   key={fmt}
-                  onClick={() => console.log(`[export] ${fmt} statement for ${selected.id}`)}
+                  onClick={() => {}}
                   style={{
                     background: "transparent",
                     color: "var(--text-secondary)",

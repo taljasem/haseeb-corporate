@@ -1,4 +1,4 @@
-import * as L from "lucide-react";
+import { Home, Inbox, Landmark, MessageSquare, BarChart3, CheckCircle, ListChecks, Building2, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import SidebarGroup from "../shared/SidebarGroup";
 import LtrText from "../shared/LtrText";
@@ -79,23 +79,23 @@ export default function JuniorSidebar({ active, setActive, taskStats = { open: 0
         zIndex: 1,
       }}
     >
-      <NavItem icon={L.Home}  label={t("items.today")}   active={is("today")}   onClick={() => setActive("today")} />
-      <NavItem icon={L.Inbox} label={t("items.taskbox")} active={is("taskbox")} onClick={() => setActive("taskbox")} badge={taskboxBadge} />
+      <NavItem icon={Home}  label={t("items.today")}   active={is("today")}   onClick={() => setActive("today")} />
+      <NavItem icon={Inbox} label={t("items.taskbox")} active={is("taskbox")} onClick={() => setActive("taskbox")} badge={taskboxBadge} />
 
       <SidebarGroup label={t("groups.my_work")}>
-        <NavItem icon={L.Landmark}       label={t("items.bank_transactions")} active={is("bank-transactions")} onClick={() => setActive("bank-transactions")} />
-        <NavItem icon={L.MessageSquare}  label={t("items.conversational_je")} active={is("conversational-je")} onClick={() => setActive("conversational-je")} />
-        <NavItem icon={L.BarChart3}      label={t("items.budget")}            active={is("budget")}            onClick={() => setActive("budget")} />
-        <NavItem icon={L.CheckCircle}    label={t("items.reconciliation")}    active={is("reconciliation")}    onClick={() => setActive("reconciliation")} />
+        <NavItem icon={Landmark}       label={t("items.bank_transactions")} active={is("bank-transactions")} onClick={() => setActive("bank-transactions")} />
+        <NavItem icon={MessageSquare}  label={t("items.conversational_je")} active={is("conversational-je")} onClick={() => setActive("conversational-je")} />
+        <NavItem icon={BarChart3}      label={t("items.budget")}            active={is("budget")}            onClick={() => setActive("budget")} />
+        <NavItem icon={CheckCircle}    label={t("items.reconciliation")}    active={is("reconciliation")}    onClick={() => setActive("reconciliation")} />
       </SidebarGroup>
 
       <SidebarGroup label={t("groups.reference")}>
-        <NavItem icon={L.ListChecks} label={t("items.my_responsibilities")} active={is("responsibilities")} onClick={() => setActive("responsibilities")} />
-        <NavItem icon={L.Building2}  label={t("items.bank_accounts")}       active={is("bank-accounts")}    onClick={() => setActive("bank-accounts")} />
+        <NavItem icon={ListChecks} label={t("items.my_responsibilities")} active={is("responsibilities")} onClick={() => setActive("responsibilities")} />
+        <NavItem icon={Building2}  label={t("items.bank_accounts")}       active={is("bank-accounts")}    onClick={() => setActive("bank-accounts")} />
       </SidebarGroup>
 
       <SidebarGroup label={t("groups.personal")}>
-        <NavItem icon={L.User} label={t("items.profile")} active={is("profile")} onClick={() => setActive("profile")} />
+        <NavItem icon={User} label={t("items.profile")} active={is("profile")} onClick={() => setActive("profile")} />
       </SidebarGroup>
     </aside>
   );

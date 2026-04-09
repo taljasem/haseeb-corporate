@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 
 const STORAGE_KEY = "haseeb-corporate-theme";
 const ThemeContext = createContext(null);
@@ -38,11 +38,12 @@ export function ThemeProvider({ children }) {
     setThemeState((t) => (t === "dark" ? "light" : "dark"));
   }, []);
 
-  return (
-    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme, isLight: theme === "light", isDark: theme === "dark" }}>
-      {children}
-    </ThemeContext.Provider>
+  const value = useMemo(
+    () => ({ theme, setTheme, toggleTheme, isLight: theme === "light", isDark: theme === "dark" }),
+    [theme, setTheme, toggleTheme]
   );
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {

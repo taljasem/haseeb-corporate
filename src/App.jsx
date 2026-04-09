@@ -1,15 +1,19 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, lazy, Suspense } from "react";
 import AmbientBackground from "./components/AmbientBackground";
 import Header from "./components/Header";
-import OwnerView from "./screens/owner/OwnerView";
-import CFOView from "./screens/cfo/CFOView";
-import JuniorView from "./screens/junior/JuniorView";
+const OwnerView = lazy(() => import("./screens/owner/OwnerView"));
+const CFOView = lazy(() => import("./screens/cfo/CFOView"));
+const JuniorView = lazy(() => import("./screens/junior/JuniorView"));
 import { NavContext } from "./components/shared/NavContext";
 import { TenantProvider, useTenant } from "./components/shared/TenantContext";
 import "./i18n";
 import { LanguageProvider } from "./i18n/LanguageContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import DesktopOnlyGate from "./components/shared/DesktopOnlyGate";
+
+function ViewFallback() {
+  return <div style={{ flex: 1 }} />;
+}
 
 function AppInner() {
   const [role, setRole] = useState("Owner");
@@ -30,9 +34,11 @@ function AppInner() {
     <NavContext.Provider value={{ setActiveScreen, openTask }}>
       <AmbientBackground />
       <Header role={role} setRole={setRole} />
-      {role === "Owner" && <OwnerView key={viewKey} registerNav={registerNav} />}
-      {role === "CFO" && <CFOView key={viewKey} registerNav={registerNav} />}
-      {role === "Junior" && <JuniorView key={viewKey} registerNav={registerNav} />}
+      <Suspense fallback={<ViewFallback />}>
+        {role === "Owner" && <OwnerView key={viewKey} registerNav={registerNav} />}
+        {role === "CFO" && <CFOView key={viewKey} registerNav={registerNav} />}
+        {role === "Junior" && <JuniorView key={viewKey} registerNav={registerNav} />}
+      </Suspense>
     </NavContext.Provider>
   );
 }

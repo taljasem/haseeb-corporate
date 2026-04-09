@@ -23,5 +23,86 @@
   "aminah_card": {
     "label": "AMINAH SAYS",
     "ask_about": "Ask Aminah about any line item →"
+  },
+  "cfo": {
+    "view_label": "CFO VIEW",
+    "hero_subtitle": "{{period}} · {{tenant}}",
+    "tools_label": "TOOLS",
+    "reclassify_line": "Re-classify a line",
+    "add_note": "Add note",
+    "toggle_adjusting": "Adjusting entries",
+    "adjusting_count": "Adjusting entries ({{count}})",
+    "line_actions": "Line actions",
+    "notes_and_adjustments": "Notes & adjustments"
+  },
+  "materiality": {
+    "label": "Materiality",
+    "prefix": "Show items > ",
+    "suffix": " KWD",
+    "all": "All items",
+    "t_1k": "1,000",
+    "t_5k": "5,000",
+    "t_10k": "10,000",
+    "t_50k": "50,000",
+    "t_100k": "100,000",
+    "filtered_count": "{{shown}} of {{total}} lines"
+  },
+  "adjusting": {
+    "title": "Adjusting entries",
+    "subtitle": "{{period}}",
+    "empty_title": "No adjusting entries",
+    "empty_desc": "No adjusting JEs have been posted for this statement in this period.",
+    "filter_all": "All",
+    "filter_week": "This week",
+    "filter_month": "This month",
+    "posted_by": "Posted by",
+    "close": "Close"
+  },
+  "reclassify": {
+    "label": "RE-CLASSIFY",
+    "title": "Re-classify line item",
+    "field_source": "From account",
+    "field_target": "To account",
+    "field_amount": "Amount (KWD)",
+    "field_reason": "Reason",
+    "reason_placeholder": "Why this line should move…",
+    "field_effective": "Effective date",
+    "preview_title": "Journal entry preview",
+    "preview_debit": "Debit",
+    "preview_credit": "Credit",
+    "cancel": "Cancel",
+    "post": "Post JE",
+    "posting": "Posting…",
+    "posted_toast": "Reclassification JE posted",
+    "close": "Close"
+  },
+  "notes": {
+    "label": "LINE NOTE",
+    "title_add": "Add line note",
+    "title_edit": "Edit line note",
+    "field_account": "Account",
+    "field_note": "Note",
+    "note_placeholder": "Context, commentary, or follow-ups…",
+    "field_visibility": "Visibility",
+    "visibility_cfo_only": "CFO only",
+    "visibility_cfo_owner": "CFO + Owner",
+    "cancel": "Cancel",
+    "save": "Save note",
+    "saving": "Saving…",
+    "saved_toast": "Note saved",
+    "delete": "Delete",
+    "delete_confirm": "Delete this note?",
+    "close": "Close",
+    "by": "by",
+    "open_note": "View note",
+    "empty_title": "No notes on this statement",
+    "empty_desc": "Add context for the Owner on any line item."
+  },
+  "export_modal": {
+    "generating": "Generating…",
+    "downloaded_toast": "Exported {{filename}}"
+  },
+  "line_menu": {
+    "open": "Open menu"
   }
 }

@@ -6,8 +6,8 @@ import OwnerHeroBand from "../../components/owner/OwnerHeroBand";
 import AminahSlideOver from "../../components/cfo/AminahSlideOver";
 import OwnerTodayScreen from "./OwnerTodayScreen";
 import OwnerOverviewScreen from "./OwnerOverviewScreen";
-import FinancialStatementsScreen from "./FinancialStatementsScreen";
-import MonthEndCloseScreen from "./MonthEndCloseScreen";
+import FinancialStatementsScreen from "../shared/FinancialStatementsScreen";
+import MonthEndCloseScreen from "../shared/MonthEndCloseScreen";
 import AuditBridgeScreen from "./AuditBridgeScreen";
 import TeamScreen from "./TeamScreen";
 import BankAccountsScreen from "../shared/BankAccountsScreen";
@@ -143,9 +143,9 @@ export default function OwnerView({ registerNav }) {
       case "bank-accounts":
         return <BankAccountsScreen role="Owner" initialAccountId={initialAccountId} />;
       case "financial-statements":
-        return <FinancialStatementsScreen onOpenAminah={openAminah} />;
+        return <FinancialStatementsScreen role="Owner" onOpenAminah={openAminah} />;
       case "month-end-close":
-        return <MonthEndCloseScreen onNavigate={setActive} />;
+        return <MonthEndCloseScreen role="Owner" onNavigate={setActive} />;
       case "audit-bridge":
         return <AuditBridgeScreen />;
       case "team":

@@ -4867,3 +4867,238 @@ export async function updateUserNotes(content) {
   _userNotes = { content, lastSaved: new Date().toISOString() };
   return { ..._userNotes };
 }
+
+// ─────────────────────────────────────────
+// Step 20C-2 additions — CFO FinStmts + MEC. All additive.
+// ─────────────────────────────────────────
+
+// ── Adjusting entries feed for Financial Statements ─────────────
+const _adjustingEntries = [
+  { id: "JE-0420", postedBy: "cfo",  postedAt: _hoursAgo(2),  amount: 1250.5,  description: "Reclassify freight charges from COGS to Operating Expenses", statementType: "income",  confidence: "cfo-approved",  lines: [{ account: "6400 Travel & Transport", debit: 1250.5, credit: 0 }, { account: "5100 Cost of Goods Sold", debit: 0, credit: 1250.5 }] },
+  { id: "JE-0419", postedBy: "sara", postedAt: _hoursAgo(5),  amount: 9500.0,  description: "PIFSS accrual — March payroll",                               statementType: "income",  confidence: "engine",        lines: [{ account: "6110 PIFSS Contributions", debit: 9500, credit: 0 }, { account: "2200 PIFSS Payable", debit: 0, credit: 9500 }] },
+  { id: "JE-0418", postedBy: "cfo",  postedAt: _hoursAgo(22), amount: 3200.0,  description: "Prepaid insurance amortization — March",                       statementType: "income",  confidence: "cfo-approved",  lines: [{ account: "6700 Insurance", debit: 3200, credit: 0 }, { account: "1400 Prepaid Expenses", debit: 0, credit: 3200 }] },
+  { id: "JE-0417", postedBy: "cfo",  postedAt: _daysAgo(1),   amount: 4862.5,  description: "Inventory shrinkage adjustment",                                statementType: "balance", confidence: "cfo-approved",  lines: [{ account: "5100 Cost of Goods Sold", debit: 4862.5, credit: 0 }, { account: "1300 Inventory", debit: 0, credit: 4862.5 }] },
+  { id: "JE-0416", postedBy: "sara", postedAt: _daysAgo(2),   amount: 720.0,   description: "Depreciation expense — March",                                 statementType: "balance", confidence: "engine",        lines: [{ account: "6500 Professional Fees", debit: 720, credit: 0 }, { account: "1520 Accumulated Depreciation", debit: 0, credit: 720 }] },
+  { id: "JE-0415", postedBy: "cfo",  postedAt: _daysAgo(3),   amount: 2100.0,  description: "Accrued audit fees — Q1 review",                                statementType: "balance", confidence: "cfo-approved",  lines: [{ account: "6510 Audit Fees", debit: 2100, credit: 0 }, { account: "2400 Accrued Expenses", debit: 0, credit: 2100 }] },
+  { id: "JE-0414", postedBy: "sara", postedAt: _daysAgo(4),   amount: 580.0,   description: "Bank fee correction — KIB Settlement",                         statementType: "cash-flow", confidence: "engine",      lines: [{ account: "6800 Bank Charges", debit: 580, credit: 0 }, { account: "1140 KIB Settlement Account", debit: 0, credit: 580 }] },
+  { id: "JE-0413", postedBy: "cfo",  postedAt: _daysAgo(6),   amount: 12500.0, description: "Deferred revenue recognition — subscription",                  statementType: "income",  confidence: "cfo-approved",  lines: [{ account: "2100 Accounts Payable", debit: 12500, credit: 0 }, { account: "4200 Service Revenue", debit: 0, credit: 12500 }] },
+  { id: "JE-0412", postedBy: "cfo",  postedAt: _daysAgo(8),   amount: 1800.0,  description: "Utility bill reclassification",                                statementType: "income",  confidence: "cfo-approved",  lines: [{ account: "6210 Utilities", debit: 1800, credit: 0 }, { account: "6220 Internet & Phone", debit: 0, credit: 1800 }] },
+  { id: "JE-0411", postedBy: "sara", postedAt: _daysAgo(10),  amount: 450.0,   description: "FX gain on USD receivable",                                     statementType: "income",  confidence: "engine",        lines: [{ account: "1200 Accounts Receivable", debit: 450, credit: 0 }, { account: "7200 FX Gain", debit: 0, credit: 450 }] },
+  { id: "JE-0410", postedBy: "cfo",  postedAt: _daysAgo(12),  amount: 6200.0,  description: "Rent accrual — March",                                          statementType: "balance", confidence: "cfo-approved",  lines: [{ account: "6200 Office Rent", debit: 6200, credit: 0 }, { account: "2400 Accrued Expenses", debit: 0, credit: 6200 }] },
+];
+
+export async function getAdjustingEntries(period, statementType) {
+  await delay();
+  let list = _adjustingEntries.filter((j) => j.statementType === statementType);
+  if (period === "week") list = list.filter((j) => new Date(j.postedAt) > new Date(Date.now() - 7 * 86400000));
+  return _brandObj(list.map((j) => ({ ...j, lines: j.lines.map((l) => ({ ...l })) })));
+}
+
+let _nextJEId = 421;
+export async function createReclassificationJE(sourceAccount, targetAccount, amount, reason, effectiveDate) {
+  await delay();
+  const id = `JE-0${_nextJEId++}`;
+  const je = {
+    id,
+    postedBy: "cfo",
+    postedAt: new Date().toISOString(),
+    amount: Number(amount),
+    description: `Reclassification — ${reason}`.slice(0, 160),
+    statementType: "income",
+    confidence: "cfo-approved",
+    lines: [
+      { account: targetAccount, debit: Number(amount), credit: 0 },
+      { account: sourceAccount, debit: 0, credit: Number(amount) },
+    ],
+    effectiveDate: effectiveDate || new Date().toISOString(),
+  };
+  _adjustingEntries.unshift(je);
+  return _brandObj({ ...je, lines: je.lines.map((l) => ({ ...l })) });
+}
+
+// ── Line notes ──────────────────────────────────────────────────
+let _lineNoteSeq = 1;
+let _lineNotes = [
+  { id: `ln-${_lineNoteSeq++}`, accountCode: "6300",  period: "march-2026", note: "Marketing budget overrun tracking — three large campaigns this month. Watch April.",           author: "cfo",  timestamp: _hoursAgo(14), visibility: "cfo_owner" },
+  { id: `ln-${_lineNoteSeq++}`, accountCode: "1300",  period: "march-2026", note: "Inventory count completed on the 28th. Minor shrinkage adjustment posted (JE-0417).",           author: "cfo",  timestamp: _hoursAgo(26), visibility: "cfo_owner" },
+  { id: `ln-${_lineNoteSeq++}`, accountCode: "2400",  period: "march-2026", note: "Accrued expenses include audit fees and March rent. Review with auditor next week.",            author: "cfo",  timestamp: _daysAgo(2),   visibility: "cfo_owner" },
+  { id: `ln-${_lineNoteSeq++}`, accountCode: "6110",  period: "march-2026", note: "PIFSS accrual higher than February — new hire in Operations.",                                   author: "cfo",  timestamp: _daysAgo(3),   visibility: "cfo_only" },
+  { id: `ln-${_lineNoteSeq++}`, accountCode: "4100",  period: "march-2026", note: "Revenue includes one-time distribution partner onboarding — adjust for trend analysis.",        author: "cfo",  timestamp: _daysAgo(5),   visibility: "cfo_owner" },
+];
+
+export async function getLineNotes(period) {
+  await delay();
+  const p = period || "march-2026";
+  return _brandObj(_lineNotes.filter((n) => n.period === p).map((n) => ({ ...n })));
+}
+
+export async function addLineNote(accountCode, period, note, visibility) {
+  await delay();
+  const newNote = {
+    id: `ln-${_lineNoteSeq++}`,
+    accountCode,
+    period: period || "march-2026",
+    note,
+    author: "cfo",
+    timestamp: new Date().toISOString(),
+    visibility: visibility || "cfo_owner",
+  };
+  _lineNotes.unshift(newNote);
+  return _brandObj({ ...newNote });
+}
+
+export async function updateLineNote(noteId, updates) {
+  await delay();
+  const n = _lineNotes.find((x) => x.id === noteId);
+  if (!n) return null;
+  if (updates.note != null) n.note = updates.note;
+  if (updates.visibility != null) n.visibility = updates.visibility;
+  n.timestamp = new Date().toISOString();
+  return _brandObj({ ...n });
+}
+
+export async function deleteLineNote(noteId) {
+  await delay();
+  _lineNotes = _lineNotes.filter((n) => n.id !== noteId);
+  return { success: true };
+}
+
+// Metadata stub for tracked exports. The real file is built client-side so
+// this just returns a canonical filename + timestamp.
+export async function exportStatement(statementType, period, format) {
+  await delay();
+  const tn = (TENANTS[_currentTenantId]?.company?.shortName || "tenant").toLowerCase().replace(/\s+/g, "-");
+  return { url: null, filename: `${tn}_${statementType}_${period}.${format}` };
+}
+
+// ── Month-End Close — CFO authority ─────────────────────────────
+// Per-tenant close state so every tenant shows a different progress.
+const _closeStateByTenant = {
+  almanara:      { status: "in_progress",  day: 5,  totalDays: 8, rejectionReason: null, submittedAt: null, approvedAt: null },
+  almawred:      { status: "in_progress",  day: 3,  totalDays: 8, rejectionReason: null, submittedAt: null, approvedAt: null },
+  "demo-corporate": { status: "in_progress", day: 6, totalDays: 8, rejectionReason: null, submittedAt: null, approvedAt: null },
+};
+
+// Per-tenant checklist progression — seeded so each tenant shows a distinct
+// proportion of completed items.
+const _closeItemsByTenant = {
+  almanara:         { complete: 9,  total: 15 }, // ~60%
+  almawred:         { complete: 6,  total: 15 }, // ~40%
+  "demo-corporate": { complete: 12, total: 15 }, // ~80%
+};
+
+export async function getCloseStatusDetail(period) {
+  await delay();
+  const s = _closeStateByTenant[_currentTenantId] || _closeStateByTenant.almanara;
+  const p = _closeItemsByTenant[_currentTenantId] || _closeItemsByTenant.almanara;
+  return {
+    period: period || "March 2026",
+    status: s.status,
+    day: s.day,
+    totalDays: s.totalDays,
+    completedItems: p.complete,
+    totalItems: p.total,
+    lastUpdated: _hoursAgo(1),
+    blockers: s.status === "in_progress" && p.complete < p.total ? [
+      { id: "bk-1", label: "Bank reconciliation KIB Settlement pending", severity: "warning" },
+      { id: "bk-2", label: "2 unposted manual JEs", severity: "info" },
+    ] : [],
+    rejectionReason: s.rejectionReason,
+    submittedAt: s.submittedAt,
+    approvedAt: s.approvedAt,
+  };
+}
+
+// Mark a close item complete — accepts notes + in-memory attachment names.
+const _closeItemDetails = {};
+export async function markCloseItemComplete(itemId, notes, attachments) {
+  await delay();
+  _closeItemDetails[itemId] = {
+    completed: true,
+    notes: notes || "",
+    attachments: Array.isArray(attachments) ? attachments.slice() : [],
+    completedAt: new Date().toISOString(),
+    completedBy: "cfo",
+  };
+  // Bump the completed count for the active tenant so progress feels live.
+  const p = _closeItemsByTenant[_currentTenantId];
+  if (p && p.complete < p.total) p.complete = Math.min(p.total, p.complete + 1);
+  return { id: itemId, ..._closeItemDetails[itemId] };
+}
+
+export async function getCloseItemDetail(itemId) {
+  await delay();
+  return _closeItemDetails[itemId] ? { id: itemId, ..._closeItemDetails[itemId] } : null;
+}
+
+export async function runPreCloseValidations(period) {
+  await delay();
+  return [
+    { checkId: "pc-1",  name: "All bank accounts reconciled",                status: "fail",    details: "1 account (KIB Settlement) has 3 unmatched items",        actionable: true,  fixAction: "reconciliation" },
+    { checkId: "pc-2",  name: "All bank transactions categorized",           status: "pass",    details: "237 / 237 transactions coded",                              actionable: false, fixAction: null },
+    { checkId: "pc-3",  name: "All manual JEs posted (no drafts)",           status: "fail",    details: "2 drafts awaiting post — JE-DRAFT-0004, JE-DRAFT-0005",    actionable: true,  fixAction: "manual-je" },
+    { checkId: "pc-4",  name: "PIFSS accrual posted",                        status: "pass",    details: "JE-0419 posted 2h ago",                                     actionable: false, fixAction: null },
+    { checkId: "pc-5",  name: "Depreciation entries posted",                 status: "pass",    details: "JE-0416 posted 2d ago",                                     actionable: false, fixAction: null },
+    { checkId: "pc-6",  name: "All receivables aged and reviewed",           status: "warning", details: "4 invoices > 90 days, totaling 12,400 KWD",                 actionable: true,  fixAction: "aging-reports" },
+    { checkId: "pc-7",  name: "No unapproved budget variances > 10%",        status: "pass",    details: "All variances within tolerance",                            actionable: false, fixAction: null },
+    { checkId: "pc-8",  name: "Inventory count reconciled",                  status: "pass",    details: "Count completed 3/28, shrinkage adjustment posted",         actionable: false, fixAction: null },
+    { checkId: "pc-9",  name: "Prepaid expenses amortized",                  status: "pass",    details: "Insurance amortization posted — JE-0418",                   actionable: false, fixAction: null },
+    { checkId: "pc-10", name: "Trial balance in balance",                    status: "pass",    details: "Debits = Credits (verified)",                               actionable: false, fixAction: null },
+    { checkId: "pc-11", name: "Audit trail complete for period",             status: "pass",    details: "15 / 15 checks in Audit Bridge passing",                    actionable: false, fixAction: "audit-bridge" },
+    { checkId: "pc-12", name: "Period cut-off review complete",              status: "warning", details: "3 transactions near period boundary need review",           actionable: true,  fixAction: "bank-transactions" },
+  ];
+}
+
+export async function submitCloseForApproval(period) {
+  await delay();
+  const s = _closeStateByTenant[_currentTenantId];
+  if (s) {
+    s.status = "pending_approval";
+    s.submittedAt = new Date().toISOString();
+  }
+  // Create a task in Owner's taskbox
+  const taskId = `TSK-CLS-${Math.floor(Math.random() * 900 + 100)}`;
+  const task = {
+    id: taskId,
+    senderId: "cfo",
+    recipient: P.owner,
+    sender: P.cfo,
+    type: "request-approval",
+    subject: `${period || "March"} close submitted for approval`,
+    body: "The month-end close checklist is complete and pre-close validations have been run. Please review and approve to lock the period.",
+    direction: "upward",
+    priority: "high",
+    status: "open",
+    unread: true,
+    linkedItem: { type: "month-end-close", period: period || "March 2026" },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    dueDate: _daysFromNow(2),
+    messages: [
+      _msgEvent(P.cfo, "Please review and approve the March close.", 0),
+    ],
+  };
+  TASKBOX_DB.unshift(task);
+  return { taskId, status: "pending_approval" };
+}
+
+export async function approveClose(period) {
+  await delay();
+  const s = _closeStateByTenant[_currentTenantId];
+  if (s) {
+    s.status = "approved";
+    s.approvedAt = new Date().toISOString();
+  }
+  return { status: "approved", lockedAt: new Date().toISOString() };
+}
+
+export async function rejectClose(period, reason) {
+  await delay();
+  const s = _closeStateByTenant[_currentTenantId];
+  if (s) {
+    s.status = "in_progress";
+    s.rejectionReason = reason || "";
+    s.submittedAt = null;
+  }
+  return { status: "in_progress", rejectionReason: reason || "" };
+}

@@ -22,5 +22,65 @@
   "due_label": "Due {{time}}",
   "resolve": "Resolve →",
   "you_cfo_self": "You",
-  "section_label": "MONTH-END CLOSE"
+  "section_label": "MONTH-END CLOSE",
+  "cfo": {
+    "view_label": "CFO VIEW",
+    "hero_subtitle": "{{period}} · Day {{day}} of {{total}}",
+    "run_validations": "Run pre-close validations",
+    "running": "Running…",
+    "bulk_mark_recon": "Mark all reconciliations complete",
+    "bulk_run_checks": "Run all pre-close checks",
+    "bulk_generate": "Generate close package",
+    "submit_approval": "Submit close to Owner for approval",
+    "awaiting_approval_banner": "Submitted to Owner for approval — awaiting decision.",
+    "rejected_banner": "Owner rejected this close. Reason: {{reason}}",
+    "locked_banner": "This period is closed and locked.",
+    "item_notes": "Notes",
+    "item_notes_placeholder": "Sign-off notes…",
+    "item_attachments": "Supporting documents",
+    "item_attachment_add": "Attach file",
+    "item_mark_complete": "Mark complete",
+    "item_completing": "Completing…",
+    "item_cancel": "Cancel",
+    "item_completed_by": "by {{name}} · {{time}}",
+    "close_status_label": "CLOSE STATUS",
+    "status_not_started": "NOT STARTED",
+    "status_in_progress": "IN PROGRESS",
+    "status_pending_approval": "PENDING APPROVAL",
+    "status_approved": "APPROVED"
+  },
+  "validations_panel": {
+    "title": "Pre-close validations",
+    "subtitle": "Run before submitting the close for Owner approval.",
+    "status_pass": "PASS",
+    "status_fail": "FAIL",
+    "status_warning": "WARNING",
+    "fix": "Fix →",
+    "rerun": "Re-run",
+    "empty": "Click 'Run pre-close validations' to check this period."
+  },
+  "submit_modal": {
+    "label": "MONTH-END CLOSE",
+    "title": "Submit close for Owner approval",
+    "body": "Submitting {{period}} will lock the checklist until the Owner approves or rejects the close.",
+    "cancel": "Cancel",
+    "confirm": "Submit for approval",
+    "submitting": "Submitting…",
+    "close": "Close"
+  },
+  "reject_modal": {
+    "label": "MONTH-END CLOSE",
+    "title": "Reject close",
+    "field_reason": "Rejection reason",
+    "reason_placeholder": "Tell the CFO what needs to be fixed…",
+    "cancel": "Cancel",
+    "confirm": "Reject close",
+    "rejecting": "Rejecting…",
+    "close": "Close"
+  },
+  "owner_approval": {
+    "approve": "Approve close",
+    "reject": "Reject close",
+    "approved_toast": "Close approved — period locked"
+  }
 }

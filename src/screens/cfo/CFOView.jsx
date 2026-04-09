@@ -17,6 +17,8 @@ import ManualJEScreen from "./ManualJEScreen";
 import NewTaskModal from "../../components/taskbox/NewTaskModal";
 import SettingsScreen from "../shared/SettingsScreen";
 import ProfileScreen from "../shared/ProfileScreen";
+import FinancialStatementsScreen from "../shared/FinancialStatementsScreen";
+import MonthEndCloseScreen from "../shared/MonthEndCloseScreen";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
 
@@ -109,6 +111,10 @@ export default function CFOView({ registerNav }) {
         return <SettingsScreen role="CFO" />;
       case "profile":
         return <ProfileScreen role="CFO" />;
+      case "financial-statements":
+        return <FinancialStatementsScreen role="CFO" onOpenAminah={openAminah} />;
+      case "month-end-close":
+        return <MonthEndCloseScreen role="CFO" onNavigate={setActive} />;
       default:
         return <PlaceholderScreen title={t(`placeholder.screens.${activeScreen}`, { defaultValue: activeScreen.toUpperCase() })} />;
     }

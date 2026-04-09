@@ -22,5 +22,65 @@
   "due_label": "الاستحقاق {{time}}",
   "resolve": "معالجة ←",
   "you_cfo_self": "أنت",
-  "section_label": "إقفال نهاية الشهر"
+  "section_label": "إقفال نهاية الشهر",
+  "cfo": {
+    "view_label": "عرض المدير المالي",
+    "hero_subtitle": "{{period}} · اليوم {{day}} من {{total}}",
+    "run_validations": "تشغيل فحوصات ما قبل الإقفال",
+    "running": "جارٍ التشغيل…",
+    "bulk_mark_recon": "وسم كل التسويات كمكتملة",
+    "bulk_run_checks": "تشغيل جميع الفحوصات",
+    "bulk_generate": "توليد حزمة الإقفال",
+    "submit_approval": "إرسال الإقفال للمالك للاعتماد",
+    "awaiting_approval_banner": "تم الإرسال للمالك — بانتظار القرار.",
+    "rejected_banner": "رفض المالك هذا الإقفال. السبب: {{reason}}",
+    "locked_banner": "هذه الفترة مقفلة ومحميّة.",
+    "item_notes": "ملاحظات",
+    "item_notes_placeholder": "ملاحظات الاعتماد…",
+    "item_attachments": "المستندات الداعمة",
+    "item_attachment_add": "إرفاق ملف",
+    "item_mark_complete": "وسم كمكتمل",
+    "item_completing": "جارٍ…",
+    "item_cancel": "إلغاء",
+    "item_completed_by": "بواسطة {{name}} · {{time}}",
+    "close_status_label": "حالة الإقفال",
+    "status_not_started": "لم يبدأ",
+    "status_in_progress": "قيد التنفيذ",
+    "status_pending_approval": "بانتظار الاعتماد",
+    "status_approved": "معتمد"
+  },
+  "validations_panel": {
+    "title": "فحوصات ما قبل الإقفال",
+    "subtitle": "شغّلها قبل إرسال الإقفال للاعتماد.",
+    "status_pass": "نجح",
+    "status_fail": "فشل",
+    "status_warning": "تحذير",
+    "fix": "معالجة ←",
+    "rerun": "إعادة التشغيل",
+    "empty": "اضغط 'تشغيل فحوصات ما قبل الإقفال' للبدء."
+  },
+  "submit_modal": {
+    "label": "إقفال نهاية الشهر",
+    "title": "إرسال الإقفال للمالك للاعتماد",
+    "body": "بإرسال {{period}} ستقفل القائمة حتى يعتمد المالك أو يرفض الإقفال.",
+    "cancel": "إلغاء",
+    "confirm": "إرسال للاعتماد",
+    "submitting": "جارٍ الإرسال…",
+    "close": "إغلاق"
+  },
+  "reject_modal": {
+    "label": "إقفال نهاية الشهر",
+    "title": "رفض الإقفال",
+    "field_reason": "سبب الرفض",
+    "reason_placeholder": "أخبر المدير المالي بما يحتاج للإصلاح…",
+    "cancel": "إلغاء",
+    "confirm": "رفض الإقفال",
+    "rejecting": "جارٍ الرفض…",
+    "close": "إغلاق"
+  },
+  "owner_approval": {
+    "approve": "اعتماد الإقفال",
+    "reject": "رفض الإقفال",
+    "approved_toast": "تم اعتماد الإقفال — الفترة مقفلة"
+  }
 }

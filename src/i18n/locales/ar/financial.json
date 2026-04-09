@@ -23,5 +23,86 @@
   "aminah_card": {
     "label": "أمينة تقول",
     "ask_about": "اسأل أمينة عن أي بند ←"
+  },
+  "cfo": {
+    "view_label": "عرض المدير المالي",
+    "hero_subtitle": "{{period}} · {{tenant}}",
+    "tools_label": "أدوات",
+    "reclassify_line": "إعادة تصنيف بند",
+    "add_note": "إضافة ملاحظة",
+    "toggle_adjusting": "قيود التعديل",
+    "adjusting_count": "قيود التعديل ({{count}})",
+    "line_actions": "إجراءات البند",
+    "notes_and_adjustments": "الملاحظات والتعديلات"
+  },
+  "materiality": {
+    "label": "الأهمية النسبية",
+    "prefix": "إظهار البنود > ",
+    "suffix": " د.ك",
+    "all": "كل البنود",
+    "t_1k": "1,000",
+    "t_5k": "5,000",
+    "t_10k": "10,000",
+    "t_50k": "50,000",
+    "t_100k": "100,000",
+    "filtered_count": "{{shown}} من {{total}} بند"
+  },
+  "adjusting": {
+    "title": "قيود التعديل",
+    "subtitle": "{{period}}",
+    "empty_title": "لا توجد قيود تعديل",
+    "empty_desc": "لم تُرحَّل أي قيود تعديل لهذه القائمة في هذه الفترة.",
+    "filter_all": "الكل",
+    "filter_week": "هذا الأسبوع",
+    "filter_month": "هذا الشهر",
+    "posted_by": "رحّله",
+    "close": "إغلاق"
+  },
+  "reclassify": {
+    "label": "إعادة التصنيف",
+    "title": "إعادة تصنيف بند",
+    "field_source": "من حساب",
+    "field_target": "إلى حساب",
+    "field_amount": "المبلغ (د.ك)",
+    "field_reason": "السبب",
+    "reason_placeholder": "لماذا يجب نقل هذا البند…",
+    "field_effective": "تاريخ النفاذ",
+    "preview_title": "معاينة القيد",
+    "preview_debit": "مدين",
+    "preview_credit": "دائن",
+    "cancel": "إلغاء",
+    "post": "ترحيل القيد",
+    "posting": "جارٍ الترحيل…",
+    "posted_toast": "تم ترحيل قيد إعادة التصنيف",
+    "close": "إغلاق"
+  },
+  "notes": {
+    "label": "ملاحظة بند",
+    "title_add": "إضافة ملاحظة",
+    "title_edit": "تعديل الملاحظة",
+    "field_account": "الحساب",
+    "field_note": "الملاحظة",
+    "note_placeholder": "سياق، تعليق، أو متابعة…",
+    "field_visibility": "الظهور",
+    "visibility_cfo_only": "المدير المالي فقط",
+    "visibility_cfo_owner": "المدير المالي + المالك",
+    "cancel": "إلغاء",
+    "save": "حفظ الملاحظة",
+    "saving": "جارٍ الحفظ…",
+    "saved_toast": "تم حفظ الملاحظة",
+    "delete": "حذف",
+    "delete_confirm": "هل تريد حذف هذه الملاحظة؟",
+    "close": "إغلاق",
+    "by": "بواسطة",
+    "open_note": "عرض الملاحظة",
+    "empty_title": "لا توجد ملاحظات على هذه القائمة",
+    "empty_desc": "أضف سياقاً للمالك على أي بند."
+  },
+  "export_modal": {
+    "generating": "جارٍ التوليد…",
+    "downloaded_toast": "تم تصدير {{filename}}"
+  },
+  "line_menu": {
+    "open": "فتح القائمة"
   }
 }

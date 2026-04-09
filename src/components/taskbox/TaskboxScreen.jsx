@@ -10,6 +10,8 @@ import {
   approveBudget as engineApproveBudget,
   requestBudgetChanges as engineRequestBudgetChanges,
   cancelTask as engineCancelTask,
+  approveCloseAndSyncTask,
+  rejectCloseAndSyncTask,
 } from "../../engine/mockEngine";
 import { emitTaskboxChange } from "../../utils/taskboxBus";
 
@@ -89,9 +91,13 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
         onApprovalAction={async (t, action, note) => {
           const author = role === "CFO" ? "cfo" : role === "Owner" ? "owner" : "sara";
           const isBudgetApproval = t.type === "approve-budget";
+          const isCloseApproval =
+            t.type === "request-approval" && t.linkedItem?.type === "month-end-close";
           const budgetId = t.linkedItem?.budgetId;
           if (action === "approve") {
-            if (isBudgetApproval && budgetId) {
+            if (isCloseApproval) {
+              await approveCloseAndSyncTask(t.linkedItem?.period || null);
+            } else if (isBudgetApproval && budgetId) {
               await engineApproveBudget(budgetId, author);
               await engineCompleteTask(t.id, `Budget approved.`, author);
               setToast(t("toast.budget_approved"));
@@ -109,7 +115,11 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
               await engineReplyToTask(t.id, `[Requested changes] ${note}`, author);
             }
           } else if (action === "reject") {
-            await engineReplyToTask(t.id, `[Rejected] ${note}`, author);
+            if (isCloseApproval) {
+              await rejectCloseAndSyncTask(t.linkedItem?.period || null, note || "");
+            } else {
+              await engineReplyToTask(t.id, `[Rejected] ${note}`, author);
+            }
           } else if (action === "escalate") {
             await engineReplyToTask(t.id, "[Escalated]", author);
           } else if (action === "cancel") {

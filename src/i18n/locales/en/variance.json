@@ -1,0 +1,92 @@
+{
+  "title": "Variance Analysis",
+  "loading": "Loading variance analysis…",
+  "hero_subtitle": "Plan vs Actual · {{period}} · {{tenant}}",
+  "view_label": "CFO VIEW",
+  "controls": {
+    "period_label": "Period",
+    "comparison_label": "Compare to",
+    "compare_budget": "Budget",
+    "compare_prior_period": "Prior period",
+    "compare_prior_year": "Prior year"
+  },
+  "top_variances": {
+    "title": "Top variances",
+    "subtitle": "Largest absolute variances this period",
+    "col_category": "CATEGORY",
+    "col_dept": "DEPARTMENT",
+    "col_plan": "PLAN",
+    "col_actual": "ACTUAL",
+    "col_variance": "VARIANCE",
+    "col_pct": "%",
+    "col_status": "STATUS",
+    "empty": "No variances in this period."
+  },
+  "status": {
+    "on_track": "ON TRACK",
+    "watch": "WATCH",
+    "investigate": "INVESTIGATE",
+    "critical": "CRITICAL"
+  },
+  "matrix": {
+    "title": "Variance matrix",
+    "subtitle": "Department × category heatmap",
+    "col_total": "TOTAL",
+    "row_total": "TOTAL"
+  },
+  "trend": {
+    "title": "Variance trend",
+    "subtitle": "Last 12 months · total variance per month",
+    "hover_favorable": "Favorable",
+    "hover_unfavorable": "Unfavorable"
+  },
+  "detail": {
+    "title": "Variance detail",
+    "close": "Close",
+    "plan": "Plan",
+    "actual": "Actual",
+    "variance": "Variance",
+    "variance_pct": "% of plan",
+    "contributors_title": "Top contributors",
+    "trend_title": "6-month trend",
+    "notes_title": "Notes",
+    "commentary_label": "AMINAH COMMENTARY",
+    "add_note": "Add note",
+    "flag": "Flag for investigation",
+    "unflag": "Remove flag",
+    "flagged": "Flagged"
+  },
+  "add_note_modal": {
+    "label": "VARIANCE",
+    "title": "Add variance note",
+    "field_note": "Note",
+    "note_placeholder": "Why this variance occurred, next steps, etc.",
+    "field_visibility": "Visibility",
+    "visibility_cfo_only": "CFO only",
+    "visibility_cfo_owner": "CFO + Owner",
+    "cancel": "Cancel",
+    "save": "Save note",
+    "saving": "Saving…",
+    "saved_toast": "Note saved",
+    "close": "Close"
+  },
+  "flag_modal": {
+    "label": "VARIANCE",
+    "title": "Flag variance for investigation",
+    "field_reason": "Reason",
+    "reason_placeholder": "What needs investigating?",
+    "field_assignee": "Assign to",
+    "assignee_sara": "Senior Accountant",
+    "assignee_cfo": "Myself (CFO)",
+    "cancel": "Cancel",
+    "confirm": "Flag variance",
+    "flagging": "Flagging…",
+    "flagged_toast": "Variance flagged and task created",
+    "close": "Close"
+  },
+  "export": "Export {{format}}",
+  "narration": {
+    "insights_label": "TOP INSIGHTS",
+    "actions_label": "RECOMMENDED ACTIONS"
+  }
+}

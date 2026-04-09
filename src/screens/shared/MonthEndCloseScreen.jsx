@@ -14,8 +14,9 @@ import {
   getCloseStatusDetail,
   markCloseItemComplete,
   runPreCloseValidations,
-  approveClose,
+  approveCloseAndSyncTask,
 } from "../../engine/mockEngine";
+import { emitTaskboxChange } from "../../utils/taskboxBus";
 import { formatRelativeTime } from "../../utils/relativeTime";
 
 const STATUS = {
@@ -107,7 +108,8 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
   };
 
   const handleApprove = async () => {
-    await approveClose(closeStatus?.period || "March 2026");
+    await approveCloseAndSyncTask(closeStatus?.period || "March 2026");
+    emitTaskboxChange();
     reloadStatus();
     showToast(t("owner_approval.approved_toast"));
   };

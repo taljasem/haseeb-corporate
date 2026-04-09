@@ -5102,3 +5102,382 @@ export async function rejectClose(period, reason) {
   }
   return { status: "in_progress", rejectionReason: reason || "" };
 }
+
+// ─────────────────────────────────────────
+// Step 20C-3 additions — Forecast + Variance + carryovers. All additive.
+// ─────────────────────────────────────────
+
+// ── Forecast ────────────────────────────────────────────────────
+const _baseAssumptions = {
+  conservative: { revenueGrowth: 3,  churnRate: 8,  avgDealSize: 2400, hiringPlan: 2, salaryInflation: 2, marketingRatio: 8,  taxRate: 15 },
+  base:         { revenueGrowth: 10, churnRate: 5,  avgDealSize: 2800, hiringPlan: 4, salaryInflation: 3, marketingRatio: 10, taxRate: 15 },
+  aggressive:   { revenueGrowth: 20, churnRate: 3,  avgDealSize: 3200, hiringPlan: 8, salaryInflation: 4, marketingRatio: 14, taxRate: 15 },
+};
+
+const _tenantForecastSeed = {
+  almanara:         { baseRevenue: 185000, baseExpenses: 142000, startingCash: 184235, maturity: "mature" },
+  almawred:         { baseRevenue: 92000,  baseExpenses: 88000,  startingCash: 62400,  maturity: "early" },
+  "demo-corporate": { baseRevenue: 140000, baseExpenses: 108000, startingCash: 124800, maturity: "mid" },
+};
+
+function _monthLabelsFromNow(count) {
+  const now = new Date();
+  const out = [];
+  for (let i = 0; i < count; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    out.push(d.toLocaleDateString("en-US", { month: "short", year: "2-digit" }));
+  }
+  return out;
+}
+
+function _confidenceForMonth(i) {
+  if (i < 3) return "high";
+  if (i < 6) return "medium";
+  return "low";
+}
+
+function _projectForecast(scenario, assumptions) {
+  const seed = _tenantForecastSeed[_currentTenantId] || _tenantForecastSeed.almanara;
+  const a = assumptions || _baseAssumptions[scenario] || _baseAssumptions.base;
+  const monthlyGrowth = Math.pow(1 + a.revenueGrowth / 100, 1 / 12) - 1;
+  const labels = _monthLabelsFromNow(12);
+  let runningCash = seed.startingCash;
+  const months = labels.map((m, i) => {
+    const revMult = Math.pow(1 + monthlyGrowth, i + 1);
+    const revenue = Math.round(seed.baseRevenue * revMult);
+    const marketingBump = 1 + (a.marketingRatio - 10) / 100;
+    const salaryBump = 1 + (i * a.salaryInflation) / 1200;
+    const expenses = Math.round(seed.baseExpenses * marketingBump * salaryBump);
+    const netIncome = revenue - expenses;
+    const afterTax = Math.round(netIncome * (1 - a.taxRate / 100));
+    runningCash += afterTax;
+    return {
+      month: m,
+      revenue,
+      expenses,
+      netIncome: afterTax,
+      cashFlow: afterTax,
+      endingBalance: runningCash,
+      confidence: _confidenceForMonth(i),
+      revenueBreakdown: {
+        "Product A": Math.round(revenue * 0.45),
+        "Product B": Math.round(revenue * 0.25),
+        "Services":  Math.round(revenue * 0.22),
+        "Other":     Math.round(revenue * 0.08),
+      },
+      expenseBreakdown: {
+        "Payroll":       Math.round(expenses * 0.55),
+        "Rent":          Math.round(expenses * 0.08),
+        "Marketing":     Math.round(expenses * (a.marketingRatio / 100)),
+        "Operations":    Math.round(expenses * 0.12),
+        "Tech & Infra":  Math.round(expenses * 0.06),
+        "Other":         Math.round(expenses * 0.06),
+      },
+    };
+  });
+  const totals = months.reduce(
+    (acc, m) => ({
+      revenue:   acc.revenue + m.revenue,
+      expenses:  acc.expenses + m.expenses,
+      netIncome: acc.netIncome + m.netIncome,
+      endingCash: m.endingBalance,
+    }),
+    { revenue: 0, expenses: 0, netIncome: 0, endingCash: 0 }
+  );
+  return { scenario, months, totals, assumptions: a };
+}
+
+export async function getForecast(scenario) {
+  await delay();
+  const s = scenario || "base";
+  return _brandObj(_projectForecast(s, null));
+}
+
+export async function recalculateForecast(scenario, customAssumptions) {
+  await delay();
+  return _brandObj(_projectForecast(scenario || "base", customAssumptions));
+}
+
+let _savedScenarios = [
+  { id: "sv-1", name: "Q4 stretch plan",      scenario: "aggressive",  assumptions: _baseAssumptions.aggressive,  savedAt: _daysAgo(12), author: "cfo" },
+  { id: "sv-2", name: "Pre-funding baseline", scenario: "base",        assumptions: _baseAssumptions.base,        savedAt: _daysAgo(30), author: "cfo" },
+  { id: "sv-3", name: "Conservative floor",   scenario: "conservative", assumptions: _baseAssumptions.conservative, savedAt: _daysAgo(5),  author: "cfo" },
+];
+let _savedSeq = 4;
+
+export async function getSavedForecastScenarios() {
+  await delay();
+  return _brandObj(_savedScenarios.map((s) => ({ ...s, assumptions: { ...s.assumptions } })));
+}
+
+export async function saveForecastScenario(name, scenario, assumptions) {
+  await delay();
+  const s = {
+    id: `sv-${_savedSeq++}`,
+    name,
+    scenario,
+    assumptions: { ...assumptions },
+    savedAt: new Date().toISOString(),
+    author: "cfo",
+  };
+  _savedScenarios.unshift(s);
+  return _brandObj({ ...s, assumptions: { ...s.assumptions } });
+}
+
+export async function deleteSavedForecastScenario(id) {
+  await delay();
+  _savedScenarios = _savedScenarios.filter((s) => s.id !== id);
+  return { success: true };
+}
+
+export async function getForecastNarration(scenario) {
+  await delay();
+  const n = {
+    conservative: "Conservative projection assumes [3% YoY revenue growth] and elevated churn. Cash runway remains stable but net income flattens by Q3. Risk: margin compression if marketing scales back.",
+    base:         "Base projection tracks historical [10% YoY growth]. Cash position strengthens meaningfully by end of year. Watch for seasonal Q2 dip — marketing spend should ramp ahead of it.",
+    aggressive:   "Aggressive scenario banks on [20% YoY growth] with 8 new hires. Cash position expands strongly but expenses run higher — tight execution on hiring cadence is critical.",
+  };
+  return _brandObj({
+    narration: n[scenario] || n.base,
+    highlights: [
+      "Revenue compounds 10% across the year under base assumptions",
+      "Cash position grows by ~42,000 KWD over 12 months",
+      "Payroll remains ~55% of total expenses",
+    ],
+    risks: [
+      "Q2 seasonality typically reduces revenue by 8-12%",
+      "Marketing ratio above 12% historically yields diminishing returns",
+      "PIFSS rates may increase in Q3",
+    ],
+  });
+}
+
+// ── Variance Analysis ───────────────────────────────────────────
+const DEPARTMENTS_V = ["Sales", "Operations", "Marketing", "Tech", "Finance", "HR"];
+const CATEGORIES_V = ["Revenue", "Payroll", "Rent", "Marketing", "Operations", "Tech & Infra", "Other"];
+
+function _tenantVarianceMultiplier() {
+  return ({ almanara: 1.0, almawred: 1.6, "demo-corporate": 1.2 }[_currentTenantId]) || 1.0;
+}
+
+function _seedMatrix() {
+  const m = _tenantVarianceMultiplier();
+  // rows = departments, cols = categories. Positive = favorable, negative = unfavorable.
+  const raw = [
+    [ 4200,  -1800,  -300,  -620,  -450,  -120,  -300],
+    [  800,   -520,  -180, -1100, -1650,  -340,  -210],
+    [-2400,  -3100,  -240, -4200,  -560,  -180,  -340],
+    [  120,   -780,  -190,  -310, -1120,   720,   -90],
+    [  300,   -200,  -140,    80,  -220,   -60,   -40],
+    [  -40,   -330,  -110,  -160,  -180,  -40,   -70],
+  ];
+  return raw.map((row) => row.map((v) => Math.round(v * m)));
+}
+
+function _varianceStatus(v, planAbs) {
+  const pct = planAbs > 0 ? (v / planAbs) * 100 : 0;
+  if (v < -3000 || pct < -15) return { status: "critical", severity: 4 };
+  if (v < -1000 || pct < -8)  return { status: "investigate", severity: 3 };
+  if (v < -300  || pct < -3)  return { status: "watch", severity: 2 };
+  return { status: "on_track", severity: 1 };
+}
+
+export async function getVarianceAnalysis(period, comparisonType) {
+  await delay();
+  const cells = _seedMatrix();
+  const topVariances = [];
+  let totalVariance = 0;
+  for (let r = 0; r < DEPARTMENTS_V.length; r++) {
+    for (let c = 0; c < CATEGORIES_V.length; c++) {
+      const v = cells[r][c];
+      const plan = 8000 + (r * 700) + (c * 450);
+      const actual = plan - v;
+      totalVariance += v;
+      const meta = _varianceStatus(v, plan);
+      topVariances.push({
+        id: `var-${r}-${c}`,
+        category: CATEGORIES_V[c],
+        department: DEPARTMENTS_V[r],
+        plan,
+        actual,
+        variance: v,
+        variancePct: +((v / plan) * 100).toFixed(1),
+        status: meta.status,
+        severity: meta.severity,
+        favorable: v > 0,
+      });
+    }
+  }
+  topVariances.sort((a, b) => Math.abs(b.variance) - Math.abs(a.variance));
+  const top5 = topVariances.slice(0, 5);
+  const trend = _monthLabelsFromNow(1).length && (() => {
+    const labels = [];
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      labels.push(d.toLocaleDateString("en-US", { month: "short" }));
+    }
+    return labels.map((m, i) => ({
+      month: m,
+      totalVariance: Math.round((Math.sin(i / 2) * 3200 - i * 180) * _tenantVarianceMultiplier()),
+      topContributors: ["Marketing", "Payroll", "Operations"],
+    }));
+  })();
+  return _brandObj({
+    topVariances: top5,
+    allVariances: topVariances,
+    matrix: { departments: DEPARTMENTS_V, categories: CATEGORIES_V, cells },
+    trend,
+    totalVariance,
+  });
+}
+
+let _varianceNotes = [
+  { id: "vn-1", varianceId: "var-2-3", note: "Marketing ran 4.2k over — three big campaigns stacked in March. Q2 plan revises down.", author: "cfo", visibility: "cfo_owner", timestamp: _daysAgo(2) },
+  { id: "vn-2", varianceId: "var-1-4", note: "Ops overrun from one-time equipment repair. Not recurring.", author: "cfo", visibility: "cfo_owner", timestamp: _daysAgo(4) },
+  { id: "vn-3", varianceId: "var-3-4", note: "Tech infra under-spend is expected — Q3 hardware refresh pushed to Q4.", author: "cfo", visibility: "cfo_only", timestamp: _daysAgo(6) },
+];
+let _varianceNoteSeq = 4;
+let _flaggedVariances = new Set(["var-2-3"]);
+
+export async function getVarianceDetail(varianceId) {
+  await delay();
+  const all = (await getVarianceAnalysis()).allVariances;
+  const v = all.find((x) => x.id === varianceId);
+  if (!v) return null;
+  const contributors = [
+    { ref: "JE-0420", desc: "Campaign A invoice",   amount: -1820 },
+    { ref: "JE-0417", desc: "Trade show booth",     amount: -1420 },
+    { ref: "JE-0411", desc: "Agency retainer",      amount: -960 },
+  ];
+  const monthlyTrend = Array.from({ length: 6 }, (_, i) => ({
+    month: new Date(new Date().getFullYear(), new Date().getMonth() - (5 - i), 1).toLocaleDateString("en-US", { month: "short" }),
+    variance: Math.round((Math.sin(i / 1.5) - 0.3) * 1800 * _tenantVarianceMultiplier()),
+  }));
+  const notes = _varianceNotes.filter((n) => n.varianceId === varianceId);
+  return _brandObj({
+    ...v,
+    monthlyTrend,
+    contributors,
+    notes,
+    flagged: _flaggedVariances.has(varianceId),
+    aminahCommentary: `Variance driven primarily by ${contributors[0].desc.toLowerCase()}. Pattern not recurring — expect reversion in next period.`,
+  });
+}
+
+export async function addVarianceNote(varianceId, note, visibility) {
+  await delay();
+  const n = {
+    id: `vn-${_varianceNoteSeq++}`,
+    varianceId,
+    note,
+    author: "cfo",
+    visibility: visibility || "cfo_owner",
+    timestamp: new Date().toISOString(),
+  };
+  _varianceNotes.unshift(n);
+  return _brandObj({ ...n });
+}
+
+export async function flagVariance(varianceId, reason, assignTo) {
+  await delay();
+  _flaggedVariances.add(varianceId);
+  const recipient = assignTo === "sara" ? P.sara : P.cfo;
+  const taskId = `TSK-VAR-${Math.floor(Math.random() * 900 + 100)}`;
+  const task = {
+    id: taskId,
+    senderId: "cfo",
+    recipient,
+    sender: P.cfo,
+    type: "request-investigation",
+    subject: `Variance investigation — ${varianceId}`,
+    body: `CFO flagged this variance for investigation.\n\nReason: ${reason}`,
+    direction: assignTo === "sara" ? "downward" : "lateral",
+    priority: "high",
+    status: "open",
+    unread: true,
+    linkedItem: { type: "variance", varianceId },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    dueDate: _daysFromNow(3),
+    messages: [_msgEvent(P.cfo, reason, 0)],
+  };
+  TASKBOX_DB.unshift(task);
+  return { taskId, success: true };
+}
+
+export async function unflagVariance(varianceId) {
+  await delay();
+  _flaggedVariances.delete(varianceId);
+  return { success: true };
+}
+
+export async function getVarianceNarration(period) {
+  await delay();
+  return _brandObj({
+    narration: "Total variance is driven by Marketing overspend (~4.2k over plan) and Operations one-time equipment repair. Favorable variances in Sales Revenue partially offset. Aminah recommends reviewing Q2 marketing commitments before any reallocation.",
+    topInsights: [
+      "Marketing ran [4,200 KWD over budget] in March",
+      "Sales revenue is [3,600 KWD ahead of plan]",
+      "Operations equipment overage is non-recurring",
+    ],
+    recommendedActions: [
+      "Revise Q2 marketing plan down by ~8%",
+      "Confirm Ops repair is a one-time charge",
+      "Reallocate Tech underspend to Sales enablement",
+    ],
+  });
+}
+
+export async function exportVarianceReport(period, format) {
+  await delay();
+  const tn = (TENANTS[_currentTenantId]?.company?.shortName || "tenant").toLowerCase().replace(/\s+/g, "-");
+  return { url: null, filename: `${tn}_variance-report_${period || "march-2026"}.${format || "csv"}` };
+}
+
+// ── Close sync: mutate close-approval task when Owner acts ──────
+function _findCloseApprovalTask(period) {
+  return TASKBOX_DB.find(
+    (t) =>
+      t.linkedItem &&
+      t.linkedItem.type === "month-end-close" &&
+      (t.linkedItem.period === period || !period) &&
+      t.status !== "completed"
+  );
+}
+
+// Monkey-patch the originally-defined approveClose / rejectClose by
+// re-defining them as local wrappers. We can't re-export, so expose new
+// helpers that wire both sides. The screens now call these helpers.
+export async function approveCloseAndSyncTask(period) {
+  await delay();
+  const s = _closeStateByTenant[_currentTenantId];
+  if (s) {
+    s.status = "approved";
+    s.approvedAt = new Date().toISOString();
+  }
+  const task = _findCloseApprovalTask(period);
+  if (task) {
+    task.status = "completed";
+    task.updatedAt = new Date().toISOString();
+    task.messages.push(_msgEvent(P.owner, "[System] Close approved — period locked.", 0));
+  }
+  return { status: "approved", lockedAt: new Date().toISOString(), taskId: task?.id || null };
+}
+
+export async function rejectCloseAndSyncTask(period, reason) {
+  await delay();
+  const s = _closeStateByTenant[_currentTenantId];
+  if (s) {
+    s.status = "in_progress";
+    s.rejectionReason = reason || "";
+    s.submittedAt = null;
+  }
+  const task = _findCloseApprovalTask(period);
+  if (task) {
+    task.status = "needs-revision";
+    task.updatedAt = new Date().toISOString();
+    task.messages.push(_msgEvent(P.owner, `[System] Close rejected. Reason: ${reason || ""}`, 0));
+  }
+  return { status: "in_progress", rejectionReason: reason || "", taskId: task?.id || null };
+}

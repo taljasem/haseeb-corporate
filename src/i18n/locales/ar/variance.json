@@ -1,0 +1,92 @@
+{
+  "title": "تحليل الانحرافات",
+  "loading": "جارٍ تحميل التحليل…",
+  "hero_subtitle": "الخطة مقابل الفعلي · {{period}} · {{tenant}}",
+  "view_label": "عرض المدير المالي",
+  "controls": {
+    "period_label": "الفترة",
+    "comparison_label": "المقارنة",
+    "compare_budget": "الميزانية",
+    "compare_prior_period": "الفترة السابقة",
+    "compare_prior_year": "السنة السابقة"
+  },
+  "top_variances": {
+    "title": "أكبر الانحرافات",
+    "subtitle": "أكبر الانحرافات المطلقة في هذه الفترة",
+    "col_category": "الفئة",
+    "col_dept": "القسم",
+    "col_plan": "الخطة",
+    "col_actual": "الفعلي",
+    "col_variance": "الانحراف",
+    "col_pct": "%",
+    "col_status": "الحالة",
+    "empty": "لا توجد انحرافات في هذه الفترة."
+  },
+  "status": {
+    "on_track": "ضمن الخطة",
+    "watch": "مراقبة",
+    "investigate": "تحقيق",
+    "critical": "حرج"
+  },
+  "matrix": {
+    "title": "مصفوفة الانحرافات",
+    "subtitle": "خريطة حرارية قسم × فئة",
+    "col_total": "الإجمالي",
+    "row_total": "الإجمالي"
+  },
+  "trend": {
+    "title": "اتجاه الانحرافات",
+    "subtitle": "آخر 12 شهراً · إجمالي الانحراف شهرياً",
+    "hover_favorable": "إيجابي",
+    "hover_unfavorable": "سلبي"
+  },
+  "detail": {
+    "title": "تفاصيل الانحراف",
+    "close": "إغلاق",
+    "plan": "الخطة",
+    "actual": "الفعلي",
+    "variance": "الانحراف",
+    "variance_pct": "% من الخطة",
+    "contributors_title": "أهم المساهمين",
+    "trend_title": "اتجاه 6 أشهر",
+    "notes_title": "ملاحظات",
+    "commentary_label": "تعليق أمينة",
+    "add_note": "إضافة ملاحظة",
+    "flag": "وضع علامة للتحقيق",
+    "unflag": "إزالة العلامة",
+    "flagged": "مُعلَّم"
+  },
+  "add_note_modal": {
+    "label": "الانحرافات",
+    "title": "إضافة ملاحظة انحراف",
+    "field_note": "الملاحظة",
+    "note_placeholder": "لماذا حدث هذا الانحراف، الخطوات التالية…",
+    "field_visibility": "الظهور",
+    "visibility_cfo_only": "المدير المالي فقط",
+    "visibility_cfo_owner": "المدير المالي + المالك",
+    "cancel": "إلغاء",
+    "save": "حفظ الملاحظة",
+    "saving": "جارٍ الحفظ…",
+    "saved_toast": "تم حفظ الملاحظة",
+    "close": "إغلاق"
+  },
+  "flag_modal": {
+    "label": "الانحرافات",
+    "title": "وضع علامة على الانحراف",
+    "field_reason": "السبب",
+    "reason_placeholder": "ما الذي يحتاج للتحقيق؟",
+    "field_assignee": "إسناد إلى",
+    "assignee_sara": "محاسب أول",
+    "assignee_cfo": "نفسي (المدير المالي)",
+    "cancel": "إلغاء",
+    "confirm": "وضع علامة",
+    "flagging": "جارٍ الوضع…",
+    "flagged_toast": "تم وضع علامة وإنشاء مهمة",
+    "close": "إغلاق"
+  },
+  "export": "تصدير {{format}}",
+  "narration": {
+    "insights_label": "أبرز الملاحظات",
+    "actions_label": "إجراءات موصى بها"
+  }
+}

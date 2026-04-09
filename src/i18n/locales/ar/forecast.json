@@ -1,0 +1,86 @@
+{
+  "title": "التوقعات",
+  "loading": "جارٍ تحميل التوقعات…",
+  "hero_subtitle": "توقعات 12 شهراً · {{tenant}} · {{scenario}}",
+  "view_label": "عرض المدير المالي",
+  "scenarios": {
+    "conservative": "متحفظ",
+    "base": "أساسي",
+    "aggressive": "طموح"
+  },
+  "kpis": {
+    "title": "ملخص التوقعات",
+    "revenue": "الإيراد المتوقع (12 شهر)",
+    "expenses": "المصروفات المتوقعة (12 شهر)",
+    "net_income": "صافي الدخل المتوقع (12 شهر)",
+    "ending_cash": "الرصيد النقدي المتوقع",
+    "delta_vs_base": "مقابل الأساسي",
+    "delta_vs_ly": "مقابل السنة السابقة"
+  },
+  "table": {
+    "title": "تفصيل شهري",
+    "subtitle": "الأشهر الـ 12 القادمة",
+    "col_row": "",
+    "col_total": "الإجمالي",
+    "row_revenue": "الإيرادات",
+    "row_expenses": "المصروفات",
+    "row_net_income": "صافي الدخل",
+    "row_cash_flow": "التدفق النقدي",
+    "row_ending": "الرصيد الختامي",
+    "confidence_high": "عالية",
+    "confidence_medium": "متوسطة",
+    "confidence_low": "منخفضة",
+    "expand": "توسيع",
+    "collapse": "طي"
+  },
+  "assumptions": {
+    "title": "المحركات والافتراضات",
+    "subtitle": "عدّل أي محرك ثم طبّق لإعادة حساب التوقعات.",
+    "revenueGrowth": "نمو الإيراد (% سنوياً)",
+    "churnRate": "معدل فقد العملاء (%)",
+    "avgDealSize": "متوسط قيمة الصفقة (د.ك)",
+    "hiringPlan": "موظفون جدد كل ربع",
+    "salaryInflation": "تضخم الرواتب (%)",
+    "marketingRatio": "نسبة إنفاق التسويق (%)",
+    "taxRate": "نسبة الضريبة (%)",
+    "apply": "تطبيق",
+    "applied_toast": "تم إعادة حساب التوقعات",
+    "reset": "استعادة الافتراضات",
+    "reset_toast": "تم إعادة ضبط الافتراضات"
+  },
+  "saved": {
+    "title": "السيناريوهات المحفوظة",
+    "load": "تحميل",
+    "save_current": "حفظ هذا السيناريو",
+    "compare": "مقارنة السيناريوهات",
+    "empty": "لا توجد سيناريوهات محفوظة بعد",
+    "saved_at": "حُفظ {{time}}",
+    "delete": "حذف"
+  },
+  "save_modal": {
+    "label": "التوقعات",
+    "title": "حفظ سيناريو",
+    "field_name": "اسم السيناريو",
+    "name_placeholder": "مثلاً: خطة الربع الثالث",
+    "cancel": "إلغاء",
+    "save": "حفظ السيناريو",
+    "saving": "جارٍ الحفظ…",
+    "saved_toast": "تم حفظ السيناريو",
+    "close": "إغلاق"
+  },
+  "compare_slideover": {
+    "title": "مقارنة السيناريوهات",
+    "subtitle": "توقعات جنباً إلى جنب",
+    "close": "إغلاق",
+    "pick": "اختر سيناريوهات للمقارنة",
+    "kpi_revenue": "الإيراد",
+    "kpi_expenses": "المصروفات",
+    "kpi_net_income": "صافي الدخل",
+    "kpi_ending_cash": "الرصيد النقدي الختامي"
+  },
+  "export": "تصدير {{format}}",
+  "narration": {
+    "highlights_label": "أبرز النقاط",
+    "risks_label": "المخاطر"
+  }
+}

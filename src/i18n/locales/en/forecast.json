@@ -1,0 +1,86 @@
+{
+  "title": "Forecast",
+  "loading": "Loading forecast…",
+  "hero_subtitle": "12-month projection · {{tenant}} · {{scenario}}",
+  "view_label": "CFO VIEW",
+  "scenarios": {
+    "conservative": "Conservative",
+    "base": "Base",
+    "aggressive": "Aggressive"
+  },
+  "kpis": {
+    "title": "Forecast summary",
+    "revenue": "PROJECTED REVENUE (12M)",
+    "expenses": "PROJECTED EXPENSES (12M)",
+    "net_income": "PROJECTED NET INCOME (12M)",
+    "ending_cash": "PROJECTED ENDING CASH",
+    "delta_vs_base": "vs Base",
+    "delta_vs_ly": "vs LY"
+  },
+  "table": {
+    "title": "Monthly breakdown",
+    "subtitle": "Next 12 months",
+    "col_row": "",
+    "col_total": "TOTAL",
+    "row_revenue": "Revenue",
+    "row_expenses": "Expenses",
+    "row_net_income": "Net income",
+    "row_cash_flow": "Cash flow",
+    "row_ending": "Ending balance",
+    "confidence_high": "HIGH",
+    "confidence_medium": "MED",
+    "confidence_low": "LOW",
+    "expand": "Expand",
+    "collapse": "Collapse"
+  },
+  "assumptions": {
+    "title": "Drivers & assumptions",
+    "subtitle": "Edit any driver and apply to see the forecast recalculate.",
+    "revenueGrowth": "Revenue growth (% YoY)",
+    "churnRate": "Customer churn (%)",
+    "avgDealSize": "Avg deal size (KWD)",
+    "hiringPlan": "New hires per quarter",
+    "salaryInflation": "Salary inflation (%)",
+    "marketingRatio": "Marketing spend ratio (%)",
+    "taxRate": "Tax rate (%)",
+    "apply": "Apply",
+    "applied_toast": "Forecast recalculated",
+    "reset": "Reset to defaults",
+    "reset_toast": "Assumptions reset"
+  },
+  "saved": {
+    "title": "Saved scenarios",
+    "load": "Load",
+    "save_current": "Save this scenario",
+    "compare": "Compare scenarios",
+    "empty": "No saved scenarios yet",
+    "saved_at": "Saved {{time}}",
+    "delete": "Delete"
+  },
+  "save_modal": {
+    "label": "FORECAST",
+    "title": "Save scenario",
+    "field_name": "Scenario name",
+    "name_placeholder": "e.g. Q3 stretch plan",
+    "cancel": "Cancel",
+    "save": "Save scenario",
+    "saving": "Saving…",
+    "saved_toast": "Scenario saved",
+    "close": "Close"
+  },
+  "compare_slideover": {
+    "title": "Compare scenarios",
+    "subtitle": "Side-by-side projections",
+    "close": "Close",
+    "pick": "Pick scenarios to compare",
+    "kpi_revenue": "Revenue",
+    "kpi_expenses": "Expenses",
+    "kpi_net_income": "Net income",
+    "kpi_ending_cash": "Ending cash"
+  },
+  "export": "Export {{format}}",
+  "narration": {
+    "highlights_label": "HIGHLIGHTS",
+    "risks_label": "RISKS"
+  }
+}

@@ -103,6 +103,13 @@
     "downloaded_toast": "Exported {{filename}}"
   },
   "line_menu": {
-    "open": "Open menu"
+    "open": "Open menu",
+    "reclassify": "Re-classify line",
+    "add_note": "Add note",
+    "edit_note": "Edit note",
+    "view_entries": "View contributing entries",
+    "copy_code": "Copy account code",
+    "copied_toast": "Account code copied",
+    "note_icon_tooltip": "View note"
   }
 }

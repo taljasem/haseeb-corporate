@@ -4,7 +4,8 @@ import { X } from "lucide-react";
 import useEscapeKey from "../../hooks/useEscapeKey";
 import Spinner from "../shared/Spinner";
 import { runValidators, required, minLength, maxLength } from "../../utils/validation";
-import { rejectClose } from "../../engine/mockEngine";
+import { rejectCloseAndSyncTask } from "../../engine/mockEngine";
+import { emitTaskboxChange } from "../../utils/taskboxBus";
 
 const inputStyle = {
   width: "100%",
@@ -44,7 +45,8 @@ export default function RejectCloseModal({ open, period, onClose, onRejected }) 
   const handleReject = async () => {
     if (!validate()) return;
     setRejecting(true);
-    const r = await rejectClose(period, reason);
+    const r = await rejectCloseAndSyncTask(period, reason);
+    emitTaskboxChange();
     setRejecting(false);
     if (onRejected) onRejected(r);
     if (onClose) onClose();

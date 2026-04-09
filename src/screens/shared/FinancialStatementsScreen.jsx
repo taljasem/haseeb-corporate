@@ -198,6 +198,11 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
   };
 
   const noteForAccountCode = (code) => notes.find((n) => n.accountCode === code);
+  const notesByCode = useMemo(() => {
+    const map = {};
+    for (const n of notes) map[n.accountCode] = n;
+    return map;
+  }, [notes]);
 
   const heroAccent = role === "CFO" ? "var(--accent-primary)" : "var(--role-owner)";
 
@@ -344,7 +349,7 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
               })}
             </div>
 
-            {/* CFO tool bar: materiality + reclassify trigger */}
+            {/* CFO tool bar: materiality only (per-line kebabs handle reclassify + notes now) */}
             {role === "CFO" && (
               <div
                 style={{
@@ -381,35 +386,6 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
                     <LtrText>{t("materiality.filtered_count", { shown: lineCounts.shown, total: lineCounts.total })}</LtrText>
                   </span>
                 )}
-                <div style={{ flex: 1 }} />
-                <button
-                  onClick={() => setReclassifySource({ account: "", label: "—" })}
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 6,
-                    padding: "7px 12px",
-                    background: "transparent",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    color: "var(--text-secondary)",
-                    borderRadius: 6, cursor: "pointer",
-                    fontSize: 11, fontFamily: "inherit", fontWeight: 600,
-                  }}
-                >
-                  <Edit3 size={12} /> {t("cfo.reclassify_line")}
-                </button>
-                <button
-                  onClick={() => setNoteTarget({ accountCode: "", accountLabel: "—", existing: null })}
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 6,
-                    padding: "7px 12px",
-                    background: "transparent",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    color: "var(--text-secondary)",
-                    borderRadius: 6, cursor: "pointer",
-                    fontSize: 11, fontFamily: "inherit", fontWeight: 600,
-                  }}
-                >
-                  <StickyNote size={12} /> {t("cfo.add_note")}
-                </button>
               </div>
             )}
 
@@ -437,7 +413,27 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
                     onOpenAminah && onOpenAminah(`${t(`tabs.${tab}`)} — ${current.period}`)
                   }
                 />
-                <StatementTable sections={filteredSections} />
+                <StatementTable
+                  sections={filteredSections}
+                  mode={role === "CFO" ? "cfo" : "readonly"}
+                  notesByCode={notesByCode}
+                  onOpenNote={(note, line) =>
+                    setNoteTarget({ accountCode: note.accountCode, accountLabel: line?.account || note.accountCode, existing: note })
+                  }
+                  onLineAction={(actionId, line, code) => {
+                    if (actionId === "reclassify") {
+                      setReclassifySource({ account: line.account, current: line.current });
+                    } else if (actionId === "note") {
+                      const existing = code && notesByCode ? notesByCode[code] : null;
+                      setNoteTarget({ accountCode: code || "", accountLabel: line.account, existing });
+                    } else if (actionId === "view_entries") {
+                      setAdjustingOpen(true);
+                    } else if (actionId === "copy_code" && code) {
+                      if (navigator.clipboard) navigator.clipboard.writeText(code).catch(() => {});
+                      showToast(t("line_menu.copied_toast"));
+                    }
+                  }}
+                />
 
                 {/* CFO notes panel — shows notes attached to this statement's lines */}
                 {role === "CFO" && (

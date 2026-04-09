@@ -103,6 +103,13 @@
     "downloaded_toast": "تم تصدير {{filename}}"
   },
   "line_menu": {
-    "open": "فتح القائمة"
+    "open": "فتح القائمة",
+    "reclassify": "إعادة تصنيف البند",
+    "add_note": "إضافة ملاحظة",
+    "edit_note": "تعديل الملاحظة",
+    "view_entries": "عرض القيود المساهمة",
+    "copy_code": "نسخ رمز الحساب",
+    "copied_toast": "تم نسخ رمز الحساب",
+    "note_icon_tooltip": "عرض الملاحظة"
   }
 }

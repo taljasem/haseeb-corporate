@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import useEscapeKey from "../../hooks/useEscapeKey";
 import Spinner from "../shared/Spinner";
+import { runValidators, required, minLength, maxLength } from "../../utils/validation";
 import {
   getRecipientsForRole,
   getTaskTypesForDirection,
@@ -78,6 +79,7 @@ const LINK_OPTIONS = [
 
 export default function NewTaskModal({ open, role = "CFO", onClose, onSent, prefilledLinkedItem = null }) {
   const { t } = useTranslation("taskbox");
+  const { t: tc } = useTranslation("common");
   useEscapeKey(onClose, open);
   const [recipients, setRecipients] = useState([]);
   const [types, setTypes] = useState([]);
@@ -85,6 +87,34 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
   const [type, setType] = useState("");
   const [subject, setSubject] = useState("");
   const [bodyText, setBodyText] = useState("");
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const result = runValidators(
+      { subject, bodyText, recipient, type },
+      {
+        subject: [required(), minLength(3), maxLength(200)],
+        bodyText: [maxLength(500)],
+        recipient: [required("validation.select_recipient")],
+        type: [required()],
+      }
+    );
+    setErrors(result);
+    return Object.keys(result).length === 0;
+  };
+
+  const fieldError = (key) => {
+    const e = errors[key];
+    if (!e) return null;
+    return (
+      <div style={{ fontSize: 12, color: "var(--semantic-danger)", marginTop: 4 }}>
+        {tc(e.key, e.values || {})}
+      </div>
+    );
+  };
+
+  const invalidBorder = (key) =>
+    errors[key] ? { borderColor: "var(--semantic-danger)" } : null;
   const [linkedItem, setLinkedItem] = useState(prefilledLinkedItem);
   const [dueDate, setDueDate] = useState("");
   const [sending, setSending] = useState(false);
@@ -119,6 +149,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
   };
 
   const handleSend = async () => {
+    if (!validate()) return;
     setSending(true);
     const task = await createTask({
       senderId: ROLE_TO_SENDER_ID[role] || "cfo",
@@ -237,7 +268,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
                 return (
                   <button
                     key={r.id}
-                    onClick={() => setRecipient(r)}
+                    onClick={() => { setRecipient(r); if (errors.recipient) setErrors({ ...errors, recipient: null }); }}
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -260,6 +291,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
                 );
               })}
             </div>
+            {fieldError("recipient")}
           </div>
 
           {/* 2 — TYPE (gated by recipient) */}
@@ -269,7 +301,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
               {types.map((t) => (
                 <button
                   key={t.id}
-                  onClick={() => setType(t.id)}
+                  onClick={() => { setType(t.id); if (errors.type) setErrors({ ...errors, type: null }); }}
                   style={{
                     background: "transparent",
                     border: "none",
@@ -285,6 +317,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
                 </button>
               ))}
             </div>
+            {fieldError("type")}
           </div>
 
           {/* 3 — SUBJECT (gated by type) */}
@@ -292,10 +325,11 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
             <FieldLabel filled={!!subject.trim()}>{t("new_modal.subject")}</FieldLabel>
             <input
               value={subject}
-              onChange={(e) => setSubject(e.target.value)}
+              onChange={(e) => { setSubject(e.target.value); if (errors.subject) setErrors({ ...errors, subject: null }); }}
               placeholder={t("new_modal.subject_placeholder")}
-              style={inputStyle}
+              style={{ ...inputStyle, ...invalidBorder("subject") }}
             />
+            {fieldError("subject")}
           </div>
 
           {/* 4 — DETAILS */}
@@ -303,11 +337,12 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
             <FieldLabel filled={!!bodyText.trim()}>{t("new_modal.details")}</FieldLabel>
             <textarea
               value={bodyText}
-              onChange={(e) => setBodyText(e.target.value)}
+              onChange={(e) => { setBodyText(e.target.value); if (errors.bodyText) setErrors({ ...errors, bodyText: null }); }}
               placeholder={t("new_modal.details_placeholder")}
               rows={5}
-              style={{ ...inputStyle, resize: "vertical" }}
+              style={{ ...inputStyle, ...invalidBorder("bodyText"), resize: "vertical" }}
             />
+            {fieldError("bodyText")}
           </div>
 
           {/* 5 — LINKED ITEM */}
@@ -368,14 +403,14 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
           </button>
           <button
             onClick={handleSend}
-            disabled={!canSend || sending}
+            disabled={sending}
             style={{
-              background: canSend ? "var(--accent-primary)" : "rgba(0,196,140,0.25)",
+              background: "var(--accent-primary)",
               color: "#fff",
               border: "none",
               padding: "9px 18px",
               borderRadius: 6,
-              cursor: canSend ? "pointer" : "not-allowed",
+              cursor: sending ? "not-allowed" : "pointer",
               fontSize: 12,
               fontWeight: 600,
               fontFamily: "inherit",

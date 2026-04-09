@@ -6,6 +6,8 @@ import { useLanguage } from "../i18n/LanguageContext";
 import LtrText from "./shared/LtrText";
 import DirArrow from "./shared/DirArrow";
 import { useTheme } from "../contexts/ThemeContext";
+import EmptyState from "./shared/EmptyState";
+import { BellOff } from "lucide-react";
 
 // DEMO ONLY — production roles come from auth
 const ROLES = ["Owner", "CFO", "Junior"];
@@ -92,6 +94,7 @@ function Tooltip({ title, sub }) {
 
 export default function Header({ role, setRole }) {
   const { t } = useTranslation("header");
+  const { t: tc } = useTranslation("common");
   const { language, toggleLanguage } = useLanguage();
   const { toggleTheme, isLight } = useTheme();
   const [bellOpen, setBellOpen] = useState(false);
@@ -402,6 +405,9 @@ export default function Header({ role, setRole }) {
                 </a>
               </div>
               <div style={{ overflowY: "auto", flex: 1 }}>
+                {notifications.length === 0 && (
+                  <EmptyState icon={BellOff} title={tc("empty_states.notifications_title")} description={tc("empty_states.notifications_desc")} />
+                )}
                 {notifications.map((n) => (
                   <div
                     key={n.id}

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import useEscapeKey from "../../hooks/useEscapeKey";
+import Spinner from "../shared/Spinner";
 import {
   createRoutingRule,
   updateRoutingRule,
@@ -385,7 +386,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
               fontFamily: "inherit",
             }}
           >
-            {sending ? t("route_modal.saving") : editingRule ? t("route_modal.save_changes") : t("route_modal.create_rule")}
+            {sending ? <><Spinner size={13} />&nbsp;{t("route_modal.saving")}</> : editingRule ? t("route_modal.save_changes") : t("route_modal.create_rule")}
           </button>
         </div>
       </div>

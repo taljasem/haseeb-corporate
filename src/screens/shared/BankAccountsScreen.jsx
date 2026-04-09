@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Search } from "lucide-react";
+import { Search, Building2 } from "lucide-react";
 import LtrText from "../../components/shared/LtrText";
+import EmptyState from "../../components/shared/EmptyState";
 import {
   getBankAccounts,
   getBankStatement,
@@ -28,6 +29,7 @@ const TYPE_FILTERS = [
 
 export default function BankAccountsScreen({ role = "CFO", readOnly = false, initialAccountId = null }) {
   const { t } = useTranslation("bank-accounts");
+  const { t: tc } = useTranslation("common");
   const { tenant } = useTenant();
   const showFutureOps = tenant.features?.showFutureBankOperations !== false;
   const [accounts, setAccounts] = useState(null);
@@ -127,6 +129,9 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
             marginBottom: 22,
           }}
         >
+          {accounts && accounts.length === 0 && (
+            <EmptyState icon={Building2} title={tc("empty_states.bank_accounts_title")} description={tc("empty_states.bank_accounts_desc")} />
+          )}
           {(accounts || []).map((a) => (
             <BankAccountCard
               key={a.id}

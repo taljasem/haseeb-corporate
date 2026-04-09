@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { CheckCircle2 } from "lucide-react";
 import TodaySection from "../../components/cfo/TodaySection";
 import AssignToButton from "../../components/shared/AssignToButton";
 import DirArrow from "../../components/shared/DirArrow";
+import EmptyState from "../../components/shared/EmptyState";
 import TaskboxSummaryCard from "../../components/taskbox/TaskboxSummaryCard";
 import SuggestedRuleRow from "../../components/rules/SuggestedRuleRow";
 import { getSuggestedCategorizationRules, getSuggestedRoutingRules } from "../../engine/mockEngine";
@@ -122,6 +124,7 @@ function Avatar({ initials }) {
 
 export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask }) {
   const { t } = useTranslation("cfo-today");
+  const { t: tc } = useTranslation("common");
   const [suggestions, setSuggestions] = useState([]);
   const [queue, setQueue] = useState(null);
   const [notes, setNotes] = useState(null);
@@ -168,7 +171,10 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
           extra={totalQueue > 0 ? <span className="tension-dot tension-dot--warning">{totalQueue}</span> : null}
           aminah
         >
-          {queue && (
+          {queue && totalQueue === 0 && (
+            <EmptyState icon={CheckCircle2} title={tc("empty_states.today_no_attention_title")} description={tc("empty_states.today_no_attention_desc")} />
+          )}
+          {queue && totalQueue > 0 && (
             <div style={{ marginTop: 4 }}>
               <QueueRow
                 count={queue.pendingApprovals}

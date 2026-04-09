@@ -39,7 +39,9 @@
     "delegate_title": "لا توجد أقسام للتفويض",
     "delegate_desc": "كل الأقسام لديها مسؤولون مُسندون بالفعل.",
     "today_no_attention_title": "لا شيء يحتاج اهتمامك",
-    "today_no_attention_desc": "أنت على اطلاع باليوم."
+    "today_no_attention_desc": "أنت على اطلاع باليوم.",
+    "responsibilities_title": "لا توجد مسؤوليات مُسندة",
+    "responsibilities_desc": "سيُسند المدير المالي قواعد التوجيه إليك عند الجاهزية."
   },
   "error_states": {
     "boundary_title": "حدث خطأ ما",
@@ -58,7 +60,9 @@
     "must_balance": "يجب أن تتساوى المدينات مع الدائنات",
     "select_recipient": "اختر مستلماً",
     "select_account": "اختر حساباً",
-    "amount_required": "أدخل مبلغاً"
+    "amount_required": "أدخل مبلغاً",
+    "min_lines": "يحتاج القيد المحاسبي إلى بندين على الأقل",
+    "line_needs_value": "كل بند يحتاج إلى مدين أو دائن"
   },
   "aria": {
     "notifications": "الإشعارات",

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Circle, Clock, AlertTriangle } from "lucide-react";
+import { Check, Circle, Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
+import EmptyState from "../../components/shared/EmptyState";
 import AminahNarrationCard from "../../components/financial/AminahNarrationCard";
 import Avatar from "../../components/taskbox/Avatar";
 import { getMonthEndCloseTasks } from "../../engine/mockEngine";
@@ -111,6 +112,7 @@ function Validation({ v, onResolve }) {
 
 export default function MonthEndCloseScreen({ onNavigate }) {
   const { t } = useTranslation("close");
+  const { t: tc } = useTranslation("common");
   const [data, setData] = useState(null);
   useEffect(() => {
     getMonthEndCloseTasks().then(setData);
@@ -263,6 +265,13 @@ export default function MonthEndCloseScreen({ onNavigate }) {
           >
             {t("close_checklist")}
           </div>
+          {data.tasks.length === 0 && (
+            <EmptyState
+              icon={CheckCircle2}
+              title={tc("empty_states.close_no_tasks_title")}
+              description={tc("empty_states.close_no_tasks_desc")}
+            />
+          )}
           {sorted.map((t) => (
             <ChecklistRow key={t.id} task={t} allTasksComplete={allComplete} />
           ))}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Users } from "lucide-react";
+import EmptyState from "../../components/shared/EmptyState";
 import Avatar from "../../components/taskbox/Avatar";
 import { getTeamMembersWithResponsibilities } from "../../engine/mockEngine";
 import { formatRelativeTime } from "../../utils/relativeTime";
@@ -149,6 +150,7 @@ function ResponsibilityCard({ m }) {
 
 export default function TeamScreen() {
   const { t } = useTranslation("team");
+  const { t: tc } = useTranslation("common");
   const [members, setMembers] = useState(null);
   useEffect(() => {
     getTeamMembersWithResponsibilities().then(setMembers);
@@ -244,6 +246,9 @@ export default function TeamScreen() {
             <div>{t("columns.last_active")}</div>
             <div>{t("columns.actions")}</div>
           </div>
+          {members && members.length === 0 && (
+            <EmptyState icon={Users} title={tc("empty_states.team_title")} description={tc("empty_states.team_desc")} />
+          )}
           {(members || []).map((m) => (
             <MemberRow key={m.id} m={m} />
           ))}

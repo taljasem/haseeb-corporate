@@ -39,7 +39,9 @@
     "delegate_title": "No departments to delegate",
     "delegate_desc": "All departments already have owners assigned.",
     "today_no_attention_title": "Nothing needs your attention",
-    "today_no_attention_desc": "You're all caught up for today."
+    "today_no_attention_desc": "You're all caught up for today.",
+    "responsibilities_title": "No responsibilities assigned",
+    "responsibilities_desc": "The CFO will assign routing rules to you when ready."
   },
   "error_states": {
     "boundary_title": "Something went wrong",
@@ -58,7 +60,9 @@
     "must_balance": "Debits must equal credits",
     "select_recipient": "Select a recipient",
     "select_account": "Select an account",
-    "amount_required": "Enter an amount"
+    "amount_required": "Enter an amount",
+    "min_lines": "A journal entry needs at least 2 lines",
+    "line_needs_value": "Each line must have a debit or credit"
   },
   "aria": {
     "notifications": "Notifications",

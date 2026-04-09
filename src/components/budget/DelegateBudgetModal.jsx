@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import useEscapeKey from "../../hooks/useEscapeKey";
 import Spinner from "../shared/Spinner";
+import EmptyState from "../shared/EmptyState";
+import { Inbox } from "lucide-react";
 import { getBudgetById, delegateBudget, getTeamMembers } from "../../engine/mockEngine";
 import { formatKWD } from "../../utils/format";
 
@@ -16,6 +18,7 @@ const DEFAULT_ASSIGNMENTS = {
 
 export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegated }) {
   const { t } = useTranslation("budget");
+  const { t: tc } = useTranslation("common");
   useEscapeKey(onClose, open);
   const [budget, setBudget] = useState(null);
   const [team, setTeam] = useState([]);
@@ -115,6 +118,9 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
         </div>
 
         <div style={{ padding: "14px 22px 4px", overflowY: "auto", flex: 1 }}>
+          {expenseDepts.length === 0 && (
+            <EmptyState icon={Inbox} title={tc("empty_states.delegate_title")} description={tc("empty_states.delegate_desc")} />
+          )}
           {expenseDepts.map((d) => {
             const expanded = !!expandedNotes[d.id];
             return (

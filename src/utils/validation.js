@@ -37,6 +37,14 @@ export const minValue = (min, key = "validation.amount_required") => (value) => 
   return null;
 };
 
+/** Returns { key } if debits !== credits, null otherwise. Tolerates float drift. */
+export const mustBalance = (debits, credits, key = "validation.must_balance") => {
+  const d = Number(debits) || 0;
+  const c = Number(credits) || 0;
+  if (Math.abs(d - c) > 0.0001) return { key };
+  return null;
+};
+
 /**
  * Run a map of field → validators[] against a state object.
  * Returns { fieldName: { key, values } } for failing fields.

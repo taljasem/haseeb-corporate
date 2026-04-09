@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Receipt } from "lucide-react";
 import BankTransactionRow from "../../components/cfo/BankTransactionRow";
+import EmptyState from "../../components/shared/EmptyState";
 import BankTransactionDetail from "../../components/cfo/BankTransactionDetail";
 import SuggestionBanner from "../../components/shared/SuggestionBanner";
 import NewCategorizationRuleModal from "../../components/rules/NewCategorizationRuleModal";
@@ -16,6 +18,7 @@ const FILTERS = [
 
 export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccounts, role = "CFO", filterByAssignee = null }) {
   const { t } = useTranslation("bank-transactions");
+  const { t: tc } = useTranslation("common");
   const [txs, setTxs] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [filter, setFilter] = useState("All");
@@ -156,6 +159,9 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
           </div>
         </div>
         <div style={{ flex: 1, overflowY: "auto" }}>
+          {filtered.length === 0 && (
+            <EmptyState icon={Receipt} title={tc("empty_states.bank_tx_title")} description={tc("empty_states.bank_tx_desc")} />
+          )}
           {filtered.map((t) => (
             <BankTransactionRow
               key={t.id}

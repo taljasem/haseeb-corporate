@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { CheckCircle2 } from "lucide-react";
 import SectionHeader from "../../components/SectionHeader";
 import { useTenant } from "../../components/shared/TenantContext";
 import DirArrow from "../../components/shared/DirArrow";
+import EmptyState from "../../components/shared/EmptyState";
 import TaskboxSummaryCard from "../../components/taskbox/TaskboxSummaryCard";
 import {
   getBusinessPulse,
@@ -156,6 +158,7 @@ function renderHighlighted(text) {
 
 export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAminah }) {
   const { t } = useTranslation("owner-today");
+  const { t: tc } = useTranslation("common");
   const { tenant } = useTenant();
   const bankAbbr = tenant?.banks?.[0]?.abbreviation || "KIB";
   const [pulse, setPulse] = useState(null);
@@ -270,6 +273,9 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
           label={t("sections.needs_attention")}
           extra={<span className="tension-dot tension-dot--warning">{attentionCount}</span>}
         >
+          {attentionCount === 0 && (
+            <EmptyState icon={CheckCircle2} title={tc("empty_states.today_no_attention_title")} description={tc("empty_states.today_no_attention_desc")} />
+          )}
           {approvals > 0 && (
             <AttentionRow
               count={approvals}

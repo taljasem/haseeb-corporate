@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ClipboardList } from "lucide-react";
 import AminahNarrationCard from "../../components/financial/AminahNarrationCard";
+import EmptyState from "../../components/shared/EmptyState";
 import RoutingRuleReadOnlyCard from "../../components/junior/RoutingRuleReadOnlyCard";
 import { getRoutingRules, getJuniorDomainStats } from "../../engine/mockEngine";
 
@@ -42,6 +44,7 @@ function Stat({ label, value }) {
 
 export default function MyResponsibilitiesScreen({ onContactCFO }) {
   const { t } = useTranslation("junior-today");
+  const { t: tc } = useTranslation("common");
   const [rules, setRules] = useState(null);
   const [stats, setStats] = useState(null);
 
@@ -95,6 +98,9 @@ export default function MyResponsibilitiesScreen({ onContactCFO }) {
             marginBottom: 24,
           }}
         >
+          {rules && rules.length === 0 && (
+            <EmptyState icon={ClipboardList} title={tc("empty_states.responsibilities_title")} description={tc("empty_states.responsibilities_desc")} />
+          )}
           {rules && rules.map((r) => <RoutingRuleReadOnlyCard key={r.id} rule={r} />)}
         </div>
 

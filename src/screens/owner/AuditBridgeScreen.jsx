@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, X, Shield, Lock } from "lucide-react";
+import { Check, X, Shield, Lock, ShieldCheck } from "lucide-react";
 import LtrText from "../../components/shared/LtrText";
+import EmptyState from "../../components/shared/EmptyState";
 import AminahNarrationCard from "../../components/financial/AminahNarrationCard";
 import { getAuditChecks } from "../../engine/mockEngine";
 import { formatRelativeTime } from "../../utils/relativeTime";
@@ -88,6 +89,7 @@ function CheckCard({ check }) {
 
 export default function AuditBridgeScreen() {
   const { t } = useTranslation("audit");
+  const { t: tc } = useTranslation("common");
   const [data, setData] = useState(null);
   useEffect(() => {
     getAuditChecks().then(setData);
@@ -173,6 +175,14 @@ export default function AuditBridgeScreen() {
         </div>
 
         <AminahNarrationCard text={data.aminahNarration} />
+
+        {data.failing === 0 && (
+          <EmptyState
+            icon={ShieldCheck}
+            title={tc("empty_states.audit_all_passing_title")}
+            description={tc("empty_states.audit_all_passing_desc")}
+          />
+        )}
 
         {/* Checks grid */}
         <div

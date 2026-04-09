@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Edit3 } from "lucide-react";
+import { Check, Edit3, CheckCircle2 } from "lucide-react";
 import DirArrow from "../../components/shared/DirArrow";
+import EmptyState from "../../components/shared/EmptyState";
 import SectionHeader from "../../components/SectionHeader";
 import TaskRow from "../../components/taskbox/TaskRow";
 import {
@@ -97,6 +98,7 @@ function renderHighlighted(text) {
 
 export default function JuniorTodayScreen({ setActiveScreen, onOpenTask }) {
   const { t } = useTranslation("junior-today");
+  const { t: tc } = useTranslation("common");
   const [myTasks, setMyTasks] = useState(null);
   const [queue, setQueue] = useState(null);
   const [activity, setActivity] = useState(null);
@@ -150,7 +152,10 @@ export default function JuniorTodayScreen({ setActiveScreen, onOpenTask }) {
 
         {/* 2. TODAY'S WORK QUEUE */}
         <SectionCard label={t("sections.work_queue")}>
-          {queue && (
+          {queue && (queue.bankTransactions + queue.reconciliationExceptions + queue.jeAwaitingApproval + queue.escalationsToRespond === 0) && (
+            <EmptyState icon={CheckCircle2} title={tc("empty_states.today_no_attention_title")} description={tc("empty_states.today_no_attention_desc")} />
+          )}
+          {queue && (queue.bankTransactions + queue.reconciliationExceptions + queue.jeAwaitingApproval + queue.escalationsToRespond > 0) && (
             <div style={{ marginTop: 4 }}>
               <QueueRow
                 count={queue.bankTransactions}

@@ -3,6 +3,9 @@ import { useTranslation } from "react-i18next";
 import { Plus, Trash2, Search, Lock, X, FileText, Clock, CheckCircle2, AlertCircle, RotateCcw, Save, Calendar, Sparkles } from "lucide-react";
 import LtrText from "../../components/shared/LtrText";
 import useEscapeKey from "../../hooks/useEscapeKey";
+import SharedEmptyState from "../../components/shared/EmptyState";
+import Spinner from "../../components/shared/Spinner";
+import { mustBalance } from "../../utils/validation";
 import {
   getManualJEs,
   getManualJEById,
@@ -65,6 +68,7 @@ const TABS = [
 
 export default function ManualJEScreen({ onOpenAminah }) {
   const { t } = useTranslation("manual-je");
+  const { t: tc } = useTranslation("common");
   const [activeTab, setActiveTab] = useState("drafts");
   const [drafts, setDrafts] = useState([]);
   const [recent, setRecent] = useState([]);
@@ -198,9 +202,11 @@ export default function ManualJEScreen({ onOpenAminah }) {
         {/* List */}
         <div style={{ flex: 1, overflowY: "auto" }}>
           {listForTab().length === 0 ? (
-            <div style={{ padding: 24, textAlign: "center", color: COLORS.textFaint, fontSize: 12 }}>
-              {t("empty_list", { tab: t(`tab_names.${activeTab}`) })}
-            </div>
+            <SharedEmptyState
+              icon={FileText}
+              title={tc(`empty_states.manual_je_${activeTab}_title`)}
+              description={tc(`empty_states.manual_je_${activeTab}_desc`)}
+            />
           ) : (
             listForTab().map((item) => {
               const isTemplate = activeTab === "templates";
@@ -392,6 +398,7 @@ function ListItem({ item, tab, selected, onClick }) {
 
 function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedule, onPostNow, onSaveTemplate, onAskAminah }) {
   const { t } = useTranslation("manual-je");
+  const { t: tc } = useTranslation("common");
   const isPosted = je.status === "posted";
   const isScheduled = je.status === "scheduled";
   const isDraft = je.status === "draft";
@@ -403,13 +410,20 @@ function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedul
 
   const validation = (() => {
     const td = je.lines.reduce((s, l) => s + (l.debit || 0), 0);
-    const tc = je.lines.reduce((s, l) => s + (l.credit || 0), 0);
+    const totalCr = je.lines.reduce((s, l) => s + (l.credit || 0), 0);
     const errors = [];
+    if (je.lines.length < 2) {
+      errors.push(tc("validation.min_lines"));
+    }
     je.lines.forEach((l, i) => {
       if (!l.accountCode && (l.debit || l.credit)) errors.push(t("lines.line_account_not_selected", { n: i + 1 }));
       if (l.debit > 0 && l.credit > 0) errors.push(t("lines.line_both", { n: i + 1 }));
     });
-    return { totalDebits: td, totalCredits: tc, difference: Number((td - tc).toFixed(3)), isBalanced: Math.abs(td - tc) < 0.0001 && td > 0, errors };
+    const balanceCheck = mustBalance(td, totalCr);
+    if (balanceCheck && td > 0) {
+      errors.push(tc(balanceCheck.key));
+    }
+    return { totalDebits: td, totalCredits: totalCr, difference: Number((td - totalCr).toFixed(3)), isBalanced: Math.abs(td - totalCr) < 0.0001 && td > 0 && je.lines.length >= 2, errors };
   })();
 
   const updateField = async (field, value) => {

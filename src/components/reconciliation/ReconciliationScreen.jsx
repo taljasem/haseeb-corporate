@@ -223,13 +223,11 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
   const exceptionsRef = useRef(null);
   const [matchedExpanded, setMatchedExpanded] = useState({ bank: false, ledger: false });
 
-  // Auto-match banner on first load
+  // Auto-match banner on first load — PersistentBanner handles dismiss timing
   useEffect(() => {
     if (rec && rec.id !== bannerShownRef.current) {
       bannerShownRef.current = rec.id;
       setBannerVisible(true);
-      const t = setTimeout(() => setBannerVisible(false), 5000);
-      return () => clearTimeout(t);
     }
   }, [rec?.id]);
 

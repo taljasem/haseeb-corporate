@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ChevronRight, MessageCircle, ArrowUpRight, CheckCircle2, Clock, XCircle, AlertCircle, X } from "lucide-react";
 import {
   getActiveBudget,
   getActiveBudgetSummary,
@@ -14,8 +14,18 @@ import {
   approveDepartment,
   requestDepartmentRevision,
   requestBudgetChanges,
+  getBudgetForYear,
+  updateBudgetLine,
+  deleteBudgetLine,
+  createBudgetLine,
+  addBudgetLineComment,
+  getBudgetLineComments,
+  deleteBudgetLineComment,
+  getBudgetApprovalState,
 } from "../../engine/mockEngine";
 import AminahNarrationCard from "../financial/AminahNarrationCard";
+import ActionButton from "../ds/ActionButton";
+import PersistentBanner from "../ds/PersistentBanner";
 import BudgetStatusPill from "./BudgetStatusPill";
 import BudgetSummaryStrip from "./BudgetSummaryStrip";
 import DepartmentRow from "./DepartmentRow";
@@ -53,12 +63,78 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
   const [refreshKey, setRefreshKey] = useState(0);
   const [delegateOpen, setDelegateOpen] = useState(false);
   const [toast, setToast] = useState(null);
+  // 20D-5 additions
+  const [viewingYear, setViewingYear] = useState(null); // null = current budget
+  const [historicalBudget, setHistoricalBudget] = useState(null);
+  const [editingLineId, setEditingLineId] = useState(null);
+  const [editingLineData, setEditingLineData] = useState(null);
+  const [commentLineId, setCommentLineId] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [commentDraft, setCommentDraft] = useState("");
+  const [approvalState, setApprovalState] = useState(null);
+  const [approvalOpen, setApprovalOpen] = useState(false);
+  const readOnly = viewingYear !== null;
+  const activeBudget = readOnly ? historicalBudget : budget;
   const showToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(null), 2600);
   };
   const periodRef = useRef(null);
   const refresh = () => setRefreshKey((k) => k + 1);
+
+  // Historical year handlers
+  const switchToYear = async (year) => {
+    const currentYear = budget?.period?.fiscalYear || 2026;
+    if (year === currentYear) { setViewingYear(null); setHistoricalBudget(null); return; }
+    const hist = await getBudgetForYear(year);
+    setHistoricalBudget(hist);
+    setViewingYear(year);
+  };
+
+  // Edit line handlers
+  const startEditLine = (line) => { setEditingLineId(line.id || line.code); setEditingLineData({ ...line }); };
+  const cancelEditLine = () => { setEditingLineId(null); setEditingLineData(null); };
+  const saveEditLine = async () => {
+    if (!editingLineData) return;
+    await updateBudgetLine(editingLineId, editingLineData);
+    setEditingLineId(null); setEditingLineData(null);
+    refresh(); showToast(t("edit.save_button"));
+  };
+  const handleDeleteLine = async (lineId) => {
+    if (!window.confirm(t("edit.delete_confirm"))) return;
+    await deleteBudgetLine(lineId);
+    refresh(); showToast(t("edit.delete_button"));
+  };
+
+  // Comment handlers
+  const openComments = async (lineId) => {
+    if (commentLineId === lineId) { setCommentLineId(null); return; }
+    setCommentLineId(lineId);
+    const c = await getBudgetLineComments(lineId);
+    setComments(c || []);
+  };
+  const postComment = async () => {
+    if (!commentDraft.trim() || !commentLineId) return;
+    const author = role === "Owner" ? "owner" : role === "Junior" ? "junior" : "cfo";
+    await addBudgetLineComment(commentLineId, commentDraft.trim(), author);
+    setCommentDraft("");
+    const c = await getBudgetLineComments(commentLineId);
+    setComments(c || []);
+  };
+  const handleDeleteComment = async (commentId) => {
+    if (!commentLineId) return;
+    await deleteBudgetLineComment(commentLineId, commentId);
+    const c = await getBudgetLineComments(commentLineId);
+    setComments(c || []);
+  };
+
+  // Approval state handler
+  const openApprovalState = async () => {
+    if (!budget?.id) return;
+    const state = await getBudgetApprovalState(budget.id);
+    setApprovalState(state);
+    setApprovalOpen(true);
+  };
 
   useEffect(() => {
     getAllBudgets().then((list) => {
@@ -339,25 +415,40 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                 {t("actions.export_pdf")}
               </button>
             )}
-            {role === "CFO" && (
-              <button
-                style={{
-                  background: "var(--accent-primary)",
-                  color: "#fff",
-                  border: "none",
-                  padding: "8px 14px",
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  fontFamily: "inherit",
-                }}
-              >
-                {t("actions.edit_budget")}
+            {role === "CFO" && !readOnly && (
+              <ActionButton variant="primary" label={t("actions.edit_budget")} onClick={() => {}} />
+            )}
+            {/* Approval state pill */}
+            {budget && !readOnly && (
+              <button onClick={openApprovalState} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", padding: "4px 10px", borderRadius: 12, background: budget.status === "approved" || budget.status === "active" ? "rgba(0,196,140,0.1)" : budget.status === "rejected" ? "rgba(239,68,68,0.1)" : "rgba(245,166,35,0.1)", border: `1px solid ${budget.status === "approved" || budget.status === "active" ? "rgba(0,196,140,0.3)" : budget.status === "rejected" ? "rgba(239,68,68,0.3)" : "rgba(245,166,35,0.3)"}`, color: budget.status === "approved" || budget.status === "active" ? "var(--accent-primary)" : budget.status === "rejected" ? "var(--semantic-danger)" : "var(--semantic-warning)", cursor: "pointer", fontFamily: "inherit" }}>
+                {budget.status === "approved" || budget.status === "active" ? <CheckCircle2 size={10} /> : budget.status === "rejected" ? <XCircle size={10} /> : <Clock size={10} />}
+                {t(`approval.${budget.status === "active" ? "approved" : budget.status}`)}
               </button>
+            )}
+            {/* Historical year buttons */}
+            {role !== "Junior" && (
+              <div style={{ display: "flex", gap: 4 }}>
+                {[2024, 2025, 2026].map((yr) => (
+                  <button key={yr} onClick={() => switchToYear(yr)} style={{ fontSize: 10, fontWeight: 600, padding: "4px 10px", borderRadius: 12, background: (viewingYear === yr || (viewingYear === null && yr === (budget?.period?.fiscalYear || 2026))) ? "rgba(0,196,140,0.08)" : "transparent", border: (viewingYear === yr || (viewingYear === null && yr === (budget?.period?.fiscalYear || 2026))) ? "1px solid rgba(0,196,140,0.3)" : "1px solid rgba(255,255,255,0.08)", color: (viewingYear === yr || (viewingYear === null && yr === (budget?.period?.fiscalYear || 2026))) ? "var(--accent-primary)" : "var(--text-tertiary)", cursor: "pointer", fontFamily: "inherit" }}>
+                    {yr === (budget?.period?.fiscalYear || 2026) ? t("historical.current", { year: yr }) : yr}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
         </div>
+
+        {/* Read-only historical banner */}
+        {readOnly && (
+          <PersistentBanner
+            open={true}
+            onDismiss={() => { setViewingYear(null); setHistoricalBudget(null); }}
+            title={t("historical.read_only_banner", { year: viewingYear })}
+            body={<ActionButton variant="tertiary" size="sm" label={t("historical.back")} onClick={() => { setViewingYear(null); setHistoricalBudget(null); }} />}
+            variant="info"
+            dismissible
+          />
+        )}
 
         {/* Workflow status strip — shown for non-active budgets or pending approval */}
         {budget && role !== "Junior" && budget.status !== "active" && budget.status !== "closed" && (
@@ -541,6 +632,74 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
           showToast(t("toast.delegated", { count }));
         }}
       />
+
+      {/* Approval workflow slide-over */}
+      {approvalOpen && approvalState && (
+        <>
+          <div onClick={() => setApprovalOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 300 }} />
+          <div style={{ position: "fixed", top: 0, insetInlineEnd: 0, bottom: 0, width: 420, maxWidth: "calc(100vw - 32px)", background: "var(--bg-surface-raised)", borderInlineStart: "1px solid rgba(255,255,255,0.10)", zIndex: 301, boxShadow: "-24px 0 60px rgba(0,0,0,0.7)", display: "flex", flexDirection: "column" }}>
+            <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: "var(--text-primary)" }}>{t("approval.workflow_title")}</div>
+              <button onClick={() => setApprovalOpen(false)} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer" }}><X size={16} /></button>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: "16px 22px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                {approvalState.status === "approved" || approvalState.status === "active" ? <CheckCircle2 size={20} color="var(--accent-primary)" /> : <Clock size={20} color="var(--semantic-warning)" />}
+                <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>{t(`approval.${approvalState.status === "active" ? "approved" : approvalState.status}`)}</div>
+              </div>
+              <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 16 }}>{t("approval.next_action", { action: approvalState.nextAction })}</div>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 8 }}>REVIEWERS</div>
+              {(approvalState.reviewers || []).map((r, i) => (
+                <div key={i} style={{ padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", fontSize: 12, display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "var(--text-primary)" }}>{r.role}</span>
+                  <span style={{ color: r.status === "approved" ? "var(--accent-primary)" : "var(--text-tertiary)", fontWeight: 600, fontSize: 10 }}>{r.status.toUpperCase()}</span>
+                </div>
+              ))}
+              {(approvalState.history || []).length > 0 && (
+                <>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginTop: 16, marginBottom: 8 }}>WORKFLOW HISTORY</div>
+                  {approvalState.history.map((h, i) => (
+                    <div key={i} style={{ padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.03)", fontSize: 11, color: "var(--text-tertiary)" }}>
+                      <span style={{ color: "var(--text-secondary)" }}>{h.fromState || "—"} → {h.toState}</span>
+                      {h.byUserId && <span> · {h.byUserId}</span>}
+                      {h.note && <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 2, fontStyle: "italic" }}>{h.note}</div>}
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Comment thread panel (inline below budget table) */}
+      {commentLineId && (
+        <div style={{ position: "fixed", bottom: 0, insetInlineEnd: 0, width: 380, maxWidth: "calc(100vw - 32px)", background: "var(--bg-surface-raised)", borderInlineStart: "1px solid rgba(255,255,255,0.10)", borderTop: "1px solid rgba(255,255,255,0.10)", zIndex: 250, boxShadow: "-8px -8px 24px rgba(0,0,0,0.5)", display: "flex", flexDirection: "column", maxHeight: "50vh" }}>
+          <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)" }}>{t("comments.title", { count: comments.length })}</div>
+            <button onClick={() => setCommentLineId(null)} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer" }}><X size={14} /></button>
+          </div>
+          <div style={{ flex: 1, overflowY: "auto", padding: "10px 16px" }}>
+            {comments.length === 0 ? (
+              <div style={{ fontSize: 11, color: "var(--text-tertiary)", textAlign: "center", padding: 16 }}>{t("comments.empty")}</div>
+            ) : comments.map((c) => (
+              <div key={c.id} style={{ marginBottom: 10, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--text-tertiary)", marginBottom: 3 }}>
+                  <span style={{ fontWeight: 600, color: "var(--text-secondary)" }}>{c.authorRole}</span>
+                  <span>{new Date(c.createdAt).toLocaleDateString()}</span>
+                </div>
+                <div style={{ fontSize: 12, color: "var(--text-primary)", lineHeight: 1.5 }}>{c.content}</div>
+              </div>
+            ))}
+          </div>
+          {!readOnly && (
+            <div style={{ padding: "10px 16px", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", gap: 8 }}>
+              <input value={commentDraft} onChange={(e) => setCommentDraft(e.target.value)} placeholder={t("comments.placeholder")} onKeyDown={(e) => { if (e.key === "Enter") postComment(); }} style={{ flex: 1, background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "8px 10px", color: "var(--text-primary)", fontSize: 12, fontFamily: "inherit", outline: "none" }} />
+              <ActionButton variant="primary" size="sm" label={t("comments.post_button")} onClick={postComment} disabled={!commentDraft.trim()} />
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

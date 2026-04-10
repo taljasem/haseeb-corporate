@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Circle, Clock, AlertTriangle, CheckCircle2, Paperclip, PlayCircle, X } from "lucide-react";
+import { Check, Circle, Clock, AlertTriangle, CheckCircle2, Paperclip, PlayCircle, X, RefreshCw, RotateCcw, Download, ChevronDown, ChevronRight, Shield, Eye } from "lucide-react";
 import EmptyState from "../../components/shared/EmptyState";
 import Spinner from "../../components/shared/Spinner";
 import AminahNarrationCard from "../../components/financial/AminahNarrationCard";
 import Avatar from "../../components/taskbox/Avatar";
 import LtrText from "../../components/shared/LtrText";
 import { useTenant } from "../../components/shared/TenantContext";
+import ActionButton from "../../components/ds/ActionButton";
+import PersistentBanner from "../../components/ds/PersistentBanner";
+import DropZone from "../../components/ds/DropZone";
 import SubmitCloseConfirmationModal from "../../components/month-end/SubmitCloseConfirmationModal";
 import RejectCloseModal from "../../components/month-end/RejectCloseModal";
 import {
@@ -15,6 +18,15 @@ import {
   markCloseItemComplete,
   runPreCloseValidations,
   approveCloseAndSyncTask,
+  getCloseSummary,
+  exportClosePackage,
+  reopenPeriodClose,
+  recalculateCloseChecks,
+  overrideCloseCheck,
+  addCloseCheckNote,
+  getCloseCheckNotes,
+  attachCloseCheckFile,
+  getCloseCheckAttachments,
 } from "../../engine/mockEngine";
 import { emitTaskboxChange } from "../../utils/taskboxBus";
 import { formatRelativeTime } from "../../utils/relativeTime";
@@ -54,6 +66,18 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
   const [submitOpen, setSubmitOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [toast, setToast] = useState(null);
+  // 20D-5 additions
+  const [reopenOpen, setReopenOpen] = useState(false);
+  const [reopenReason, setReopenReason] = useState("");
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [closeSummary, setCloseSummary] = useState(null);
+  const [expandedCheckId, setExpandedCheckId] = useState(null);
+  const [checkNotes, setCheckNotes] = useState([]);
+  const [checkAttachments, setCheckAttachments] = useState([]);
+  const [checkNoteDraft, setCheckNoteDraft] = useState("");
+  const [overrideCheckId, setOverrideCheckId] = useState(null);
+  const [overrideReason, setOverrideReason] = useState("");
+  const [refreshingChecks, setRefreshingChecks] = useState(false);
 
   const reloadStatus = () => getCloseStatusDetail().then(setCloseStatus);
 
@@ -114,6 +138,79 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
     showToast(t("owner_approval.approved_toast"));
   };
 
+  // 20D-5 handlers
+  const handleRefreshChecks = async () => {
+    setRefreshingChecks(true);
+    await recalculateCloseChecks(period);
+    const freshData = await getMonthEndCloseTasks();
+    setData(freshData);
+    reloadStatus();
+    setRefreshingChecks(false);
+    showToast(t("checks.refresh_all"));
+  };
+
+  const handleExportClose = async () => {
+    const result = await exportClosePackage(period, "csv");
+    if (!result?.csvText) return;
+    const blob = new Blob(["\uFEFF" + result.csvText], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = result.filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(t("post_close.export_package"));
+  };
+
+  const handleReopen = async () => {
+    if (!reopenReason.trim()) return;
+    const author = role === "CFO" ? "cfo" : "owner";
+    const result = await reopenPeriodClose(period, reopenReason.trim(), author);
+    setReopenOpen(false); setReopenReason("");
+    if (result?.requiresApproval) { showToast(t("reopen.pending_approval_toast")); }
+    else if (result?.success) { showToast(t("reopen.reopened_toast")); reloadStatus(); const freshData = await getMonthEndCloseTasks(); setData(freshData); }
+    else if (result?.error) { showToast(result.error); }
+    emitTaskboxChange();
+  };
+
+  const openSummary = async () => {
+    const s = await getCloseSummary(period);
+    setCloseSummary(s);
+    setSummaryOpen(true);
+  };
+
+  const expandCheck = async (checkId) => {
+    if (expandedCheckId === checkId) { setExpandedCheckId(null); return; }
+    setExpandedCheckId(checkId);
+    const notes = await getCloseCheckNotes(period, checkId);
+    setCheckNotes(notes || []);
+    const atts = await getCloseCheckAttachments(period, checkId);
+    setCheckAttachments(atts || []);
+  };
+
+  const handleAddCheckNote = async () => {
+    if (!checkNoteDraft.trim() || !expandedCheckId) return;
+    const author = role === "CFO" ? "cfo" : "owner";
+    await addCloseCheckNote(period, expandedCheckId, checkNoteDraft.trim(), author);
+    setCheckNoteDraft("");
+    const notes = await getCloseCheckNotes(period, expandedCheckId);
+    setCheckNotes(notes || []);
+  };
+
+  const handleAttachCheckFile = async (file) => {
+    if (!expandedCheckId) return;
+    const author = role === "CFO" ? "cfo" : "owner";
+    await attachCloseCheckFile(period, expandedCheckId, file, author);
+    const atts = await getCloseCheckAttachments(period, expandedCheckId);
+    setCheckAttachments(atts || []);
+  };
+
+  const handleOverrideCheck = async () => {
+    if (!overrideReason.trim() || !overrideCheckId) return;
+    const author = role === "CFO" ? "cfo" : "owner";
+    await overrideCloseCheck(period, overrideCheckId, overrideReason.trim(), author);
+    setOverrideCheckId(null); setOverrideReason("");
+    await handleRefreshChecks();
+  };
+
   const heroAccent = role === "CFO" ? "var(--accent-primary)" : "var(--role-owner)";
   const period = closeStatus?.period || data?.period || "March 2026";
   const day = closeStatus?.day || 5;
@@ -157,6 +254,13 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
             }}
           >
             {t(`cfo.close_status_label`)} · {t(`cfo.${closePillMeta.key}`)}
+          </div>
+          {/* 20D-5: Action buttons */}
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <ActionButton variant="secondary" size="sm" icon={RefreshCw} label={t("checks.refresh_all")} onClick={handleRefreshChecks} disabled={refreshingChecks} />
+            <ActionButton variant="secondary" size="sm" icon={Download} label={t("post_close.export_package")} onClick={handleExportClose} />
+            {isLocked && <ActionButton variant="secondary" size="sm" icon={Eye} label={t("post_close.view_summary")} onClick={openSummary} />}
+            {isLocked && <ActionButton variant="secondary" size="sm" icon={RotateCcw} label={t("post_close.reopen_button")} onClick={() => setReopenOpen(true)} />}
           </div>
         </div>
       )}
@@ -316,6 +420,16 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
                 expanded={expandedItemId === task.id}
                 onToggle={() => setExpandedItemId((x) => (x === task.id ? null : task.id))}
                 onMarkComplete={handleMarkComplete}
+                cfoEditable={role === "CFO"}
+                checkExpanded={expandedCheckId === task.id}
+                onExpandCheck={() => expandCheck(task.id)}
+                checkNotes={expandedCheckId === task.id ? checkNotes : []}
+                checkAttachments={expandedCheckId === task.id ? checkAttachments : []}
+                onAddNote={handleAddCheckNote}
+                noteDraft={expandedCheckId === task.id ? checkNoteDraft : ""}
+                onNoteDraftChange={setCheckNoteDraft}
+                onAttachFile={handleAttachCheckFile}
+                onOverride={(checkId) => { setOverrideCheckId(checkId); }}
               />
             ))}
           </div>
@@ -458,12 +572,97 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
         onClose={() => setRejectOpen(false)}
         onRejected={() => { reloadStatus(); }}
       />
+
+      {/* Re-open modal */}
+      {reopenOpen && (
+        <>
+          <div onClick={() => setReopenOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
+          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 460, background: "var(--bg-surface-raised)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
+            <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)" }}>{t("reopen.modal_title")}</div>
+              <button onClick={() => setReopenOpen(false)} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer" }}><X size={16} /></button>
+            </div>
+            <div style={{ padding: "18px 22px" }}>
+              <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>{t("reopen.modal_body")}</div>
+              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 5 }}>{t("reopen.reason_label")}</div>
+              <textarea value={reopenReason} onChange={(e) => setReopenReason(e.target.value)} placeholder={t("reopen.reason_placeholder")} rows={3} style={{ width: "100%", background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, fontFamily: "inherit", outline: "none", resize: "vertical" }} />
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              <ActionButton variant="secondary" label={t("reopen.cancel_button")} onClick={() => setReopenOpen(false)} />
+              <ActionButton variant="primary" label={t("reopen.confirm_button")} onClick={handleReopen} disabled={!reopenReason.trim()} />
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Close summary slide-over */}
+      {summaryOpen && closeSummary && (
+        <>
+          <div onClick={() => setSummaryOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 300 }} />
+          <div style={{ position: "fixed", top: 0, insetInlineEnd: 0, bottom: 0, width: 520, maxWidth: "calc(100vw - 32px)", background: "var(--bg-surface-raised)", borderInlineStart: "1px solid rgba(255,255,255,0.10)", zIndex: 301, boxShadow: "-24px 0 60px rgba(0,0,0,0.7)", display: "flex", flexDirection: "column" }}>
+            <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: "var(--text-primary)" }}>{t("post_close.view_summary")}</div>
+              <button onClick={() => setSummaryOpen(false)} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer" }}><X size={16} /></button>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: "16px 22px" }}>
+              <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>{closeSummary.period}</div>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: closeSummary.status === "approved" ? "var(--accent-primary)" : "var(--semantic-warning)", padding: "2px 8px", borderRadius: 4, background: closeSummary.status === "approved" ? "rgba(0,196,140,0.1)" : "rgba(245,166,35,0.1)" }}>{closeSummary.status.toUpperCase()}</div>
+              </div>
+              {closeSummary.closedBy && <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginBottom: 12 }}>{t("post_close.closed_by", { user: closeSummary.closedBy, date: closeSummary.closedAt || "" })}</div>}
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 8 }}>CHECKS</div>
+              {(closeSummary.checks || []).map((c, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.03)", fontSize: 12 }}>
+                  <span style={{ color: "var(--text-secondary)" }}>{c.name}</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: c.status === "complete" ? "var(--accent-primary)" : "var(--semantic-warning)" }}>{c.status.toUpperCase()}</span>
+                </div>
+              ))}
+              {(closeSummary.forcedItems || []).length > 0 && (
+                <>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--semantic-warning)", marginTop: 16, marginBottom: 8 }}>OVERRIDES</div>
+                  {closeSummary.forcedItems.map((f, i) => (
+                    <div key={i} style={{ padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.03)", fontSize: 11, color: "var(--text-tertiary)" }}>
+                      Check: {f.checkId} · {f.reason} · by {f.overriddenBy}
+                    </div>
+                  ))}
+                </>
+              )}
+              <div style={{ marginTop: 16 }}>
+                <ActionButton variant="secondary" size="sm" icon={Download} label={t("post_close.export_package")} onClick={handleExportClose} />
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Override modal */}
+      {overrideCheckId && (
+        <>
+          <div onClick={() => setOverrideCheckId(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 310 }} />
+          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 420, background: "var(--bg-surface-raised)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, zIndex: 311, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
+            <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: "var(--text-primary)" }}>{t("checks.override_button")}</div>
+            </div>
+            <div style={{ padding: "16px 22px" }}>
+              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 5 }}>{t("checks.override_reason_label")}</div>
+              <textarea value={overrideReason} onChange={(e) => setOverrideReason(e.target.value)} rows={3} style={{ width: "100%", background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, fontFamily: "inherit", outline: "none", resize: "vertical" }} />
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              <ActionButton variant="secondary" label={t("reopen.cancel_button")} onClick={() => setOverrideCheckId(null)} />
+              <ActionButton variant="primary" label={t("checks.override_confirm")} onClick={handleOverrideCheck} disabled={!overrideReason.trim()} />
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Toast */}
+      {toast && <div style={{ position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)", background: "var(--accent-primary-subtle)", border: "1px solid rgba(0,196,140,0.30)", color: "var(--accent-primary)", padding: "10px 18px", borderRadius: 8, fontSize: 12, fontWeight: 500, zIndex: 400 }}>{toast}</div>}
     </div>
   );
 }
 
 // ── Checklist row with CFO sub-form ───────────────────────────────
-function ChecklistRow({ task, editable, expanded, onToggle, onMarkComplete }) {
+function ChecklistRow({ task, editable, expanded, onToggle, onMarkComplete, cfoEditable, checkExpanded, onExpandCheck, checkNotes, checkAttachments, onAddNote, noteDraft, onNoteDraftChange, onAttachFile, onOverride }) {
   const { t } = useTranslation("close");
   const s = STATUS[task.status] || STATUS.pending;
   const Icon = s.Icon;
@@ -632,6 +831,47 @@ function ChecklistRow({ task, editable, expanded, onToggle, onMarkComplete }) {
               {completing ? <><Spinner size={13} />&nbsp;{t("cfo.item_completing")}</> : t("cfo.item_mark_complete")}
             </button>
           </div>
+        </div>
+      )}
+
+      {/* 20D-5: CFO-editable check expand — notes, attachments, override */}
+      {cfoEditable && (
+        <div style={{ paddingInlineStart: 40 }}>
+          <button onClick={onExpandCheck} style={{ fontSize: 10, color: "var(--text-tertiary)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", padding: "4px 0", display: "flex", alignItems: "center", gap: 4 }}>
+            {checkExpanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+            {t("checks.notes_header")} · {t("checks.attachments_header")}
+          </button>
+          {checkExpanded && (
+            <div style={{ padding: "8px 0 12px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+              {/* Notes */}
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 4 }}>{t("checks.notes_header")}</div>
+                {(checkNotes || []).length === 0 ? (
+                  <div style={{ fontSize: 11, color: "var(--text-tertiary)", fontStyle: "italic" }}>No notes yet</div>
+                ) : (checkNotes || []).map((n) => (
+                  <div key={n.id} style={{ fontSize: 11, color: "var(--text-secondary)", padding: "3px 0", borderBottom: "1px solid rgba(255,255,255,0.02)" }}>
+                    <span style={{ fontWeight: 600, fontSize: 10, color: "var(--text-tertiary)" }}>{n.user}</span> · {n.note}
+                  </div>
+                ))}
+                <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                  <input value={noteDraft} onChange={(e) => onNoteDraftChange(e.target.value)} placeholder={t("checks.add_note_button")} onKeyDown={(e) => { if (e.key === "Enter") onAddNote(); }} style={{ flex: 1, background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 4, padding: "5px 8px", color: "var(--text-primary)", fontSize: 11, fontFamily: "inherit", outline: "none" }} />
+                  <ActionButton variant="secondary" size="sm" label={t("checks.add_note_button")} onClick={onAddNote} disabled={!noteDraft?.trim()} />
+                </div>
+              </div>
+              {/* Attachments */}
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 4 }}>{t("checks.attachments_header")}</div>
+                {(checkAttachments || []).length > 0 && (checkAttachments || []).map((a) => (
+                  <div key={a.id} style={{ fontSize: 11, color: "var(--text-secondary)", padding: "3px 0" }}>📎 {a.name} ({Math.round(a.size / 1024)} KB)</div>
+                ))}
+                <DropZone variant="compact" height={50} title={t("checks.attach_file_button")} onFile={onAttachFile} accept="application/pdf,image/*" maxSize={5 * 1024 * 1024} />
+              </div>
+              {/* Override */}
+              {!isDone && (
+                <ActionButton variant="secondary" size="sm" icon={Shield} label={t("checks.override_button")} onClick={() => onOverride(task.id)} />
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

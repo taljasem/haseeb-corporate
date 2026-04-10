@@ -217,12 +217,12 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
             if (isPeriodReopenApproval && task.linkedItem?.periodKey) {
               await approvePeriodReopen(task.linkedItem.periodKey, author);
               await engineCompleteTask(task.id, "Period re-open approved.", author);
-              setToast("Period re-open approved");
+              setToast(t("toast.period_reopen_approved"));
               setTimeout(() => setToast(null), 2600);
             } else if (isReconciliationApproval && task.linkedItem?.reconciliationId) {
               await approveReconciliationCompletion(task.linkedItem.reconciliationId, author);
               await engineCompleteTask(task.id, "Reconciliation approved.", author);
-              setToast("Reconciliation approved");
+              setToast(t("toast.reconciliation_approved"));
               setTimeout(() => setToast(null), 2600);
             } else if (isCloseApproval) {
               await approveCloseAndSyncTask(task.linkedItem?.period || null);
@@ -247,12 +247,12 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
             if (isPeriodReopenApproval && task.linkedItem?.periodKey) {
               await rejectPeriodReopen(task.linkedItem.periodKey, author, note || "");
               await engineCompleteTask(task.id, `Period re-open rejected: ${note || "No reason given"}`, author);
-              setToast("Period re-open rejected");
+              setToast(t("toast.period_reopen_rejected"));
               setTimeout(() => setToast(null), 2600);
             } else if (isReconciliationApproval && task.linkedItem?.reconciliationId) {
               await rejectReconciliationCompletion(task.linkedItem.reconciliationId, author, note || "");
               await engineCompleteTask(task.id, `Reconciliation rejected: ${note || "No reason given"}`, author);
-              setToast("Reconciliation rejected");
+              setToast(t("toast.reconciliation_rejected"));
               setTimeout(() => setToast(null), 2600);
             } else if (isCloseApproval) {
               await rejectCloseAndSyncTask(task.linkedItem?.period || null, note || "");

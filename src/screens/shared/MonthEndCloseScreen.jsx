@@ -81,6 +81,16 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
 
   const reloadStatus = () => getCloseStatusDetail().then(setCloseStatus);
 
+  // Auto-refresh on window focus
+  useEffect(() => {
+    const onFocus = () => {
+      getMonthEndCloseTasks().then(setData);
+      reloadStatus();
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, []);
+
   useEffect(() => {
     getMonthEndCloseTasks().then(setData);
     reloadStatus();

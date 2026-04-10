@@ -125,13 +125,19 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
     refresh();
   };
 
+  // Bulk action picker popovers
+  const [catPickerOpen, setCatPickerOpen] = useState(false);
+  const [assignPickerOpen, setAssignPickerOpen] = useState(false);
+
   // Bulk actions
   const handleBulkCategorize = async (code) => {
+    setCatPickerOpen(false);
     const result = await bulkCategorizeTransactions([...checkedIds], code, "cfo");
     showToast(t("bulk.applied_toast", { count: result.updated }));
     clearSelection(); refresh();
   };
   const handleBulkAssign = async (assigneeId) => {
+    setAssignPickerOpen(false);
     const result = await bulkAssignTransactions([...checkedIds], assigneeId, "cfo");
     showToast(t("bulk.applied_toast", { count: result.updated }));
     clearSelection(); refresh();
@@ -199,8 +205,14 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
               <span style={{ fontSize: 12, fontWeight: 600, color: "var(--accent-primary)" }}>{t("bulk.selected_count", { count: checkedIds.size })}</span>
               <button onClick={selectAllVisible} style={{ fontSize: 10, color: "var(--accent-primary)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", textDecoration: "underline" }}>{t("bulk.select_all_visible")}</button>
               <span style={{ width: 1, height: 14, background: "rgba(255,255,255,0.08)" }} />
-              <ActionButton variant="secondary" size="sm" icon={Tag} label={t("bulk.actions.categorize_all")} onClick={() => { const first = categories[0]; if (first) handleBulkCategorize(first.code); }} />
-              <ActionButton variant="secondary" size="sm" icon={UserPlus} label={t("bulk.actions.assign_to")} onClick={() => { const first = teamMembers[0]; if (first) handleBulkAssign(first.id || "sara"); }} />
+              <div style={{ position: "relative" }}>
+                <ActionButton variant="secondary" size="sm" icon={Tag} label={t("bulk.actions.categorize_all")} onClick={() => setCatPickerOpen(!catPickerOpen)} />
+                {catPickerOpen && <PickerPopover items={categories.map(c => ({ id: c.code, label: `${c.code} ${c.name}` }))} onSelect={(id) => handleBulkCategorize(id)} onClose={() => setCatPickerOpen(false)} />}
+              </div>
+              <div style={{ position: "relative" }}>
+                <ActionButton variant="secondary" size="sm" icon={UserPlus} label={t("bulk.actions.assign_to")} onClick={() => setAssignPickerOpen(!assignPickerOpen)} />
+                {assignPickerOpen && <PickerPopover items={[{ id: "", label: t("filters.assignee_unassigned") }, ...teamMembers.map(m => ({ id: m.id || m.userId, label: m.name }))]} onSelect={(id) => handleBulkAssign(id)} onClose={() => setAssignPickerOpen(false)} />}
+              </div>
               <ActionButton variant="secondary" size="sm" icon={Sparkles} label={t("bulk.actions.create_rule")} onClick={handleBulkCreateRule} />
               <ActionButton variant="secondary" size="sm" icon={Download} label={t("bulk.actions.export")} onClick={handleBulkExport} />
               <ActionButton variant="secondary" size="sm" icon={CheckCircle2} label={t("bulk.actions.mark_reviewed")} onClick={handleBulkMarkReviewed} />
@@ -269,3 +281,25 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
 }
 
 // BulkBtn, SortHeader, FilterDropdown removed — replaced by ds/ primitives
+
+function PickerPopover({ items, onSelect, onClose }) {
+  const [search, setSearch] = useState("");
+  const filtered = items.filter(i => !search || i.label.toLowerCase().includes(search.toLowerCase()));
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 200 }} />
+      <div style={{ position: "absolute", top: "100%", insetInlineStart: 0, marginTop: 4, width: 240, maxHeight: 280, background: "var(--bg-surface-raised)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, boxShadow: "0 8px 24px rgba(0,0,0,0.5)", zIndex: 201, display: "flex", flexDirection: "column" }}>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..." autoFocus style={{ margin: "8px 8px 4px", padding: "6px 10px", background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, color: "var(--text-primary)", fontSize: 11, fontFamily: "inherit", outline: "none" }} />
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          {filtered.map(item => (
+            <button key={item.id} onClick={() => onSelect(item.id)} style={{ display: "block", width: "100%", padding: "7px 12px", background: "transparent", border: "none", color: "var(--text-primary)", fontSize: 11, cursor: "pointer", fontFamily: "inherit", textAlign: "start" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,196,140,0.06)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}

@@ -8,7 +8,11 @@
     "task_sent": "تم إرسال المهمة إلى {{name}}",
     "budget_approved": "تم اعتماد الميزانية وتفعيلها",
     "change_request_sent": "تم إرسال طلب التعديل إلى المدير المالي",
-    "request_cancelled": "تم إلغاء الطلب"
+    "request_cancelled": "تم إلغاء الطلب",
+    "reconciliation_approved": "تمت الموافقة على التسوية",
+    "reconciliation_rejected": "تم رفض التسوية",
+    "period_reopen_approved": "تمت الموافقة على إعادة فتح الفترة",
+    "period_reopen_rejected": "تم رفض إعادة فتح الفترة"
   },
   "filters": {
     "all": "الكل",

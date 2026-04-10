@@ -8,7 +8,11 @@
     "task_sent": "Task sent to {{name}}",
     "budget_approved": "Budget approved and activated",
     "change_request_sent": "Sent change request to CFO",
-    "request_cancelled": "Request cancelled"
+    "request_cancelled": "Request cancelled",
+    "reconciliation_approved": "Reconciliation approved",
+    "reconciliation_rejected": "Reconciliation rejected",
+    "period_reopen_approved": "Period re-open approved",
+    "period_reopen_rejected": "Period re-open rejected"
   },
   "filters": {
     "all": "All",

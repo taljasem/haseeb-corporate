@@ -50,7 +50,7 @@ function HeaderCell({ children, align = "left" }) {
   );
 }
 
-export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId = null }) {
+export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId = null, onViewInForecast }) {
   const { t } = useTranslation("budget");
   const [allBudgets, setAllBudgets] = useState([]);
   const [selectedId, setSelectedId] = useState(null);

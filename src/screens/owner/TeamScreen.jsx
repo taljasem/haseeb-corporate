@@ -11,6 +11,7 @@ import {
   getTeamMembersWithResponsibilities,
   addTeamMember,
   removeTeamMember,
+  getTeamActivityLog,
 } from "../../engine/mockEngine";
 import { formatRelativeTime } from "../../utils/relativeTime";
 
@@ -30,6 +31,8 @@ export default function TeamScreen() {
   const [toast, setToast] = useState(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [removingMember, setRemovingMember] = useState(null);
+  const [activityMember, setActivityMember] = useState(null);
+  const [activityLog, setActivityLog] = useState([]);
   const [sortField, setSortField] = useState("name");
   const [sortDir, setSortDir] = useState("asc");
   const [statusFilter, setStatusFilter] = useState([]);
@@ -117,7 +120,7 @@ export default function TeamScreen() {
             const isOwner = m.role === "owner";
             return (
               <div key={m.id} style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 100px 90px 100px 120px", gap: 12, alignItems: "center", padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                <div onClick={async () => { setActivityMember(m); const log = await getTeamActivityLog(m.id, 10); setActivityLog(log || []); }} style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, cursor: "pointer" }}>
                   <Avatar person={m} size={30} />
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.name}</div>
@@ -170,6 +173,32 @@ export default function TeamScreen() {
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
               <ActionButton variant="secondary" label={t("remove.cancel_button")} onClick={() => setRemovingMember(null)} />
               <button onClick={handleRemove} style={{ background: "var(--semantic-danger)", color: "#fff", border: "none", padding: "8px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>{t("remove.confirm_button")}</button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Activity slide-over */}
+      {activityMember && (
+        <>
+          <div onClick={() => setActivityMember(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 300 }} />
+          <div style={{ position: "fixed", top: 0, insetInlineEnd: 0, bottom: 0, width: 400, maxWidth: "calc(100vw - 32px)", background: "var(--bg-surface-raised)", borderInlineStart: "1px solid rgba(255,255,255,0.10)", zIndex: 301, boxShadow: "-24px 0 60px rgba(0,0,0,0.7)", display: "flex", flexDirection: "column" }}>
+            <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>{activityMember.name}</div>
+                <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 2 }}>{activityMember.role?.toUpperCase()} · Activity log</div>
+              </div>
+              <button onClick={() => setActivityMember(null)} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer" }}><X size={16} /></button>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: "12px 22px" }}>
+              {activityLog.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-tertiary)", fontSize: 12 }}>No recent activity</div>
+              ) : activityLog.map((e) => (
+                <div key={e.id} style={{ padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.03)", display: "flex", gap: 10, fontSize: 11 }}>
+                  <span style={{ fontSize: 10, color: "var(--text-tertiary)", fontFamily: "'DM Mono', monospace", minWidth: 60 }}>{formatRelativeTime(e.timestamp)}</span>
+                  <span style={{ color: "var(--text-secondary)" }}>{e.detail}</span>
+                </div>
+              ))}
             </div>
           </div>
         </>

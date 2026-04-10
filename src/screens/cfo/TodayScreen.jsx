@@ -94,7 +94,7 @@ function QueueRow({ count, label, onClick, itemId }) {
       >
         <AssignToButton itemType="review-queue" itemId={itemId} compact onAssign={() => {}} />
       </span>
-      <span style={{ color: "var(--text-tertiary)", fontSize: 14 }}><DirArrow /></span>
+      <span style={{ color: "var(--text-tertiary)", fontSize: 14, opacity: hover ? 1 : 0.5, transition: "opacity 0.15s, transform 0.15s", transform: hover ? "translateX(2px)" : "none" }}><DirArrow /></span>
     </div>
   );
 }

@@ -36,6 +36,7 @@ export default function CFOView({ registerNav }) {
   const [initialTaskboxFilter, setInitialTaskboxFilter] = useState(null);
   const [newTaskOpen, setNewTaskOpen] = useState(false);
   const [newTaskPrefill, setNewTaskPrefill] = useState(null);
+  const [forecastHighlight, setForecastHighlight] = useState(null);
 
   const openNewTask = (prefill = null) => {
     setNewTaskPrefill(prefill);
@@ -95,7 +96,7 @@ export default function CFOView({ registerNav }) {
       case "rules":
         return <RulesScreen />;
       case "budget":
-        return <BudgetScreen role="CFO" onOpenAminah={openAminah} />;
+        return <BudgetScreen role="CFO" onOpenAminah={openAminah} onViewInForecast={(code) => { setForecastHighlight(code); setActiveScreen("forecast"); }} />;
       case "bank-accounts":
         return <BankAccountsScreen role="CFO" />;
       case "reconciliation":
@@ -119,7 +120,7 @@ export default function CFOView({ registerNav }) {
       case "month-end-close":
         return <MonthEndCloseScreen role="CFO" onNavigate={setActive} />;
       case "forecast":
-        return <ForecastScreen onOpenAminah={openAminah} />;
+        return <ForecastScreen onOpenAminah={openAminah} highlightCode={forecastHighlight} onHighlightConsumed={() => setForecastHighlight(null)} />;
       case "variance-analysis":
         return <VarianceAnalysisScreen onOpenAminah={openAminah} />;
       case "aging-reports":

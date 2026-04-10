@@ -7914,3 +7914,25 @@ export async function getTeamActivityLog(memberId, limit = 20) {
     { id: "ta-5", memberId, action: "login", timestamp: _daysAgo(2), detail: "Logged in" },
   ].slice(0, limit));
 }
+
+// ─── Soft-close JE post approval (20F) ─────────────────────────
+export async function approveSoftClosePost(jeId, approvedBy = "owner") {
+  await delay();
+  const j = _MANUAL_JES_DB[jeId];
+  if (!j) return null;
+  j.status = "posted";
+  j.postedAt = new Date().toISOString();
+  j.postedBy = approvedBy;
+  return _brandObj({ ...j, lines: j.lines.map((l) => ({ ...l })) });
+}
+
+export async function rejectSoftClosePost(jeId, rejectedBy = "owner", reason = "") {
+  await delay();
+  const j = _MANUAL_JES_DB[jeId];
+  if (!j) return null;
+  j.status = "draft";
+  j.rejectionReason = reason;
+  j.rejectedBy = rejectedBy;
+  j.rejectedAt = new Date().toISOString();
+  return _brandObj({ ...j });
+}

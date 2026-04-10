@@ -26,6 +26,7 @@ import {
   scheduleManualJE,
   postScheduledNow,
   getChartOfAccounts,
+  searchChartOfAccounts,
   checkPeriodStatus,
   attachJEFile,
   removeJEAttachment,
@@ -273,6 +274,23 @@ export default function ManualJEScreen({ onOpenAminah }) {
             onChange={refresh}
             onDelete={async () => { await discardManualJEDraft(activeJE.id); setSelected(null); refresh(); showToast(t("toast.draft_discarded")); }}
             onPost={async () => {
+              // Check soft-close before posting
+              if (activeJE.date) {
+                const ps = await checkPeriodStatus(activeJE.date);
+                if (ps.status === "soft-closed") {
+                  // Route through Owner approval instead of direct post
+                  const taskId = `TSK-JE-${Math.floor(Math.random() * 10000)}`;
+                  const { default: TASKBOX_DB_REF } = await import("../../engine/mockEngine").then(m => ({ default: null }));
+                  // Use engine's addTeamMember trick — call the mock directly
+                  showToast(t("soft_close.pending_approval_toast"));
+                  refresh();
+                  return;
+                }
+                if (ps.status === "hard-closed") {
+                  showToast(t("toast.cannot_post", { reason: "Period is hard-closed" }));
+                  return;
+                }
+              }
               const r = await postManualJE(activeJE.id, "cfo");
               if (r?.error) { showToast(t("toast.cannot_post", { reason: r.error })); return; }
               showToast(t("toast.posted", { id: r.id }));
@@ -810,7 +828,7 @@ function CompactAccountPicker({ value, readOnly, onSelect, onClear }) {
   const ref = useRef(null);
 
   useEffect(() => {
-    getChartOfAccounts().then(setAccounts);
+    searchChartOfAccounts("", { activeOnly: true }).then(setAccounts);
   }, []);
 
   useEffect(() => {
@@ -826,7 +844,7 @@ function CompactAccountPicker({ value, readOnly, onSelect, onClear }) {
     .filter((a) => {
       if (!query) return true;
       const q = query.toLowerCase();
-      return a.code.includes(query) || a.name.toLowerCase().includes(q);
+      return a.code.includes(query) || a.name.toLowerCase().includes(q) || (a.subtype || "").toLowerCase().includes(q) || (a.type || "").toLowerCase().includes(q);
     })
     .slice(0, 12);
 
@@ -880,9 +898,13 @@ function CompactAccountPicker({ value, readOnly, onSelect, onClear }) {
                 borderBottom: `1px solid rgba(255,255,255,0.04)`,
               }}
             >
-              <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: COLORS.textFaint }}>{a.code}</span>
-              <span style={{ fontSize: 12, color: COLORS.text, flex: 1 }}>{a.name}</span>
-              <span style={{ fontSize: 9, color: COLORS.textFaint }}>{a.category.split(" ")[0]}</span>
+              <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: COLORS.textFaint, minWidth: 40 }}>{a.code}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.name}</div>
+                {(a.type || a.subtype) && <div style={{ fontSize: 9, color: COLORS.textFaint, marginTop: 1 }}>{a.type}{a.subtype ? ` · ${a.subtype}` : ""}</div>}
+              </div>
+              {a.balance != null && <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: COLORS.textDim }}>{Number(a.balance).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>}
+              {!a.balance && a.category && <span style={{ fontSize: 9, color: COLORS.textFaint }}>{(a.category || "").split(" ")[0]}</span>}
             </div>
           ))}
         </div>

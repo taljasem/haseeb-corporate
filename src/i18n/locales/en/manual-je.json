@@ -175,5 +175,10 @@
   },
   "badge": {
     "ai_assisted": "AI-assisted"
+  },
+  "soft_close": {
+    "pending_approval_toast": "Post submitted to Owner for approval",
+    "approved_toast": "JE post approved",
+    "rejected_toast": "JE post rejected"
   }
 }

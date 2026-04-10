@@ -16,6 +16,8 @@ import {
   rejectReconciliationCompletion,
   approvePeriodReopen,
   rejectPeriodReopen,
+  approveSoftClosePost,
+  rejectSoftClosePost,
   bulkApproveTasks,
   bulkRejectTasks,
   bulkAssignTasks,
@@ -212,9 +214,16 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
             task.type === "request-approval" && task.linkedItem?.type === "reconciliation";
           const isPeriodReopenApproval =
             task.type === "request-approval" && task.linkedItem?.type === "period_reopen";
+          const isSoftCloseJEApproval =
+            task.type === "request-approval" && task.linkedItem?.type === "soft_close_je_post";
           const budgetId = task.linkedItem?.budgetId;
           if (action === "approve") {
-            if (isPeriodReopenApproval && task.linkedItem?.periodKey) {
+            if (isSoftCloseJEApproval && task.linkedItem?.jeId) {
+              await approveSoftClosePost(task.linkedItem.jeId, author);
+              await engineCompleteTask(task.id, "JE post approved.", author);
+              setToast(t("toast.reconciliation_approved"));
+              setTimeout(() => setToast(null), 2600);
+            } else if (isPeriodReopenApproval && task.linkedItem?.periodKey) {
               await approvePeriodReopen(task.linkedItem.periodKey, author);
               await engineCompleteTask(task.id, "Period re-open approved.", author);
               setToast(t("toast.period_reopen_approved"));
@@ -244,7 +253,12 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
               await engineReplyToTask(task.id, `[Requested changes] ${note}`, author);
             }
           } else if (action === "reject") {
-            if (isPeriodReopenApproval && task.linkedItem?.periodKey) {
+            if (isSoftCloseJEApproval && task.linkedItem?.jeId) {
+              await rejectSoftClosePost(task.linkedItem.jeId, author, note || "");
+              await engineCompleteTask(task.id, `JE post rejected: ${note || "No reason given"}`, author);
+              setToast(t("toast.reconciliation_rejected"));
+              setTimeout(() => setToast(null), 2600);
+            } else if (isPeriodReopenApproval && task.linkedItem?.periodKey) {
               await rejectPeriodReopen(task.linkedItem.periodKey, author, note || "");
               await engineCompleteTask(task.id, `Period re-open rejected: ${note || "No reason given"}`, author);
               setToast(t("toast.period_reopen_rejected"));

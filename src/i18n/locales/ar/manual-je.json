@@ -175,5 +175,10 @@
   },
   "badge": {
     "ai_assisted": "بمساعدة الذكاء الاصطناعي"
+  },
+  "soft_close": {
+    "pending_approval_toast": "تم إرسال القيد إلى المالك للموافقة",
+    "approved_toast": "تمت الموافقة على نشر القيد",
+    "rejected_toast": "تم رفض نشر القيد"
   }
 }

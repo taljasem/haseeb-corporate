@@ -1,286 +1,154 @@
-import { useEffect, useState } from "react";
-import { getMockChatHistory } from "../engine/mockEngine";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { Send, Sparkles, Loader2, CheckCircle2, ChevronRight } from "lucide-react";
+import { runAminahSession } from "../engine/aminah/stubBackend";
+import { createAminahSession, listRecentAminahSessions, getAminahSession, appendMessageToSession } from "../engine/mockEngine";
 
 const PROMPTS = [
   "How am I doing?",
   "Cash position",
-  "Branches",
-  "Budget",
-  "Who owes me?",
+  "Budget status",
+  "Anything to worry about?",
 ];
 
-function MicIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <rect x="9" y="1" width="6" height="12" rx="3" />
-      <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
-      <line x1="12" y1="19" x2="12" y2="23" />
-      <line x1="8" y1="23" x2="16" y2="23" />
-    </svg>
-  );
-}
-
-/** Renders **bold** segments. Numbers inside bold use DM Mono. */
 function renderBold(text) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      const inner = part.slice(2, -2);
-      const isNumeric = /^[-+]?[\d,.]+(\s*KWD)?$|^\+\d+%/.test(inner) || /\d/.test(inner);
-      return (
-        <span
-          key={i}
-          style={{
-            color: "var(--text-primary)",
-            fontWeight: 500,
-            fontFamily: isNumeric ? "'DM Mono', monospace" : "inherit",
-          }}
-        >
-          {inner}
-        </span>
-      );
+  const parts = (text || "").split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((p, i) => {
+    if (p.startsWith("**") && p.endsWith("**")) {
+      const inner = p.slice(2, -2);
+      return <span key={i} style={{ color: "var(--text-primary)", fontWeight: 600, fontFamily: /\d/.test(inner) ? "'DM Mono', monospace" : "inherit" }}>{inner}</span>;
     }
-    return <span key={i}>{part}</span>;
+    return <span key={i}>{p}</span>;
   });
 }
 
-function ChatBubble({ msg }) {
-  const isUser = msg.role === "user";
-  return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: isUser ? "flex-end" : "flex-start",
-        marginBottom: 8,
-      }}
-    >
-      <div
-        style={{
-          maxWidth: isUser ? "80%" : "90%",
-          background: isUser ? "rgba(0,196,140,0.12)" : "var(--bg-surface-sunken)",
-          border: isUser
-            ? "1px solid rgba(0,196,140,0.20)"
-            : "1px solid rgba(255,255,255,0.08)",
-          borderRadius: 12,
-          borderBottomRightRadius: isUser ? 4 : 12,
-          borderBottomLeftRadius: isUser ? 12 : 4,
-          padding: "10px 14px",
-          fontSize: 13,
-          lineHeight: 1.55,
-          color: isUser ? "var(--text-primary)" : "var(--text-secondary)",
-        }}
-      >
-        {renderBold(msg.text)}
-      </div>
-    </div>
-  );
-}
+export default function AminahChat({ role = "cfo" }) {
+  const [messages, setMessages] = useState([]);
+  const [sessionId, setSessionId] = useState(null);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [draft, setDraft] = useState("");
+  const scrollRef = useRef(null);
+  const streamRef = useRef(null);
 
-export default function AminahChat() {
-  const [history, setHistory] = useState(null);
+  // Load or create session
   useEffect(() => {
-    getMockChatHistory().then(setHistory);
+    (async () => {
+      const recent = await listRecentAminahSessions(role, 1);
+      if (recent.length > 0) {
+        const sess = await getAminahSession(recent[0].id);
+        if (sess) { setSessionId(sess.id); setMessages(sess.messages || []); return; }
+      }
+      const sess = await createAminahSession(role);
+      setSessionId(sess.id);
+      setMessages([]);
+    })();
+  }, [role]);
+
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [messages]);
+
+  const applyEvent = useCallback((msgId, event) => {
+    setMessages((prev) => {
+      const msgs = [...prev];
+      const idx = msgs.findIndex((m) => m.id === msgId);
+      if (idx < 0) return prev;
+      const msg = { ...msgs[idx], blocks: [...msgs[idx].blocks] };
+      msgs[idx] = msg;
+      if (event.type === "message.text_delta") {
+        const last = msg.blocks[msg.blocks.length - 1];
+        if (last?.type === "text") msg.blocks[msg.blocks.length - 1] = { ...last, text: last.text + event.textDelta };
+        else msg.blocks.push({ type: "text", text: event.textDelta });
+      } else if (event.type === "message.block_added") {
+        msg.blocks.push({ ...event.block });
+      } else if (event.type === "status.update") {
+        msg.blocks.push({ type: "status", label: event.label });
+      } else if (event.type === "tool.call_started") {
+        msg.blocks.push({ type: "tool_call", toolName: event.toolName, callId: event.callId, status: "running" });
+      } else if (event.type === "tool.call_completed") {
+        const tc = msg.blocks.findIndex((b) => b.callId === event.callId);
+        if (tc >= 0) msg.blocks[tc] = { ...msg.blocks[tc], status: "complete" };
+      } else if (event.type === "message.complete") {
+        msg.complete = true;
+      }
+      return msgs;
+    });
   }, []);
 
-  // Group messages into exchanges (user → aminah pairs) for spacing.
-  const exchanges = [];
-  if (history) {
-    for (let i = 0; i < history.length; i += 2) {
-      exchanges.push(history.slice(i, i + 2));
+  const sendMessage = async (text) => {
+    if (!text.trim() || isStreaming || !sessionId) return;
+    const userMsg = { id: `msg-u-${Date.now()}`, role: "user", blocks: [{ type: "text", text: text.trim() }], createdAt: new Date().toISOString(), complete: true };
+    setMessages((prev) => [...prev, userMsg]);
+    setDraft("");
+    setIsStreaming(true);
+    const asstId = `msg-a-${Date.now()}`;
+    setMessages((prev) => [...prev, { id: asstId, role: "assistant", blocks: [], createdAt: new Date().toISOString(), complete: false }]);
+    try {
+      const gen = runAminahSession(sessionId, text.trim(), { role });
+      streamRef.current = gen;
+      for await (const event of gen) {
+        applyEvent(asstId, event);
+        if (event.type === "message.complete") break;
+      }
+      await appendMessageToSession(sessionId, userMsg);
+    } catch { /* ignore */ } finally {
+      setIsStreaming(false);
+      streamRef.current = null;
     }
-  }
+  };
 
   return (
-    <div
-      style={{
-        width: 340,
-        flexShrink: 0,
-        display: "flex",
-        flexDirection: "column",
-        padding: "16px 18px 0",
-        borderInlineEnd: "1px solid rgba(255,255,255,0.10)",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      {/* Arabic watermark — narrower clamp for the 340px column */}
-      <div
-        style={{
-          position: "absolute",
-          left: "50%",
-          top: "50%",
-          transform: "translate(-50%, -50%)",
-          fontFamily: "'Noto Sans Arabic', sans-serif",
-          fontWeight: 700,
-          fontSize: "clamp(80px, 9vw, 140px)",
-          color: "rgba(255,255,255,0.01)",
-          pointerEvents: "none",
-          userSelect: "none",
-          zIndex: 0,
-          whiteSpace: "nowrap",
-        }}
-      >
-        حسيب
-      </div>
+    <div style={{ width: 340, flexShrink: 0, display: "flex", flexDirection: "column", padding: "16px 18px 0", borderInlineEnd: "1px solid rgba(255,255,255,0.10)", position: "relative", overflow: "hidden" }}>
+      {/* Watermark */}
+      <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", fontFamily: "'Noto Sans Arabic', sans-serif", fontWeight: 700, fontSize: "clamp(80px, 9vw, 140px)", color: "rgba(255,255,255,0.01)", pointerEvents: "none", userSelect: "none", zIndex: 0, whiteSpace: "nowrap" }}>حسيب</div>
 
-      {/* Top: status + intro + prompt chips */}
+      {/* Header */}
       <div style={{ position: "relative", zIndex: 1, flexShrink: 0 }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            marginBottom: 10,
-          }}
-        >
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
           <span className="aminah-dot" />
-          <span className="aminah-label">AMINAH ONLINE</span>
+          <span className="aminah-label">{isStreaming ? "AMINAH THINKING..." : "AMINAH ONLINE"}</span>
         </div>
-        <p
-          style={{
-            fontSize: 14,
-            fontStyle: "italic",
-            lineHeight: 1.6,
-            color: "var(--text-tertiary)",
-            marginBottom: 12,
-          }}
-        >
-          Ask me anything about your business.
-        </p>
-        <div
-          style={{
-            display: "flex",
-            gap: 6,
-            flexWrap: "wrap",
-            marginBottom: 14,
-          }}
-        >
-          {PROMPTS.map((p) => (
-            <button
-              key={p}
-              className="starter"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "7px 12px",
-                background: "var(--bg-surface)",
-                border: "1px solid rgba(255,255,255,0.10)",
-                borderRadius: 14,
-                cursor: "pointer",
-                fontSize: 12,
-                color: "var(--text-tertiary)",
-                fontFamily: "inherit",
-              }}
-            >
-              <span
-                style={{
-                  width: 5,
-                  height: 5,
-                  borderRadius: "50%",
-                  background: "var(--role-owner)",
-                }}
-              />
-              {p}
-            </button>
-          ))}
-        </div>
+        {messages.length === 0 && (
+          <>
+            <p style={{ fontSize: 14, fontStyle: "italic", lineHeight: 1.6, color: "var(--text-tertiary)", marginBottom: 12 }}>Ask me anything about your business.</p>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
+              {PROMPTS.map((p) => (
+                <button key={p} onClick={() => sendMessage(p)} className="starter" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 14, cursor: "pointer", fontSize: 12, color: "var(--text-tertiary)", fontFamily: "inherit" }}>
+                  <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--role-owner)" }} />{p}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Chat history scroll */}
-      <div
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          position: "relative",
-          zIndex: 1,
-          paddingTop: 6,
-        }}
-      >
-        {exchanges.map((ex, idx) => (
-          <div
-            key={idx}
-            style={{
-              marginBottom: idx === exchanges.length - 1 ? 8 : 14,
-            }}
-          >
-            {ex.map((m, j) => (
-              <ChatBubble key={j} msg={m} />
-            ))}
+      {/* Messages */}
+      <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", position: "relative", zIndex: 1, paddingTop: 6 }}>
+        {messages.map((msg) => (
+          <div key={msg.id} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start", marginBottom: 8 }}>
+            <div style={{ maxWidth: msg.role === "user" ? "80%" : "90%", background: msg.role === "user" ? "rgba(0,196,140,0.12)" : "var(--bg-surface-sunken)", border: msg.role === "user" ? "1px solid rgba(0,196,140,0.20)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 12, borderBottomRightRadius: msg.role === "user" ? 4 : 12, borderBottomLeftRadius: msg.role === "user" ? 12 : 4, padding: "10px 14px" }}>
+              {msg.role === "user" ? (
+                <div style={{ fontSize: 13, lineHeight: 1.55, color: "var(--text-primary)" }}>{msg.blocks?.[0]?.text || ""}</div>
+              ) : (
+                (msg.blocks || []).map((block, i) => {
+                  if (block.type === "text") return <div key={i} style={{ fontSize: 13, lineHeight: 1.55, color: "var(--text-secondary)", whiteSpace: "pre-wrap" }}>{renderBold(block.text)}</div>;
+                  if (block.type === "status") return <div key={i} style={{ fontSize: 10, color: "var(--accent-primary)", display: "flex", alignItems: "center", gap: 4, padding: "2px 0" }}><Loader2 size={10} style={{ animation: "spin 1s linear infinite" }} />{block.label}</div>;
+                  if (block.type === "tool_call") return <div key={i} style={{ fontSize: 10, color: "var(--text-tertiary)", display: "flex", alignItems: "center", gap: 4, padding: "2px 0" }}>{block.status === "complete" ? <CheckCircle2 size={10} color="var(--accent-primary)" /> : <Loader2 size={10} style={{ animation: "spin 1s linear infinite" }} />}<span style={{ fontFamily: "'DM Mono', monospace" }}>{block.toolName}</span></div>;
+                  return null;
+                })
+              )}
+              {msg.role === "assistant" && !msg.complete && msg.blocks?.length === 0 && (
+                <div style={{ fontSize: 11, color: "var(--text-tertiary)", display: "flex", alignItems: "center", gap: 4 }}><Loader2 size={10} style={{ animation: "spin 1s linear infinite" }} /> Thinking...</div>
+              )}
+            </div>
           </div>
         ))}
       </div>
 
       {/* Input */}
-      <div
-        style={{
-          padding: "10px 0 16px",
-          flexShrink: 0,
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
-        <div style={{ position: "relative" }}>
-          <input
-            className="chat-input"
-            placeholder="Talk to Aminah…"
-            style={{
-              width: "100%",
-              background: "var(--bg-surface-sunken)",
-              border: "1px solid rgba(255,255,255,0.10)",
-              borderRadius: 10,
-              padding: "14px 86px 14px 16px",
-              color: "var(--text-primary)",
-              fontSize: 13,
-              fontFamily: "inherit",
-              outline: "none",
-              transition: "all 0.15s ease",
-            }}
-          />
-          <button
-            aria-label="Mic"
-            style={{
-              position: "absolute",
-              right: 46,
-              top: "50%",
-              transform: "translateY(-50%)",
-              width: 32,
-              height: 32,
-              background: "transparent",
-              border: "none",
-              borderRadius: 8,
-              color: "var(--text-tertiary)",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <MicIcon />
-          </button>
-          <button
-            className="send-btn"
-            aria-label="Send"
-            style={{
-              position: "absolute",
-              right: 7,
-              top: "50%",
-              transform: "translateY(-50%)",
-              width: 32,
-              height: 32,
-              background: "var(--accent-primary)",
-              border: "none",
-              borderRadius: 8,
-              color: "#fff",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 14,
-            }}
-          >
-            →
-          </button>
+      <div style={{ position: "relative", zIndex: 1, padding: "10px 0 14px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ display: "flex", gap: 6 }}>
+          <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") sendMessage(draft); }} placeholder="Ask Aminah..." disabled={isStreaming} style={{ flex: 1, background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, padding: "9px 12px", color: "var(--text-primary)", fontSize: 12, fontFamily: "inherit", outline: "none" }} />
+          <button onClick={() => sendMessage(draft)} disabled={!draft.trim() || isStreaming} style={{ background: draft.trim() ? "var(--accent-primary)" : "rgba(255,255,255,0.05)", color: draft.trim() ? "#fff" : "var(--text-tertiary)", border: "none", borderRadius: 8, padding: "8px 10px", cursor: draft.trim() ? "pointer" : "not-allowed", display: "flex", alignItems: "center" }}><Send size={13} /></button>
         </div>
       </div>
     </div>

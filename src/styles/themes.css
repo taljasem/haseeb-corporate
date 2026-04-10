@@ -85,12 +85,12 @@ html[data-theme="dark"] {
 }
 
 html[data-theme="light"] {
-  /* ---------------- Surfaces (3-step hierarchy) -- */
-  --bg-base:            #F1F3F7;
-  --bg-surface:         #F7F8FA;
-  --bg-surface-raised:  #FFFFFF;
-  --bg-surface-sunken:  #E9ECF1;
-  --bg-hover:           #EEF0F3;
+  /* ---------------- Surfaces (3-step hierarchy, translucent for ambient bleed-through) -- */
+  --bg-base:            #EEF1F5;
+  --bg-surface:         rgba(255, 255, 255, 0.55);
+  --bg-surface-raised:  rgba(255, 255, 255, 0.75);
+  --bg-surface-sunken:  rgba(0, 0, 0, 0.03);
+  --bg-hover:           rgba(255, 255, 255, 0.40);
   --bg-selected:        rgba(0, 166, 132, 0.08);
 
   /* ---------------- Borders (3-step hierarchy) --- */
@@ -141,18 +141,18 @@ html[data-theme="light"] {
   --pill-pending-fg:    #DC2626;
 
   /* ---------------- Header / overlay --------- */
-  --header-bg:          rgba(247, 248, 250, 0.85);
+  --header-bg:          rgba(255, 255, 255, 0.65);
   --header-border:      rgba(0, 0, 0, 0.09);
   --overlay-backdrop:   rgba(0, 0, 0, 0.35);
-  --panel-bg:           #FFFFFF;
+  --panel-bg:           rgba(255, 255, 255, 0.92);
   --panel-border:       rgba(0, 0, 0, 0.09);
   --panel-shadow:       0 12px 32px rgba(0, 0, 0, 0.12);
 
   /* ---------------- Ambient background ------- */
-  --ambient-dot-color:     rgba(0, 0, 0, 0.12);
-  --ambient-glow-teal:     rgba(0, 166, 132, 0.08);
-  --ambient-glow-purple:   rgba(139, 92, 246, 0.05);
-  --ambient-vignette:      inset 0 0 100px 30px rgba(0, 0, 0, 0.06);
+  --ambient-dot-color:     rgba(0, 0, 0, 0.18);
+  --ambient-glow-teal:     rgba(0, 166, 132, 0.12);
+  --ambient-glow-purple:   rgba(139, 92, 246, 0.08);
+  --ambient-vignette:      inset 0 0 100px 30px rgba(0, 0, 0, 0.08);
   --ambient-noise-opacity: 0.03;
 
   /* ---------------- Shadows & overlays ------ */

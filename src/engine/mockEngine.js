@@ -7369,3 +7369,58 @@ export async function shareJETemplate(templateId, sharedWithRole) {
   meta.sharedWithRole = !!sharedWithRole;
   return { ...meta };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Aminah session persistence (in-memory, wiped on page refresh)
+// ─────────────────────────────────────────────────────────────────────────────
+const _AMINAH_SESSIONS_DB = {};
+let _aminahSessionSeq = 1;
+
+export async function createAminahSession(role) {
+  await delay();
+  const id = `sess-${_aminahSessionSeq++}-${Date.now()}`;
+  const session = {
+    id,
+    role,
+    tenantId: _currentTenantId,
+    createdAt: new Date().toISOString(),
+    lastActivityAt: new Date().toISOString(),
+    messages: [],
+    metadata: { totalToolCalls: 0, totalTokens: 0, modelUsed: "stub-canned-v1" },
+  };
+  _AMINAH_SESSIONS_DB[id] = session;
+  return _brandObj({ ...session });
+}
+
+export async function getAminahSession(sessionId) {
+  await delay();
+  const s = _AMINAH_SESSIONS_DB[sessionId];
+  return s ? _brandObj({ ...s, messages: [...s.messages] }) : null;
+}
+
+export async function listRecentAminahSessions(role, limit = 10) {
+  await delay();
+  const list = Object.values(_AMINAH_SESSIONS_DB)
+    .filter((s) => s.role === role && s.tenantId === _currentTenantId)
+    .sort((a, b) => new Date(b.lastActivityAt) - new Date(a.lastActivityAt))
+    .slice(0, limit);
+  return _brandObj(list.map((s) => ({ id: s.id, role: s.role, createdAt: s.createdAt, lastActivityAt: s.lastActivityAt, messageCount: s.messages.length, preview: s.messages[0]?.blocks?.[0]?.text?.slice(0, 60) || "" })));
+}
+
+export async function deleteAminahSession(sessionId) {
+  await delay();
+  delete _AMINAH_SESSIONS_DB[sessionId];
+  return { success: true };
+}
+
+export async function appendMessageToSession(sessionId, message) {
+  await delay();
+  const s = _AMINAH_SESSIONS_DB[sessionId];
+  if (!s) return null;
+  s.messages.push(message);
+  s.lastActivityAt = new Date().toISOString();
+  if (message.blocks?.some((b) => b.type === "tool_call")) {
+    s.metadata.totalToolCalls += message.blocks.filter((b) => b.type === "tool_call").length;
+  }
+  return { success: true };
+}

@@ -1,9 +1,53 @@
 {
   "label": "AMINAH",
+  "subtitle_online": "Ready to help",
+  "subtitle_thinking": "Thinking...",
+  "subtitle_error": "Something went wrong",
   "context_prefix": "Context: {{context}}",
   "suggested_questions": "SUGGESTED QUESTIONS",
-  "input_placeholder": "Ask Aminah…",
+  "new_conversation": "New conversation",
+  "recent_sessions": "Recent",
   "close": "Close",
+  "input": {
+    "placeholder": "Ask Aminah anything about your books...",
+    "send_button": "Send",
+    "stop_button": "Stop",
+    "disclaimer": "Aminah can make mistakes. Always verify critical numbers."
+  },
+  "empty_state": {
+    "title": "Hi, I'm Aminah",
+    "subtitle": "I can help you understand your financials, spot issues, and answer questions about your books.",
+    "example_1": "What's my cash position this month?",
+    "example_2": "How are we doing vs budget?",
+    "example_3": "Is there anything I should worry about?"
+  },
+  "status": {
+    "checking_accounts": "Checking your accounts...",
+    "running_report": "Running report...",
+    "comparing_periods": "Comparing periods...",
+    "analyzing": "Analyzing...",
+    "fetching_data": "Fetching data..."
+  },
+  "tool_call": {
+    "label": "Used tool: {{name}}",
+    "input_header": "INPUT",
+    "result_header": "RESULT",
+    "status_running": "Running",
+    "status_complete": "Complete",
+    "status_error": "Error"
+  },
+  "error": {
+    "generic": "Something went wrong. Please try again.",
+    "session_lost": "Your session was lost. Starting a new one.",
+    "retry_button": "Retry",
+    "dismiss_button": "Dismiss"
+  },
+  "inline_triggers": {
+    "ask_about_reconciliation": "Ask Aminah about this reconciliation",
+    "ask_about_financials": "Ask Aminah to explain this",
+    "ask_about_forecast": "Ask Aminah about this forecast"
+  },
+  "stopped_suffix": " (stopped)",
   "owner": {
     "greeting": "Hi Tarek. What can I help you understand?",
     "q1": "How is cash this month?",

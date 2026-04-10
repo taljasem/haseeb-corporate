@@ -1,9 +1,53 @@
 {
   "label": "أمينة",
+  "subtitle_online": "جاهزة للمساعدة",
+  "subtitle_thinking": "جارٍ التفكير...",
+  "subtitle_error": "حدث خطأ ما",
   "context_prefix": "السياق: {{context}}",
   "suggested_questions": "أسئلة مقترحة",
-  "input_placeholder": "اسأل أمينة…",
+  "new_conversation": "محادثة جديدة",
+  "recent_sessions": "الأخيرة",
   "close": "إغلاق",
+  "input": {
+    "placeholder": "اسأل أمينة عن أي شيء يتعلق بحساباتك...",
+    "send_button": "إرسال",
+    "stop_button": "إيقاف",
+    "disclaimer": "قد تخطئ أمينة. تحقق دائمًا من الأرقام المهمة."
+  },
+  "empty_state": {
+    "title": "مرحبًا، أنا أمينة",
+    "subtitle": "يمكنني مساعدتك في فهم حساباتك المالية، واكتشاف المشكلات، والإجابة على أسئلتك حول دفاترك.",
+    "example_1": "ما وضع السيولة النقدية هذا الشهر؟",
+    "example_2": "كيف أداؤنا مقارنة بالميزانية؟",
+    "example_3": "هل هناك ما يجب أن أقلق بشأنه؟"
+  },
+  "status": {
+    "checking_accounts": "جارٍ فحص حساباتك...",
+    "running_report": "جارٍ إعداد التقرير...",
+    "comparing_periods": "جارٍ مقارنة الفترات...",
+    "analyzing": "جارٍ التحليل...",
+    "fetching_data": "جارٍ جلب البيانات..."
+  },
+  "tool_call": {
+    "label": "أداة مستخدمة: {{name}}",
+    "input_header": "المدخلات",
+    "result_header": "النتيجة",
+    "status_running": "قيد التنفيذ",
+    "status_complete": "مكتمل",
+    "status_error": "خطأ"
+  },
+  "error": {
+    "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+    "session_lost": "تم فقدان جلستك. بدء جلسة جديدة.",
+    "retry_button": "إعادة المحاولة",
+    "dismiss_button": "تجاهل"
+  },
+  "inline_triggers": {
+    "ask_about_reconciliation": "اسأل أمينة عن هذه التسوية",
+    "ask_about_financials": "اطلب من أمينة توضيح هذا",
+    "ask_about_forecast": "اسأل أمينة عن هذه التوقعات"
+  },
+  "stopped_suffix": " (متوقف)",
   "owner": {
     "greeting": "مرحباً طارق. كيف يمكنني مساعدتك على الفهم؟",
     "q1": "كيف حال السيولة هذا الشهر؟",

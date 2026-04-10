@@ -7652,3 +7652,265 @@ export async function getCloseCheckAttachments(_periodKey, checkId) {
   await delay();
   return _brandObj(_CLOSE_CHECK_ATTACHMENTS_DB[checkId] ? [..._CLOSE_CHECK_ATTACHMENTS_DB[checkId]] : []);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Audit Bridge 20D-6
+// ─────────────────────────────────────────────────────────────────────────────
+
+const _AUDIT_ENGAGEMENTS_DB = {};
+const _AUDIT_CLARIFICATIONS_DB = {};
+let _engSeq = 1;
+let _clarSeq = 1;
+
+const AUDIT_CHECKS_SEED = [
+  { id: "CHK-01", name: "Trial balance balances", trustClass: "A", passResult: "Balanced. Total debits: 450,000.000 KWD = Total credits: 450,000.000 KWD", failResult: "Out of balance by 12.500 KWD", passExplanation: "The trial balance is perfectly balanced — all debits equal all credits for the period.", failExplanation: "The trial balance is out of balance. Check for unposted journal entries or rounding errors." },
+  { id: "CHK-02", name: "All JEs posted (no drafts)", trustClass: "A", passResult: "All 142 journal entries posted", failResult: "3 draft JEs remain unposted", passExplanation: "Every journal entry in the period has been posted. No drafts remain.", failExplanation: "There are draft journal entries that haven't been posted yet. Review and post or discard them." },
+  { id: "CHK-03", name: "Source documents attached", trustClass: "A", passResult: "100% source document coverage", failResult: "8 JEs missing source documents", passExplanation: "All journal entries have at least one supporting source document attached.", failExplanation: "Some journal entries are missing source documents. Attach receipts, invoices, or contracts." },
+  { id: "CHK-04", name: "No orphaned accounts", trustClass: "A", passResult: "All 42 accounts have activity or are system accounts", failResult: "2 accounts with zero activity and no system flag", passExplanation: "Every account in the chart of accounts is either active or properly flagged.", failExplanation: "There are inactive accounts that should be archived or flagged." },
+  { id: "CHK-05", name: "Period is locked", trustClass: "A", passResult: "March 2026 hard-closed on Apr 3", failResult: "Period still open — not yet locked", passExplanation: "The period has been hard-closed, preventing any further modifications.", failExplanation: "The period is still open. Complete the month-end close process before audit." },
+  { id: "CHK-06", name: "Bank reconciliations complete", trustClass: "B", passResult: "4 of 4 bank accounts reconciled", failResult: "1 of 4 accounts unreconciled (KIB Settlement)", passExplanation: "All bank accounts have been reconciled for the period with zero exceptions.", failExplanation: "One or more bank accounts have not been fully reconciled." },
+  { id: "CHK-07", name: "AR aging ties to balance sheet", trustClass: "B", passResult: "AR balance 120,006 KWD matches BS line", failResult: "AR aging total differs from BS by 1,200 KWD", passExplanation: "The accounts receivable aging report total matches the balance sheet AR line exactly.", failExplanation: "There is a discrepancy between the AR aging and the balance sheet." },
+  { id: "CHK-08", name: "AP aging ties to balance sheet", trustClass: "B", passResult: "AP balance 87,450 KWD matches BS line", failResult: "AP aging differs from BS", passExplanation: "The accounts payable aging matches the balance sheet AP line.", failExplanation: "There is a discrepancy in accounts payable." },
+  { id: "CHK-09", name: "Revenue cutoff verified", trustClass: "B", passResult: "No revenue recognized after period end", failResult: "2 invoices dated after cutoff included", passExplanation: "All revenue in the period was earned before the cutoff date.", failExplanation: "Some revenue appears to have been recognized after the period end." },
+  { id: "CHK-10", name: "Expense accruals posted", trustClass: "B", passResult: "All 6 standard accruals posted", failResult: "Payroll accrual missing", passExplanation: "All standard expense accruals (payroll, rent, utilities, etc.) have been posted.", failExplanation: "One or more standard accruals are missing." },
+  { id: "CHK-11", name: "Inventory count verified", trustClass: "B", passResult: "N/A — service company", failResult: "N/A", passExplanation: "This check is not applicable for service companies without inventory.", failExplanation: "N/A" },
+  { id: "CHK-12", name: "PIFSS contributions reconciled", trustClass: "C", passResult: "PIFSS contributions match payroll at 11.5%", failResult: "PIFSS shortfall of 450 KWD", passExplanation: "Social security contributions (PIFSS) are correctly calculated and reconciled to payroll.", failExplanation: "PIFSS contributions don't match the expected percentage of payroll." },
+  { id: "CHK-13", name: "Zakat accrual calculated", trustClass: "C", passResult: "N/A — Kuwaiti company exempt", failResult: "N/A", passExplanation: "Kuwaiti companies are exempt from Zakat. This check is not applicable.", failExplanation: "N/A" },
+  { id: "CHK-14", name: "FX revaluation posted", trustClass: "C", passResult: "USD account revalued at 0.3070 KWD/USD", failResult: "USD account not revalued", passExplanation: "Foreign currency accounts have been revalued at the period-end exchange rate.", failExplanation: "Foreign currency balances have not been revalued at the closing rate." },
+  { id: "CHK-15", name: "Related party disclosures", trustClass: "C", passResult: "No related party transactions identified", failResult: "2 related party transactions undisclosed", passExplanation: "No related party transactions were identified in the period.", failExplanation: "Related party transactions exist but have not been disclosed." },
+];
+
+function _seedAuditEngagements() {
+  const tenants = ["almanara", "almawred", "demo-corporate"];
+  const firms = ["Al-Aiban & Partners", "KPMG Al-Osaimi", "EY Kuwait"];
+  const auditors = ["Ahmad Al-Aiban", "Fatima Al-Osaimi", "Khalid Al-Rashidi"];
+  for (const tid of tenants) {
+    const fi = tenants.indexOf(tid);
+    // Active engagement
+    const activeId = `eng-${tid}-active`;
+    const activeChecks = AUDIT_CHECKS_SEED.map((c, i) => ({
+      ...c,
+      status: c.id === "CHK-05" ? "fail" : c.id === "CHK-11" || c.id === "CHK-13" ? "not_applicable" : c.id === "CHK-06" ? "fail" : "pass",
+      result: (c.id === "CHK-05" || c.id === "CHK-06") ? c.failResult : c.id === "CHK-11" || c.id === "CHK-13" ? c.passResult : c.passResult,
+      explanation: (c.id === "CHK-05" || c.id === "CHK-06") ? c.failExplanation : c.passExplanation,
+      failReason: (c.id === "CHK-05") ? "Period still open" : c.id === "CHK-06" ? "KIB Settlement unreconciled" : null,
+      lastRunAt: _daysAgo(1),
+      clarificationId: c.id === "CHK-06" ? `clar-${tid}-1` : null,
+    }));
+    _AUDIT_ENGAGEMENTS_DB[activeId] = {
+      id: activeId, tenantId: tid, auditorFirm: firms[fi], auditorFirmLicense: `MOC-${2024 + fi}-${String(1000 + fi * 100)}`,
+      leadAuditor: auditors[fi], leadAuditorEmail: `${auditors[fi].toLowerCase().replace(/\s+/g, ".")}@${firms[fi].toLowerCase().replace(/\s+/g, "")}.com`,
+      fiscalPeriod: "2025", status: "active", createdAt: _daysAgo(30), snapshotId: `snap-${tid}-2025`,
+      snapshotFrozenAt: _daysAgo(14), completedAt: null, engagementType: "annual_audit",
+      checks: activeChecks,
+      checksSummary: { total: 15, passing: activeChecks.filter(c => c.status === "pass").length, failing: activeChecks.filter(c => c.status === "fail").length, pending: 0, notApplicable: activeChecks.filter(c => c.status === "not_applicable").length },
+      clarificationsSummary: { open: 1, resolved: 1 },
+      fees: { amount: 12500, currency: "KWD", paid: false },
+      auditTrail: [
+        { id: "at-1", timestamp: _daysAgo(30), actor: "CFO", actorRole: "cfo", action: "created_engagement", target: activeId, targetType: "engagement", digestHash: `sha256:${btoa(tid + "create").slice(0, 16)}` },
+        { id: "at-2", timestamp: _daysAgo(14), actor: "CFO", actorRole: "cfo", action: "froze_snapshot", target: `snap-${tid}-2025`, targetType: "snapshot", digestHash: `sha256:${btoa(tid + "freeze").slice(0, 16)}` },
+        { id: "at-3", timestamp: _daysAgo(7), actor: "System", actorRole: "system", action: "ran_all_checks", target: activeId, targetType: "engagement", digestHash: `sha256:${btoa(tid + "checks").slice(0, 16)}` },
+        { id: "at-4", timestamp: _daysAgo(3), actor: auditors[fi], actorRole: "auditor", action: "raised_clarification", target: `clar-${tid}-1`, targetType: "clarification", digestHash: `sha256:${btoa(tid + "clar1").slice(0, 16)}` },
+        { id: "at-5", timestamp: _daysAgo(1), actor: "CFO", actorRole: "cfo", action: "responded_clarification", target: `clar-${tid}-1`, targetType: "clarification", digestHash: `sha256:${btoa(tid + "resp1").slice(0, 16)}` },
+      ],
+    };
+    // Seed clarifications for active
+    _AUDIT_CLARIFICATIONS_DB[`clar-${tid}-1`] = {
+      id: `clar-${tid}-1`, engagementId: activeId, raisedBy: "auditor", raisedByName: auditors[fi], raisedAt: _daysAgo(3),
+      subject: "KIB Settlement reconciliation incomplete", context: { type: "check", refId: "CHK-06" }, status: "open",
+      messages: [
+        { author: auditors[fi], role: "auditor", content: "CHK-06 shows KIB Settlement is not fully reconciled. Can you provide the status and expected completion date?", attachments: [], createdAt: _daysAgo(3) },
+        { author: "CFO", role: "cfo", content: "Sara is working on the remaining 3 items. Expected completion by April 5.", attachments: [], createdAt: _daysAgo(1) },
+      ],
+      resolution: null, resolvedAt: null,
+    };
+    _AUDIT_CLARIFICATIONS_DB[`clar-${tid}-2`] = {
+      id: `clar-${tid}-2`, engagementId: activeId, raisedBy: "auditor", raisedByName: auditors[fi], raisedAt: _daysAgo(10),
+      subject: "Marketing expense variance explanation", context: { type: "account", refId: "6300" }, status: "resolved",
+      messages: [
+        { author: auditors[fi], role: "auditor", content: "Marketing expenses are 23% over budget. Please explain.", attachments: [], createdAt: _daysAgo(10) },
+        { author: "CFO", role: "cfo", content: "GITEX Q2 tradeshow costs were front-loaded. Expected to normalize in Q3.", attachments: [], createdAt: _daysAgo(8) },
+      ],
+      resolution: "Accepted — seasonal variance", resolvedAt: _daysAgo(7),
+    };
+    // Completed engagement
+    _AUDIT_ENGAGEMENTS_DB[`eng-${tid}-completed`] = {
+      id: `eng-${tid}-completed`, tenantId: tid, auditorFirm: firms[fi], auditorFirmLicense: `MOC-${2023 + fi}-${900 + fi * 100}`,
+      leadAuditor: auditors[fi], leadAuditorEmail: `${auditors[fi].toLowerCase().replace(/\s+/g, ".")}@firm.com`,
+      fiscalPeriod: "2024", status: "completed", createdAt: _daysAgo(120), snapshotId: `snap-${tid}-2024`,
+      snapshotFrozenAt: _daysAgo(100), completedAt: _daysAgo(60), engagementType: "annual_audit",
+      checks: AUDIT_CHECKS_SEED.map(c => ({ ...c, status: c.id === "CHK-11" || c.id === "CHK-13" ? "not_applicable" : "pass", result: c.passResult, explanation: c.passExplanation, failReason: null, lastRunAt: _daysAgo(65), clarificationId: null })),
+      checksSummary: { total: 15, passing: 13, failing: 0, pending: 0, notApplicable: 2 },
+      clarificationsSummary: { open: 0, resolved: 3 },
+      fees: { amount: 11000, currency: "KWD", paid: true },
+      auditTrail: [{ id: "at-h1", timestamp: _daysAgo(120), actor: "CFO", actorRole: "cfo", action: "created_engagement", target: `eng-${tid}-completed`, targetType: "engagement", digestHash: "sha256:completed1234" }],
+    };
+    // Draft engagement
+    _AUDIT_ENGAGEMENTS_DB[`eng-${tid}-draft`] = {
+      id: `eng-${tid}-draft`, tenantId: tid, auditorFirm: firms[fi], auditorFirmLicense: "",
+      leadAuditor: "", leadAuditorEmail: "", fiscalPeriod: "2026-Q1", status: "draft",
+      createdAt: _daysAgo(2), snapshotId: null, snapshotFrozenAt: null, completedAt: null,
+      engagementType: "quarterly_review",
+      checks: [], checksSummary: { total: 0, passing: 0, failing: 0, pending: 0, notApplicable: 0 },
+      clarificationsSummary: { open: 0, resolved: 0 },
+      fees: { amount: 5000, currency: "KWD", paid: false },
+      auditTrail: [{ id: "at-d1", timestamp: _daysAgo(2), actor: "CFO", actorRole: "cfo", action: "created_engagement", target: `eng-${tid}-draft`, targetType: "engagement", digestHash: "sha256:draft5678" }],
+    };
+  }
+}
+_seedAuditEngagements();
+
+export async function listAuditEngagements() {
+  await delay();
+  const list = Object.values(_AUDIT_ENGAGEMENTS_DB).filter(e => e.tenantId === _currentTenantId);
+  return _brandObj(list.map(e => ({ ...e, checks: undefined, auditTrail: undefined })));
+}
+
+export async function getAuditEngagement(engagementId) {
+  await delay();
+  const e = _AUDIT_ENGAGEMENTS_DB[engagementId];
+  return e ? _brandObj({ ...e }) : null;
+}
+
+export async function createAuditEngagement(data) {
+  await delay();
+  const id = `eng-${_currentTenantId}-${_engSeq++}`;
+  const e = { id, tenantId: _currentTenantId, auditorFirm: data.auditorFirm || "", auditorFirmLicense: "", leadAuditor: data.leadAuditor || "", leadAuditorEmail: data.leadAuditorEmail || "", fiscalPeriod: data.fiscalPeriod || "", status: "draft", createdAt: new Date().toISOString(), snapshotId: null, snapshotFrozenAt: null, completedAt: null, engagementType: data.engagementType || "annual_audit", checks: [], checksSummary: { total: 0, passing: 0, failing: 0, pending: 0, notApplicable: 0 }, clarificationsSummary: { open: 0, resolved: 0 }, fees: { amount: 0, currency: "KWD", paid: false }, auditTrail: [{ id: `at-new-${Date.now()}`, timestamp: new Date().toISOString(), actor: "CFO", actorRole: "cfo", action: "created_engagement", target: id, targetType: "engagement", digestHash: `sha256:${btoa(id).slice(0, 16)}` }] };
+  _AUDIT_ENGAGEMENTS_DB[id] = e;
+  return _brandObj({ ...e });
+}
+
+export async function createSnapshot(engagementId) {
+  await delay();
+  const e = _AUDIT_ENGAGEMENTS_DB[engagementId];
+  if (!e) return null;
+  e.snapshotId = `snap-${e.tenantId}-${Date.now()}`;
+  e.snapshotFrozenAt = new Date().toISOString();
+  e.status = "active";
+  e.checks = AUDIT_CHECKS_SEED.map(c => ({ ...c, status: "pending", result: "Pending first run", explanation: "Check has not been run yet.", failReason: null, lastRunAt: null, clarificationId: null }));
+  e.checksSummary = { total: 15, passing: 0, failing: 0, pending: 15, notApplicable: 0 };
+  e.auditTrail.push({ id: `at-snap-${Date.now()}`, timestamp: new Date().toISOString(), actor: "CFO", actorRole: "cfo", action: "froze_snapshot", target: e.snapshotId, targetType: "snapshot", digestHash: `sha256:${btoa(e.snapshotId).slice(0, 16)}` });
+  return _brandObj({ ...e });
+}
+
+export async function runAuditCheck(engagementId, checkId) {
+  await delay();
+  const e = _AUDIT_ENGAGEMENTS_DB[engagementId];
+  if (!e) return null;
+  const c = e.checks.find(x => x.id === checkId);
+  if (!c) return null;
+  const seed = AUDIT_CHECKS_SEED.find(s => s.id === checkId);
+  const shouldFail = checkId === "CHK-05" || checkId === "CHK-06";
+  c.status = (checkId === "CHK-11" || checkId === "CHK-13") ? "not_applicable" : shouldFail ? "fail" : "pass";
+  c.result = shouldFail ? seed.failResult : seed.passResult;
+  c.explanation = shouldFail ? seed.failExplanation : seed.passExplanation;
+  c.failReason = shouldFail ? c.result : null;
+  c.lastRunAt = new Date().toISOString();
+  e.checksSummary = { total: e.checks.length, passing: e.checks.filter(x => x.status === "pass").length, failing: e.checks.filter(x => x.status === "fail").length, pending: e.checks.filter(x => x.status === "pending").length, notApplicable: e.checks.filter(x => x.status === "not_applicable").length };
+  return _brandObj({ ...c });
+}
+
+export async function runAllAuditChecks(engagementId) {
+  await delay();
+  const e = _AUDIT_ENGAGEMENTS_DB[engagementId];
+  if (!e) return null;
+  for (const c of e.checks) { await runAuditCheck(engagementId, c.id); }
+  return _brandObj({ ...e.checksSummary });
+}
+
+export async function generateAuditPackage(engagementId) {
+  await delay();
+  const e = _AUDIT_ENGAGEMENTS_DB[engagementId];
+  if (!e || !e.snapshotId) return null;
+  const manifest = {
+    packageId: `pkg-${Date.now()}`, engagementId, snapshotId: e.snapshotId, generatedAt: new Date().toISOString(),
+    files: [
+      { name: "trial_balance.xlsx", sha256: `sha256:${btoa("tb" + e.snapshotId).slice(0, 32)}` },
+      { name: "balance_sheet.xlsx", sha256: `sha256:${btoa("bs" + e.snapshotId).slice(0, 32)}` },
+      { name: "income_statement.xlsx", sha256: `sha256:${btoa("is" + e.snapshotId).slice(0, 32)}` },
+      { name: "journal_register.xlsx", sha256: `sha256:${btoa("jr" + e.snapshotId).slice(0, 32)}` },
+      { name: "check_summary.xlsx", sha256: `sha256:${btoa("cs" + e.snapshotId).slice(0, 32)}` },
+      { name: "clarification_summary.xlsx", sha256: `sha256:${btoa("cl" + e.snapshotId).slice(0, 32)}` },
+      { name: "financial_statements.xhtml", sha256: `sha256:${btoa("ix" + e.snapshotId).slice(0, 32)}`, type: "iXBRL" },
+      { name: "snapshot_certificate.pdf", sha256: `sha256:${btoa("cert" + e.snapshotId).slice(0, 32)}` },
+    ],
+    sha256: `sha256:${btoa("manifest" + engagementId + Date.now()).slice(0, 48)}`,
+  };
+  const filename = `audit_package_${e.tenantId}_${e.fiscalPeriod}.json`;
+  const csvText = JSON.stringify(manifest, null, 2);
+  return _brandObj({ ...manifest, filename, csvText });
+}
+
+export async function listClarifications(engagementId) {
+  await delay();
+  return _brandObj(Object.values(_AUDIT_CLARIFICATIONS_DB).filter(c => c.engagementId === engagementId));
+}
+
+export async function getClarification(clarificationId) {
+  await delay();
+  return _brandObj(_AUDIT_CLARIFICATIONS_DB[clarificationId] ? { ..._AUDIT_CLARIFICATIONS_DB[clarificationId] } : null);
+}
+
+export async function createClarification(engagementId, data) {
+  await delay();
+  const id = `clar-${_currentTenantId}-${_clarSeq++}`;
+  const c = { id, engagementId, raisedBy: data.raisedBy || "cfo", raisedByName: data.raisedByName || "CFO", raisedAt: new Date().toISOString(), subject: data.subject, context: data.context || { type: "general", refId: null }, status: "open", messages: [{ author: data.raisedByName || "CFO", role: data.raisedBy || "cfo", content: data.message, attachments: [], createdAt: new Date().toISOString() }], resolution: null, resolvedAt: null };
+  _AUDIT_CLARIFICATIONS_DB[id] = c;
+  return _brandObj({ ...c });
+}
+
+export async function addClarificationMessage(clarificationId, message) {
+  await delay();
+  const c = _AUDIT_CLARIFICATIONS_DB[clarificationId];
+  if (!c) return null;
+  c.messages.push({ author: message.author || "CFO", role: message.role || "cfo", content: message.content, attachments: message.attachments || [], createdAt: new Date().toISOString() });
+  return _brandObj({ ...c });
+}
+
+export async function resolveClarification(clarificationId, resolution, user = "cfo") {
+  await delay();
+  const c = _AUDIT_CLARIFICATIONS_DB[clarificationId];
+  if (!c) return null;
+  c.status = "resolved";
+  c.resolution = resolution;
+  c.resolvedAt = new Date().toISOString();
+  return _brandObj({ ...c });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Team 20D-6 extensions
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function addTeamMember(data) {
+  await delay();
+  const id = data.id || `user-${Date.now()}`;
+  const member = { id, name: data.name, email: data.email, role: data.role || "junior", initials: (data.name || "").split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2), status: "invited", joinedAt: new Date().toISOString(), lastActiveAt: null };
+  TASKBOX_PEOPLE[id] = member;
+  return _brandObj({ ...member });
+}
+
+export async function removeTeamMember(memberId) {
+  await delay();
+  if (TASKBOX_PEOPLE[memberId]?.role === "owner") return { success: false, error: "Cannot remove Owner" };
+  delete TASKBOX_PEOPLE[memberId];
+  return { success: true };
+}
+
+export async function updateTeamMemberRole(memberId, newRole) {
+  await delay();
+  const m = TASKBOX_PEOPLE[memberId];
+  if (!m) return null;
+  m.role = newRole;
+  return _brandObj({ ...m });
+}
+
+export async function getTeamActivityLog(memberId, limit = 20) {
+  await delay();
+  return _brandObj([
+    { id: "ta-1", memberId, action: "login", timestamp: _hoursAgo(2), detail: "Logged in" },
+    { id: "ta-2", memberId, action: "view_reconciliation", timestamp: _hoursAgo(3), detail: "Viewed KIB Operating reconciliation" },
+    { id: "ta-3", memberId, action: "post_je", timestamp: _daysAgo(1), detail: "Posted JE-0417" },
+    { id: "ta-4", memberId, action: "complete_task", timestamp: _daysAgo(1), detail: "Completed task TSK-113" },
+    { id: "ta-5", memberId, action: "login", timestamp: _daysAgo(2), detail: "Logged in" },
+  ].slice(0, limit));
+}

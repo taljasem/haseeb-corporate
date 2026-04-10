@@ -1,9 +1,13 @@
 {
   "title": "AUDIT BRIDGE",
   "subtitle": "CONTINUOUS AUDIT ASSURANCE",
+  "description": "Evidence-grade audit access to your verified financial data",
+  "back_to_list": "Back to engagements",
+  "new_engagement": "New engagement",
+  "export_package": "Export package",
   "checks_passing": "CHECKS PASSING",
   "attention_needed": "{{count}} ATTENTION NEEDED",
-  "loading": "Loading…",
+  "loading": "Loading...",
   "pill_passing": "PASSING",
   "pill_failing": "FAILING",
   "verified": "Verified {{time}}",
@@ -17,12 +21,68 @@
   },
   "auditor": {
     "title": "EXTERNAL AUDITOR ACCESS",
-    "desc": "Grant read-only access to an external auditor. They see the full ledger, hash-chained entries, all approvals, and the audit trail — without any ability to modify.",
+    "desc": "Grant read-only access to an external auditor.",
     "grant": "Grant auditor access",
     "view_trail": "View audit trail"
   },
   "readiness": {
     "checks_passing": "CHECKS PASSING",
     "failing_prefix": "{{count}} check failing:"
+  },
+  "engagement": {
+    "firm": "Firm",
+    "lead_auditor": "Lead auditor",
+    "period": "Period",
+    "status": "Status",
+    "checks": "Checks",
+    "clarifications": "Clarifications",
+    "created": "Created",
+    "type": "Type",
+    "fees": "Fees",
+    "empty_title": "No audit engagements",
+    "empty_desc": "Create your first engagement to start"
+  },
+  "tabs": {
+    "overview": "OVERVIEW",
+    "checks": "CHECKS",
+    "clarifications": "CLARIFICATIONS",
+    "export": "EXPORT",
+    "audit_trail": "AUDIT TRAIL"
+  },
+  "snapshot": {
+    "prepare": "Prepare snapshot",
+    "frozen": "Snapshot frozen",
+    "no_snapshot": "No snapshot yet",
+    "hash": "Hash"
+  },
+  "checks_tab": {
+    "re_run_all": "Re-run all",
+    "re_run": "Re-run",
+    "ask_aminah": "Ask Aminah",
+    "raise_clarification": "Raise clarification",
+    "trust_class_a": "Class A — Deterministic",
+    "trust_class_b": "Class B — Reconciliation-gated",
+    "trust_class_c": "Class C — Kuwait Compliance"
+  },
+  "clarifications_tab": {
+    "title": "Clarifications",
+    "select": "Select a clarification to view",
+    "send": "Send",
+    "resolve": "Resolve",
+    "resolved": "Resolved",
+    "reply_placeholder": "Reply..."
+  },
+  "export_tab": {
+    "title": "Audit package contents",
+    "generate": "Generate audit package",
+    "disclaimer": "Preview of the real audit package. Full export requires Arelle XBRL validation runtime in production."
+  },
+  "trail": {
+    "title": "IMMUTABLE AUDIT TRAIL — CRYPTOGRAPHICALLY VERIFIED"
+  },
+  "preview": {
+    "banner_title": "Viewing as auditor",
+    "banner_body": "This is what the auditor sees — read-only mode",
+    "exit": "Exit preview"
   }
 }

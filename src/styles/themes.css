@@ -149,10 +149,10 @@ html[data-theme="light"] {
   --panel-shadow:       0 12px 32px rgba(0, 0, 0, 0.12);
 
   /* ---------------- Ambient background ------- */
-  --ambient-dot-color:     rgba(0, 0, 0, 0.06);
-  --ambient-glow-teal:     rgba(0, 166, 132, 0.05);
-  --ambient-glow-purple:   rgba(139, 92, 246, 0.03);
-  --ambient-vignette:      inset 0 0 100px 30px rgba(0, 0, 0, 0.03);
+  --ambient-dot-color:     rgba(0, 0, 0, 0.12);
+  --ambient-glow-teal:     rgba(0, 166, 132, 0.08);
+  --ambient-glow-purple:   rgba(139, 92, 246, 0.05);
+  --ambient-vignette:      inset 0 0 100px 30px rgba(0, 0, 0, 0.06);
   --ambient-noise-opacity: 0.03;
 
   /* ---------------- Shadows & overlays ------ */

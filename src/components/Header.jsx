@@ -79,10 +79,10 @@ function Tooltip({ title, sub }) {
         top: "calc(100% + 8px)",
         right: 0,
         background: "var(--bg-surface-raised)",
-        border: "1px solid rgba(255,255,255,0.10)",
+        border: "1px solid var(--panel-border)",
         borderRadius: 8,
         padding: "10px 12px",
-        boxShadow: "0 12px 32px rgba(0,0,0,0.6)",
+        boxShadow: "var(--panel-shadow)",
         minWidth: 220,
         zIndex: 200,
       }}
@@ -150,13 +150,13 @@ export default function Header({ role, setRole }) {
       style={{
         position: "relative",
         zIndex: 10,
-        borderBottom: "1px solid rgba(255,255,255,0.10)",
+        borderBottom: "1px solid var(--header-border)",
         display: "flex",
         alignItems: "center",
         height: 52,
         padding: "0 24px",
         flexShrink: 0,
-        background: "rgba(5,7,10,0.8)",
+        background: "var(--header-bg)",
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
       }}
@@ -168,7 +168,7 @@ export default function Header({ role, setRole }) {
           alignItems: "center",
           gap: 8,
           paddingInlineEnd: 20,
-          borderInlineEnd: "1px solid rgba(255,255,255,0.10)",
+          borderInlineEnd: "1px solid var(--border-default)",
           height: "100%",
         }}
       >
@@ -187,7 +187,7 @@ export default function Header({ role, setRole }) {
             style={{
               position: "absolute",
               inset: 0,
-              background: "linear-gradient(135deg, rgba(255,255,255,0.2), transparent 50%)",
+              background: "linear-gradient(135deg, var(--border-strong), transparent 50%)",
             }}
           />
         </div>
@@ -216,7 +216,7 @@ export default function Header({ role, setRole }) {
             letterSpacing: "0.12em",
             color: "var(--text-tertiary)",
             background: "var(--bg-surface)",
-            border: "1px dashed rgba(255,255,255,0.12)",
+            border: "1px dashed var(--border-default)",
             borderRadius: 4,
             padding: "4px 10px",
             cursor: "pointer",
@@ -238,9 +238,9 @@ export default function Header({ role, setRole }) {
               left: 0,
               width: 260,
               background: "var(--bg-surface-raised)",
-              border: "1px solid rgba(255,255,255,0.10)",
+              border: "1px solid var(--panel-border)",
               borderRadius: 10,
-              boxShadow: "0 12px 32px rgba(0,0,0,0.6)",
+              boxShadow: "var(--panel-shadow)",
               zIndex: 200,
               overflow: "hidden",
             }}
@@ -252,7 +252,7 @@ export default function Header({ role, setRole }) {
                 letterSpacing: "0.15em",
                 color: "var(--text-tertiary)",
                 padding: "10px 14px",
-                borderBottom: "1px solid rgba(255,255,255,0.06)",
+                borderBottom: "1px solid var(--border-subtle)",
               }}
             >
               {t("tenant_dev_only")}
@@ -281,7 +281,7 @@ export default function Header({ role, setRole }) {
                     padding: "10px 14px",
                     background: on ? "var(--bg-selected)" : "transparent",
                     border: "none",
-                    borderBottom: "1px solid rgba(255,255,255,0.04)",
+                    borderBottom: "1px solid var(--border-subtle)",
                     cursor: "pointer",
                     fontFamily: "inherit",
                     textAlign: "start",
@@ -336,7 +336,7 @@ export default function Header({ role, setRole }) {
                   padding: "4px 10px",
                   borderRadius: 4,
                   background: on ? `${color}14` : "var(--bg-surface)",
-                  border: on ? `1px solid ${color}66` : "1px solid rgba(255,255,255,0.08)",
+                  border: on ? `1px solid ${color}66` : "1px solid var(--border-default)",
                   color: on ? color : "var(--text-tertiary)",
                   cursor: "pointer",
                   fontFamily: "inherit",
@@ -389,9 +389,9 @@ export default function Header({ role, setRole }) {
                 width: 320,
                 maxHeight: 480,
                 background: "var(--bg-surface-raised)",
-                border: "1px solid rgba(255,255,255,0.10)",
+                border: "1px solid var(--panel-border)",
                 borderRadius: 10,
-                boxShadow: "0 12px 32px rgba(0,0,0,0.6)",
+                boxShadow: "var(--panel-shadow)",
                 zIndex: 200,
                 display: "flex",
                 flexDirection: "column",
@@ -404,7 +404,7 @@ export default function Header({ role, setRole }) {
                   alignItems: "center",
                   justifyContent: "space-between",
                   padding: "12px 14px",
-                  borderBottom: "1px solid rgba(255,255,255,0.06)",
+                  borderBottom: "1px solid var(--border-subtle)",
                 }}
               >
                 <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>
@@ -449,7 +449,7 @@ export default function Header({ role, setRole }) {
                     onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     style={{
                       padding: "10px 14px",
-                      borderBottom: "1px solid rgba(255,255,255,0.04)",
+                      borderBottom: "1px solid var(--border-subtle)",
                       cursor: "pointer",
                       transition: "background 0.12s ease",
                     }}
@@ -485,7 +485,7 @@ export default function Header({ role, setRole }) {
               <div
                 style={{
                   padding: "10px 14px",
-                  borderTop: "1px solid rgba(255,255,255,0.06)",
+                  borderTop: "1px solid var(--border-subtle)",
                   textAlign: "center",
                 }}
               >
@@ -542,7 +542,7 @@ export default function Header({ role, setRole }) {
               fontWeight: 600,
               color: language === "ar" ? "var(--accent-primary)" : "var(--text-tertiary)",
               background: language === "ar" ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)",
-              border: language === "ar" ? "1px solid rgba(0,196,140,0.40)" : "1px solid rgba(255,255,255,0.10)",
+              border: language === "ar" ? "1px solid var(--accent-primary-border)" : "1px solid var(--border-default)",
               borderRadius: 4,
               padding: "4px 10px",
               cursor: "pointer",

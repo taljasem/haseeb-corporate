@@ -13,14 +13,14 @@ export default function AmbientBackground() {
         </filter>
       </svg>
 
-      {/* Noise layer */}
+      {/* Noise layer — opacity from theme token */}
       <div
         style={{
           position: "fixed",
           inset: 0,
           pointerEvents: "none",
           zIndex: 0,
-          opacity: 0.08,
+          opacity: "var(--ambient-noise-opacity)",
         }}
       >
         <svg width="100%" height="100%">
@@ -28,60 +28,57 @@ export default function AmbientBackground() {
         </svg>
       </div>
 
-      {/* Animated dot grid */}
+      {/* Animated dot grid — color from theme token via CSS class */}
       <div
+        className="ambient-dot-grid"
         style={{
           position: "fixed",
           inset: 0,
           pointerEvents: "none",
           zIndex: 0,
-          backgroundImage:
-            "radial-gradient(circle, rgba(255,255,255,0.12) 1.5px, transparent 1.5px)",
           backgroundSize: "24px 24px",
           animation: "dotPulse 6s ease-in-out infinite",
         }}
       />
 
-      {/* Top-left teal glow */}
+      {/* Top-left teal glow — color from theme token via CSS class */}
       <div
+        className="ambient-glow-teal"
         style={{
           position: "fixed",
           top: "-20%",
           left: "-10%",
           width: "50%",
           height: "60%",
-          background:
-            "radial-gradient(ellipse, rgba(0,196,140,0.08) 0%, transparent 70%)",
           pointerEvents: "none",
           zIndex: 0,
           animation: "glowDrift1 10s ease-in-out infinite",
         }}
       />
 
-      {/* Top-right purple glow */}
+      {/* Top-right purple glow — color from theme token via CSS class */}
       <div
+        className="ambient-glow-purple"
         style={{
           position: "fixed",
           top: "10%",
           right: "-10%",
           width: "45%",
           height: "50%",
-          background:
-            "radial-gradient(ellipse, rgba(139,92,246,0.05) 0%, transparent 70%)",
           pointerEvents: "none",
           zIndex: 0,
           animation: "glowDrift2 12s ease-in-out infinite",
         }}
       />
 
-      {/* Inset vignette */}
+      {/* Inset vignette — from theme token */}
       <div
         style={{
           position: "fixed",
           inset: 0,
           pointerEvents: "none",
           zIndex: 0,
-          boxShadow: "inset 0 0 100px 30px rgba(0,0,0,0.25)",
+          boxShadow: "var(--ambient-vignette)",
         }}
       />
     </>

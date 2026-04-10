@@ -27,6 +27,21 @@ html[data-theme="dark"] {
   --text-disabled:      rgba(139, 152, 165, 0.5);
   --text-inverse:       #05070A;
 
+  /* ---------------- Header / overlay --------- */
+  --header-bg:          rgba(5, 7, 10, 0.80);
+  --header-border:      rgba(255, 255, 255, 0.10);
+  --overlay-backdrop:   rgba(0, 0, 0, 0.55);
+  --panel-bg:           #0C0E12;
+  --panel-border:       rgba(255, 255, 255, 0.10);
+  --panel-shadow:       0 12px 32px rgba(0, 0, 0, 0.60);
+
+  /* ---------------- Ambient background ------- */
+  --ambient-dot-color:     rgba(255, 255, 255, 0.12);
+  --ambient-glow-teal:     rgba(0, 196, 140, 0.08);
+  --ambient-glow-purple:   rgba(139, 92, 246, 0.05);
+  --ambient-vignette:      inset 0 0 100px 30px rgba(0, 0, 0, 0.25);
+  --ambient-noise-opacity: 0.08;
+
   /* ---------------- Accent (Haseeb teal) --- */
   --accent-primary:         #00C48C;
   --accent-primary-hover:   #00D99A;
@@ -62,26 +77,26 @@ html[data-theme="dark"] {
   --pill-pending-fg:    #FF5A5F;
 
   /* ---------------- Shadows & overlays ------ */
-  --shadow-sm:          0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md:          0 4px 12px rgba(0, 0, 0, 0.5);
-  --shadow-lg:          0 12px 32px rgba(0, 0, 0, 0.6);
+  --shadow-sm:          0 1px 2px rgba(0, 0, 0, 0.40);
+  --shadow-md:          0 4px 12px rgba(0, 0, 0, 0.50);
+  --shadow-lg:          0 12px 32px rgba(0, 0, 0, 0.60);
+  --shadow-xl:          0 24px 60px rgba(0, 0, 0, 0.70);
   --shadow-card:        none;
-  --overlay-backdrop:   rgba(0, 0, 0, 0.55);
 }
 
 html[data-theme="light"] {
-  /* ---------------- Surfaces ---------------- */
-  --bg-base:            #F7F8FA;
-  --bg-surface:         #FFFFFF;
+  /* ---------------- Surfaces (3-step hierarchy) -- */
+  --bg-base:            #F1F3F7;
+  --bg-surface:         #F7F8FA;
   --bg-surface-raised:  #FFFFFF;
-  --bg-surface-sunken:  #F2F4F7;
+  --bg-surface-sunken:  #E9ECF1;
   --bg-hover:           #EEF0F3;
   --bg-selected:        rgba(0, 166, 132, 0.08);
 
-  /* ---------------- Borders ----------------- */
-  --border-subtle:      #EEF0F3;
-  --border-default:     #E5E7EB;
-  --border-strong:      #D1D5DB;
+  /* ---------------- Borders (3-step hierarchy) --- */
+  --border-subtle:      rgba(0, 0, 0, 0.05);
+  --border-default:     rgba(0, 0, 0, 0.09);
+  --border-strong:      rgba(0, 0, 0, 0.14);
   --border-focus:       rgba(0, 166, 132, 0.40);
 
   /* ---------------- Text -------------------- */
@@ -125,12 +140,27 @@ html[data-theme="light"] {
   --pill-pending-bg:    rgba(220, 38, 38, 0.10);
   --pill-pending-fg:    #DC2626;
 
+  /* ---------------- Header / overlay --------- */
+  --header-bg:          rgba(247, 248, 250, 0.85);
+  --header-border:      rgba(0, 0, 0, 0.09);
+  --overlay-backdrop:   rgba(0, 0, 0, 0.35);
+  --panel-bg:           #FFFFFF;
+  --panel-border:       rgba(0, 0, 0, 0.09);
+  --panel-shadow:       0 12px 32px rgba(0, 0, 0, 0.12);
+
+  /* ---------------- Ambient background ------- */
+  --ambient-dot-color:     rgba(0, 0, 0, 0.06);
+  --ambient-glow-teal:     rgba(0, 166, 132, 0.05);
+  --ambient-glow-purple:   rgba(139, 92, 246, 0.03);
+  --ambient-vignette:      inset 0 0 100px 30px rgba(0, 0, 0, 0.03);
+  --ambient-noise-opacity: 0.03;
+
   /* ---------------- Shadows & overlays ------ */
-  --shadow-sm:          0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-md:          0 4px 12px rgba(15, 23, 42, 0.08);
-  --shadow-lg:          0 12px 32px rgba(15, 23, 42, 0.12);
-  --shadow-card:        0 1px 3px rgba(15, 23, 42, 0.06);
-  --overlay-backdrop:   rgba(15, 23, 42, 0.35);
+  --shadow-sm:          0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md:          0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg:          0 12px 32px rgba(0, 0, 0, 0.12);
+  --shadow-xl:          0 24px 60px rgba(0, 0, 0, 0.16);
+  --shadow-card:        0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 /* Global page background + text colour follow the theme */
@@ -192,6 +222,17 @@ html[data-theme="light"] textarea:focus,
 html[data-theme="light"] select:focus {
   border-color: var(--border-focus);
   outline: none;
+}
+
+/* Ambient background layers (theme-aware via CSS variables) */
+.ambient-dot-grid {
+  background-image: radial-gradient(circle, var(--ambient-dot-color) 1.5px, transparent 1.5px);
+}
+.ambient-glow-teal {
+  background: radial-gradient(ellipse, var(--ambient-glow-teal) 0%, transparent 70%);
+}
+.ambient-glow-purple {
+  background: radial-gradient(ellipse, var(--ambient-glow-purple) 0%, transparent 70%);
 }
 
 /* Class-based helpers for chat input styling (used in ConvJE + Aminah) */

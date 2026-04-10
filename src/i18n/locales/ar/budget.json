@@ -108,5 +108,43 @@
     "send": "إرسال مهام التفويض",
     "sending": "جارٍ الإرسال...",
     "close": "إغلاق"
+  },
+  "edit": {
+    "title": "تعديل بند الميزانية",
+    "name_label": "اسم البند",
+    "category_label": "الفئة",
+    "monthly_label": "المبالغ الشهرية",
+    "notes_label": "ملاحظات",
+    "owner_label": "المسؤول",
+    "save_button": "حفظ التغييرات",
+    "cancel_button": "إلغاء",
+    "delete_button": "حذف البند",
+    "delete_confirm": "حذف بند الميزانية هذا؟ لا يمكن التراجع عن هذا الإجراء.",
+    "add_line": "إضافة بند"
+  },
+  "historical": {
+    "label": "عرض السنة",
+    "current": "{{year}} (الحالية)",
+    "read_only_banner": "عرض ميزانية {{year}} — للقراءة فقط",
+    "back": "العودة للحالية"
+  },
+  "forecast_link": {
+    "label": "عرض في التوقعات"
+  },
+  "comments": {
+    "title": "التعليقات ({{count}})",
+    "empty": "لا توجد تعليقات بعد",
+    "placeholder": "أضف تعليقًا...",
+    "post_button": "نشر",
+    "delete_button": "حذف"
+  },
+  "approval": {
+    "draft": "مسودة",
+    "pending_review": "قيد المراجعة",
+    "approved": "معتمدة",
+    "rejected": "مرفوضة",
+    "revision_requested": "مطلوب تعديل",
+    "workflow_title": "مسار الاعتماد",
+    "next_action": "الإجراء التالي: {{action}}"
   }
 }

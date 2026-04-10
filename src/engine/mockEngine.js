@@ -7424,3 +7424,231 @@ export async function appendMessageToSession(sessionId, message) {
   }
   return { success: true };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Budget 20D-5 extensions
+// ─────────────────────────────────────────────────────────────────────────────
+
+const _BUDGET_COMMENTS_DB = {};
+let _budgetCommentSeq = 1;
+
+export async function createBudgetLine(budgetId, lineData) {
+  await delay();
+  const b = _BUDGETS_DB[budgetId];
+  if (!b) return null;
+  const dept = b.departments.find((d) => d.id === lineData.departmentId);
+  if (!dept) return null;
+  const id = `line-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  const newLine = { id, code: lineData.code || "", name: lineData.name || "New line", annual: Number(lineData.annual || 0), monthlyDistribution: Array(12).fill(Number(((lineData.annual || 0) / 12).toFixed(3))), growthRate: 0 };
+  dept.lineItems.push(newLine);
+  dept.totalAnnual = Number(dept.lineItems.reduce((s, l) => s + l.annual, 0).toFixed(3));
+  return _brandObj({ ...newLine });
+}
+
+export async function updateBudgetLine(lineId, updates) {
+  await delay();
+  for (const b of Object.values(_BUDGETS_DB)) {
+    for (const d of b.departments) {
+      const line = d.lineItems.find((l) => l.id === lineId);
+      if (line) {
+        if (updates.name != null) line.name = updates.name;
+        if (updates.code != null) line.code = updates.code;
+        if (updates.annual != null) {
+          line.annual = Number(updates.annual);
+          line.monthlyDistribution = Array(12).fill(Number((line.annual / 12).toFixed(3)));
+        }
+        if (updates.monthlyDistribution) line.monthlyDistribution = updates.monthlyDistribution;
+        d.totalAnnual = Number(d.lineItems.reduce((s, l) => s + l.annual, 0).toFixed(3));
+        return _brandObj({ ...line });
+      }
+    }
+  }
+  return null;
+}
+
+export async function deleteBudgetLine(lineId) {
+  await delay();
+  for (const b of Object.values(_BUDGETS_DB)) {
+    for (const d of b.departments) {
+      const idx = d.lineItems.findIndex((l) => l.id === lineId);
+      if (idx >= 0) {
+        d.lineItems.splice(idx, 1);
+        d.totalAnnual = Number(d.lineItems.reduce((s, l) => s + l.annual, 0).toFixed(3));
+        return _brandObj({ success: true });
+      }
+    }
+  }
+  return { success: false };
+}
+
+export async function getBudgetForYear(year) {
+  await delay();
+  const all = Object.values(_BUDGETS_DB);
+  const match = all.find((b) => b.period?.fiscalYear === year);
+  if (match) return _brandObj({ ...match, departments: match.departments.map((d) => ({ ...d, lineItems: [...d.lineItems] })) });
+  const base = all[0];
+  if (!base) return null;
+  const factor = year < 2026 ? 0.88 : 1.0;
+  return _brandObj({
+    id: `BUD-${year}-FY`, period: { type: "annual", label: `FY ${year}`, fiscalYear: year },
+    status: year < 2026 ? "approved" : "draft", approvedBy: year < 2026 ? "owner" : null, approvedAt: year < 2026 ? `${year}-12-15T00:00:00Z` : null,
+    totalRevenue: Number((base.totalRevenue * factor).toFixed(3)), totalExpenses: Number((base.totalExpenses * factor).toFixed(3)),
+    netIncome: Number(((base.totalRevenue - base.totalExpenses) * factor).toFixed(3)),
+    departments: base.departments.map((d) => ({ ...d, id: `${d.id}-${year}`, totalAnnual: Number((d.totalAnnual * factor).toFixed(3)), lineItems: d.lineItems.map((l) => ({ ...l, annual: Number((l.annual * factor).toFixed(3)) })) })),
+  });
+}
+
+export async function addBudgetLineComment(lineId, content, author = "cfo") {
+  await delay();
+  if (!_BUDGET_COMMENTS_DB[lineId]) _BUDGET_COMMENTS_DB[lineId] = [];
+  const comment = { id: `bc-${_budgetCommentSeq++}`, lineId, author, authorRole: author === "owner" ? "Owner" : author === "cfo" ? "CFO" : "Junior", content, createdAt: new Date().toISOString(), edited: false, editedAt: null };
+  _BUDGET_COMMENTS_DB[lineId].push(comment);
+  return _brandObj({ ...comment });
+}
+
+export async function getBudgetLineComments(lineId) {
+  await delay();
+  return _brandObj(_BUDGET_COMMENTS_DB[lineId] ? [..._BUDGET_COMMENTS_DB[lineId]] : []);
+}
+
+export async function deleteBudgetLineComment(lineId, commentId) {
+  await delay();
+  if (!_BUDGET_COMMENTS_DB[lineId]) return { success: false };
+  const c = _BUDGET_COMMENTS_DB[lineId].find((x) => x.id === commentId);
+  if (!c) return { success: false };
+  if (Date.now() - new Date(c.createdAt).getTime() > 5 * 60 * 1000) return { success: false, error: "Cannot delete after 5 minutes" };
+  _BUDGET_COMMENTS_DB[lineId] = _BUDGET_COMMENTS_DB[lineId].filter((x) => x.id !== commentId);
+  return _brandObj({ success: true });
+}
+
+export async function getBudgetApprovalState(budgetId) {
+  await delay();
+  const b = _BUDGETS_DB[budgetId];
+  if (!b) return null;
+  return _brandObj({
+    status: b.status, approvedBy: b.approvedBy || null, approvedAt: b.approvedAt || null,
+    reviewers: [{ role: "Owner", status: b.status === "approved" || b.status === "active" ? "approved" : "pending" }],
+    history: b.workflowHistory || [],
+    nextAction: b.status === "draft" ? "Submit for approval" : b.status === "pending_review" ? "Awaiting Owner decision" : (b.status === "approved" || b.status === "active") ? "None — budget is active" : "Revise and resubmit",
+  });
+}
+
+// Seed sample comments
+(function _seedBudgetComments() {
+  _BUDGET_COMMENTS_DB["6100"] = [
+    { id: "bc-s1", lineId: "6100", author: "cfo", authorRole: "CFO", content: "Salaries include the 2 new hires starting Q2. Should we phase the increase or book full year?", createdAt: _daysAgo(3), edited: false, editedAt: null },
+    { id: "bc-s2", lineId: "6100", author: "owner", authorRole: "Owner", content: "Phase it — book 50% for Q2, full from Q3. Safer for cash flow.", createdAt: _daysAgo(2), edited: false, editedAt: null },
+  ];
+  _BUDGET_COMMENTS_DB["6300"] = [
+    { id: "bc-s3", lineId: "6300", author: "cfo", authorRole: "CFO", content: "Marketing is already 23% over budget YTD. Consider pulling Q2 allocation down by 15%.", createdAt: _daysAgo(1), edited: false, editedAt: null },
+  ];
+  _budgetCommentSeq = 10;
+})();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Month-End Close 20D-5 extensions
+// ─────────────────────────────────────────────────────────────────────────────
+
+const _CLOSE_CHECK_NOTES_DB = {};
+const _CLOSE_CHECK_ATTACHMENTS_DB = {};
+const _CLOSE_CHECK_OVERRIDES_DB = {};
+
+export async function getCloseSummary(periodKey) {
+  await delay();
+  const status = await getCloseStatusDetail(periodKey);
+  const tasks = await getMonthEndCloseTasks();
+  return _brandObj({
+    period: periodKey || "March 2026", status: status?.status || "in_progress",
+    closedAt: status?.status === "approved" ? _daysAgo(0) : null, closedBy: status?.status === "approved" ? "owner" : null,
+    checks: (tasks?.tasks || []).map((t) => ({ id: t.id, name: t.name, status: t.status, completedAt: t.completedAt, assignee: t.assignee })),
+    forcedItems: Object.entries(_CLOSE_CHECK_OVERRIDES_DB).map(([k, v]) => ({ checkId: k, reason: v.reason, overriddenBy: v.user, overriddenAt: v.timestamp })),
+    auditHash: `h:${Math.random().toString(36).slice(2, 10)}`,
+  });
+}
+
+export async function exportClosePackage(periodKey, _format = "csv") {
+  await delay();
+  const summary = await getCloseSummary(periodKey);
+  const header = ["Check", "Status", "Assignee", "Completed", "Override"];
+  const rows = [header, ...summary.checks.map((c) => [c.name, c.status, c.assignee?.name || "", c.completedAt || "", _CLOSE_CHECK_OVERRIDES_DB[c.id] ? `Override: ${_CLOSE_CHECK_OVERRIDES_DB[c.id].reason}` : ""])];
+  const csvText = rows.map((r) => r.map((c) => String(c).includes(",") ? `"${c}"` : c).join(",")).join("\n");
+  return _brandObj({ filename: `close_package_${(periodKey || "march_2026").replace(/\s+/g, "_")}.csv`, csvText, rowCount: rows.length - 1 });
+}
+
+export async function reopenPeriodClose(periodKey, reason, user = "cfo") {
+  await delay();
+  const status = await getCloseStatusDetail(periodKey);
+  if (!status) return { error: "Period not found" };
+  if (status.status === "in_progress" || status.status === "not_started") return { error: "Period is not closed" };
+  if (status.status === "approved" && user !== "owner") {
+    const taskId = `TSK-REOPEN-${Math.floor(Math.random() * 10000)}`;
+    TASKBOX_DB.unshift({
+      id: taskId, type: "request-approval",
+      title: `Period re-open request: ${periodKey || "March 2026"}`,
+      body: `CFO has requested to re-open the ${periodKey || "March 2026"} close. Reason: ${reason}`,
+      from: user, to: "owner", status: "open", priority: "high",
+      createdAt: new Date().toISOString(), unread: true,
+      linkedItem: { type: "period_reopen", periodKey: periodKey || "March 2026", reason },
+      attachments: [],
+    });
+    return _brandObj({ requiresApproval: true, taskId });
+  }
+  const fy = await getFiscalYearConfig();
+  const p = fy.periods.find((x) => x.month === (periodKey || "Mar 2026"));
+  if (p) { p.status = "open"; p.reopenedAt = new Date().toISOString(); p.reopenedBy = user; p.reopenReason = reason; }
+  return _brandObj({ success: true, status: "open" });
+}
+
+export async function approvePeriodReopen(periodKey, approvedBy = "owner") {
+  await delay();
+  const fy = await getFiscalYearConfig();
+  const p = fy.periods.find((x) => x.month === (periodKey || "Mar 2026"));
+  if (p) { p.status = "open"; p.reopenedAt = new Date().toISOString(); p.reopenedBy = approvedBy; }
+  return _brandObj({ success: true, status: "open" });
+}
+
+export async function rejectPeriodReopen(periodKey, rejectedBy = "owner", reason = "") {
+  await delay();
+  return _brandObj({ success: true, rejected: true, reason });
+}
+
+export async function recalculateCloseChecks(periodKey) {
+  await delay();
+  const tasks = await getMonthEndCloseTasks();
+  return _brandObj({
+    period: periodKey || "March 2026",
+    checks: (tasks?.tasks || []).map((t) => ({ id: t.id, name: t.name, status: _CLOSE_CHECK_OVERRIDES_DB[t.id] ? "complete" : t.status, overridden: !!_CLOSE_CHECK_OVERRIDES_DB[t.id], overrideReason: _CLOSE_CHECK_OVERRIDES_DB[t.id]?.reason || null, assignee: t.assignee, completedAt: t.completedAt })),
+    refreshedAt: new Date().toISOString(),
+  });
+}
+
+export async function overrideCloseCheck(_periodKey, checkId, reason, user = "cfo") {
+  await delay();
+  _CLOSE_CHECK_OVERRIDES_DB[checkId] = { reason, user, timestamp: new Date().toISOString() };
+  return _brandObj({ success: true, checkId, overridden: true });
+}
+
+export async function addCloseCheckNote(_periodKey, checkId, note, user = "cfo") {
+  await delay();
+  if (!_CLOSE_CHECK_NOTES_DB[checkId]) _CLOSE_CHECK_NOTES_DB[checkId] = [];
+  _CLOSE_CHECK_NOTES_DB[checkId].push({ id: `ccn-${Date.now()}`, checkId, note, user, createdAt: new Date().toISOString() });
+  return _brandObj({ success: true });
+}
+
+export async function getCloseCheckNotes(_periodKey, checkId) {
+  await delay();
+  return _brandObj(_CLOSE_CHECK_NOTES_DB[checkId] ? [..._CLOSE_CHECK_NOTES_DB[checkId]] : []);
+}
+
+export async function attachCloseCheckFile(_periodKey, checkId, file, user = "cfo") {
+  await delay();
+  if (!_CLOSE_CHECK_ATTACHMENTS_DB[checkId]) _CLOSE_CHECK_ATTACHMENTS_DB[checkId] = [];
+  const att = { id: `cca-${Date.now()}`, checkId, name: file.name, size: file.size, type: file.type, dataUrl: file.dataUrl || "", uploadedBy: user, uploadedAt: new Date().toISOString() };
+  _CLOSE_CHECK_ATTACHMENTS_DB[checkId].push(att);
+  return _brandObj({ ...att });
+}
+
+export async function getCloseCheckAttachments(_periodKey, checkId) {
+  await delay();
+  return _brandObj(_CLOSE_CHECK_ATTACHMENTS_DB[checkId] ? [..._CLOSE_CHECK_ATTACHMENTS_DB[checkId]] : []);
+}

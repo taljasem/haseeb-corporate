@@ -82,5 +82,34 @@
     "approve": "اعتماد الإقفال",
     "reject": "رفض الإقفال",
     "approved_toast": "تم اعتماد الإقفال — الفترة مقفلة"
+  },
+  "post_close": {
+    "status_closed": "مُقفلة",
+    "closed_by": "أقفلها {{user}} في {{date}}",
+    "view_summary": "عرض ملخص الإقفال",
+    "export_package": "تصدير حزمة الإقفال",
+    "reopen_button": "إعادة فتح الفترة"
+  },
+  "reopen": {
+    "modal_title": "إعادة فتح الفترة",
+    "modal_body": "ستؤدي إعادة فتح الفترة إلى إلغاء قفل جميع القيود لهذه الفترة. هل تريد المتابعة؟",
+    "reason_label": "سبب إعادة الفتح",
+    "reason_placeholder": "اشرح لماذا تحتاج إلى إعادة فتح هذه الفترة...",
+    "confirm_button": "إعادة فتح الفترة",
+    "cancel_button": "إلغاء",
+    "pending_approval_toast": "تم تقديم طلب إعادة الفتح للمالك للموافقة",
+    "reopened_toast": "تمت إعادة فتح الفترة"
+  },
+  "checks": {
+    "refresh_all": "تحديث الفحوصات",
+    "recheck_one": "إعادة الفحص",
+    "override_button": "تجاوز النجاح",
+    "override_reason_label": "سبب التجاوز",
+    "override_confirm": "تجاوز",
+    "add_note_button": "إضافة ملاحظة",
+    "attach_file_button": "إرفاق ملف",
+    "notes_header": "الملاحظات",
+    "attachments_header": "المرفقات",
+    "override_history_header": "سجل التجاوزات"
   }
 }

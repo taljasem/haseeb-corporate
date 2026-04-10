@@ -82,5 +82,34 @@
     "approve": "Approve close",
     "reject": "Reject close",
     "approved_toast": "Close approved — period locked"
+  },
+  "post_close": {
+    "status_closed": "CLOSED",
+    "closed_by": "Closed by {{user}} on {{date}}",
+    "view_summary": "View close summary",
+    "export_package": "Export close package",
+    "reopen_button": "Re-open period"
+  },
+  "reopen": {
+    "modal_title": "Re-open period",
+    "modal_body": "Re-opening the period will unlock all entries for this period. Continue?",
+    "reason_label": "Reason for re-opening",
+    "reason_placeholder": "Explain why you need to re-open this period...",
+    "confirm_button": "Re-open period",
+    "cancel_button": "Cancel",
+    "pending_approval_toast": "Re-open request submitted to Owner for approval",
+    "reopened_toast": "Period re-opened"
+  },
+  "checks": {
+    "refresh_all": "Refresh checks",
+    "recheck_one": "Re-check",
+    "override_button": "Override pass",
+    "override_reason_label": "Reason for override",
+    "override_confirm": "Override",
+    "add_note_button": "Add note",
+    "attach_file_button": "Attach file",
+    "notes_header": "Notes",
+    "attachments_header": "Attachments",
+    "override_history_header": "Override history"
   }
 }

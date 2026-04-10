@@ -108,5 +108,43 @@
     "send": "Send delegation tasks",
     "sending": "Sending...",
     "close": "Close"
+  },
+  "edit": {
+    "title": "Edit budget line",
+    "name_label": "Line name",
+    "category_label": "Category",
+    "monthly_label": "Monthly amounts",
+    "notes_label": "Notes",
+    "owner_label": "Owner",
+    "save_button": "Save changes",
+    "cancel_button": "Cancel",
+    "delete_button": "Delete line",
+    "delete_confirm": "Delete this budget line? This cannot be undone.",
+    "add_line": "Add line"
+  },
+  "historical": {
+    "label": "View year",
+    "current": "{{year}} (current)",
+    "read_only_banner": "Viewing {{year}} budget — read-only",
+    "back": "Back to current"
+  },
+  "forecast_link": {
+    "label": "View in forecast"
+  },
+  "comments": {
+    "title": "Comments ({{count}})",
+    "empty": "No comments yet",
+    "placeholder": "Add a comment...",
+    "post_button": "Post",
+    "delete_button": "Delete"
+  },
+  "approval": {
+    "draft": "Draft",
+    "pending_review": "Pending review",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "revision_requested": "Revision requested",
+    "workflow_title": "Approval workflow",
+    "next_action": "Next action: {{action}}"
   }
 }

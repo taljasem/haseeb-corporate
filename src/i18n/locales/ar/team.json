@@ -16,6 +16,53 @@
   "who_handles_what": "من يتولى ماذا",
   "no_rules": "لا توجد قواعد توجيه مُسندة",
   "manage_rules": "إدارة قواعد التوجيه ← (المدير المالي فقط)",
+  "sort": {
+    "name": "الاسم",
+    "role": "الدور",
+    "last_active": "آخر نشاط",
+    "joined": "تاريخ الانضمام"
+  },
+  "filter": {
+    "status_label": "الحالة",
+    "status_all": "جميع الحالات",
+    "role_label": "الدور",
+    "role_all": "جميع الأدوار",
+    "clear_all": "مسح الفلاتر"
+  },
+  "invite_modal": {
+    "title": "دعوة عضو جديد",
+    "field_name": "الاسم",
+    "field_name_placeholder": "الاسم الكامل",
+    "field_email": "البريد الإلكتروني",
+    "field_email_placeholder": "name@company.com",
+    "field_role": "الدور",
+    "field_message": "رسالة ترحيب (اختياري)",
+    "field_message_placeholder": "اكتب رسالة ترحيب...",
+    "send_button": "إرسال الدعوة",
+    "cancel_button": "إلغاء",
+    "success_toast": "تم إرسال الدعوة إلى {{email}}"
+  },
+  "remove": {
+    "button": "إزالة",
+    "modal_title": "إزالة عضو الفريق",
+    "confirm_body": "إزالة {{name}} من الفريق؟ سيتم إلغاء وصوله فورًا.",
+    "owner_disabled": "لا يمكن إزالة المالك",
+    "confirm_button": "إزالة العضو",
+    "cancel_button": "إلغاء",
+    "success_toast": "تمت إزالة {{name}} من الفريق"
+  },
+  "permissions": {
+    "section_title": "صلاحيات الأدوار",
+    "section_subtitle": "ما يمكن وما لا يمكن لكل دور",
+    "owner_title": "المالك",
+    "owner_bullets": "وصول كامل لجميع الشاشات\nيوافق على إعادة فتح الفترات\nيوافق على إكمال التسويات\nيدير أعضاء الفريق\nالتوقيع النهائي للتدقيق",
+    "cfo_title": "المدير المالي",
+    "cfo_bullets": "يدير المحاسبة والتسوية\nيدير إقفال نهاية الشهر\nيدير الميزانيات والتوقعات\nيراجع ويعتمد عمل المحاسب المساعد\nيتواصل مع المدققين",
+    "junior_title": "محاسب مساعد",
+    "junior_bullets": "إدخال بيانات العمليات\nإنشاء مسودات القيود\nرفع كشوف حسابات البنك\nيستجيب لطلبات المدير المالي\nتعديلات محدودة",
+    "auditor_title": "المدقق",
+    "auditor_bullets": "وصول للقراءة فقط للقطة المجمدة\nيرفع استفسارات\nيشغل فحوصات التدقيق\nيصدّر حزم التدقيق\nلا صلاحية كتابة على دفتر الأستاذ"
+  },
   "edit_modal": {
     "label": "الفريق",
     "title": "تعديل عضو",
@@ -32,8 +79,13 @@
     "role_cfo": "المدير المالي",
     "role_senior": "محاسب أول",
     "role_junior": "محاسب مساعد",
+    "role_auditor": "المدقق",
     "status_active": "نشط",
     "status_inactive": "غير نشط",
+    "status_invited": "مدعو",
+    "status_suspended": "موقوف",
+    "owner_warning": "المالك لديه صلاحية كاملة بما في ذلك إعادة فتح الفترات والموافقات",
+    "role_change_confirm": "تأكيد تغيير الدور؟ سيؤثر هذا على مستوى وصول العضو.",
     "cancel": "إلغاء",
     "save": "حفظ التغييرات",
     "saving": "جارٍ الحفظ…",

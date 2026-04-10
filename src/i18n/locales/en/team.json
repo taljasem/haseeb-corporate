@@ -16,6 +16,53 @@
   "who_handles_what": "WHO HANDLES WHAT",
   "no_rules": "No routing rules assigned",
   "manage_rules": "Manage routing rules → (CFO only)",
+  "sort": {
+    "name": "Name",
+    "role": "Role",
+    "last_active": "Last active",
+    "joined": "Joined"
+  },
+  "filter": {
+    "status_label": "Status",
+    "status_all": "All statuses",
+    "role_label": "Role",
+    "role_all": "All roles",
+    "clear_all": "Clear filters"
+  },
+  "invite_modal": {
+    "title": "Invite team member",
+    "field_name": "Name",
+    "field_name_placeholder": "Full name",
+    "field_email": "Email",
+    "field_email_placeholder": "name@company.com",
+    "field_role": "Role",
+    "field_message": "Welcome message (optional)",
+    "field_message_placeholder": "Write a welcome note...",
+    "send_button": "Send invite",
+    "cancel_button": "Cancel",
+    "success_toast": "Invite sent to {{email}}"
+  },
+  "remove": {
+    "button": "Remove",
+    "modal_title": "Remove team member",
+    "confirm_body": "Remove {{name}} from the team? This will revoke their access immediately.",
+    "owner_disabled": "The Owner cannot be removed",
+    "confirm_button": "Remove member",
+    "cancel_button": "Cancel",
+    "success_toast": "{{name}} removed from the team"
+  },
+  "permissions": {
+    "section_title": "ROLE PERMISSIONS",
+    "section_subtitle": "What each role can and cannot do",
+    "owner_title": "Owner",
+    "owner_bullets": "Full access to all screens\nApproves period re-opens\nApproves reconciliation completions\nManages team members\nFinal audit sign-off",
+    "cfo_title": "CFO",
+    "cfo_bullets": "Manages bookkeeping and reconciliation\nRuns month-end close\nManages budgets and forecasts\nReviews and approves junior work\nEngages with auditors",
+    "junior_title": "Junior",
+    "junior_bullets": "Data entry for transactions\nCreates draft JEs\nUploads bank statements\nResponds to CFO requests\nLimited modifications",
+    "auditor_title": "Auditor",
+    "auditor_bullets": "Read-only access to frozen snapshot\nRaises clarifications\nRuns audit checks\nExports audit packages\nNo write access to ledger"
+  },
   "edit_modal": {
     "label": "TEAM",
     "title": "Edit member",
@@ -32,8 +79,13 @@
     "role_cfo": "CFO",
     "role_senior": "Senior Accountant",
     "role_junior": "Junior Accountant",
+    "role_auditor": "Auditor",
     "status_active": "Active",
     "status_inactive": "Inactive",
+    "status_invited": "Invited",
+    "status_suspended": "Suspended",
+    "owner_warning": "Owners have full access including period re-opens and approvals",
+    "role_change_confirm": "Confirm role change? This affects the member's access level.",
     "cancel": "Cancel",
     "save": "Save changes",
     "saving": "Saving…",

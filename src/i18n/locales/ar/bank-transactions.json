@@ -10,7 +10,13 @@
     "today": "اليوم",
     "this_week": "هذا الأسبوع",
     "suggestions": "اقتراحات",
-    "needs_review": "بحاجة للمراجعة"
+    "needs_review": "بحاجة للمراجعة",
+    "category_label": "الفئة",
+    "category_all": "جميع الفئات",
+    "assignee_label": "المسؤول",
+    "assignee_all": "جميع المسؤولين",
+    "assignee_unassigned": "غير مُعيّن",
+    "clear_all": "مسح الفلاتر"
   },
   "detail": {
     "select_to_review": "اختر عملية للمراجعة.",
@@ -38,5 +44,38 @@
     "apply_all": "تطبيق الكل",
     "dismiss": "تجاهل",
     "auto_cat_name": "تصنيف تلقائي لـ {{merchant}}"
+  },
+  "bulk": {
+    "enter_mode": "تحديد",
+    "exit_mode": "إلغاء",
+    "selected_count": "{{count}} محدد",
+    "select_all_visible": "تحديد الكل المرئي",
+    "actions": {
+      "categorize_all": "تصنيف الكل",
+      "assign_to": "تعيين إلى...",
+      "create_rule": "إنشاء قاعدة من التحديد",
+      "export": "تصدير المحدد (CSV)",
+      "mark_reviewed": "تحديد كمُراجَع"
+    },
+    "confirm_categorize": "تطبيق الفئة \"{{category}}\" على {{count}} عملية؟",
+    "confirm_assign": "تعيين {{count}} عملية إلى {{assignee}}؟",
+    "applied_toast": "تم تحديث {{count}} عملية",
+    "skipped_toast": "تم تخطي {{count}} عملية"
+  },
+  "sort": {
+    "by_date": "التاريخ",
+    "by_amount": "المبلغ",
+    "by_merchant": "الجهة",
+    "by_category": "الفئة",
+    "by_status": "الحالة",
+    "asc": "تصاعدي",
+    "desc": "تنازلي"
+  },
+  "attachments": {
+    "section_title": "المرفقات ({{count}})",
+    "empty": "لا توجد مرفقات بعد",
+    "max_files": "حد أقصى 3 ملفات",
+    "max_size": "حد أقصى 5 ميغابايت لكل ملف",
+    "accepted_types": "PDF، صور، Excel، Word"
   }
 }

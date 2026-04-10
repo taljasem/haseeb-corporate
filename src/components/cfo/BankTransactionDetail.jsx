@@ -4,7 +4,8 @@ import { formatKWD, formatDate } from "../../utils/format";
 import EngineConfidencePill from "./EngineConfidencePill";
 import JournalEntryCard from "./JournalEntryCard";
 import AminahTag from "../AminahTag";
-import { suggestJournalEntryFromBankTransaction } from "../../engine/mockEngine";
+import FileAttachment from "../shared/FileAttachment";
+import { suggestJournalEntryFromBankTransaction, getTransactionAttachments, attachTransactionFile, removeTransactionAttachment } from "../../engine/mockEngine";
 
 function Field({ label, value, mono = false }) {
   return (
@@ -37,12 +38,15 @@ export default function BankTransactionDetail({ tx, onOpenAminah, onConfirmed })
   const { t } = useTranslation("bank-transactions");
   const [suggestion, setSuggestion] = useState(null);
   const [posted, setPosted] = useState(false);
+  const [attachments, setAttachments] = useState([]);
 
   useEffect(() => {
     setSuggestion(null);
     setPosted(false);
+    setAttachments([]);
     if (tx) {
       suggestJournalEntryFromBankTransaction(tx).then(setSuggestion);
+      getTransactionAttachments(tx.id).then(setAttachments);
     }
   }, [tx]);
 
@@ -110,6 +114,20 @@ export default function BankTransactionDetail({ tx, onOpenAminah, onConfirmed })
           />
           <Field label={t("detail.field_direction")} value={tx.amount < 0 ? t("detail.direction_outflow") : t("detail.direction_inflow")} />
         </div>
+      </div>
+
+      {/* Attachments */}
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 8 }}>
+          {t("attachments.section_title", { count: attachments.length })}
+        </div>
+        <FileAttachment
+          attachments={attachments}
+          onAttach={async (file) => { const att = await attachTransactionFile(tx.id, file); if (att && !att.error) setAttachments((prev) => [...prev, att]); }}
+          onRemove={async (id) => { await removeTransactionAttachment(tx.id, id); setAttachments((prev) => prev.filter((a) => a.id !== id)); }}
+          readonly={false}
+          currentUserId="cfo"
+        />
       </div>
 
       {/* Engine suggests header */}

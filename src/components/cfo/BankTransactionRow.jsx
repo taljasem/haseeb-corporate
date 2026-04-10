@@ -8,14 +8,14 @@ function fmtAmount(n) {
   return n < 0 ? `-${abs}` : `+${abs}`;
 }
 
-export default function BankTransactionRow({ tx, selected, onSelect }) {
+export default function BankTransactionRow({ tx, selected, onSelect, selectable, isChecked, onToggleCheck }) {
   return (
     <div
       onClick={() => onSelect(tx)}
       data-selected-indicator={selected ? "start" : undefined}
       style={{
         display: "grid",
-        gridTemplateColumns: "46px 1fr auto auto",
+        gridTemplateColumns: selectable ? "28px 46px 1fr auto auto" : "46px 1fr auto auto",
         gap: 12,
         alignItems: "center",
         padding: "12px 14px",
@@ -32,6 +32,11 @@ export default function BankTransactionRow({ tx, selected, onSelect }) {
         if (!selected) e.currentTarget.style.background = "transparent";
       }}
     >
+      {selectable && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <input type="checkbox" checked={!!isChecked} onChange={(e) => { e.stopPropagation(); onToggleCheck && onToggleCheck(tx.id); }} onClick={(e) => e.stopPropagation()} style={{ width: 15, height: 15, accentColor: "var(--accent-primary)", cursor: "pointer" }} />
+        </div>
+      )}
       <div
         style={{
           fontFamily: "'DM Mono', monospace",

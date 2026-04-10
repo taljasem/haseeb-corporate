@@ -7,7 +7,8 @@
     "completed": "مكتملة",
     "in_progress": "قيد التنفيذ",
     "not_started": "لم تبدأ",
-    "locked": "مقفلة"
+    "locked": "مقفلة",
+    "pending_approval": "بانتظار الموافقة"
   },
   "card": {
     "matched": "مطابقة",
@@ -42,6 +43,9 @@
     "type_amount_mismatch": "اختلاف في المبلغ",
     "type_missing_ledger": "قيد مفقود في دفتر الأستاذ",
     "type_date_mismatch": "اختلاف في التاريخ",
+    "type_bank_only": "البنك فقط",
+    "type_ledger_only": "دفتر الأستاذ فقط",
+    "type_duplicate": "مكرر",
     "resolved": "✓ مُسوَّى",
     "create_je": "إنشاء قيد",
     "accept_match": "قبول المطابقة",
@@ -57,5 +61,133 @@
     "cancel": "إلغاء",
     "confirm": "ترحيل القيد والمطابقة",
     "close": "إغلاق"
+  },
+  "auto_match": {
+    "banner_title": "اكتملت المطابقة التلقائية",
+    "banner_body": "تمت مطابقة {{matched}} عنصر — {{exceptions}} استثناءات بحاجة للمراجعة",
+    "suggestions_body": "{{suggestions}} اقتراحات بحاجة لتأكيدك",
+    "dismiss": "تجاهل"
+  },
+  "confidence": {
+    "exact": "مطابقة تامة",
+    "high": "ثقة عالية",
+    "medium": "ثقة متوسطة",
+    "low": "ثقة منخفضة",
+    "manual": "يدوي",
+    "rule": "حسب القاعدة",
+    "bulk_rule": "قاعدة مجمعة",
+    "fuzzy_confirmed": "تقريبية — مؤكدة"
+  },
+  "suggestions": {
+    "title": "مطابقات مقترحة",
+    "subtitle": "{{count}} اقتراحات بحاجة لتأكيد بشري",
+    "confirm_button": "تأكيد المطابقة",
+    "dismiss_button": "ليست مطابقة",
+    "confidence_label": "ثقة {{confidence}}%",
+    "day_diff_label": "فارق {{days}} يوم",
+    "token_overlap_label": "تطابق الوصف {{percent}}%",
+    "empty_title": "لا توجد اقتراحات",
+    "empty_body": "جميع العناصر إما مطابقة أو استثنائية."
+  },
+  "bulk_rule": {
+    "title": "مطابقة مجمعة حسب القاعدة",
+    "subtitle": "مطابقة العناصر المتبقية باستخدام تفاوتات مخصصة",
+    "amount_tolerance_label": "تفاوت المبلغ (د.ك)",
+    "amount_tolerance_help": "سيتم مطابقة العناصر ذات المبالغ ضمن هذا النطاق",
+    "date_tolerance_label": "تفاوت التاريخ (أيام)",
+    "date_tolerance_help": "سيتم مطابقة العناصر ذات التواريخ ضمن هذا النطاق",
+    "desc_overlap_label": "الحد الأدنى لتطابق الوصف",
+    "desc_overlap_help": "0 = أي وصف، 1 = تطابق تام",
+    "preview_button": "معاينة المطابقات",
+    "preview_count": "{{count}} عنصر سيتطابق مع هذه القاعدة",
+    "preview_empty": "لا توجد عناصر تطابق هذه التفاوتات",
+    "apply_button": "تطبيق القاعدة",
+    "cancel_button": "إلغاء",
+    "applied_toast": "تمت مطابقة {{count}} عنصر عبر القاعدة"
+  },
+  "history": {
+    "title": "سجل التسويات",
+    "subtitle": "الفترات السابقة لـ {{account}}",
+    "period_column": "الفترة",
+    "status_column": "الحالة",
+    "reconciled_by_column": "تمت التسوية بواسطة",
+    "completed_at_column": "تاريخ الإكمال",
+    "matched_count_column": "المطابقات",
+    "exceptions_column": "الاستثناءات المحلولة",
+    "difference_column": "الفرق",
+    "view_button": "عرض",
+    "empty_title": "لا توجد تسويات سابقة",
+    "empty_body": "لم يتم العثور على سجل تسويات لهذا الحساب."
+  },
+  "complete": {
+    "title": "إكمال التسوية",
+    "subtitle_clean": "تم حل جميع الاستثناءات. هل تريد إكمال هذه التسوية؟",
+    "subtitle_with_exceptions": "لا يزال هناك {{count}} استثناءات لم تُحل. هل تريد الإكمال على أي حال؟",
+    "warning_soft_closed": "هذه الفترة مغلقة جزئيًا. سيؤدي الإكمال إلى إنشاء مهمة موافقة للمالك.",
+    "warning_difference": "فرق التسوية هو {{amount}}. سيتم تثبيت هذا الفرق عند الإكمال.",
+    "confirm_button": "إكمال التسوية",
+    "force_button": "إكمال على أي حال",
+    "cancel_button": "إلغاء",
+    "completed_toast": "اكتملت التسوية",
+    "pending_approval_toast": "تم التقديم للمالك للموافقة",
+    "reopen_button": "إعادة فتح",
+    "reopen_confirm_title": "إعادة فتح التسوية؟",
+    "reopen_confirm_body": "سيتم إلغاء قفل التسوية للتعديل. استخدم فقط إذا كانت هناك حاجة لتصحيحات.",
+    "reopen_confirm_button": "إعادة فتح",
+    "reopened_toast": "تمت إعادة فتح التسوية"
+  },
+  "export": {
+    "button": "تصدير CSV",
+    "downloading": "جارٍ تنزيل {{filename}}..."
+  },
+  "upload": {
+    "button": "رفع كشف حساب",
+    "modal_title": "رفع كشف حساب بنكي",
+    "modal_subtitle": "ملف CSV من البنك — حد أقصى 5 ميغابايت",
+    "drop_zone_title": "أسقط ملف CSV هنا",
+    "drop_zone_body": "أو انقر للتصفح",
+    "format_help_title": "الأعمدة المطلوبة",
+    "format_help_body": "التاريخ، الوصف، المبلغ (أو مدين/دائن)، المرجع (اختياري)",
+    "format_help_link": "عرض دليل التنسيق",
+    "selected_file": "المحدد: {{filename}} ({{size}})",
+    "parsing": "جارٍ تحليل الملف...",
+    "import_button": "استيراد الكشف",
+    "cancel_button": "إلغاء",
+    "success_title": "تم استيراد الكشف",
+    "success_body": "تم استيراد {{count}} عنصر — {{autoMatched}} مطابقة تلقائية، {{suggestions}} اقتراحات",
+    "warnings_header": "تحذيرات ({{count}})",
+    "error_empty": "الملف فارغ",
+    "error_no_header": "يجب أن يحتوي CSV على صف رأس",
+    "error_missing_columns": "أعمدة مطلوبة مفقودة",
+    "error_unparseable": "تعذر تحليل الملف",
+    "error_too_large": "الملف كبير جدًا (حد أقصى 5 ميغابايت)",
+    "error_wrong_type": "يُدعم ملفات CSV فقط"
+  },
+  "sources": {
+    "embedded": "متصل بالبنك",
+    "embedded_body": "مسحوب من {{bank}}",
+    "uploaded": "كشف مرفوع",
+    "uploaded_body": "من {{filename}}",
+    "manual": "إدخال يدوي"
+  },
+  "exception_types": {
+    "bank_only": "البنك فقط",
+    "ledger_only": "دفتر الأستاذ فقط",
+    "amount_mismatch": "اختلاف في المبلغ",
+    "date_mismatch": "اختلاف في التاريخ",
+    "duplicate": "مكرر",
+    "unmatched": "غير مطابق"
+  },
+  "exception_severity": {
+    "info": "معلومات",
+    "warning": "تحذير",
+    "critical": "حرج"
+  },
+  "resolution_types": {
+    "create_je_from_statement": "إنشاء قيد من الكشف",
+    "create_adjustment_je": "إنشاء قيد تسوية",
+    "accept_timing": "قبول فارق التوقيت",
+    "wait_clearance": "انتظار التخليص البنكي",
+    "ignore": "تجاهل"
   }
 }

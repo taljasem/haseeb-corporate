@@ -12,6 +12,8 @@ import {
   cancelTask as engineCancelTask,
   approveCloseAndSyncTask,
   rejectCloseAndSyncTask,
+  approveReconciliationCompletion,
+  rejectReconciliationCompletion,
   bulkApproveTasks,
   bulkRejectTasks,
   bulkAssignTasks,
@@ -204,9 +206,16 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
           const isBudgetApproval = task.type === "approve-budget";
           const isCloseApproval =
             task.type === "request-approval" && task.linkedItem?.type === "month-end-close";
+          const isReconciliationApproval =
+            task.type === "request-approval" && task.linkedItem?.type === "reconciliation";
           const budgetId = task.linkedItem?.budgetId;
           if (action === "approve") {
-            if (isCloseApproval) {
+            if (isReconciliationApproval && task.linkedItem?.reconciliationId) {
+              await approveReconciliationCompletion(task.linkedItem.reconciliationId, author);
+              await engineCompleteTask(task.id, "Reconciliation approved.", author);
+              setToast("Reconciliation approved");
+              setTimeout(() => setToast(null), 2600);
+            } else if (isCloseApproval) {
               await approveCloseAndSyncTask(task.linkedItem?.period || null);
             } else if (isBudgetApproval && budgetId) {
               await engineApproveBudget(budgetId, author);
@@ -226,7 +235,12 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
               await engineReplyToTask(task.id, `[Requested changes] ${note}`, author);
             }
           } else if (action === "reject") {
-            if (isCloseApproval) {
+            if (isReconciliationApproval && task.linkedItem?.reconciliationId) {
+              await rejectReconciliationCompletion(task.linkedItem.reconciliationId, author, note || "");
+              await engineCompleteTask(task.id, `Reconciliation rejected: ${note || "No reason given"}`, author);
+              setToast("Reconciliation rejected");
+              setTimeout(() => setToast(null), 2600);
+            } else if (isCloseApproval) {
               await rejectCloseAndSyncTask(task.linkedItem?.period || null, note || "");
             } else {
               await engineReplyToTask(task.id, `[Rejected] ${note}`, author);

@@ -7,7 +7,8 @@
     "completed": "COMPLETED",
     "in_progress": "IN PROGRESS",
     "not_started": "NOT STARTED",
-    "locked": "LOCKED"
+    "locked": "LOCKED",
+    "pending_approval": "PENDING APPROVAL"
   },
   "card": {
     "matched": "matched",
@@ -42,6 +43,9 @@
     "type_amount_mismatch": "AMOUNT MISMATCH",
     "type_missing_ledger": "MISSING LEDGER ENTRY",
     "type_date_mismatch": "DATE MISMATCH",
+    "type_bank_only": "BANK ONLY",
+    "type_ledger_only": "LEDGER ONLY",
+    "type_duplicate": "DUPLICATE",
     "resolved": "✓ RESOLVED",
     "create_je": "Create JE",
     "accept_match": "Accept match",
@@ -57,5 +61,133 @@
     "cancel": "Cancel",
     "confirm": "Post entry & match",
     "close": "Close"
+  },
+  "auto_match": {
+    "banner_title": "Auto-match complete",
+    "banner_body": "Matched {{matched}} items — {{exceptions}} exceptions need review",
+    "suggestions_body": "{{suggestions}} suggestions need your confirmation",
+    "dismiss": "Dismiss"
+  },
+  "confidence": {
+    "exact": "Exact",
+    "high": "High confidence",
+    "medium": "Medium confidence",
+    "low": "Low confidence",
+    "manual": "Manual",
+    "rule": "Rule-based",
+    "bulk_rule": "Bulk rule",
+    "fuzzy_confirmed": "Fuzzy — confirmed"
+  },
+  "suggestions": {
+    "title": "Suggested matches",
+    "subtitle": "{{count}} suggestions need human confirmation",
+    "confirm_button": "Confirm match",
+    "dismiss_button": "Not a match",
+    "confidence_label": "{{confidence}}% confidence",
+    "day_diff_label": "{{days}} day difference",
+    "token_overlap_label": "{{percent}}% description overlap",
+    "empty_title": "No suggestions",
+    "empty_body": "All items are either matched or exceptional."
+  },
+  "bulk_rule": {
+    "title": "Bulk match by rule",
+    "subtitle": "Match remaining items using custom tolerances",
+    "amount_tolerance_label": "Amount tolerance (KWD)",
+    "amount_tolerance_help": "Items with amounts within this range will be matched",
+    "date_tolerance_label": "Date tolerance (days)",
+    "date_tolerance_help": "Items with dates within this range will be matched",
+    "desc_overlap_label": "Minimum description overlap",
+    "desc_overlap_help": "0 = any, 1 = exact match",
+    "preview_button": "Preview matches",
+    "preview_count": "{{count}} items would match this rule",
+    "preview_empty": "No items match these tolerances",
+    "apply_button": "Apply rule",
+    "cancel_button": "Cancel",
+    "applied_toast": "{{count}} items matched via rule"
+  },
+  "history": {
+    "title": "Reconciliation history",
+    "subtitle": "Prior periods for {{account}}",
+    "period_column": "Period",
+    "status_column": "Status",
+    "reconciled_by_column": "Reconciled by",
+    "completed_at_column": "Completed",
+    "matched_count_column": "Matched",
+    "exceptions_column": "Exceptions resolved",
+    "difference_column": "Difference",
+    "view_button": "View",
+    "empty_title": "No prior reconciliations",
+    "empty_body": "No reconciliation history found for this account."
+  },
+  "complete": {
+    "title": "Complete reconciliation",
+    "subtitle_clean": "All exceptions resolved. Complete this reconciliation?",
+    "subtitle_with_exceptions": "{{count}} exceptions are still unresolved. Complete anyway?",
+    "warning_soft_closed": "This period is soft-closed. Completion will create an approval task for the Owner.",
+    "warning_difference": "Reconciliation difference is {{amount}}. Completing will lock this difference in.",
+    "confirm_button": "Complete reconciliation",
+    "force_button": "Complete anyway",
+    "cancel_button": "Cancel",
+    "completed_toast": "Reconciliation complete",
+    "pending_approval_toast": "Submitted to Owner for approval",
+    "reopen_button": "Reopen",
+    "reopen_confirm_title": "Reopen reconciliation?",
+    "reopen_confirm_body": "This will unlock the reconciliation for editing. Use only if corrections are needed.",
+    "reopen_confirm_button": "Reopen",
+    "reopened_toast": "Reconciliation reopened"
+  },
+  "export": {
+    "button": "Export CSV",
+    "downloading": "Downloading {{filename}}..."
+  },
+  "upload": {
+    "button": "Upload statement",
+    "modal_title": "Upload bank statement",
+    "modal_subtitle": "CSV file from your bank — max 5 MB",
+    "drop_zone_title": "Drop a CSV file here",
+    "drop_zone_body": "or click to browse",
+    "format_help_title": "Expected columns",
+    "format_help_body": "Date, Description, Amount (or Debit/Credit), Reference (optional)",
+    "format_help_link": "View format guide",
+    "selected_file": "Selected: {{filename}} ({{size}})",
+    "parsing": "Parsing file...",
+    "import_button": "Import statement",
+    "cancel_button": "Cancel",
+    "success_title": "Statement imported",
+    "success_body": "Imported {{count}} items — {{autoMatched}} auto-matched, {{suggestions}} suggestions",
+    "warnings_header": "Warnings ({{count}})",
+    "error_empty": "File is empty",
+    "error_no_header": "CSV must have a header row",
+    "error_missing_columns": "Missing required columns",
+    "error_unparseable": "File could not be parsed",
+    "error_too_large": "File is too large (max 5 MB)",
+    "error_wrong_type": "Only CSV files are supported"
+  },
+  "sources": {
+    "embedded": "Bank-connected",
+    "embedded_body": "Pulled from {{bank}}",
+    "uploaded": "Uploaded statement",
+    "uploaded_body": "From {{filename}}",
+    "manual": "Manual entry"
+  },
+  "exception_types": {
+    "bank_only": "Bank only",
+    "ledger_only": "Ledger only",
+    "amount_mismatch": "Amount mismatch",
+    "date_mismatch": "Date mismatch",
+    "duplicate": "Duplicate",
+    "unmatched": "Unmatched"
+  },
+  "exception_severity": {
+    "info": "Info",
+    "warning": "Warning",
+    "critical": "Critical"
+  },
+  "resolution_types": {
+    "create_je_from_statement": "Create JE from statement",
+    "create_adjustment_je": "Create adjustment JE",
+    "accept_timing": "Accept timing difference",
+    "wait_clearance": "Wait for bank clearance",
+    "ignore": "Ignore"
   }
 }

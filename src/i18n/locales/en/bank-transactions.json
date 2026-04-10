@@ -10,7 +10,13 @@
     "today": "Today",
     "this_week": "This week",
     "suggestions": "Suggestions",
-    "needs_review": "Needs review"
+    "needs_review": "Needs review",
+    "category_label": "Category",
+    "category_all": "All categories",
+    "assignee_label": "Assignee",
+    "assignee_all": "All assignees",
+    "assignee_unassigned": "Unassigned",
+    "clear_all": "Clear filters"
   },
   "detail": {
     "select_to_review": "Select a transaction to review.",
@@ -38,5 +44,38 @@
     "apply_all": "Apply All",
     "dismiss": "Dismiss",
     "auto_cat_name": "{{merchant}} auto-categorization"
+  },
+  "bulk": {
+    "enter_mode": "Select",
+    "exit_mode": "Cancel",
+    "selected_count": "{{count}} selected",
+    "select_all_visible": "Select all visible",
+    "actions": {
+      "categorize_all": "Categorize all",
+      "assign_to": "Assign to...",
+      "create_rule": "Create rule from selection",
+      "export": "Export selected (CSV)",
+      "mark_reviewed": "Mark as reviewed"
+    },
+    "confirm_categorize": "Apply category \"{{category}}\" to {{count}} transactions?",
+    "confirm_assign": "Assign {{count}} transactions to {{assignee}}?",
+    "applied_toast": "{{count}} transactions updated",
+    "skipped_toast": "{{count}} transactions skipped"
+  },
+  "sort": {
+    "by_date": "Date",
+    "by_amount": "Amount",
+    "by_merchant": "Merchant",
+    "by_category": "Category",
+    "by_status": "Status",
+    "asc": "Ascending",
+    "desc": "Descending"
+  },
+  "attachments": {
+    "section_title": "Attachments ({{count}})",
+    "empty": "No attachments yet",
+    "max_files": "Max 3 files",
+    "max_size": "Max 5 MB per file",
+    "accepted_types": "PDF, images, Excel, Word"
   }
 }

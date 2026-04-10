@@ -381,20 +381,23 @@ export async function getEngineStatus() {
   };
 }
 
+// Mutable bank transactions store — extracted from inline array so bulk ops can mutate
+const _BANK_TX_DB = [
+  { id: "bt-1",  date: "2026-04-07", merchant: "KNPC fuel cards",            amount: -1820.5,  currency: "KWD", source: "KIB Operating", terminal: "POS-2241", description: "KNPC fuel cards",            categoryCode: null, assigneeId: null, reviewed: false, engineSuggestion: { account: "Fuel & Vehicle",     accountCode: "6420", confidence: "RULE",    reasoning: "Matched rule: KNPC merchants → Fuel & Vehicle (6420)" } },
+  { id: "bt-2",  date: "2026-04-07", merchant: "Alghanim Industries",        amount: 12450.0,  currency: "KWD", source: "KIB Operating", terminal: "WIRE",     description: "Alghanim Industries",        categoryCode: null, assigneeId: null, reviewed: false, engineSuggestion: { account: "Sales Revenue",      accountCode: "4100", confidence: "PATTERN", reasoning: "Pattern match: customer payments from Alghanim entities" } },
+  { id: "bt-3",  date: "2026-04-07", merchant: "Al Shaya Trading",           amount: 8740.0,   currency: "KWD", source: "KIB Operating", terminal: "WIRE",     description: "Al Shaya Trading",           categoryCode: null, assigneeId: null, reviewed: false, engineSuggestion: { account: "Sales Revenue",      accountCode: "4100", confidence: "RULE",    reasoning: "Recurring customer — rule active since Jan 2025" } },
+  { id: "bt-4",  date: "2026-04-06", merchant: "Office rent — Sharq",        amount: -4200.0,  currency: "KWD", source: "KIB Operating", terminal: "STO",      description: "Office rent — Sharq",        categoryCode: null, assigneeId: null, reviewed: false, engineSuggestion: { account: "Office Rent",        accountCode: "6200", confidence: "RULE",    reasoning: "Standing order — landlord rule" } },
+  { id: "bt-5",  date: "2026-04-06", merchant: "Zain Kuwait",                amount: -624.75,  currency: "KWD", source: "KIB Operating", terminal: "DD",       description: "Zain Kuwait",                categoryCode: null, assigneeId: null, reviewed: false, engineSuggestion: { account: "Internet & Phone",   accountCode: "6220", confidence: "RULE",    reasoning: "Direct debit — telecom rule" } },
+  { id: "bt-6",  date: "2026-04-05", merchant: "Avenues Mall — booth fee",   amount: -3100.0,  currency: "KWD", source: "KIB Operating", terminal: "POS",      description: "Avenues Mall — booth fee",   categoryCode: null, assigneeId: null, reviewed: false, engineSuggestion: { account: "Trade Shows",        accountCode: "6310", confidence: "AI",      reasoning: "AI inferred from memo: 'tradeshow booth Q2'" } },
+  { id: "bt-7",  date: "2026-04-05", merchant: "Boubyan transfer in — unidentified", amount: 2462.5, currency: "KWD", source: "KIB Operating", terminal: "WIRE", description: "Boubyan transfer in — unidentified", categoryCode: null, assigneeId: null, reviewed: false, engineSuggestion: { account: "",              accountCode: "",     confidence: "NONE",    reasoning: "No matching customer or rule. Manual review required." } },
+  { id: "bt-8",  date: "2026-04-04", merchant: "Ooredoo fiber",              amount: -135.0,   currency: "KWD", source: "KIB Operating", terminal: "DD",       description: "Ooredoo fiber",              categoryCode: null, assigneeId: null, reviewed: false, engineSuggestion: { account: "Internet & Phone",   accountCode: "6220", confidence: "RULE",    reasoning: "Direct debit — telecom rule" } },
+  { id: "bt-9",  date: "2026-04-04", merchant: "Tradeshow vendor — Dubai",   amount: -1240.0,  currency: "KWD", source: "KIB Operating", terminal: "WIRE",     description: "Tradeshow vendor — Dubai",   categoryCode: null, assigneeId: null, reviewed: false, engineSuggestion: { account: "Trade Shows",        accountCode: "6310", confidence: "PATTERN", reasoning: "Pattern: vendor previously coded to Trade Shows" } },
+  { id: "bt-10", date: "2026-04-03", merchant: "Misc deposit — counter",     amount: 380.0,    currency: "KWD", source: "KIB Operating", terminal: "BRANCH",   description: "Misc deposit — counter",     categoryCode: null, assigneeId: null, reviewed: false, engineSuggestion: { account: "",              accountCode: "",     confidence: "NONE",    reasoning: "No description from bank. Needs manual coding." } },
+];
+
 export async function getBankTransactionsPending() {
   await delay();
-  return _brandObj([
-    { id: "bt-1", date: "Apr 7", merchant: "KNPC fuel cards",            amount: -1820.5,  currency: "KWD", source: "KIB Operating", terminal: "POS-2241", engineSuggestion: { account: "Fuel & Vehicle",            accountCode: "6420", confidence: "RULE",    reasoning: "Matched rule: KNPC merchants → Fuel & Vehicle (6420)" } },
-    { id: "bt-2", date: "Apr 7", merchant: "Alghanim Industries",        amount: 12450.0,  currency: "KWD", source: "KIB Operating", terminal: "WIRE",     engineSuggestion: { account: "Sales Revenue",            accountCode: "4100", confidence: "PATTERN", reasoning: "Pattern match: customer payments from Alghanim entities" } },
-    { id: "bt-3", date: "Apr 7", merchant: "Al Shaya Trading",           amount: 8740.0,   currency: "KWD", source: "KIB Operating", terminal: "WIRE",     engineSuggestion: { account: "Sales Revenue",            accountCode: "4100", confidence: "RULE",    reasoning: "Recurring customer — rule active since Jan 2025" } },
-    { id: "bt-4", date: "Apr 6", merchant: "Office rent — Sharq",        amount: -4200.0,  currency: "KWD", source: "KIB Operating", terminal: "STO",      engineSuggestion: { account: "Office Rent",              accountCode: "6200", confidence: "RULE",    reasoning: "Standing order — landlord rule" } },
-    { id: "bt-5", date: "Apr 6", merchant: "Zain Kuwait",                amount: -624.75,  currency: "KWD", source: "KIB Operating", terminal: "DD",       engineSuggestion: { account: "Internet & Phone",         accountCode: "6220", confidence: "RULE",    reasoning: "Direct debit — telecom rule" } },
-    { id: "bt-6", date: "Apr 5", merchant: "Avenues Mall — booth fee",   amount: -3100.0,  currency: "KWD", source: "KIB Operating", terminal: "POS",      engineSuggestion: { account: "Trade Shows",              accountCode: "6310", confidence: "AI",      reasoning: "AI inferred from memo: 'tradeshow booth Q2'" } },
-    { id: "bt-7", date: "Apr 5", merchant: "Boubyan transfer in — unidentified", amount: 2462.5, currency: "KWD", source: "KIB Operating", terminal: "WIRE", engineSuggestion: { account: "",                       accountCode: "",     confidence: "NONE",    reasoning: "No matching customer or rule. Manual review required." } },
-    { id: "bt-8", date: "Apr 4", merchant: "Ooredoo fiber",              amount: -135.0,   currency: "KWD", source: "KIB Operating", terminal: "DD",       engineSuggestion: { account: "Internet & Phone",         accountCode: "6220", confidence: "RULE",    reasoning: "Direct debit — telecom rule" } },
-    { id: "bt-9", date: "Apr 4", merchant: "Tradeshow vendor — Dubai",   amount: -1240.0,  currency: "KWD", source: "KIB Operating", terminal: "WIRE",     engineSuggestion: { account: "Trade Shows",              accountCode: "6310", confidence: "PATTERN", reasoning: "Pattern: vendor previously coded to Trade Shows" } },
-    { id: "bt-10", date: "Apr 3", merchant: "Misc deposit — counter",    amount: 380.0,    currency: "KWD", source: "KIB Operating", terminal: "BRANCH",   engineSuggestion: { account: "",                       accountCode: "",     confidence: "NONE",    reasoning: "No description from bank. Needs manual coding." } },
-  ]);
+  return _brandObj(_BANK_TX_DB.map((tx) => ({ ...tx })));
 }
 
 export async function getChartOfAccounts() {
@@ -3612,22 +3615,38 @@ function _mkException(id, type, description, suggestedAction, bankItemId = null,
     _mkBankItem("OP-B028", _daysAgo(4),  "KIB monthly service fee",             "FEE-0342",     -8.0),
     _mkBankItem("OP-B029", _daysAgo(3),  "Talabat payout (commission adj)",     "TLB-92104",    3800.0),
     _mkBankItem("OP-B030", _daysAgo(2),  "Alghanim Industries wire",            "ALG-88123",    12450.0),
+    // 20D-3: items for pending suggestions
+    _mkBankItem("OP-B031", _daysAgo(4),  "Zain Kuwait autopay",                 "DD-ZN-0412",   47.25),
+    _mkBankItem("OP-B032", _daysAgo(3),  "Ooredoo fiber",                       "DD-OO-0413",   35.5),
+    _mkBankItem("OP-B033", _daysAgo(2),  "Avenues Mall rent — April",           "STO-AV-0414",  4500.0),
+    // 20D-3: items for ledger_only + duplicate exception types
+    _mkBankItem("OP-B034", _daysAgo(1),  "Duplicate KNPC fuel",                 "POS-KNPC-DUP", 82.75),
   ];
   unmatchedBankItems.push(...unmatchedBank);
 
   const unmatchedLedger = [
     _mkLedgerEntry("OP-L026", _daysAgo(3), "Talabat payout (JE)", 3750.0, "JE-0411"),
     _mkLedgerEntry("OP-L027", _daysAgo(3), "Alghanim payment (JE)", 12450.0, "JE-0412"),
+    // 20D-3: items for pending suggestions
+    _mkLedgerEntry("OP-L028", _daysAgo(5), "Zain telecom bill", 47.25, "JE-0413"),
+    _mkLedgerEntry("OP-L029", _daysAgo(4), "Internet service Ooredoo", 35.5, "JE-0414"),
+    _mkLedgerEntry("OP-L030", _daysAgo(3), "Rent Avenues Mall", 4500.0, "JE-0415"),
+    // 20D-3: ledger-only item (no bank counterpart)
+    _mkLedgerEntry("OP-L031", _daysAgo(2), "PIFSS accrual — March", 1250.0, "JE-0416"),
   ];
   unmatchedLedgerItems.push(...unmatchedLedger);
 
-  // 5 exceptions
+  // 5 original exceptions + 3 new types for 20D-3 coverage
   exceptions.push(
     _mkException("EXC-OP-1", "unidentified",           "Boubyan transfer in for 2,462.500 KWD — no matching ledger entry found",      "investigate",     "OP-B026"),
     _mkException("EXC-OP-2", "missing-ledger-entry",   "KIB wire fee 12.500 KWD not yet booked to Bank Charges (6800)",               "create-je",       "OP-B027"),
     _mkException("EXC-OP-3", "missing-ledger-entry",   "KIB monthly service fee 8.000 KWD not yet booked to Bank Charges (6800)",    "create-je",       "OP-B028"),
     _mkException("EXC-OP-4", "amount-mismatch",         "Talabat bank payout 3,800.000 vs JE posted 3,750.000 — commission rounding", "investigate",     "OP-B029", "OP-L026"),
     _mkException("EXC-OP-5", "date-mismatch",           "Alghanim payment — bank shows 3 days ago, JE dated 4 days ago (fuzzy match)", "accept",          "OP-B030", "OP-L027"),
+    // 20D-3: ledger_only exception
+    _mkException("EXC-OP-6", "ledger-only",             "PIFSS accrual 1,250.000 KWD booked in ledger with no matching bank debit",   "investigate",     null,       "OP-L031"),
+    // 20D-3: duplicate exception
+    _mkException("EXC-OP-7", "duplicate",               "KNPC fuel 82.750 KWD appears twice — possible duplicate POS settlement",     "investigate",     "OP-B034"),
   );
 
   const openingBalance = 118000.25;
@@ -3643,6 +3662,9 @@ function _mkException(id, type, description, suggestedAction, bankItemId = null,
     startedAt: _daysAgo(5),
     completedAt: null,
     completedBy: null,
+    reopenedAt: null,
+    lockedAt: null,
+    approvalTaskId: null,
     openingBalance,
     closingBalance: closingBankBalance,
     closingLedgerBalance: Number(closingLedgerBalance.toFixed(3)),
@@ -3650,8 +3672,13 @@ function _mkException(id, type, description, suggestedAction, bankItemId = null,
     unmatchedBankItems,
     unmatchedLedgerItems,
     exceptions,
-    totalBankItems: 30,
-    totalLedgerItems: 30,
+    pendingSuggestions: [
+      { id: "SUGG-OP-1", bankItemId: "OP-B031", ledgerEntryId: "OP-L028", confidence: 85, tier: "fuzzy", dayDiff: 1, tokenOverlap: 0.55, createdAt: _daysAgo(3) },
+      { id: "SUGG-OP-2", bankItemId: "OP-B032", ledgerEntryId: "OP-L029", confidence: 78, tier: "fuzzy", dayDiff: 1, tokenOverlap: 0.42, createdAt: _daysAgo(3) },
+      { id: "SUGG-OP-3", bankItemId: "OP-B033", ledgerEntryId: "OP-L030", confidence: 92, tier: "fuzzy", dayDiff: 1, tokenOverlap: 0.60, createdAt: _daysAgo(2) },
+    ],
+    totalBankItems: 34,
+    totalLedgerItems: 31,
     matchedCount: 25,
     exceptionCount: exceptions.length,
     reconciliationDifference: Number((closingBankBalance - closingLedgerBalance).toFixed(3)),
@@ -3660,6 +3687,7 @@ function _mkException(id, type, description, suggestedAction, bankItemId = null,
       { id: "ACT-2", timestamp: _daysAgo(5), user: "engine", action: "auto-matched", detail: "24 items matched by engine (Tier 1)" },
       { id: "ACT-3", timestamp: _daysAgo(3), user: "sara", action: "manual-match", detail: "Matched 1 item manually" },
       { id: "ACT-4", timestamp: _daysAgo(2), user: "sara", action: "flagged",  detail: "Flagged 5 exceptions" },
+      { id: "ACT-5", timestamp: _daysAgo(2), user: "engine", action: "suggestions", detail: "3 fuzzy match suggestions generated" },
     ],
   };
 })();
@@ -3678,6 +3706,9 @@ function _mkException(id, type, description, suggestedAction, bankItemId = null,
     startedAt: _daysAgo(4),
     completedAt: _daysAgo(1),
     completedBy: "sara",
+    reopenedAt: null,
+    lockedAt: null,
+    approvalTaskId: null,
     openingBalance: 37000.0,
     closingBalance: 42135.25,
     closingLedgerBalance: 42135.25,
@@ -3685,6 +3716,7 @@ function _mkException(id, type, description, suggestedAction, bankItemId = null,
     unmatchedBankItems: [],
     unmatchedLedgerItems: [],
     exceptions: [],
+    pendingSuggestions: [],
     totalBankItems: 12,
     totalLedgerItems: 12,
     matchedCount: 12,
@@ -3698,7 +3730,7 @@ function _mkException(id, type, description, suggestedAction, bankItemId = null,
   };
 })();
 
-// ACC-3 KIB Settlement — IN PROGRESS — 18/20 + 2 POS timing exceptions
+// ACC-3 KIB Settlement — IN PROGRESS — 18/20 + 2 POS timing exceptions + 20D-3 suggestions
 (function seedSettlementRec() {
   const matchedItems = [];
   for (let i = 1; i <= 18; i++) {
@@ -3707,14 +3739,28 @@ function _mkException(id, type, description, suggestedAction, bankItemId = null,
   const unmatchedBankItems = [
     _mkBankItem("ST-B019", _daysAgo(2), "POS batch settlement", "POS-3471", 1420.0),
     _mkBankItem("ST-B020", _daysAgo(1), "POS batch settlement", "POS-3472", 1385.0),
+    // 20D-3: items for pending suggestions
+    _mkBankItem("ST-B021", _daysAgo(2), "KNPC fuel station — Salmiya",    "POS-KNPC-441", 68.5),
+    _mkBankItem("ST-B022", _daysAgo(1), "PIFSS monthly",                   "DD-PIFSS-03",  2180.0),
+    _mkBankItem("ST-B023", _daysAgo(1), "Alghanim Industries deposit",     "WIRE-ALG-812", 5420.0),
+    _mkBankItem("ST-B024", _daysAgo(1), "Talabat daily payout — Mar 27",   "TLB-93201",    1840.5),
+    // 20D-3: bank_only exception item
+    _mkBankItem("ST-B025", _daysAgo(1), "Unknown ATM withdrawal — Farwaniya", "ATM-FRW-01", -200.0),
   ];
   const unmatchedLedgerItems = [
     _mkLedgerEntry("ST-L019", _daysAgo(3), "POS receipts batch (pre-settlement)", 1420.0, "JE-0401"),
     _mkLedgerEntry("ST-L020", _daysAgo(2), "POS receipts batch (pre-settlement)", 1385.0, "JE-0402"),
+    // 20D-3: items for pending suggestions
+    _mkLedgerEntry("ST-L021", _daysAgo(3), "Fuel expense KNPC", 68.5, "JE-0403"),
+    _mkLedgerEntry("ST-L022", _daysAgo(2), "PIFSS contribution — March", 2180.0, "JE-0404"),
+    _mkLedgerEntry("ST-L023", _daysAgo(2), "Alghanim receivable deposit", 5420.0, "JE-0405"),
+    _mkLedgerEntry("ST-L024", _daysAgo(2), "Talabat POS payout batch", 1840.5, "JE-0406"),
   ];
   const exceptions = [
     _mkException("EXC-ST-1", "date-mismatch", "POS settlement timing — bank Mar 6, ledger Mar 5",   "accept", "ST-B019", "ST-L019"),
     _mkException("EXC-ST-2", "date-mismatch", "POS settlement timing — bank Mar 7, ledger Mar 5",   "accept", "ST-B020", "ST-L020"),
+    // 20D-3: bank_only exception
+    _mkException("EXC-ST-3", "bank-only",     "ATM withdrawal 200.000 KWD — no matching ledger entry", "create-je", "ST-B025"),
   ];
   _RECONS_DB["REC-2026-03-ACC-3"] = {
     id: "REC-2026-03-ACC-3",
@@ -3724,6 +3770,9 @@ function _mkException(id, type, description, suggestedAction, bankItemId = null,
     startedAt: _daysAgo(3),
     completedAt: null,
     completedBy: null,
+    reopenedAt: null,
+    lockedAt: null,
+    approvalTaskId: null,
     openingBalance: 15015.75,
     closingBalance: 18420.75,
     closingLedgerBalance: 18420.75,
@@ -3731,15 +3780,22 @@ function _mkException(id, type, description, suggestedAction, bankItemId = null,
     unmatchedBankItems,
     unmatchedLedgerItems,
     exceptions,
-    totalBankItems: 20,
-    totalLedgerItems: 20,
+    pendingSuggestions: [
+      { id: "SUGG-ST-1", bankItemId: "ST-B021", ledgerEntryId: "ST-L021", confidence: 82, tier: "fuzzy", dayDiff: 1, tokenOverlap: 0.48, createdAt: _daysAgo(2) },
+      { id: "SUGG-ST-2", bankItemId: "ST-B022", ledgerEntryId: "ST-L022", confidence: 90, tier: "fuzzy", dayDiff: 1, tokenOverlap: 0.65, createdAt: _daysAgo(1) },
+      { id: "SUGG-ST-3", bankItemId: "ST-B023", ledgerEntryId: "ST-L023", confidence: 88, tier: "fuzzy", dayDiff: 1, tokenOverlap: 0.52, createdAt: _daysAgo(1) },
+      { id: "SUGG-ST-4", bankItemId: "ST-B024", ledgerEntryId: "ST-L024", confidence: 76, tier: "fuzzy", dayDiff: 1, tokenOverlap: 0.45, createdAt: _daysAgo(1) },
+    ],
+    totalBankItems: 25,
+    totalLedgerItems: 24,
     matchedCount: 18,
-    exceptionCount: 2,
+    exceptionCount: 3,
     reconciliationDifference: 0,
     activityLog: [
       { id: "ACT-S1", timestamp: _daysAgo(3), user: "sara",   action: "started",      detail: "Reconciliation started" },
       { id: "ACT-S2", timestamp: _daysAgo(3), user: "engine", action: "auto-matched", detail: "18 items matched (Tier 1)" },
       { id: "ACT-S3", timestamp: _daysAgo(2), user: "sara",   action: "flagged",      detail: "Flagged 2 POS timing exceptions" },
+      { id: "ACT-S4", timestamp: _daysAgo(1), user: "engine", action: "suggestions",  detail: "4 fuzzy match suggestions generated" },
     ],
   };
 })();
@@ -3754,6 +3810,9 @@ function _mkException(id, type, description, suggestedAction, bankItemId = null,
     startedAt: null,
     completedAt: null,
     completedBy: null,
+    reopenedAt: null,
+    lockedAt: null,
+    approvalTaskId: null,
     openingBalance: 5816.5,
     closingBalance: 8240.5,
     closingLedgerBalance: 8240.5,
@@ -3761,6 +3820,7 @@ function _mkException(id, type, description, suggestedAction, bankItemId = null,
     unmatchedBankItems: [],
     unmatchedLedgerItems: [],
     exceptions: [],
+    pendingSuggestions: [],
     totalBankItems: 8,
     totalLedgerItems: 8,
     matchedCount: 0,
@@ -3877,7 +3937,27 @@ export async function getReconciliationById(id) {
 
 export async function getReconciliationHistory(accountId) {
   await delay();
-  return []; // Placeholder — February prior period not seeded in this pass
+  const allRecs = Object.values(_RECONS_DB)
+    .filter((r) => r.accountId === accountId)
+    .map((r) => ({
+      id: r.id,
+      period: r.period,
+      status: r.status,
+      completedAt: r.completedAt,
+      completedBy: r.completedBy,
+      openingBalance: r.openingBalance,
+      closingBalance: r.closingBalance,
+      matchedCount: r.matchedCount,
+      totalBankItems: r.totalBankItems,
+      exceptionCount: (r.exceptions || []).filter((e) => e.resolved).length,
+      reconciliationDifference: r.reconciliationDifference,
+    }))
+    .sort((a, b) => {
+      const aKey = `${a.period.year}-${String(a.period.month).padStart(2, "0")}`;
+      const bKey = `${b.period.year}-${String(b.period.month).padStart(2, "0")}`;
+      return bKey.localeCompare(aKey);
+    });
+  return _brandObj(allRecs);
 }
 
 // Action functions
@@ -3964,17 +4044,59 @@ export async function createMissingJournalEntry(reconciliationId, bankItemId, de
   return _brandObj({ ...r, newJournalEntryId: jeId });
 }
 
-export async function completeReconciliation(reconciliationId, completedBy = "sara") {
+export async function completeReconciliation(reconciliationId, completedBy = "sara", options = {}) {
   await delay();
   const r = _RECONS_DB[reconciliationId];
   if (!r) return null;
-  if (r.reconciliationDifference !== 0) return null;
-  if (r.exceptions.some((e) => !e.resolved)) return null;
+
+  const unresolvedExceptions = (r.exceptions || []).filter((e) => !e.resolved).length;
+  const hasDifference = Math.abs(r.reconciliationDifference || 0) > 0.001;
+  const forceComplete = !!options.force;
+
+  if ((unresolvedExceptions > 0 || hasDifference) && !forceComplete) {
+    return {
+      error: "Cannot complete — unresolved exceptions or difference",
+      unresolvedExceptions,
+      difference: r.reconciliationDifference,
+      status: r.status,
+    };
+  }
+
+  // Check period status for soft-closed routing
+  const periodDate = new Date(r.period.year, r.period.month - 1, 15);
+  const periodStatus = await checkPeriodStatus(periodDate);
+
+  if (periodStatus.status === "soft-closed") {
+    const taskId = `TSK-REC-${Math.floor(Math.random() * 10000)}`;
+    TASKBOX_DB.unshift({
+      id: taskId,
+      type: "request-approval",
+      title: `Reconciliation ${r.period.label} — needs approval`,
+      body: `CFO has completed the ${r.period.label} reconciliation for account ${r.accountId}. Approval required because the period is soft-closed.`,
+      from: completedBy,
+      to: "owner",
+      status: "open",
+      priority: "high",
+      createdAt: new Date().toISOString(),
+      unread: true,
+      linkedItem: { type: "reconciliation", reconciliationId: r.id, accountId: r.accountId, period: r.period },
+      attachments: [],
+    });
+    r.approvalTaskId = taskId;
+    r.status = "pending-approval";
+    _logActivity(r, completedBy, "submitted-for-approval", `Submitted for Owner approval (soft-closed period) — task ${taskId}`);
+    return _brandObj({ ...r, activityLog: [...r.activityLog], requiresApproval: true, approvalTaskId: taskId });
+  }
+
   r.status = "completed";
   r.completedAt = new Date().toISOString();
   r.completedBy = completedBy;
-  _logActivity(r, completedBy, "completed", "Reconciliation completed");
-  return _brandObj({ ...r });
+  if (forceComplete && unresolvedExceptions > 0) {
+    _logActivity(r, completedBy, "completed-with-exceptions", `Completed with ${unresolvedExceptions} unresolved exceptions (forced)`);
+  } else {
+    _logActivity(r, completedBy, "completed", "Reconciliation completed");
+  }
+  return _brandObj({ ...r, activityLog: [...r.activityLog], requiresApproval: false });
 }
 
 export async function lockReconciliation(reconciliationId) {
@@ -3982,6 +4104,7 @@ export async function lockReconciliation(reconciliationId) {
   const r = _RECONS_DB[reconciliationId];
   if (!r || r.status !== "completed") return null;
   r.status = "locked";
+  r.lockedAt = new Date().toISOString();
   _logActivity(r, "system", "locked", "Period locked");
   return _brandObj({ ...r });
 }
@@ -4016,6 +4139,512 @@ export async function createReconciliation(accountId, period) {
   _RECONS_DB[id] = r;
   return _brandObj({ ...r });
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Reconciliation 20D-3 extensions
+// Added: confirmSuggestion, dismissSuggestion, bulkMatchByRule, previewBulkMatchByRule,
+//        reopenReconciliation, approveReconciliationCompletion, rejectReconciliationCompletion,
+//        resolveExceptionWithJE, parseBankStatementCSV, importUploadedStatement, exportReconciliationCSV
+// Modified: completeReconciliation (additive options parameter), getReconciliationHistory (replaced stub)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function confirmSuggestion(reconciliationId, suggestionId, user = "cfo") {
+  await delay();
+  const r = _RECONS_DB[reconciliationId];
+  if (!r) return null;
+  const sugg = (r.pendingSuggestions || []).find((s) => s.id === suggestionId);
+  if (!sugg) return null;
+  r.pendingSuggestions = r.pendingSuggestions.filter((s) => s.id !== suggestionId);
+  r.unmatchedBankItems = r.unmatchedBankItems.filter((b) => b.id !== sugg.bankItemId);
+  r.unmatchedLedgerItems = r.unmatchedLedgerItems.filter((l) => l.id !== sugg.ledgerEntryId);
+  const matchId = `MATCH-${Math.random().toString(36).slice(2, 8)}`;
+  r.matchedItems.push(_mkMatch(matchId, sugg.bankItemId, sugg.ledgerEntryId, "fuzzy-confirmed", user));
+  _logActivity(r, user, "confirmed-suggestion", `Confirmed fuzzy match ${sugg.bankItemId} with ${sugg.ledgerEntryId} (${sugg.confidence}%)`);
+  _recomputeCounts(r);
+  return _brandObj({ ...r, matchedItems: [...r.matchedItems], unmatchedBankItems: [...r.unmatchedBankItems], unmatchedLedgerItems: [...r.unmatchedLedgerItems], pendingSuggestions: [...r.pendingSuggestions], exceptions: [...r.exceptions], activityLog: [...r.activityLog] });
+}
+
+export async function dismissSuggestion(reconciliationId, suggestionId, user = "cfo") {
+  await delay();
+  const r = _RECONS_DB[reconciliationId];
+  if (!r) return null;
+  const sugg = (r.pendingSuggestions || []).find((s) => s.id === suggestionId);
+  if (!sugg) return null;
+  r.pendingSuggestions = r.pendingSuggestions.filter((s) => s.id !== suggestionId);
+  _logActivity(r, user, "dismissed-suggestion", `Dismissed fuzzy match ${sugg.bankItemId} with ${sugg.ledgerEntryId}`);
+  return _brandObj({ ...r, pendingSuggestions: [...r.pendingSuggestions], activityLog: [...r.activityLog] });
+}
+
+export async function bulkMatchByRule(reconciliationId, rule, user = "cfo") {
+  await delay();
+  const r = _RECONS_DB[reconciliationId];
+  if (!r) return null;
+  const amountTolerance = Number(rule.amountTolerance || 0.010);
+  const dateToleranceDays = Number(rule.dateToleranceDays || 2);
+  const minOverlap = Number(rule.minDescriptionOverlap || 0);
+  const usedBank = new Set();
+  const usedLedger = new Set();
+  const newMatches = [];
+  r.unmatchedBankItems.forEach((b) => {
+    if (usedBank.has(b.id)) return;
+    const candidate = r.unmatchedLedgerItems.find((l) => {
+      if (usedLedger.has(l.id)) return false;
+      if (Math.abs(l.amount - b.amount) > amountTolerance) return false;
+      const dayDiff = Math.abs((new Date(l.date) - new Date(b.date)) / (1000 * 60 * 60 * 24));
+      if (dayDiff > dateToleranceDays) return false;
+      if (minOverlap > 0 && _tokenOverlap(b.description, l.description) < minOverlap) return false;
+      return true;
+    });
+    if (candidate) {
+      usedBank.add(b.id);
+      usedLedger.add(candidate.id);
+      newMatches.push({ bankItem: b, ledgerEntry: candidate });
+    }
+  });
+  newMatches.forEach(({ bankItem, ledgerEntry }) => {
+    r.unmatchedBankItems = r.unmatchedBankItems.filter((b) => b.id !== bankItem.id);
+    r.unmatchedLedgerItems = r.unmatchedLedgerItems.filter((l) => l.id !== ledgerEntry.id);
+    r.matchedItems.push(_mkMatch(`MATCH-${Math.random().toString(36).slice(2, 8)}`, bankItem.id, ledgerEntry.id, "bulk-rule", user));
+  });
+  _logActivity(r, user, "bulk-matched", `Bulk matched ${newMatches.length} items via rule (amount +/- ${amountTolerance}, date +/- ${dateToleranceDays} days)`);
+  _recomputeCounts(r);
+  return { reconciliation: _brandObj({ ...r, matchedItems: [...r.matchedItems], unmatchedBankItems: [...r.unmatchedBankItems], unmatchedLedgerItems: [...r.unmatchedLedgerItems], pendingSuggestions: [...(r.pendingSuggestions || [])], exceptions: [...r.exceptions], activityLog: [...r.activityLog] }), matchedCount: newMatches.length };
+}
+
+export async function previewBulkMatchByRule(reconciliationId, rule) {
+  await delay();
+  const r = _RECONS_DB[reconciliationId];
+  if (!r) return null;
+  const amountTolerance = Number(rule.amountTolerance || 0.010);
+  const dateToleranceDays = Number(rule.dateToleranceDays || 2);
+  const minOverlap = Number(rule.minDescriptionOverlap || 0);
+  const usedBank = new Set();
+  const usedLedger = new Set();
+  const previewMatches = [];
+  r.unmatchedBankItems.forEach((b) => {
+    if (usedBank.has(b.id)) return;
+    const candidate = r.unmatchedLedgerItems.find((l) => {
+      if (usedLedger.has(l.id)) return false;
+      if (Math.abs(l.amount - b.amount) > amountTolerance) return false;
+      const dayDiff = Math.abs((new Date(l.date) - new Date(b.date)) / (1000 * 60 * 60 * 24));
+      if (dayDiff > dateToleranceDays) return false;
+      if (minOverlap > 0 && _tokenOverlap(b.description, l.description) < minOverlap) return false;
+      return true;
+    });
+    if (candidate) {
+      usedBank.add(b.id);
+      usedLedger.add(candidate.id);
+      previewMatches.push({ bankItem: { ...b }, ledgerEntry: { ...candidate } });
+    }
+  });
+  return _brandObj({ matchCount: previewMatches.length, matches: previewMatches });
+}
+
+export async function reopenReconciliation(reconciliationId, user = "cfo") {
+  await delay();
+  const r = _RECONS_DB[reconciliationId];
+  if (!r) return null;
+  if (r.status !== "completed" && r.status !== "locked") {
+    return { error: "Can only reopen a completed or locked reconciliation", status: r.status };
+  }
+  const wasLocked = r.status === "locked";
+  r.status = "in-progress";
+  r.reopenedAt = new Date().toISOString();
+  r.completedAt = null;
+  r.completedBy = null;
+  r.lockedAt = null;
+  _logActivity(r, user, "reopened", wasLocked ? "Reopened from locked" : "Reopened from completed");
+  return _brandObj({ ...r, activityLog: [...r.activityLog] });
+}
+
+export async function approveReconciliationCompletion(reconciliationId, approvedBy = "owner") {
+  await delay();
+  const r = _RECONS_DB[reconciliationId];
+  if (!r) return null;
+  if (r.status !== "pending-approval") {
+    return { error: "Reconciliation is not pending approval", status: r.status };
+  }
+  r.status = "completed";
+  r.completedAt = new Date().toISOString();
+  r.completedBy = approvedBy;
+  r.approvalTaskId = null;
+  _logActivity(r, approvedBy, "approved", "Owner approved reconciliation completion");
+  return _brandObj({ ...r, activityLog: [...r.activityLog] });
+}
+
+export async function rejectReconciliationCompletion(reconciliationId, rejectedBy = "owner", reason = "") {
+  await delay();
+  const r = _RECONS_DB[reconciliationId];
+  if (!r) return null;
+  if (r.status !== "pending-approval") {
+    return { error: "Reconciliation is not pending approval", status: r.status };
+  }
+  r.status = "in-progress";
+  r.approvalTaskId = null;
+  _logActivity(r, rejectedBy, "approval-rejected", reason ? `Owner rejected: ${reason}` : "Owner rejected approval");
+  return _brandObj({ ...r, activityLog: [...r.activityLog] });
+}
+
+export async function resolveExceptionWithJE(reconciliationId, exceptionId, resolutionType, jeData, user = "cfo") {
+  await delay();
+  const r = _RECONS_DB[reconciliationId];
+  if (!r) return null;
+  const exc = (r.exceptions || []).find((e) => e.id === exceptionId);
+  if (!exc) return null;
+
+  const _fullReturn = () => _brandObj({
+    ...r,
+    matchedItems: [...r.matchedItems],
+    unmatchedBankItems: [...r.unmatchedBankItems],
+    unmatchedLedgerItems: [...r.unmatchedLedgerItems],
+    pendingSuggestions: [...(r.pendingSuggestions || [])],
+    exceptions: [...r.exceptions],
+    activityLog: [...r.activityLog],
+  });
+
+  if (resolutionType === "create_je_from_statement") {
+    if (!exc.bankItemId) return { error: "Exception has no bankItemId" };
+    const result = await createMissingJournalEntry(reconciliationId, exc.bankItemId, jeData.debitAccount, jeData.creditAccount, jeData.amount, user);
+    if (result && !result.error) {
+      const e2 = r.exceptions.find((e) => e.id === exceptionId);
+      if (e2) { e2.resolved = true; e2.resolutionNotes = `Created JE: ${jeData.debitAccount} / ${jeData.creditAccount}`; }
+      _recomputeCounts(r);
+      return _fullReturn();
+    }
+    return result;
+  }
+
+  if (resolutionType === "create_adjustment_je") {
+    const adjAmount = Number(jeData.amount || 0);
+    if (adjAmount <= 0) return { error: "Adjustment amount must be positive" };
+    const jeId = `JE-ADJ-${Math.floor(500 + Math.random() * 500)}`;
+    const le = _mkLedgerEntry(`LE-ADJ-${Math.random().toString(36).slice(2, 6)}`, new Date().toISOString().slice(0, 10), `Adjustment: ${exc.description}`, adjAmount, jeId);
+    if (exc.bankItemId) {
+      r.unmatchedBankItems = r.unmatchedBankItems.filter((b) => b.id !== exc.bankItemId);
+      r.matchedItems.push(_mkMatch(`MATCH-${Math.random().toString(36).slice(2, 6)}`, exc.bankItemId, le.id, "manual", user));
+    }
+    exc.resolved = true;
+    exc.resolutionNotes = `Created adjustment JE ${jeId} for ${adjAmount.toFixed(3)}`;
+    _logActivity(r, user, "created-adjustment-je", `Created ${jeId} for exception ${exceptionId} (${adjAmount.toFixed(3)})`);
+    _recomputeCounts(r);
+    return _fullReturn();
+  }
+
+  if (resolutionType === "accept_timing" || resolutionType === "wait_clearance" || resolutionType === "ignore") {
+    exc.resolved = true;
+    exc.resolutionNotes =
+      resolutionType === "accept_timing" ? "Accepted as timing difference"
+        : resolutionType === "wait_clearance" ? "Waiting for bank clearance"
+        : "Ignored";
+    if (exc.bankItemId && exc.ledgerEntryId) {
+      const bi = r.unmatchedBankItems.find((b) => b.id === exc.bankItemId);
+      const le = r.unmatchedLedgerItems.find((l) => l.id === exc.ledgerEntryId);
+      if (bi && le) {
+        r.unmatchedBankItems = r.unmatchedBankItems.filter((b) => b.id !== exc.bankItemId);
+        r.unmatchedLedgerItems = r.unmatchedLedgerItems.filter((l) => l.id !== exc.ledgerEntryId);
+        r.matchedItems.push(_mkMatch(`MATCH-${Math.random().toString(36).slice(2, 6)}`, exc.bankItemId, exc.ledgerEntryId, "manual", user));
+      }
+    }
+    _logActivity(r, user, "resolved-exception", `Resolved exception ${exceptionId}: ${exc.resolutionNotes}`);
+    _recomputeCounts(r);
+    return _fullReturn();
+  }
+
+  return { error: `Unknown resolution type: ${resolutionType}` };
+}
+
+function _parseDateFlexible(input) {
+  const s = (input || "").trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  if (/^\d{4}\/\d{2}\/\d{2}$/.test(s)) return s.replace(/\//g, "-");
+  const m1 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m1) return `${m1[3]}-${m1[2].padStart(2, "0")}-${m1[1].padStart(2, "0")}`;
+  const m2 = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  if (m2) return `${m2[3]}-${m2[2].padStart(2, "0")}-${m2[1].padStart(2, "0")}`;
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  return null;
+}
+
+export async function parseBankStatementCSV(csvText, _options = {}) {
+  await delay();
+  const errors = [];
+  const warnings = [];
+  const items = [];
+  if (!csvText || !csvText.trim()) return { items: [], errors: ["Empty file"], warnings: [], format: null };
+  const text = csvText.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+  // Simple CSV parser handling quoted fields
+  const rows = [];
+  let currentRow = [];
+  let currentField = "";
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQuotes) {
+      if (ch === '"' && text[i + 1] === '"') { currentField += '"'; i++; }
+      else if (ch === '"') inQuotes = false;
+      else currentField += ch;
+    } else {
+      if (ch === '"') inQuotes = true;
+      else if (ch === ",") { currentRow.push(currentField); currentField = ""; }
+      else if (ch === "\n") { currentRow.push(currentField); rows.push(currentRow); currentRow = []; currentField = ""; }
+      else currentField += ch;
+    }
+  }
+  if (currentField || currentRow.length > 0) { currentRow.push(currentField); rows.push(currentRow); }
+  if (rows.length < 2) return { items: [], errors: ["CSV must have a header row and at least one data row"], warnings: [], format: null };
+  const header = rows[0].map((h) => (h || "").trim().toLowerCase());
+  const dateIdx = header.findIndex((h) => /^(date|transaction.?date|posting.?date|value.?date)$/.test(h));
+  const descIdx = header.findIndex((h) => /^(description|narration|details|memo|particulars)$/.test(h));
+  const amountIdx = header.findIndex((h) => /^amount$/.test(h));
+  const debitIdx = header.findIndex((h) => /^debit$/.test(h));
+  const creditIdx = header.findIndex((h) => /^credit$/.test(h));
+  const refIdx = header.findIndex((h) => /^(reference|ref|txn.?id|transaction.?id|document)$/.test(h));
+  if (dateIdx < 0) errors.push('Missing required column: "Date"');
+  if (descIdx < 0) errors.push('Missing required column: "Description"');
+  if (amountIdx < 0 && (debitIdx < 0 || creditIdx < 0)) errors.push('Missing required column: either "Amount" or both "Debit" and "Credit"');
+  if (errors.length > 0) return { items: [], errors, warnings: [], format: null };
+  const format = amountIdx >= 0 ? "single_amount" : "debit_credit";
+  for (let rIdx = 1; rIdx < rows.length; rIdx++) {
+    const row = rows[rIdx];
+    if (row.length === 0 || row.every((f) => !f || !f.trim())) continue;
+    const dateRaw = (row[dateIdx] || "").trim();
+    if (!dateRaw) { warnings.push(`Row ${rIdx + 1}: missing date, skipped`); continue; }
+    const date = _parseDateFlexible(dateRaw);
+    if (!date) { warnings.push(`Row ${rIdx + 1}: unparseable date "${dateRaw}", skipped`); continue; }
+    const description = ((row[descIdx] || "") + "").trim();
+    const reference = refIdx >= 0 ? ((row[refIdx] || "") + "").trim() : "";
+    let amount, type;
+    if (format === "single_amount") {
+      const raw = ((row[amountIdx] || "") + "").trim().replace(/,/g, "");
+      const parsed = parseFloat(raw);
+      if (isNaN(parsed)) { warnings.push(`Row ${rIdx + 1}: unparseable amount "${raw}", skipped`); continue; }
+      amount = Number(Math.abs(parsed).toFixed(3));
+      type = parsed < 0 ? "debit" : "credit";
+    } else {
+      const debit = parseFloat(((row[debitIdx] || "") + "").trim().replace(/,/g, "") || "0");
+      const credit = parseFloat(((row[creditIdx] || "") + "").trim().replace(/,/g, "") || "0");
+      if (isNaN(debit) || isNaN(credit)) { warnings.push(`Row ${rIdx + 1}: unparseable debit/credit, skipped`); continue; }
+      if (debit > 0) { amount = Number(debit.toFixed(3)); type = "debit"; }
+      else if (credit > 0) { amount = Number(credit.toFixed(3)); type = "credit"; }
+      else { warnings.push(`Row ${rIdx + 1}: both debit and credit are zero, skipped`); continue; }
+    }
+    items.push({ id: `CSV-${rIdx}-${Math.random().toString(36).slice(2, 6)}`, date, description, reference, amount, type, source: "uploaded", sourceRow: rIdx + 1 });
+  }
+  if (items.length === 0 && errors.length === 0) errors.push("No valid rows found in the file");
+  return { items, errors, warnings, format };
+}
+
+export async function importUploadedStatement(reconciliationId, parsedItems, filename, user = "cfo") {
+  await delay();
+  const r = _RECONS_DB[reconciliationId];
+  if (!r) return null;
+  const newBankItems = parsedItems.map((item, idx) => ({
+    id: `UP-${Date.now()}-${idx}`,
+    date: item.date,
+    description: item.description,
+    reference: item.reference || `CSV-ROW-${item.sourceRow}`,
+    amount: item.amount,
+    source: "uploaded",
+    sourceFile: filename,
+  }));
+  r.unmatchedBankItems = [...r.unmatchedBankItems, ...newBankItems];
+  r.totalBankItems = (r.totalBankItems || 0) + newBankItems.length;
+  const matchResult = _runMatchingEngine(r.unmatchedBankItems, r.unmatchedLedgerItems);
+  // Apply Tier 1 auto-matches
+  matchResult.tier1Matches.forEach((m) => {
+    r.matchedItems.push(_mkMatch(`MATCH-${Math.random().toString(36).slice(2, 8)}`, m.bankItem.id, m.ledgerEntry.id, "exact", "engine"));
+    r.unmatchedBankItems = r.unmatchedBankItems.filter((b) => b.id !== m.bankItem.id);
+    r.unmatchedLedgerItems = r.unmatchedLedgerItems.filter((l) => l.id !== m.ledgerEntry.id);
+  });
+  // Add Tier 2 as pending suggestions
+  r.pendingSuggestions = r.pendingSuggestions || [];
+  matchResult.tier2Suggestions.forEach((s) => {
+    const dayDiff = Math.abs((new Date(s.ledgerEntry.date) - new Date(s.bankItem.date)) / (1000 * 60 * 60 * 24));
+    const overlap = _tokenOverlap(s.bankItem.description, s.ledgerEntry.description);
+    r.pendingSuggestions.push({ id: `SUGG-${Math.random().toString(36).slice(2, 8)}`, bankItemId: s.bankItem.id, ledgerEntryId: s.ledgerEntry.id, confidence: s.confidence, tier: "fuzzy", dayDiff, tokenOverlap: overlap, createdAt: new Date().toISOString() });
+  });
+  _logActivity(r, user, "imported-statement", `Imported ${newBankItems.length} items from ${filename} — ${matchResult.tier1Matches.length} auto-matched, ${matchResult.tier2Suggestions.length} suggestions`);
+  _recomputeCounts(r);
+  return _brandObj({ ...r, matchedItems: [...r.matchedItems], unmatchedBankItems: [...r.unmatchedBankItems], unmatchedLedgerItems: [...r.unmatchedLedgerItems], pendingSuggestions: [...r.pendingSuggestions], exceptions: [...r.exceptions], activityLog: [...r.activityLog], importSummary: { newItems: newBankItems.length, autoMatched: matchResult.tier1Matches.length, newSuggestions: matchResult.tier2Suggestions.length } });
+}
+
+export async function exportReconciliationCSV(reconciliationId) {
+  await delay();
+  const r = _RECONS_DB[reconciliationId];
+  if (!r) return null;
+  const csvRows = [];
+  csvRows.push(["Type", "Date", "Description", "Reference", "Amount", "Status", "MatchedWith", "ExceptionType", "Resolution"]);
+  r.matchedItems.forEach((m) => { csvRows.push(["matched", "", `Match ${m.bankItemId} / ${m.ledgerEntryId}`, "", "", m.matchTier, `${m.bankItemId} / ${m.ledgerEntryId}`, "", ""]); });
+  r.unmatchedBankItems.forEach((b) => { csvRows.push(["bank", b.date, b.description, b.reference || "", String(b.amount.toFixed(3)), "unmatched", "", "", ""]); });
+  r.unmatchedLedgerItems.forEach((l) => { csvRows.push(["ledger", l.date, l.description, l.journalEntryId || "", String(l.amount.toFixed(3)), "unmatched", "", "", ""]); });
+  r.exceptions.forEach((e) => { csvRows.push(["exception", "", e.description, "", "", e.resolved ? "resolved" : "open", e.bankItemId || e.ledgerEntryId || "", e.type, e.suggestedAction || ""]); });
+  const csvText = csvRows.map((row) => row.map((cell) => { const s = String(cell || ""); return (s.includes(",") || s.includes('"') || s.includes("\n")) ? `"${s.replace(/"/g, '""')}"` : s; }).join(",")).join("\n");
+  const filename = `reconciliation_${r.accountId}_${r.period.year}-${String(r.period.month).padStart(2, "0")}.csv`;
+  return _brandObj({ filename, csvText, rowCount: csvRows.length - 1 });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bank Transactions 20D-3 extensions (real implementations — turn 3)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function _filterBankTransactions(txs, filters = {}) {
+  let result = [...txs];
+  if (filters.direction && filters.direction !== "all") {
+    result = result.filter((t) => filters.direction === "inflow" ? t.amount > 0 : t.amount < 0);
+  }
+  if (filters.categoryCodes && filters.categoryCodes.length > 0) {
+    result = result.filter((t) => {
+      const code = t.categoryCode || t.engineSuggestion?.accountCode || "";
+      return filters.categoryCodes.includes(code);
+    });
+  }
+  if (filters.assigneeIds && filters.assigneeIds.length > 0) {
+    result = result.filter((t) => {
+      if (filters.assigneeIds.includes("unassigned") && !t.assigneeId) return true;
+      return filters.assigneeIds.includes(t.assigneeId);
+    });
+  }
+  if (filters.status) {
+    if (filters.status === "pending") result = result.filter((t) => !t.categoryCode && !t.reviewed);
+    if (filters.status === "categorized") result = result.filter((t) => t.categoryCode && !t.reviewed);
+    if (filters.status === "reviewed") result = result.filter((t) => t.reviewed);
+  }
+  if (filters.searchQuery) {
+    const q = filters.searchQuery.toLowerCase();
+    result = result.filter((t) => (t.description || t.merchant || "").toLowerCase().includes(q) || (t.terminal || "").toLowerCase().includes(q));
+  }
+  return result;
+}
+
+export async function bulkCategorizeTransactions(txIds, categoryCode, user = "cfo") {
+  await delay();
+  let updated = 0, skipped = 0;
+  for (const txId of (txIds || [])) {
+    const tx = _BANK_TX_DB.find((t) => t.id === txId);
+    if (!tx) { skipped++; continue; }
+    tx.categoryCode = categoryCode;
+    tx.reviewedBy = user;
+    tx.reviewedAt = new Date().toISOString();
+    updated++;
+  }
+  return _brandObj({ updated, skipped, categoryCode });
+}
+
+export async function bulkAssignTransactions(txIds, assigneeId, user = "cfo") {
+  await delay();
+  let updated = 0, skipped = 0;
+  for (const txId of (txIds || [])) {
+    const tx = _BANK_TX_DB.find((t) => t.id === txId);
+    if (!tx) { skipped++; continue; }
+    tx.assigneeId = assigneeId;
+    tx.assignedAt = new Date().toISOString();
+    tx.assignedBy = user;
+    updated++;
+  }
+  return _brandObj({ updated, skipped, assigneeId });
+}
+
+export async function bulkMarkTransactionsReviewed(txIds, user = "cfo") {
+  await delay();
+  let updated = 0, skipped = 0;
+  for (const txId of (txIds || [])) {
+    const tx = _BANK_TX_DB.find((t) => t.id === txId);
+    if (!tx) { skipped++; continue; }
+    if (tx.reviewed) { skipped++; continue; }
+    tx.reviewed = true;
+    tx.reviewedBy = user;
+    tx.reviewedAt = new Date().toISOString();
+    updated++;
+  }
+  return _brandObj({ updated, skipped });
+}
+
+export async function exportBankTransactionsCSV(txIds, filters = {}) {
+  await delay();
+  let txs;
+  if (txIds && txIds.length > 0) { txs = _BANK_TX_DB.filter((t) => txIds.includes(t.id)); }
+  else { txs = _filterBankTransactions(_BANK_TX_DB, filters); }
+  const header = ["Date", "Merchant", "Amount", "Currency", "Source", "Terminal", "Category", "Assignee", "Reviewed"];
+  const rows = [header];
+  for (const tx of txs) {
+    rows.push([tx.date, tx.merchant || tx.description || "", String((tx.amount || 0).toFixed(3)), tx.currency || "KWD", tx.source || "", tx.terminal || "", tx.categoryCode || tx.engineSuggestion?.accountCode || "", tx.assigneeId || "", tx.reviewed ? "yes" : "no"]);
+  }
+  const csvText = rows.map((row) => row.map((cell) => { const s = String(cell || ""); return (s.includes(",") || s.includes('"') || s.includes("\n")) ? `"${s.replace(/"/g, '""')}"` : s; }).join(",")).join("\n");
+  const filename = `${_currentTenantId}_bank_transactions_${Date.now()}.csv`;
+  return _brandObj({ filename, csvText, rowCount: txs.length });
+}
+
+export async function createRuleFromTransactions(txIds) {
+  await delay();
+  if (!txIds || txIds.length === 0) return _brandObj({ proposedRule: null });
+  const txs = _BANK_TX_DB.filter((t) => txIds.includes(t.id));
+  if (txs.length === 0) return _brandObj({ proposedRule: null });
+  const categoryCounts = {};
+  for (const tx of txs) { const c = tx.categoryCode || tx.engineSuggestion?.accountCode; if (c) categoryCounts[c] = (categoryCounts[c] || 0) + 1; }
+  const topCategory = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+  const descs = txs.map((t) => (t.merchant || t.description || "").toLowerCase().trim()).filter(Boolean);
+  let commonPattern = "";
+  if (descs.length > 0) {
+    const tokenCounts = {};
+    for (const d of descs) { for (const tok of d.split(/\s+/).filter((t) => t.length > 3)) { tokenCounts[tok] = (tokenCounts[tok] || 0) + 1; } }
+    const topToken = Object.entries(tokenCounts).sort((a, b) => b[1] - a[1])[0];
+    if (topToken && topToken[1] >= Math.ceil(txs.length / 2)) commonPattern = topToken[0];
+  }
+  const amounts = txs.map((t) => Math.abs(t.amount || 0));
+  return _brandObj({ proposedRule: { name: commonPattern ? `Auto: ${commonPattern}` : "Auto: bulk rule", matchType: "description_contains", matchValue: commonPattern || "", categoryCode: topCategory || "", amountRange: { min: Math.min(...amounts), max: Math.max(...amounts) }, priority: 50, confidence: commonPattern ? 80 : 50, sourceTransactionCount: txs.length } });
+}
+
+export async function getBankTransactionsSorted(accountId, filters = {}, sort = { field: "date", direction: "desc" }) {
+  await delay();
+  let txs = _filterBankTransactions(_BANK_TX_DB, filters);
+  const field = sort.field || "date";
+  const dir = sort.direction === "asc" ? 1 : -1;
+  txs.sort((a, b) => {
+    switch (field) {
+      case "date": return (new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime()) * dir;
+      case "amount": return (Math.abs(a.amount || 0) - Math.abs(b.amount || 0)) * dir;
+      case "merchant": case "description": return (a.merchant || a.description || "").localeCompare(b.merchant || b.description || "") * dir;
+      case "category": return (a.categoryCode || a.engineSuggestion?.accountCode || "").localeCompare(b.categoryCode || b.engineSuggestion?.accountCode || "") * dir;
+      case "status": { const av = a.reviewed ? 2 : (a.categoryCode ? 1 : 0); const bv = b.reviewed ? 2 : (b.categoryCode ? 1 : 0); return (av - bv) * dir; }
+      default: return 0;
+    }
+  });
+  return _brandObj(txs.map((t) => ({ ...t })));
+}
+
+let _txAttachmentSeq = 1;
+const _txAttachmentStore = {};
+
+export async function attachTransactionFile(txId, file) {
+  await delay();
+  if (!_txAttachmentStore[txId]) _txAttachmentStore[txId] = [];
+  if (_txAttachmentStore[txId].length >= 3) return { error: "Maximum 3 attachments per transaction" };
+  const att = { id: `txa-${_txAttachmentSeq++}`, name: file.name, size: file.size, type: file.type || "application/octet-stream", uploadedBy: file.uploadedBy || "cfo", uploadedAt: new Date().toISOString(), dataUrl: file.dataUrl || "" };
+  _txAttachmentStore[txId].push(att);
+  return _brandObj({ ...att });
+}
+
+export async function removeTransactionAttachment(txId, attachmentId) {
+  await delay();
+  if (!_txAttachmentStore[txId]) return { success: false };
+  _txAttachmentStore[txId] = _txAttachmentStore[txId].filter((a) => a.id !== attachmentId);
+  return _brandObj({ success: true });
+}
+
+export async function getTransactionAttachments(txId) {
+  await delay();
+  return _brandObj(_txAttachmentStore[txId] ? [..._txAttachmentStore[txId]] : []);
+}
+
+// Seed attachments on a few existing transactions
+(function _seedTxAttachments() {
+  _txAttachmentStore["bt-1"] = [{ id: "txa-s1", name: "fuel_receipt_knpc.pdf", size: 84000, type: "application/pdf", uploadedBy: "sara", uploadedAt: _daysAgo(1), dataUrl: _MOCK_PDF_URL }];
+  _txAttachmentStore["bt-4"] = [{ id: "txa-s2", name: "rent_contract_sharq.pdf", size: 215000, type: "application/pdf", uploadedBy: "cfo", uploadedAt: _daysAgo(2), dataUrl: _MOCK_PDF_URL }, { id: "txa-s3", name: "rent_invoice_apr.pdf", size: 67000, type: "application/pdf", uploadedBy: "cfo", uploadedAt: _daysAgo(2), dataUrl: _MOCK_PDF_URL }];
+  _txAttachmentStore["bt-6"] = [{ id: "txa-s4", name: "avenues_booth_agreement.pdf", size: 156000, type: "application/pdf", uploadedBy: "sara", uploadedAt: _daysAgo(1), dataUrl: _MOCK_PDF_URL }];
+  _txAttachmentStore["bt-9"] = [{ id: "txa-s5", name: "dubai_vendor_invoice.pdf", size: 98000, type: "application/pdf", uploadedBy: "sara", uploadedAt: _daysAgo(3), dataUrl: _MOCK_PDF_URL }];
+  _txAttachmentSeq = 10;
+})();
 
 // ─────────────────────────────────────────
 // MANUAL JOURNAL ENTRIES — formal double-entry workspace

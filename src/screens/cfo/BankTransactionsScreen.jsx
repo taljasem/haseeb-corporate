@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Receipt, ArrowUpDown, ArrowUp, ArrowDown, X, CheckSquare, Download, Tag, UserPlus, Sparkles, CheckCircle2 } from "lucide-react";
+import { Receipt, X, CheckSquare, Download, Tag, UserPlus, Sparkles, CheckCircle2 } from "lucide-react";
 import BankTransactionRow from "../../components/cfo/BankTransactionRow";
 import EmptyState from "../../components/shared/EmptyState";
+import ActionButton from "../../components/ds/ActionButton";
+import SortHeader from "../../components/ds/SortHeader";
+import FilterDropdown from "../../components/ds/FilterDropdown";
 import BankTransactionDetail from "../../components/cfo/BankTransactionDetail";
 import SuggestionBanner from "../../components/shared/SuggestionBanner";
 import NewCategorizationRuleModal from "../../components/rules/NewCategorizationRuleModal";
@@ -42,7 +45,7 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
 
   // Bulk selection
   const [checkedIds, setCheckedIds] = useState(new Set());
-  const bulkMode = checkedIds.size > 0;
+  const [bulkMode, setBulkMode] = useState(false);
 
   // Sort
   const [sortField, setSortField] = useState("date");
@@ -105,9 +108,10 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
   });
 
   const selected = (txs || []).find((tx) => tx.id === selectedId);
-  const toggleCheck = (txId) => { setCheckedIds((prev) => { const next = new Set(prev); if (next.has(txId)) next.delete(txId); else next.add(txId); return next; }); };
-  const selectAllVisible = () => { setCheckedIds(new Set(filtered.map((tx) => tx.id))); };
-  const clearSelection = () => { setCheckedIds(new Set()); };
+  const toggleCheck = (txId) => { setCheckedIds((prev) => { const next = new Set(prev); if (next.has(txId)) next.delete(txId); else next.add(txId); return next; }); if (!bulkMode) setBulkMode(true); };
+  const selectAllVisible = () => { setCheckedIds(new Set(filtered.map((tx) => tx.id))); setBulkMode(true); };
+  const clearSelection = () => { setCheckedIds(new Set()); setBulkMode(false); };
+  const enterBulkMode = () => { setBulkMode(true); };
   const handleSort = (field) => { if (sortField === field) setSortDir((d) => d === "asc" ? "desc" : "asc"); else { setSortField(field); setSortDir("desc"); } };
 
   const handleConfirmed = (txId) => {
@@ -180,7 +184,11 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
               {filterByAssignee && <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 4, fontStyle: "italic" }}>{t("header.in_your_domain")}</div>}
             </div>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-              {!bulkMode && <button onClick={() => selectAllVisible()} style={{ fontSize: 11, color: "var(--accent-primary)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 500 }}>{t("bulk.enter_mode")}</button>}
+              {!bulkMode ? (
+                <ActionButton variant="secondary" size="sm" icon={CheckSquare} label={t("bulk.enter_mode")} onClick={enterBulkMode} />
+              ) : (
+                <ActionButton variant="secondary" size="sm" icon={X} label={t("bulk.exit_mode")} onClick={clearSelection} />
+              )}
               <a onClick={onOpenBankAccounts} style={{ fontSize: 12, color: "var(--accent-primary)", cursor: "pointer", fontWeight: 500, letterSpacing: "0.02em" }}>{t("header.view_full_accounts")}</a>
             </div>
           </div>
@@ -189,12 +197,13 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
           {bulkMode && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0", marginBottom: 8, borderBottom: "1px solid rgba(255,255,255,0.06)", flexWrap: "wrap" }}>
               <span style={{ fontSize: 12, fontWeight: 600, color: "var(--accent-primary)" }}>{t("bulk.selected_count", { count: checkedIds.size })}</span>
-              <BulkBtn icon={Tag} label={t("bulk.actions.categorize_all")} onClick={() => { const first = categories[0]; if (first) handleBulkCategorize(first.code); }} />
-              <BulkBtn icon={UserPlus} label={t("bulk.actions.assign_to")} onClick={() => { const first = teamMembers[0]; if (first) handleBulkAssign(first.id || "sara"); }} />
-              <BulkBtn icon={Sparkles} label={t("bulk.actions.create_rule")} onClick={handleBulkCreateRule} />
-              <BulkBtn icon={Download} label={t("bulk.actions.export")} onClick={handleBulkExport} />
-              <BulkBtn icon={CheckCircle2} label={t("bulk.actions.mark_reviewed")} onClick={handleBulkMarkReviewed} />
-              <button onClick={clearSelection} style={{ fontSize: 11, color: "var(--text-tertiary)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", marginInlineStart: "auto" }}>{t("bulk.exit_mode")}</button>
+              <button onClick={selectAllVisible} style={{ fontSize: 10, color: "var(--accent-primary)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", textDecoration: "underline" }}>{t("bulk.select_all_visible")}</button>
+              <span style={{ width: 1, height: 14, background: "rgba(255,255,255,0.08)" }} />
+              <ActionButton variant="secondary" size="sm" icon={Tag} label={t("bulk.actions.categorize_all")} onClick={() => { const first = categories[0]; if (first) handleBulkCategorize(first.code); }} />
+              <ActionButton variant="secondary" size="sm" icon={UserPlus} label={t("bulk.actions.assign_to")} onClick={() => { const first = teamMembers[0]; if (first) handleBulkAssign(first.id || "sara"); }} />
+              <ActionButton variant="secondary" size="sm" icon={Sparkles} label={t("bulk.actions.create_rule")} onClick={handleBulkCreateRule} />
+              <ActionButton variant="secondary" size="sm" icon={Download} label={t("bulk.actions.export")} onClick={handleBulkExport} />
+              <ActionButton variant="secondary" size="sm" icon={CheckCircle2} label={t("bulk.actions.mark_reviewed")} onClick={handleBulkMarkReviewed} />
             </div>
           )}
 
@@ -205,10 +214,10 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
               return <button key={f.id} onClick={() => setFilter(f.id)} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", padding: "5px 12px", borderRadius: 14, background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)", border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)", color: on ? "var(--accent-primary)" : "var(--text-tertiary)", cursor: "pointer", fontFamily: "inherit" }}>{t(`filters.${f.key}`)}</button>;
             })}
             <span style={{ width: 1, height: 16, background: "rgba(255,255,255,0.08)", margin: "0 4px" }} />
-            {/* Category filter */}
-            <FilterDropdown label={t("filters.category_label")} options={categories.map((c) => ({ id: c.code, label: `${c.code} ${c.name}` }))} selected={categoryFilter} onChange={setCategoryFilter} />
-            {/* Assignee filter */}
-            <FilterDropdown label={t("filters.assignee_label")} options={[{ id: "unassigned", label: t("filters.assignee_unassigned") }, ...teamMembers.map((m) => ({ id: m.id || m.userId, label: m.name }))]} selected={assigneeFilter} onChange={setAssigneeFilter} />
+            {/* Category filter — DS FilterDropdown with chevron */}
+            <FilterDropdown label={t("filters.category_label")} placeholder={t("filters.category_all")} options={categories.map((c) => ({ id: c.code, label: `${c.code} ${c.name}` }))} selected={categoryFilter} onChange={setCategoryFilter} />
+            {/* Assignee filter — DS FilterDropdown with chevron */}
+            <FilterDropdown label={t("filters.assignee_label")} placeholder={t("filters.assignee_all")} options={[{ id: "unassigned", label: t("filters.assignee_unassigned") }, ...teamMembers.map((m) => ({ id: m.id || m.userId, label: m.name }))]} selected={assigneeFilter} onChange={setAssigneeFilter} />
           </div>
 
           {/* Active filter pills */}
@@ -224,13 +233,15 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
             </div>
           )}
 
-          {/* Sort headers */}
-          <div style={{ display: "grid", gridTemplateColumns: bulkMode ? "28px 46px 1fr auto auto" : "46px 1fr auto auto", gap: 12, padding: "8px 14px 0", marginTop: 6 }}>
+          {/* Sort headers — DS SortHeader with 14px arrows */}
+          <div style={{ display: "grid", gridTemplateColumns: bulkMode ? "28px 46px 1fr auto auto auto auto" : "46px 1fr auto auto auto auto", gap: 8, padding: "8px 14px 0", marginTop: 6, alignItems: "center" }}>
             {bulkMode && <div />}
-            <SortHeader label={t("sort.by_date")} field="date" active={sortField} dir={sortDir} onSort={handleSort} />
-            <SortHeader label={t("sort.by_merchant")} field="merchant" active={sortField} dir={sortDir} onSort={handleSort} />
-            <SortHeader label={t("sort.by_amount")} field="amount" active={sortField} dir={sortDir} onSort={handleSort} />
-            <div style={{ width: 60 }} />
+            <SortHeader field="date" activeField={sortField} direction={sortDir} onSort={handleSort} label={t("sort.by_date")} />
+            <SortHeader field="merchant" activeField={sortField} direction={sortDir} onSort={handleSort} label={t("sort.by_merchant")} />
+            <SortHeader field="amount" activeField={sortField} direction={sortDir} onSort={handleSort} label={t("sort.by_amount")} align="right" />
+            <SortHeader field="category" activeField={sortField} direction={sortDir} onSort={handleSort} label={t("sort.by_category")} />
+            <SortHeader field="status" activeField={sortField} direction={sortDir} onSort={handleSort} label={t("sort.by_status")} />
+            <div style={{ width: 50 }} />
           </div>
         </div>
 
@@ -257,48 +268,4 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
   );
 }
 
-function BulkBtn({ icon: Icon, label, onClick }) {
-  return (
-    <button onClick={onClick} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 600, padding: "4px 8px", borderRadius: 4, background: "transparent", border: "1px solid rgba(255,255,255,0.12)", color: "var(--text-secondary)", cursor: "pointer", fontFamily: "inherit" }}>
-      <Icon size={11} /> {label}
-    </button>
-  );
-}
-
-function SortHeader({ label, field, active, dir, onSort }) {
-  const isActive = active === field;
-  return (
-    <button onClick={() => onSort(field)} style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: isActive ? "var(--accent-primary)" : "var(--text-tertiary)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", padding: 0 }}>
-      {label}
-      {isActive ? (dir === "asc" ? <ArrowUp size={9} /> : <ArrowDown size={9} />) : <ArrowUpDown size={9} style={{ opacity: 0.3 }} />}
-    </button>
-  );
-}
-
-function FilterDropdown({ label, options, selected, onChange }) {
-  const [open, setOpen] = useState(false);
-  const active = selected.length > 0;
-  return (
-    <div style={{ position: "relative" }}>
-      <button onClick={() => setOpen(!open)} style={{ fontSize: 11, fontWeight: 600, padding: "5px 10px", borderRadius: 14, background: active ? "rgba(59,130,246,0.1)" : "var(--bg-surface)", border: active ? "1px solid rgba(59,130,246,0.3)" : "1px solid rgba(255,255,255,0.10)", color: active ? "#3b82f6" : "var(--text-tertiary)", cursor: "pointer", fontFamily: "inherit" }}>
-        {label}{active ? ` (${selected.length})` : ""}
-      </button>
-      {open && (
-        <>
-          <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 200 }} />
-          <div style={{ position: "absolute", top: "100%", insetInlineStart: 0, marginTop: 4, width: 220, maxHeight: 240, overflowY: "auto", background: "var(--bg-surface-raised)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, boxShadow: "0 8px 24px rgba(0,0,0,0.5)", zIndex: 201, padding: "6px 0" }}>
-            {options.map((opt) => {
-              const isSelected = selected.includes(opt.id);
-              return (
-                <button key={opt.id} onClick={() => { const next = isSelected ? selected.filter((s) => s !== opt.id) : [...selected, opt.id]; onChange(next); }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "7px 12px", background: isSelected ? "rgba(0,196,140,0.06)" : "transparent", border: "none", color: "var(--text-primary)", fontSize: 11, cursor: "pointer", fontFamily: "inherit", textAlign: "start" }}>
-                  <input type="checkbox" checked={isSelected} readOnly style={{ width: 13, height: 13, accentColor: "var(--accent-primary)", pointerEvents: "none" }} />
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{opt.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
+// BulkBtn, SortHeader, FilterDropdown removed — replaced by ds/ primitives

@@ -46,7 +46,7 @@
     "auto_cat_name": "تصنيف تلقائي لـ {{merchant}}"
   },
   "bulk": {
-    "enter_mode": "تحديد",
+    "enter_mode": "تحديد متعدد",
     "exit_mode": "إلغاء",
     "selected_count": "{{count}} محدد",
     "select_all_visible": "تحديد الكل المرئي",
@@ -74,6 +74,8 @@
   "attachments": {
     "section_title": "المرفقات ({{count}})",
     "empty": "لا توجد مرفقات بعد",
+    "drop_zone_title": "اسحب الملفات هنا",
+    "drop_zone_body": "أو انقر للتصفح — PDF أو صور، الحد الأقصى 5 ميغابايت",
     "max_files": "حد أقصى 3 ملفات",
     "max_size": "حد أقصى 5 ميغابايت لكل ملف",
     "accepted_types": "PDF، صور، Excel، Word"

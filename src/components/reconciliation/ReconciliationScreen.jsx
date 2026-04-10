@@ -1,12 +1,15 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ChevronLeft, CheckCircle2, AlertCircle, Circle, Lock, FileWarning,
+  ChevronLeft, ChevronDown, ChevronRight, CheckCircle2, AlertCircle, Circle, Lock, FileWarning,
   Plus, X, Download, History, Sparkles, RotateCcw, Upload, Clock,
 } from "lucide-react";
 import LtrText from "../shared/LtrText";
 import useEscapeKey from "../../hooks/useEscapeKey";
 import EmptyState from "../shared/EmptyState";
+import ActionButton from "../ds/ActionButton";
+import PersistentBanner from "../ds/PersistentBanner";
+import DropZone from "../ds/DropZone";
 import BulkMatchRuleModal from "./BulkMatchRuleModal";
 import CompleteReconciliationModal from "./CompleteReconciliationModal";
 import ReconciliationHistorySlideOver from "./ReconciliationHistorySlideOver";
@@ -216,6 +219,9 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
   const [isSoftClosed, setIsSoftClosed] = useState(false);
   const fileInputRef = useRef(null);
   const bannerShownRef = useRef(null);
+  const suggestionsRef = useRef(null);
+  const exceptionsRef = useRef(null);
+  const [matchedExpanded, setMatchedExpanded] = useState({ bank: false, ledger: false });
 
   // Auto-match banner on first load
   useEffect(() => {
@@ -331,13 +337,15 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
           </div>
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
             <StatusPill status={rec.status} />
+            {/* Recall match summary */}
+            {!readOnly && !bannerVisible && <ActionButton variant="tertiary" size="sm" icon={Sparkles} label={t("auto_match.recall_link")} onClick={() => setBannerVisible(true)} />}
             {/* Export — always available */}
-            <ActionBtn icon={Download} label={t("export.button")} onClick={handleExport} />
+            <ActionButton variant="secondary" size="md" icon={Download} label={t("export.button")} onClick={handleExport} />
             {/* History */}
-            {!readOnly && <ActionBtn icon={History} label={t("history.title")} onClick={() => setHistoryOpen(true)} />}
+            {!readOnly && <ActionButton variant="secondary" size="md" icon={History} label={t("history.title")} onClick={() => setHistoryOpen(true)} />}
             {/* Reopen — completed or locked only */}
             {!readOnly && (rec.status === "completed" || rec.status === "locked") && (
-              <ActionBtn icon={RotateCcw} label={t("complete.reopen_button")} onClick={handleReopen} variant="warning" />
+              <ActionButton variant="secondary" size="md" icon={RotateCcw} label={t("complete.reopen_button")} onClick={handleReopen} />
             )}
             {/* Complete — in-progress only */}
             {!readOnly && rec.status === "in-progress" && (
@@ -349,18 +357,17 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
         </div>
       </div>
 
-      {/* Auto-match banner */}
-      {bannerVisible && !readOnly && (
-        <div style={{ margin: "14px 28px 0", padding: "12px 16px", background: "rgba(0,196,140,0.06)", border: "1px solid rgba(0,196,140,0.2)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--accent-primary)" }}>{t("auto_match.banner_title")}</div>
-            <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 2 }}>
-              {t("auto_match.banner_body", { matched: rec.matchedCount, exceptions: unresolvedCount })}
-              {suggestionsCount > 0 && <> · {t("auto_match.suggestions_body", { suggestions: suggestionsCount })}</>}
-            </div>
-          </div>
-          <button onClick={() => setBannerVisible(false)} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}><X size={14} /></button>
-        </div>
+      {/* Auto-match banner — uses PersistentBanner with 15s auto-dismiss and hover pause */}
+      {!readOnly && (
+        <PersistentBanner
+          open={bannerVisible}
+          onDismiss={() => setBannerVisible(false)}
+          title={t("auto_match.banner_title")}
+          body={<>{t("auto_match.banner_body", { matched: rec.matchedCount, exceptions: unresolvedCount })}{suggestionsCount > 0 && <> · {t("auto_match.suggestions_body", { suggestions: suggestionsCount })}</>}</>}
+          icon={Sparkles}
+          variant="info"
+          autoDismissAfterMs={15000}
+        />
       )}
 
       {/* Summary strip */}
@@ -368,8 +375,8 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
         <SummaryCell label={t("summary.opening_balance")} value={fmtKWD(rec.openingBalance)} />
         <SummaryCell label={t("summary.closing_bank")} value={fmtKWD(rec.closingBalance)} />
         <SummaryCell label={t("summary.closing_ledger")} value={fmtKWD(rec.closingLedgerBalance)} />
-        <SummaryCell label={t("summary.difference")} value={fmtKWD(diff)} highlight={Math.abs(diff) < 0.001 ? "var(--accent-primary)" : "var(--semantic-warning)"} />
-        {suggestionsCount > 0 && <SummaryCell label={t("suggestions.title")} value={String(suggestionsCount)} highlight="#3b82f6" />}
+        <SummaryCell label={t("summary.difference")} value={fmtKWD(diff)} highlight={Math.abs(diff) < 0.001 ? "var(--accent-primary)" : "var(--semantic-warning)"} onClick={() => exceptionsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} clickable={unresolvedCount > 0} />
+        {suggestionsCount > 0 && <SummaryCell label="PENDING REVIEW" value={String(suggestionsCount)} highlight="#3b82f6" onClick={() => suggestionsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} clickable />}
       </div>
 
       {/* Tier breakdown */}
@@ -382,16 +389,19 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
 
       {/* Body */}
       <div style={{ flex: 1, overflowY: "auto", padding: "16px 28px 24px" }}>
-        {/* CSV Upload section */}
+        {/* CSV Upload — real DropZone */}
         {!readOnly && rec.status === "in-progress" && (
           <div style={{ marginBottom: 14 }}>
-            <input ref={fileInputRef} type="file" accept=".csv" style={{ display: "none" }} onChange={(e) => { if (e.target.files?.[0]) handleCSVFile(e.target.files[0]); e.target.value = ""; }} />
-            <button onClick={() => fileInputRef.current?.click()} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "transparent", border: "1px dashed rgba(255,255,255,0.15)", padding: "8px 14px", borderRadius: 6, fontSize: 11, color: "var(--text-tertiary)", cursor: "pointer", fontFamily: "inherit" }}
-              onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "var(--accent-primary)"; }}
-              onDragLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; }}
-              onDrop={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; if (e.dataTransfer.files?.[0]) handleCSVFile(e.dataTransfer.files[0]); }}>
-              <Upload size={12} /> {uploadState === "parsing" ? t("upload.parsing") : t("upload.button")}
-            </button>
+            <DropZone
+              onFile={handleCSVFile}
+              accept=".csv,text/csv"
+              maxSize={5 * 1024 * 1024}
+              title={t("upload.drop_zone_title")}
+              subtitle={t("upload.drop_zone_body")}
+              icon={Upload}
+              height={80}
+              loading={uploadState === "parsing"}
+            />
             {uploadWarnings.length > 0 && (
               <div style={{ marginTop: 6, fontSize: 10, color: "var(--semantic-warning)" }}>
                 {t("upload.warnings_header", { count: uploadWarnings.length })}: {uploadWarnings.slice(0, 3).join("; ")}
@@ -408,7 +418,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
 
         {/* Pending Suggestions */}
         {suggestionsCount > 0 && !readOnly && (
-          <div style={{ marginBottom: 18 }}>
+          <div ref={suggestionsRef} style={{ marginBottom: 18 }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", color: "#3b82f6", marginBottom: 10, display: "inline-flex", alignItems: "center", gap: 6 }}>
               <Sparkles size={12} />
               {t("suggestions.title")} · {t("suggestions.subtitle", { count: suggestionsCount })}
@@ -451,18 +461,27 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
           </div>
         )}
 
+        {/* Bulk match CTA row — visible when enough unmatched items remain */}
+        {!readOnly && rec.status === "in-progress" && (rec.unmatchedBankItems.length + rec.unmatchedLedgerItems.length) >= 3 && (
+          <div style={{ marginBottom: 14, padding: "14px 18px", background: "rgba(168,85,247,0.04)", border: "1px solid rgba(168,85,247,0.15)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 6 }}><Sparkles size={14} color="#a855f7" /> {t("bulk_rule.cta_title")}</div>
+              <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>{t("bulk_rule.cta_subtitle")}</div>
+            </div>
+            <ActionButton variant="secondary" size="sm" icon={Sparkles} label={t("bulk_rule.title")} onClick={() => setBulkRuleOpen(true)} />
+          </div>
+        )}
+
         {/* Exceptions */}
         {rec.exceptions.length > 0 && (
-          <div>
+          <div ref={exceptionsRef}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", color: "var(--semantic-warning)", display: "inline-flex", alignItems: "center", gap: 6 }}>
                 <FileWarning size={12} />
                 {t("exceptions.header", { open: unresolvedCount })}
               </div>
               {!readOnly && rec.status === "in-progress" && (
-                <button onClick={() => setBulkRuleOpen(true)} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "transparent", border: "1px solid rgba(255,255,255,0.15)", padding: "5px 10px", borderRadius: 5, fontSize: 10, fontWeight: 600, color: "var(--text-secondary)", cursor: "pointer", fontFamily: "inherit" }}>
-                  <Sparkles size={10} /> {t("bulk_rule.title")}
-                </button>
+                <ActionButton variant="secondary" size="sm" icon={Sparkles} label={t("bulk_rule.title")} onClick={() => setBulkRuleOpen(true)} />
               )}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -490,16 +509,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
 
 // ─── Small reusable components ───
 
-function ActionBtn({ icon: Icon, label, onClick, variant }) {
-  const bg = variant === "warning" ? "rgba(245,166,35,0.08)" : "transparent";
-  const border = variant === "warning" ? "rgba(245,166,35,0.3)" : "rgba(255,255,255,0.15)";
-  const color = variant === "warning" ? "var(--semantic-warning)" : "var(--text-secondary)";
-  return (
-    <button onClick={onClick} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: bg, border: `1px solid ${border}`, padding: "6px 10px", borderRadius: 5, fontSize: 10, fontWeight: 600, color, cursor: "pointer", fontFamily: "inherit" }}>
-      <Icon size={12} /> {label}
-    </button>
-  );
-}
+// ActionBtn removed — replaced by ds/ActionButton
 
 function ConfidencePill({ confidence }) {
   const { t } = useTranslation("reconciliation");
@@ -522,9 +532,14 @@ function TierPill({ tier }) {
   );
 }
 
-function SummaryCell({ label, value, highlight }) {
+function SummaryCell({ label, value, highlight, onClick, clickable }) {
   return (
-    <div style={{ background: "var(--bg-surface-raised)", padding: "12px 16px" }}>
+    <div
+      onClick={clickable ? onClick : undefined}
+      style={{ background: "var(--bg-surface-raised)", padding: "12px 16px", cursor: clickable ? "pointer" : "default", transition: "background 0.12s" }}
+      onMouseEnter={(e) => { if (clickable) e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = "var(--bg-surface-raised)"; }}
+    >
       <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 4 }}>{label}</div>
       <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 16, color: highlight || "var(--text-primary)", fontWeight: 600, letterSpacing: "-0.5px" }}>{value}</div>
     </div>
@@ -533,6 +548,7 @@ function SummaryCell({ label, value, highlight }) {
 
 function StatementColumn({ title, sub, matchedCount, matchedItems, unmatched, exceptions, isBank }) {
   const { t } = useTranslation("reconciliation");
+  const [expanded, setExpanded] = useState(false);
   return (
     <div style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, overflow: "hidden" }}>
       <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "var(--bg-surface)" }}>
@@ -540,12 +556,19 @@ function StatementColumn({ title, sub, matchedCount, matchedItems, unmatched, ex
         <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 3 }}>{sub}</div>
       </div>
       <div style={{ padding: "8px 0" }}>
-        <div style={{ padding: "8px 16px", display: "flex", alignItems: "center", gap: 8, color: "var(--text-tertiary)", fontSize: 11, borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+        {/* Matched items — expandable */}
+        <button onClick={() => setExpanded(!expanded)} style={{ width: "100%", padding: "8px 16px", display: "flex", alignItems: "center", gap: 8, color: "var(--text-tertiary)", fontSize: 11, borderBottom: "1px solid rgba(255,255,255,0.04)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", textAlign: "start" }}>
+          {expanded ? <ChevronDown size={12} color="var(--accent-primary)" /> : <ChevronRight size={12} color="var(--accent-primary)" />}
           <CheckCircle2 size={12} color="var(--accent-primary)" />
           <span style={{ color: "var(--text-secondary)" }}>{t("columns.matched_collapsed", { count: matchedCount })}</span>
-          <span style={{ color: "var(--text-tertiary)" }}>{t("columns.collapsed")}</span>
-        </div>
-        {unmatched.length === 0 ? (
+        </button>
+        {expanded && matchedItems && matchedItems.map((m) => (
+          <div key={m.id} style={{ padding: "6px 16px 6px 36px", borderBottom: "1px solid rgba(255,255,255,0.02)", display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: "var(--text-tertiary)" }}>
+            <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 10 }}>{m.bankItemId} ↔ {m.ledgerEntryId}</span>
+            <TierPill tier={m.matchTier || "exact"} />
+          </div>
+        ))}
+        {unmatched.length === 0 && !expanded ? (
           <div style={{ padding: "16px", textAlign: "center", color: "var(--text-tertiary)", fontSize: 12 }}>{t("columns.no_unmatched")}</div>
         ) : (
           unmatched.map((item) => {

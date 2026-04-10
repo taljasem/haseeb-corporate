@@ -46,7 +46,7 @@
     "auto_cat_name": "{{merchant}} auto-categorization"
   },
   "bulk": {
-    "enter_mode": "Select",
+    "enter_mode": "Select multiple",
     "exit_mode": "Cancel",
     "selected_count": "{{count}} selected",
     "select_all_visible": "Select all visible",
@@ -74,6 +74,8 @@
   "attachments": {
     "section_title": "Attachments ({{count}})",
     "empty": "No attachments yet",
+    "drop_zone_title": "Drop files here",
+    "drop_zone_body": "or click to browse — PDF or images, max 5 MB",
     "max_files": "Max 3 files",
     "max_size": "Max 5 MB per file",
     "accepted_types": "PDF, images, Excel, Word"

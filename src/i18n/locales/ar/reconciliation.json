@@ -34,6 +34,8 @@
     "bank_sub": "{{total}} عملية · {{unmatched}} غير مطابقة",
     "ledger_sub": "{{total}} قيد · {{unmatched}} غير مطابقة",
     "matched_collapsed": "{{count}} عنصر مطابق",
+    "matched_expand": "توسيع",
+    "matched_collapse": "طي",
     "collapsed": "(مطوي)",
     "no_unmatched": "لا توجد عناصر غير مطابقة"
   },
@@ -66,7 +68,8 @@
     "banner_title": "اكتملت المطابقة التلقائية",
     "banner_body": "تمت مطابقة {{matched}} عنصر — {{exceptions}} استثناءات بحاجة للمراجعة",
     "suggestions_body": "{{suggestions}} اقتراحات بحاجة لتأكيدك",
-    "dismiss": "تجاهل"
+    "dismiss": "تجاهل",
+    "recall_link": "ملخص المطابقة"
   },
   "confidence": {
     "exact": "مطابقة تامة",
@@ -103,7 +106,9 @@
     "preview_empty": "لا توجد عناصر تطابق هذه التفاوتات",
     "apply_button": "تطبيق القاعدة",
     "cancel_button": "إلغاء",
-    "applied_toast": "تمت مطابقة {{count}} عنصر عبر القاعدة"
+    "applied_toast": "تمت مطابقة {{count}} عنصر عبر القاعدة",
+    "cta_title": "مطابقة العناصر المتبقية حسب القاعدة",
+    "cta_subtitle": "حدد الحدود للمطابقة التلقائية للعناصر المتقاربة"
   },
   "history": {
     "title": "سجل التسويات",

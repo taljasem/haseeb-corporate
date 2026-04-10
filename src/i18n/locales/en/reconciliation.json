@@ -34,6 +34,8 @@
     "bank_sub": "{{total}} items · {{unmatched}} unmatched",
     "ledger_sub": "{{total}} entries · {{unmatched}} unmatched",
     "matched_collapsed": "{{count}} matched items",
+    "matched_expand": "Expand",
+    "matched_collapse": "Collapse",
     "collapsed": "(collapsed)",
     "no_unmatched": "No unmatched items"
   },
@@ -66,7 +68,8 @@
     "banner_title": "Auto-match complete",
     "banner_body": "Matched {{matched}} items — {{exceptions}} exceptions need review",
     "suggestions_body": "{{suggestions}} suggestions need your confirmation",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "recall_link": "Match summary"
   },
   "confidence": {
     "exact": "Exact",
@@ -103,7 +106,9 @@
     "preview_empty": "No items match these tolerances",
     "apply_button": "Apply rule",
     "cancel_button": "Cancel",
-    "applied_toast": "{{count}} items matched via rule"
+    "applied_toast": "{{count}} items matched via rule",
+    "cta_title": "Match remaining items by rule",
+    "cta_subtitle": "Set tolerances to auto-match items that differ slightly"
   },
   "history": {
     "title": "Reconciliation history",

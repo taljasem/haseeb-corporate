@@ -1,4 +1,5 @@
 import EngineConfidencePill from "./EngineConfidencePill";
+import { formatDate } from "../../utils/format";
 
 function fmtAmount(n) {
   const abs = Math.abs(n).toLocaleString("en-US", {
@@ -44,7 +45,7 @@ export default function BankTransactionRow({ tx, selected, onSelect, selectable,
           color: "var(--text-tertiary)",
         }}
       >
-        {tx.date}
+        {formatDate(tx.date)}
       </div>
       <div style={{ minWidth: 0 }}>
         <div

@@ -27,7 +27,7 @@ export default function SubmitDraftConfirmationModal({ open, departmentName, not
           transform: "translate(-50%, -50%)",
           width: 480,
           maxWidth: "calc(100vw - 32px)",
-          background: "var(--bg-surface-raised)",
+          background: "var(--panel-bg)",
           border: "1px solid rgba(255,255,255,0.10)",
           borderRadius: 12,
           zIndex: 301,

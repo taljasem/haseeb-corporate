@@ -175,7 +175,7 @@ export default function NewCategorizationRuleModal({ open, onClose, onCreated, p
           width: 560,
           maxWidth: "calc(100vw - 32px)",
           maxHeight: "calc(100vh - 80px)",
-          background: "var(--bg-surface-raised)",
+          background: "var(--panel-bg)",
           border: "1px solid rgba(255,255,255,0.10)",
           borderRadius: 12,
           zIndex: 301,

@@ -535,7 +535,7 @@ function SummaryCell({ label, value, highlight, onClick, clickable }) {
     <div
       onClick={clickable ? onClick : undefined}
       style={{ background: "var(--bg-surface-raised)", padding: "12px 16px", cursor: clickable ? "pointer" : "default", transition: "background 0.12s" }}
-      onMouseEnter={(e) => { if (clickable) e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
+      onMouseEnter={(e) => { if (clickable) e.currentTarget.style.background = "var(--bg-hover)"; }}
       onMouseLeave={(e) => { e.currentTarget.style.background = "var(--bg-surface-raised)"; }}
     >
       <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 4 }}>{label}</div>
@@ -665,7 +665,7 @@ function InlineJEComposer({ exception, bankItem, onCancel, onConfirm }) {
   return (
     <>
       <div onClick={onCancel} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
-      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 480, background: "var(--bg-surface-raised)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 480, background: "var(--panel-bg)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>{t("je_composer.label")}</div>

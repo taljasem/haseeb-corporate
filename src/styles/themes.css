@@ -144,7 +144,7 @@ html[data-theme="light"] {
   --header-bg:          rgba(255, 255, 255, 0.65);
   --header-border:      rgba(0, 0, 0, 0.09);
   --overlay-backdrop:   rgba(0, 0, 0, 0.35);
-  --panel-bg:           rgba(255, 255, 255, 0.92);
+  --panel-bg:           #FFFFFF;
   --panel-border:       rgba(0, 0, 0, 0.09);
   --panel-shadow:       0 12px 32px rgba(0, 0, 0, 0.12);
 

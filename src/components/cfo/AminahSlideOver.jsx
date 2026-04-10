@@ -186,7 +186,7 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
   return (
     <>
       <div onClick={isStreaming ? undefined : onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 90 }} />
-      <aside data-panel="aminah-slideover" style={{ position: "fixed", top: 52, insetInlineEnd: 0, bottom: 0, width: 440, maxWidth: "calc(100vw - 32px)", background: "var(--bg-surface-raised)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderInlineStart: "1px solid var(--border-default)", zIndex: 100, display: "flex", flexDirection: "column", animation: "viewEnter 0.2s ease-out both" }}>
+      <aside data-panel="aminah-slideover" style={{ position: "fixed", top: 52, insetInlineEnd: 0, bottom: 0, width: 440, maxWidth: "calc(100vw - 32px)", background: "var(--panel-bg)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderInlineStart: "1px solid var(--border-default)", zIndex: 100, display: "flex", flexDirection: "column", animation: "viewEnter 0.2s ease-out both" }}>
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 18px", borderBottom: "1px solid rgba(255,255,255,0.10)", flexShrink: 0 }}>

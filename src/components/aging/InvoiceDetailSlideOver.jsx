@@ -33,7 +33,7 @@ export default function InvoiceDetailSlideOver({ open, invoiceId, onClose }) {
         style={{
           position: "fixed", top: 0, insetInlineEnd: 0, bottom: 0,
           width: 520, maxWidth: "calc(100vw - 32px)",
-          background: "var(--bg-surface-raised)",
+          background: "var(--panel-bg)",
           borderInlineStart: "1px solid rgba(255,255,255,0.10)",
           zIndex: 301, display: "flex", flexDirection: "column",
           boxShadow: "-24px 0 60px rgba(0,0,0,0.7)",

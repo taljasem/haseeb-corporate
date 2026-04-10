@@ -30,7 +30,7 @@ export default function ReconciliationHistorySlideOver({ open, onClose, accountI
   return (
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
-      <div style={{ position: "fixed", top: 0, insetInlineEnd: 0, bottom: 0, width: 480, maxWidth: "calc(100vw - 32px)", background: "var(--bg-surface-raised)", borderInlineStart: "1px solid rgba(255,255,255,0.10)", zIndex: 301, boxShadow: "-24px 0 60px rgba(0,0,0,0.7)", display: "flex", flexDirection: "column" }}>
+      <div style={{ position: "fixed", top: 0, insetInlineEnd: 0, bottom: 0, width: 480, maxWidth: "calc(100vw - 32px)", background: "var(--panel-bg)", borderInlineStart: "1px solid rgba(255,255,255,0.10)", zIndex: 301, boxShadow: "-24px 0 60px rgba(0,0,0,0.7)", display: "flex", flexDirection: "column" }}>
         {/* Header */}
         <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>

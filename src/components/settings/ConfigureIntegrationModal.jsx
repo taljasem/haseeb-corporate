@@ -38,7 +38,7 @@ export default function ConfigureIntegrationModal({ open, integration, onClose, 
         style={{
           position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
           width: 460, maxWidth: "calc(100vw - 32px)",
-          background: "var(--bg-surface-raised)", border: "1px solid rgba(255,255,255,0.10)",
+          background: "var(--panel-bg)", border: "1px solid rgba(255,255,255,0.10)",
           borderRadius: 12, zIndex: 301, display: "flex", flexDirection: "column",
           boxShadow: "0 24px 60px rgba(0,0,0,0.7)",
         }}

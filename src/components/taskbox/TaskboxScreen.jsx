@@ -628,7 +628,7 @@ function TemplatesTab({ role, onRefresh, onToast }) {
               <MoreVertical size={14} />
             </button>
             {menuOpenId === tpl.id && (
-              <div data-popover-anchor="end" style={{ position: "absolute", top: "calc(100% + 4px)", insetInlineEnd: 0, width: 200, background: "var(--bg-surface-raised)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, boxShadow: "0 12px 32px rgba(0,0,0,0.6)", zIndex: 150, padding: "6px 0" }}>
+              <div data-popover-anchor="end" style={{ position: "absolute", top: "calc(100% + 4px)", insetInlineEnd: 0, width: 200, background: "var(--panel-bg)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, boxShadow: "0 12px 32px rgba(0,0,0,0.6)", zIndex: 150, padding: "6px 0" }}>
                 <MenuItem label={t("templates.kebab_duplicate")} onClick={() => { setMenuOpenId(null); handleDuplicate(tpl.id); }} />
                 {tpl.visibility === "my" ? (
                   <MenuItem label={t("templates.kebab_share_role")} onClick={() => { setMenuOpenId(null); handleShare(tpl.id, "role"); }} />
@@ -673,7 +673,7 @@ function BulkRejectModal({ open, count, onClose, onConfirm }) {
   return (
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
-      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 480, background: "var(--bg-surface-raised)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 480, background: "var(--panel-bg)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
         <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
           <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: "var(--text-primary)" }}>
             {t("bulk.reject_modal_title", { count })}
@@ -719,7 +719,7 @@ function BulkAssignModal({ open, count, role, onClose, onConfirm }) {
   return (
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
-      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 480, background: "var(--bg-surface-raised)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 480, background: "var(--panel-bg)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
         <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
           <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: "var(--text-primary)" }}>
             {t("bulk.assign_modal_title", { count })}

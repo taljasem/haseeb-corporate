@@ -77,7 +77,7 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
           transform: "translate(-50%, -50%)",
           width: 600, maxWidth: "calc(100vw - 32px)",
           maxHeight: "calc(100vh - 80px)",
-          background: "var(--bg-surface-raised)",
+          background: "var(--panel-bg)",
           border: "1px solid rgba(255,255,255,0.10)",
           borderRadius: 12, zIndex: 301,
           display: "flex", flexDirection: "column",

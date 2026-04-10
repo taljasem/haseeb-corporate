@@ -160,5 +160,20 @@
     "private_toast": "تم جعله خاصاً",
     "usage_format": "{{count}} استخدام · آخر {{time}}",
     "created_by": "أنشأه {{name}}"
+  },
+  "templates": {
+    "kebab": {
+      "edit": "تعديل",
+      "duplicate": "تكرار",
+      "delete": "حذف",
+      "share": "مشاركة"
+    },
+    "delete": {
+      "confirm_title": "حذف القالب",
+      "confirm_body": "هل تريد حذف هذا القالب؟ لا يمكن التراجع عن هذا الإجراء."
+    }
+  },
+  "badge": {
+    "ai_assisted": "بمساعدة الذكاء الاصطناعي"
   }
 }

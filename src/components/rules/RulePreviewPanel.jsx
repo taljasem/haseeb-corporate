@@ -4,6 +4,18 @@ import { Eye, EyeOff, Search } from "lucide-react";
 import LtrText from "../shared/LtrText";
 import { previewRule } from "../../engine/mockEngine";
 
+function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+function highlightMatch(text, searchTerm) {
+  if (!searchTerm || !text) return text;
+  try {
+    const regex = new RegExp(`(${escapeRegex(searchTerm)})`, "gi");
+    const parts = String(text).split(regex);
+    return parts.map((part, i) =>
+      regex.test(part) ? <mark key={i} style={{ background: "rgba(0,196,140,0.25)", color: "inherit", padding: "0 2px", borderRadius: 2 }}>{part}</mark> : part
+    );
+  } catch { return text; }
+}
+
 function fmtKWD(n) {
   if (n == null) return "—";
   const abs = Math.abs(Number(n));
@@ -138,7 +150,7 @@ export default function RulePreviewPanel({ ruleType, ruleConfig }) {
                   }}
                 >
                   <div style={{ color: "var(--text-tertiary)", fontFamily: "'DM Mono', monospace" }}>{m.date}</div>
-                  <div style={{ color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.merchant}</div>
+                  <div style={{ color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{highlightMatch(m.merchant, debounced?.merchant || debounced?.matchValue || debounced?.keyword || "")}</div>
                   <div style={{ fontFamily: "'DM Mono', monospace", textAlign: "end", color: m.amount < 0 ? "var(--semantic-danger)" : "var(--accent-primary)" }}>
                     <LtrText>{fmtKWD(m.amount)}</LtrText>
                   </div>

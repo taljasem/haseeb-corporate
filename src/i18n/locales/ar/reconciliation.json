@@ -50,6 +50,7 @@
     "type_duplicate": "مكرر",
     "resolved": "✓ مُسوَّى",
     "create_je": "إنشاء قيد",
+    "create_and_resolve": "إنشاء قيد وحل",
     "accept_match": "قبول المطابقة",
     "mark_resolved": "تحديد كمُسوَّى",
     "resolution_accepted": "مقبول",

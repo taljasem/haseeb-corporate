@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, Trash2, Search, Lock, X, FileText, Clock, CheckCircle2, AlertCircle, RotateCcw, Save, Calendar, Sparkles, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Search, Lock, X, FileText, Clock, CheckCircle2, AlertCircle, RotateCcw, Save, Calendar, Sparkles, AlertTriangle, MoreVertical } from "lucide-react";
 import FileAttachment from "../../components/shared/FileAttachment";
 import LtrText from "../../components/shared/LtrText";
 import useEscapeKey from "../../hooks/useEscapeKey";
@@ -222,6 +222,7 @@ export default function ManualJEScreen({ onOpenAminah }) {
                   tab={activeTab}
                   selected={isSelected}
                   onClick={() => setSelected({ kind: isTemplate ? "template" : "je", id: item.id })}
+                  onRefresh={refresh}
                 />
               );
             })
@@ -352,7 +353,7 @@ function EmptyState({ onBlank, onTemplates, onRecent }) {
   );
 }
 
-function ListItem({ item, tab, selected, onClick }) {
+function ListItem({ item, tab, selected, onClick, onRefresh }) {
   const { t } = useTranslation("manual-je");
   const isJE = tab !== "templates";
   const total = isJE ? Math.max(item.totalDebits || 0, item.totalCredits || 0) : 0;
@@ -391,6 +392,9 @@ function ListItem({ item, tab, selected, onClick }) {
           <div style={{ fontSize: 11, fontFamily: "'DM Mono', monospace", color: COLORS.text, fontWeight: 600, flexShrink: 0 }}>
             {fmtKWD(total)}
           </div>
+        )}
+        {tab === "templates" && (
+          <TemplateKebab templateId={item.id} onRefresh={onRefresh} />
         )}
       </div>
     </button>
@@ -1068,5 +1072,70 @@ function SaveTemplateModal({ onCancel, onConfirm }) {
           style={{ ...inputStyle(false), resize: "vertical" }} />
       </Field>
     </ModalShell>
+  );
+}
+
+function TemplateKebab({ templateId, onRefresh }) {
+  const { t } = useTranslation("manual-je");
+  const [open, setOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const handleDuplicate = async (e) => {
+    e.stopPropagation();
+    // No dedicated duplicate function — use useJETemplate to create a copy
+    await useJETemplate(templateId);
+    setOpen(false);
+    onRefresh && onRefresh();
+  };
+  const handleDelete = async (e) => {
+    e.stopPropagation();
+    await deleteJETemplateRecord(templateId);
+    setConfirmDelete(false);
+    setOpen(false);
+    onRefresh && onRefresh();
+  };
+  const handleShare = (e) => {
+    e.stopPropagation();
+    shareJETemplate(templateId, true);
+    setOpen(false);
+  };
+  return (
+    <div style={{ position: "relative" }} onClick={(e) => e.stopPropagation()}>
+      <button onClick={() => setOpen(!open)} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}>
+        <MoreVertical size={14} />
+      </button>
+      {open && (
+        <>
+          <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 200 }} />
+          <div style={{ position: "absolute", top: "100%", insetInlineEnd: 0, marginTop: 4, width: 160, background: "var(--bg-surface-raised)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, boxShadow: "0 8px 24px rgba(0,0,0,0.5)", zIndex: 201, padding: "4px 0" }}>
+            <KebabItem label={t("templates.kebab.duplicate")} onClick={handleDuplicate} />
+            <KebabItem label={t("templates.kebab.share")} onClick={handleShare} />
+            <KebabItem label={t("templates.kebab.delete")} onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); setOpen(false); }} danger />
+          </div>
+        </>
+      )}
+      {confirmDelete && (
+        <>
+          <div onClick={() => setConfirmDelete(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 300 }} />
+          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 360, background: "var(--bg-surface-raised)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)", padding: "20px 22px" }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 8 }}>{t("templates.delete.confirm_title")}</div>
+            <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 16, lineHeight: 1.5 }}>{t("templates.delete.confirm_body")}</div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button onClick={() => setConfirmDelete(false)} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid rgba(255,255,255,0.15)", padding: "8px 14px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("save_template_modal.cancel")}</button>
+              <button onClick={handleDelete} style={{ background: "var(--semantic-danger)", color: "#fff", border: "none", padding: "8px 14px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>{t("templates.kebab.delete")}</button>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function KebabItem({ label, onClick, danger }) {
+  return (
+    <button onClick={onClick} style={{ display: "block", width: "100%", padding: "7px 14px", background: "transparent", border: "none", color: danger ? "var(--semantic-danger)" : "var(--text-primary)", fontSize: 12, cursor: "pointer", fontFamily: "inherit", textAlign: "start" }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = danger ? "rgba(239,68,68,0.06)" : "rgba(255,255,255,0.04)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
+      {label}
+    </button>
   );
 }

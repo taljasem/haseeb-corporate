@@ -1,8 +1,9 @@
 import { useTranslation } from "react-i18next";
-import { FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { FileText, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { StatusPill, ModePill } from "./StatusPills";
 import RuleDetailExpanded from "./RuleDetailExpanded";
 import { formatRelativeTime } from "../../utils/relativeTime";
+import { getAcceptedFromAiTimestamp } from "../../engine/mockEngine";
 
 export default function CategorizationRuleRow({ rule, expanded, onToggle, onEdit, onMute, onDelete }) {
   const { t } = useTranslation("rules");
@@ -63,6 +64,7 @@ export default function CategorizationRuleRow({ rule, expanded, onToggle, onEdit
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          {(() => { const ts = getAcceptedFromAiTimestamp(rule.id); return ts && (Date.now() - new Date(ts).getTime() < 7 * 24 * 60 * 60 * 1000) ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 9, fontWeight: 600, color: "#3b82f6", background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.25)", padding: "2px 6px", borderRadius: 10 }}><Sparkles size={9} /> AI</span> : null; })()}
           <StatusPill status={rule.status} />
           <ModePill mode={rule.mode} />
           {expanded ? <ChevronUp size={14} color="var(--text-tertiary)" /> : <ChevronDown size={14} color="var(--text-tertiary)" />}

@@ -50,6 +50,7 @@
     "type_duplicate": "DUPLICATE",
     "resolved": "✓ RESOLVED",
     "create_je": "Create JE",
+    "create_and_resolve": "Create JE & resolve",
     "accept_match": "Accept match",
     "mark_resolved": "Mark resolved",
     "resolution_accepted": "Accepted",

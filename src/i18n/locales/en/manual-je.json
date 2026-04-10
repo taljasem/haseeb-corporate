@@ -160,5 +160,20 @@
     "private_toast": "Made private",
     "usage_format": "{{count}} uses · last {{time}}",
     "created_by": "Created by {{name}}"
+  },
+  "templates": {
+    "kebab": {
+      "edit": "Edit",
+      "duplicate": "Duplicate",
+      "delete": "Delete",
+      "share": "Share"
+    },
+    "delete": {
+      "confirm_title": "Delete template",
+      "confirm_body": "Delete this template? This cannot be undone."
+    }
+  },
+  "badge": {
+    "ai_assisted": "AI-assisted"
   }
 }

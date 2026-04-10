@@ -634,7 +634,7 @@ function ExceptionRow({ exc, readOnly, onResolve, onOpenJE }) {
       {!exc.resolved && !readOnly && (
         <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
           {(exc.suggestedAction === "create-je") && (
-            <button onClick={onOpenJE} style={{ background: "var(--accent-primary)", color: "#fff", border: "none", padding: "6px 12px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 4 }}><Plus size={11} /> {t("exceptions.create_je")}</button>
+            <button onClick={onOpenJE} style={{ background: "var(--accent-primary)", color: "#fff", border: "none", padding: "6px 12px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 4 }}><Plus size={11} /> {t("exceptions.create_and_resolve")}</button>
           )}
           {exc.suggestedAction === "accept" && (
             <button onClick={() => onResolve(exc.id, t("exceptions.resolution_accepted"))} style={{ background: "var(--accent-primary)", color: "#fff", border: "none", padding: "6px 12px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{t("exceptions.accept_match")}</button>

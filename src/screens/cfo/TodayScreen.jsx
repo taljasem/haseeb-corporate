@@ -63,7 +63,7 @@ function QueueRow({ count, label, onClick, itemId }) {
         padding: "12px 14px",
         margin: "4px -14px",
         background: "transparent",
-        borderBottom: "1px solid rgba(255,255,255,0.04)",
+        borderBottom: "1px solid var(--border-subtle)",
         cursor: "pointer",
         textAlign: "start",
         fontFamily: "inherit",
@@ -266,7 +266,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                 style={{
                   width: "100%",
                   height: 4,
-                  background: "rgba(255,255,255,0.05)",
+                  background: "var(--border-subtle)",
                   borderRadius: 2,
                   overflow: "hidden",
                   marginBottom: 14,
@@ -289,7 +289,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                       alignItems: "center",
                       gap: 10,
                       padding: "8px 0",
-                      borderBottom: i < close.nextTasks.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                      borderBottom: i < close.nextTasks.length - 1 ? "1px solid var(--border-subtle)" : "none",
                       fontSize: 13,
                       color: "var(--text-secondary)",
                     }}
@@ -299,7 +299,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                         width: 8,
                         height: 8,
                         borderRadius: "50%",
-                        border: "1px solid rgba(255,255,255,0.20)",
+                        border: "1px solid var(--border-strong)",
                       }}
                     />
                     <span style={{ flex: 1 }}>{t.task}</span>
@@ -343,7 +343,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                   lineHeight: 1.8,
                   paddingBottom: 8,
                   marginBottom: 8,
-                  borderBottom: "1px solid rgba(255,255,255,0.04)",
+                  borderBottom: "1px solid var(--border-subtle)",
                 }}
               >
                 {renderHighlighted(n.text)}
@@ -363,7 +363,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                     alignItems: "center",
                     gap: 12,
                     padding: "10px 0",
-                    borderBottom: "1px solid rgba(255,255,255,0.04)",
+                    borderBottom: "1px solid var(--border-subtle)",
                   }}
                 >
                   <Avatar initials={t.initials} />
@@ -449,7 +449,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                   fontSize: 12,
                   color: "var(--text-secondary)",
                   paddingTop: 12,
-                  borderTop: "1px solid rgba(255,255,255,0.06)",
+                  borderTop: "1px solid var(--border-subtle)",
                 }}
               >
                 {t("engine.rule_based")}:{" "}

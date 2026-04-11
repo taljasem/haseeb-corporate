@@ -149,7 +149,7 @@ export default function FileAttachment({
             processFiles(e.dataTransfer.files);
           }}
           style={{
-            border: `1.5px dashed ${dragOver ? "var(--accent-primary)" : "rgba(255,255,255,0.15)"}`,
+            border: `1.5px dashed ${dragOver ? "var(--accent-primary)" : "var(--border-strong)"}`,
             background: dragOver ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)",
             borderRadius: 10,
             padding: "24px 18px",
@@ -189,7 +189,7 @@ export default function FileAttachment({
                   gap: 10,
                   padding: "10px 12px",
                   background: "var(--bg-surface-sunken)",
-                  border: "1px solid rgba(255,255,255,0.08)",
+                  border: "1px solid var(--border-default)",
                   borderRadius: 8,
                 }}
               >
@@ -249,7 +249,7 @@ export default function FileAttachment({
           style={{
             marginTop: 8,
             background: "transparent",
-            border: "1px dashed rgba(255,255,255,0.15)",
+            border: "1px dashed var(--border-strong)",
             color: "var(--text-secondary)",
             padding: "8px 14px",
             borderRadius: 6,

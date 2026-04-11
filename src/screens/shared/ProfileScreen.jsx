@@ -78,7 +78,7 @@ export default function ProfileScreen({ role: roleRaw = "CFO" }) {
       <div
         style={{
           padding: "22px 28px 18px",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          borderBottom: "1px solid var(--border-subtle)",
           background: `linear-gradient(180deg, ${accent}1A 0%, transparent 100%)`,
           flexShrink: 0,
         }}
@@ -118,7 +118,7 @@ function Card({ title, subtitle, headerRight, children }) {
     <div
       style={{
         background: "var(--bg-surface)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        border: "1px solid var(--border-default)",
         borderRadius: 10,
         padding: "20px 22px",
         marginBottom: 14,
@@ -146,7 +146,7 @@ function HeaderCard({ profile, role, accent, onEdit }) {
     <div
       style={{
         background: "var(--bg-surface)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        border: "1px solid var(--border-default)",
         borderRadius: 10,
         padding: "22px 24px",
         marginBottom: 14,
@@ -193,7 +193,7 @@ function HeaderCard({ profile, role, accent, onEdit }) {
         onClick={onEdit}
         style={{
           background: "transparent", color: "var(--text-secondary)",
-          border: "1px solid rgba(255,255,255,0.15)", padding: "8px 14px",
+          border: "1px solid var(--border-strong)", padding: "8px 14px",
           borderRadius: 6, cursor: "pointer",
           fontSize: 11, fontWeight: 600, fontFamily: "inherit",
           flexShrink: 0,
@@ -229,7 +229,7 @@ function StatsCard({ stats, role }) {
             key={c.key}
             style={{
               background: "var(--bg-surface-sunken)",
-              border: "1px solid rgba(255,255,255,0.05)",
+              border: "1px solid var(--border-subtle)",
               borderRadius: 8,
               padding: "12px 14px",
             }}
@@ -267,7 +267,7 @@ function ResponsibilitiesCard({ role, items }) {
                 style={{
                   display: "flex", alignItems: "flex-start", gap: 12,
                   padding: "12px 0",
-                  borderBottom: "1px solid rgba(255,255,255,0.04)",
+                  borderBottom: "1px solid var(--border-subtle)",
                 }}
               >
                 <div style={{ width: 28, height: 28, borderRadius: 8, background: "var(--bg-surface-sunken)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -306,7 +306,7 @@ function ActivityCard({ items, onViewFull }) {
               style={{
                 display: "flex", alignItems: "center", gap: 10,
                 padding: "10px 0",
-                borderBottom: "1px solid rgba(255,255,255,0.04)",
+                borderBottom: "1px solid var(--border-subtle)",
                 fontSize: 13, color: "var(--text-secondary)",
               }}
             >
@@ -372,7 +372,7 @@ function NotesCard() {
         style={{
           width: "100%",
           background: "var(--bg-surface-sunken)",
-          border: "1px solid rgba(255,255,255,0.08)",
+          border: "1px solid var(--border-default)",
           borderRadius: 8,
           padding: "12px 14px",
           color: "var(--text-primary)",

@@ -89,7 +89,7 @@ export default function CFOSidebar({ active, setActive, pendingApprovals = 0, ta
     pendingApprovals > 0
       ? { label: <LtrText>{taskboxOpen}</LtrText>, bg: "var(--semantic-danger)", fg: "#fff" }
       : taskboxOpen > 0
-        ? { label: <LtrText>{taskboxOpen}</LtrText>, bg: "var(--border-default)", fg: "var(--text-secondary)", border: "1px solid rgba(255,255,255,0.12)" }
+        ? { label: <LtrText>{taskboxOpen}</LtrText>, bg: "var(--border-default)", fg: "var(--text-secondary)", border: "1px solid var(--border-default)" }
         : null;
   return (
     <aside

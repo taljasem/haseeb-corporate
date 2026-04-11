@@ -27,7 +27,7 @@ function SectionCard({ label, extra, aminah = true, children }) {
     <div
       style={{
         background: "var(--bg-surface)",
-        border: "1px solid rgba(255,255,255,0.06)",
+        border: "1px solid var(--border-subtle)",
         borderRadius: 10,
         padding: "18px 20px",
         marginBottom: 16,
@@ -52,7 +52,7 @@ function KpiBlock({ label, value, accent, sub, onClick }) {
       style={{
         flex: "1 1 200px",
         padding: "14px 16px",
-        borderInlineEnd: "1px solid rgba(255,255,255,0.06)",
+        borderInlineEnd: "1px solid var(--border-subtle)",
         cursor: onClick ? "pointer" : "default",
         borderRadius: 6,
         transition: "background 0.12s ease",
@@ -105,7 +105,7 @@ function AttentionRow({ count, label, onClick }) {
         margin: "4px -14px",
         background: "transparent",
         border: "none",
-        borderBottom: "1px solid rgba(255,255,255,0.04)",
+        borderBottom: "1px solid var(--border-subtle)",
         cursor: "pointer",
         textAlign: "start",
         fontFamily: "inherit",
@@ -333,7 +333,7 @@ export default function OwnerTodayScreen({ setActiveScreen, onOpenTask, onOpenAm
               style={{
                 width: "100%",
                 height: 4,
-                background: "rgba(255,255,255,0.05)",
+                background: "var(--border-subtle)",
                 borderRadius: 2,
                 overflow: "hidden",
                 marginBottom: 14,

@@ -10,7 +10,7 @@ import { updateTeamMember } from "../../engine/mockEngine";
 const inputStyle = {
   width: "100%",
   background: "var(--bg-surface-sunken)",
-  border: "1px solid rgba(255,255,255,0.10)",
+  border: "1px solid var(--border-default)",
   borderRadius: 8,
   padding: "10px 12px",
   color: "var(--text-primary)",
@@ -132,7 +132,7 @@ export default function EditMemberModal({ open, member, onClose, onSaved }) {
           maxWidth: "calc(100vw - 32px)",
           maxHeight: "calc(100vh - 80px)",
           background: "var(--panel-bg)",
-          border: "1px solid rgba(255,255,255,0.10)",
+          border: "1px solid var(--border-default)",
           borderRadius: 12,
           zIndex: 301,
           display: "flex",
@@ -146,7 +146,7 @@ export default function EditMemberModal({ open, member, onClose, onSaved }) {
             alignItems: "center",
             justifyContent: "space-between",
             padding: "16px 22px",
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            borderBottom: "1px solid var(--border-subtle)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -242,7 +242,7 @@ export default function EditMemberModal({ open, member, onClose, onSaved }) {
                       background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)",
                       border: on
                         ? "1px solid rgba(0,196,140,0.30)"
-                        : "1px solid rgba(255,255,255,0.10)",
+                        : "1px solid var(--border-default)",
                       borderRadius: 8,
                       color: on ? "var(--accent-primary)" : "var(--text-secondary)",
                       cursor: "pointer",
@@ -288,7 +288,7 @@ export default function EditMemberModal({ open, member, onClose, onSaved }) {
                       background: on ? "var(--accent-primary-subtle)" : "transparent",
                       border: on
                         ? "1px solid rgba(0,196,140,0.30)"
-                        : "1px solid rgba(255,255,255,0.10)",
+                        : "1px solid var(--border-default)",
                       color: on ? "var(--accent-primary)" : "var(--text-secondary)",
                       borderRadius: 6,
                       cursor: "pointer",
@@ -313,7 +313,7 @@ export default function EditMemberModal({ open, member, onClose, onSaved }) {
             gap: 8,
             justifyContent: "flex-end",
             padding: "14px 22px",
-            borderTop: "1px solid rgba(255,255,255,0.06)",
+            borderTop: "1px solid var(--border-subtle)",
           }}
         >
           <button
@@ -321,7 +321,7 @@ export default function EditMemberModal({ open, member, onClose, onSaved }) {
             style={{
               background: "transparent",
               color: "var(--text-secondary)",
-              border: "1px solid rgba(255,255,255,0.15)",
+              border: "1px solid var(--border-strong)",
               padding: "9px 16px",
               borderRadius: 6,
               cursor: "pointer",

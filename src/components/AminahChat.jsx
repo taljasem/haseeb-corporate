@@ -97,7 +97,7 @@ export default function AminahChat({ role = "cfo" }) {
   };
 
   return (
-    <div style={{ width: 340, flexShrink: 0, display: "flex", flexDirection: "column", padding: "16px 18px 0", borderInlineEnd: "1px solid rgba(255,255,255,0.10)", position: "relative", overflow: "hidden" }}>
+    <div style={{ width: 340, flexShrink: 0, display: "flex", flexDirection: "column", padding: "16px 18px 0", borderInlineEnd: "1px solid var(--border-default)", position: "relative", overflow: "hidden" }}>
       {/* Watermark */}
       <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", fontFamily: "'Noto Sans Arabic', sans-serif", fontWeight: 700, fontSize: "clamp(80px, 9vw, 140px)", color: "rgba(255,255,255,0.01)", pointerEvents: "none", userSelect: "none", zIndex: 0, whiteSpace: "nowrap" }}>حسيب</div>
 
@@ -112,7 +112,7 @@ export default function AminahChat({ role = "cfo" }) {
             <p style={{ fontSize: 14, fontStyle: "italic", lineHeight: 1.6, color: "var(--text-tertiary)", marginBottom: 12 }}>Ask me anything about your business.</p>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
               {PROMPTS.map((p) => (
-                <button key={p} onClick={() => sendMessage(p)} className="starter" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 14, cursor: "pointer", fontSize: 12, color: "var(--text-tertiary)", fontFamily: "inherit" }}>
+                <button key={p} onClick={() => sendMessage(p)} className="starter" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 14, cursor: "pointer", fontSize: 12, color: "var(--text-tertiary)", fontFamily: "inherit" }}>
                   <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--role-owner)" }} />{p}
                 </button>
               ))}
@@ -125,7 +125,7 @@ export default function AminahChat({ role = "cfo" }) {
       <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", position: "relative", zIndex: 1, paddingTop: 6 }}>
         {messages.map((msg) => (
           <div key={msg.id} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start", marginBottom: 8 }}>
-            <div style={{ maxWidth: msg.role === "user" ? "80%" : "90%", background: msg.role === "user" ? "rgba(0,196,140,0.12)" : "var(--bg-surface-sunken)", border: msg.role === "user" ? "1px solid rgba(0,196,140,0.20)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 12, borderBottomRightRadius: msg.role === "user" ? 4 : 12, borderBottomLeftRadius: msg.role === "user" ? 12 : 4, padding: "10px 14px" }}>
+            <div style={{ maxWidth: msg.role === "user" ? "80%" : "90%", background: msg.role === "user" ? "rgba(0,196,140,0.12)" : "var(--bg-surface-sunken)", border: msg.role === "user" ? "1px solid rgba(0,196,140,0.20)" : "1px solid var(--border-default)", borderRadius: 12, borderBottomRightRadius: msg.role === "user" ? 4 : 12, borderBottomLeftRadius: msg.role === "user" ? 12 : 4, padding: "10px 14px" }}>
               {msg.role === "user" ? (
                 <div style={{ fontSize: 13, lineHeight: 1.55, color: "var(--text-primary)" }}>{msg.blocks?.[0]?.text || ""}</div>
               ) : (
@@ -145,10 +145,10 @@ export default function AminahChat({ role = "cfo" }) {
       </div>
 
       {/* Input */}
-      <div style={{ position: "relative", zIndex: 1, padding: "10px 0 14px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+      <div style={{ position: "relative", zIndex: 1, padding: "10px 0 14px", borderTop: "1px solid var(--border-subtle)" }}>
         <div style={{ display: "flex", gap: 6 }}>
-          <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") sendMessage(draft); }} placeholder="Ask Aminah..." disabled={isStreaming} style={{ flex: 1, background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, padding: "9px 12px", color: "var(--text-primary)", fontSize: 12, fontFamily: "inherit", outline: "none" }} />
-          <button onClick={() => sendMessage(draft)} disabled={!draft.trim() || isStreaming} style={{ background: draft.trim() ? "var(--accent-primary)" : "rgba(255,255,255,0.05)", color: draft.trim() ? "#fff" : "var(--text-tertiary)", border: "none", borderRadius: 8, padding: "8px 10px", cursor: draft.trim() ? "pointer" : "not-allowed", display: "flex", alignItems: "center" }}><Send size={13} /></button>
+          <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") sendMessage(draft); }} placeholder="Ask Aminah..." disabled={isStreaming} style={{ flex: 1, background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "9px 12px", color: "var(--text-primary)", fontSize: 12, fontFamily: "inherit", outline: "none" }} />
+          <button onClick={() => sendMessage(draft)} disabled={!draft.trim() || isStreaming} style={{ background: draft.trim() ? "var(--accent-primary)" : "var(--border-subtle)", color: draft.trim() ? "#fff" : "var(--text-tertiary)", border: "none", borderRadius: 8, padding: "8px 10px", cursor: draft.trim() ? "pointer" : "not-allowed", display: "flex", alignItems: "center" }}><Send size={13} /></button>
         </div>
       </div>
     </div>

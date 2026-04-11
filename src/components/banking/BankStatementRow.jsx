@@ -60,7 +60,7 @@ export default function BankStatementRow({ tx, expanded, onToggle, currency = "K
   const pillKey = METHOD_TO_PILL[cat.method] || "NONE";
 
   return (
-    <div style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+    <div style={{ borderBottom: "1px solid var(--border-subtle)" }}>
       <div
         onClick={() => onToggle && onToggle(tx)}
         onMouseEnter={(e) => {
@@ -157,7 +157,7 @@ export default function BankStatementRow({ tx, expanded, onToggle, currency = "K
             alignItems: "flex-start",
             gap: 18,
             padding: "14px 18px 18px",
-            borderTop: "1px solid rgba(255,255,255,0.04)",
+            borderTop: "1px solid var(--border-subtle)",
             background: "rgba(255,255,255,0.015)",
           }}
         >

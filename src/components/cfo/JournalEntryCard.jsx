@@ -126,7 +126,7 @@ export default function JournalEntryCard({
     <div
       style={{
         background: s.cardBg,
-        border: "1px solid rgba(255,255,255,0.10)",
+        border: "1px solid var(--border-default)",
         borderInlineStart: `2px solid ${s.accent}`,
         borderRadius: 8,
         overflow: "hidden",
@@ -142,7 +142,7 @@ export default function JournalEntryCard({
           alignItems: "center",
           gap: 12,
           padding: "12px 16px",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          borderBottom: "1px solid var(--border-subtle)",
         }}
       >
         <div style={{ minWidth: 0 }}>
@@ -208,7 +208,7 @@ export default function JournalEntryCard({
             letterSpacing: "0.12em",
             color: "var(--text-tertiary)",
             paddingBottom: 8,
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            borderBottom: "1px solid var(--border-subtle)",
           }}
         >
           <div>{t("je_card.col_account")}</div>
@@ -310,7 +310,7 @@ export default function JournalEntryCard({
             gridTemplateColumns: "1fr 100px 100px",
             gap: 8,
             paddingTop: 10,
-            borderTop: "1px solid rgba(255,255,255,0.10)",
+            borderTop: "1px solid var(--border-default)",
             fontSize: 11,
             fontWeight: 600,
             letterSpacing: "0.10em",
@@ -348,7 +348,7 @@ export default function JournalEntryCard({
           alignItems: "center",
           gap: 12,
           padding: "10px 16px",
-          borderTop: "1px solid rgba(255,255,255,0.06)",
+          borderTop: "1px solid var(--border-subtle)",
           fontSize: 10,
           fontWeight: 600,
           letterSpacing: "0.10em",
@@ -374,7 +374,7 @@ export default function JournalEntryCard({
         <div
           style={{
             padding: "10px 16px",
-            borderTop: "1px solid rgba(255,255,255,0.06)",
+            borderTop: "1px solid var(--border-subtle)",
             fontSize: 11,
             color: "var(--text-tertiary)",
           }}
@@ -392,7 +392,7 @@ export default function JournalEntryCard({
             display: "flex",
             gap: 8,
             padding: "12px 16px",
-            borderTop: "1px solid rgba(255,255,255,0.06)",
+            borderTop: "1px solid var(--border-subtle)",
             flexWrap: "wrap",
           }}
         >
@@ -425,7 +425,7 @@ export default function JournalEntryCard({
                 style={{
                   background: "transparent",
                   color: "var(--text-secondary)",
-                  border: "1px solid rgba(255,255,255,0.15)",
+                  border: "1px solid var(--border-strong)",
                   padding: "8px 14px",
                   borderRadius: 6,
                   cursor: "pointer",
@@ -460,7 +460,7 @@ export default function JournalEntryCard({
                 style={{
                   background: "transparent",
                   color: "var(--text-secondary)",
-                  border: "1px solid rgba(255,255,255,0.15)",
+                  border: "1px solid var(--border-strong)",
                   padding: "8px 14px",
                   borderRadius: 6,
                   cursor: "pointer",
@@ -475,7 +475,7 @@ export default function JournalEntryCard({
                 style={{
                   background: "transparent",
                   color: "var(--text-secondary)",
-                  border: "1px solid rgba(255,255,255,0.15)",
+                  border: "1px solid var(--border-strong)",
                   padding: "8px 14px",
                   borderRadius: 6,
                   cursor: "pointer",

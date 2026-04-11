@@ -26,12 +26,12 @@ export default function FullActivitySlideOver({ open, onClose }) {
           position: "fixed", top: 0, insetInlineEnd: 0, bottom: 0,
           width: 460, maxWidth: "calc(100vw - 32px)",
           background: "var(--panel-bg)",
-          borderInlineStart: "1px solid rgba(255,255,255,0.10)",
+          borderInlineStart: "1px solid var(--border-default)",
           zIndex: 301, display: "flex", flexDirection: "column",
           boxShadow: "-24px 0 60px rgba(0,0,0,0.7)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: "var(--text-primary)", letterSpacing: "-0.2px" }}>
             {t("full_activity.title")}
           </div>
@@ -48,7 +48,7 @@ export default function FullActivitySlideOver({ open, onClose }) {
                 key={a.id}
                 style={{
                   padding: "12px 22px",
-                  borderBottom: "1px solid rgba(255,255,255,0.04)",
+                  borderBottom: "1px solid var(--border-subtle)",
                   display: "flex", alignItems: "flex-start", gap: 10,
                 }}
               >

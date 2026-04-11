@@ -21,7 +21,7 @@ export default function SuggestionBanner({ suggestion, onApply, onDismiss }) {
         padding: "10px 16px",
         background: "var(--semantic-warning-subtle)",
         borderInlineStart: "2px solid #D4A84B",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        borderBottom: "1px solid var(--border-subtle)",
       }}
     >
       <Repeat size={14} color="var(--semantic-warning)" strokeWidth={2.2} />

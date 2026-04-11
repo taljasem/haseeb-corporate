@@ -102,7 +102,7 @@ function LineMenu({ line, code, hasNote, onAction, anchorRef, onClose }) {
         insetInlineEnd: 0,
         width: 220,
         background: "var(--bg-surface-raised)",
-        border: "1px solid rgba(255,255,255,0.10)",
+        border: "1px solid var(--border-default)",
         borderRadius: 8,
         boxShadow: "0 12px 32px rgba(0,0,0,0.6)",
         zIndex: 150,
@@ -111,7 +111,7 @@ function LineMenu({ line, code, hasNote, onAction, anchorRef, onClose }) {
     >
       {items.map((it, i) => {
         if (it.id === "divider") {
-          return <div key={`d-${i}`} style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "6px 0" }} />;
+          return <div key={`d-${i}`} style={{ height: 1, background: "var(--border-subtle)", margin: "6px 0" }} />;
         }
         return (
           <button
@@ -161,7 +161,7 @@ function Row({
         gap: 12,
         padding: final ? "14px 18px" : "9px 18px",
         background: bg,
-        borderBottom: border ? "1px solid rgba(255,255,255,0.04)" : "none",
+        borderBottom: border ? "1px solid var(--border-subtle)" : "none",
         alignItems: "baseline",
       }}
     >
@@ -271,7 +271,7 @@ export default function StatementTable({
     <div
       style={{
         background: "var(--bg-surface)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        border: "1px solid var(--border-default)",
         borderRadius: 10,
         overflow: "visible",
       }}
@@ -284,7 +284,7 @@ export default function StatementTable({
           gap: 12,
           padding: "12px 18px",
           background: "var(--bg-surface-sunken)",
-          borderBottom: "1px solid rgba(255,255,255,0.10)",
+          borderBottom: "1px solid var(--border-default)",
           fontSize: 9,
           fontWeight: 600,
           letterSpacing: "0.15em",
@@ -329,7 +329,7 @@ export default function StatementTable({
                 letterSpacing: "0.18em",
                 color: "var(--text-primary)",
                 background: "var(--bg-surface)",
-                borderTop: si > 0 ? "1px solid rgba(255,255,255,0.08)" : "none",
+                borderTop: si > 0 ? "1px solid var(--border-default)" : "none",
               }}
             >
               {s.name}
@@ -346,7 +346,7 @@ export default function StatementTable({
               fontWeight: 600,
               letterSpacing: "0.15em",
               color: "var(--text-tertiary)",
-              borderTop: si > 0 ? "1px solid rgba(255,255,255,0.04)" : "none",
+              borderTop: si > 0 ? "1px solid var(--border-subtle)" : "none",
             }}
           >
             {s.name}

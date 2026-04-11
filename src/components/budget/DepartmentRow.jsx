@@ -86,7 +86,7 @@ export default function DepartmentRow({
   };
 
   return (
-    <div style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+    <div style={{ borderBottom: "1px solid var(--border-subtle)" }}>
       <div
         onClick={() => onToggle && onToggle(row)}
         onMouseEnter={(e) => {
@@ -179,7 +179,7 @@ export default function DepartmentRow({
         <div
           style={{
             background: "var(--bg-surface)",
-            borderTop: "1px solid rgba(255,255,255,0.04)",
+            borderTop: "1px solid var(--border-subtle)",
             padding: "14px 24px 16px 36px",
           }}
         >
@@ -252,7 +252,7 @@ export default function DepartmentRow({
                     }}
                     style={{
                       background: "var(--bg-surface-sunken)",
-                      border: "1px solid rgba(255,255,255,0.10)",
+                      border: "1px solid var(--border-default)",
                       borderRadius: 5,
                       padding: "6px 10px",
                       color: "var(--text-primary)",
@@ -289,7 +289,7 @@ export default function DepartmentRow({
                 gap: 10,
                 marginTop: 14,
                 paddingTop: 12,
-                borderTop: "1px solid rgba(255,255,255,0.06)",
+                borderTop: "1px solid var(--border-subtle)",
               }}
             >
               <input
@@ -299,7 +299,7 @@ export default function DepartmentRow({
                 style={{
                   flex: 1,
                   background: "var(--bg-surface-sunken)",
-                  border: "1px solid rgba(255,255,255,0.10)",
+                  border: "1px solid var(--border-default)",
                   borderRadius: 6,
                   padding: "8px 12px",
                   color: "var(--text-primary)",
@@ -338,7 +338,7 @@ export default function DepartmentRow({
               style={{
                 marginTop: 14,
                 paddingTop: 12,
-                borderTop: "1px solid rgba(255,255,255,0.06)",
+                borderTop: "1px solid var(--border-subtle)",
                 fontSize: 12,
                 color: "var(--text-tertiary)",
                 fontStyle: "italic",
@@ -356,7 +356,7 @@ export default function DepartmentRow({
                 gap: 8,
                 marginTop: 14,
                 paddingTop: 12,
-                borderTop: "1px solid rgba(255,255,255,0.06)",
+                borderTop: "1px solid var(--border-subtle)",
               }}
             >
               <button
@@ -430,7 +430,7 @@ export default function DepartmentRow({
                 style={{
                   width: "100%",
                   background: "var(--bg-surface-sunken)",
-                  border: "1px solid rgba(255,255,255,0.10)",
+                  border: "1px solid var(--border-default)",
                   borderRadius: 6,
                   padding: "8px 10px",
                   color: "var(--text-primary)",
@@ -450,7 +450,7 @@ export default function DepartmentRow({
                   style={{
                     background: "transparent",
                     color: "var(--text-secondary)",
-                    border: "1px solid rgba(255,255,255,0.15)",
+                    border: "1px solid var(--border-strong)",
                     padding: "7px 14px",
                     borderRadius: 6,
                     cursor: "pointer",
@@ -501,7 +501,7 @@ export default function DepartmentRow({
         <div
           style={{
             background: "var(--bg-surface)",
-            borderTop: "1px solid rgba(255,255,255,0.04)",
+            borderTop: "1px solid var(--border-subtle)",
             padding: "8px 0 14px",
           }}
         >

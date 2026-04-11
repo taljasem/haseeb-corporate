@@ -130,7 +130,7 @@ export default function AssignToButton({
               : "transparent",
           border: confirmation
             ? "1px solid rgba(0,196,140,0.30)"
-            : "1px solid rgba(255,255,255,0.10)",
+            : "1px solid var(--border-default)",
           color: confirmation ? "var(--accent-primary)" : "var(--text-tertiary)",
           cursor: "pointer",
           fontFamily: "inherit",
@@ -161,7 +161,7 @@ export default function AssignToButton({
             right: 0,
             width: 280,
             background: "var(--bg-surface-raised)",
-            border: "1px solid rgba(255,255,255,0.10)",
+            border: "1px solid var(--border-default)",
             borderRadius: 10,
             padding: 14,
             zIndex: 200,
@@ -186,7 +186,7 @@ export default function AssignToButton({
             style={{
               width: "100%",
               background: "var(--bg-surface-sunken)",
-              border: "1px solid rgba(255,255,255,0.10)",
+              border: "1px solid var(--border-default)",
               borderRadius: 8,
               padding: "9px 12px",
               color: "var(--text-primary)",
@@ -200,7 +200,7 @@ export default function AssignToButton({
             style={{
               maxHeight: 200,
               overflowY: "auto",
-              border: "1px solid rgba(255,255,255,0.06)",
+              border: "1px solid var(--border-subtle)",
               borderRadius: 8,
               marginBottom: 10,
             }}
@@ -219,7 +219,7 @@ export default function AssignToButton({
                     padding: "8px 10px",
                     background: active ? "var(--accent-primary-subtle)" : "transparent",
                     border: "none",
-                    borderBottom: "1px solid rgba(255,255,255,0.04)",
+                    borderBottom: "1px solid var(--border-subtle)",
                     cursor: "pointer",
                     textAlign: "start",
                     fontFamily: "inherit",
@@ -251,7 +251,7 @@ export default function AssignToButton({
             style={{
               width: "100%",
               background: "var(--bg-surface-sunken)",
-              border: "1px solid rgba(255,255,255,0.10)",
+              border: "1px solid var(--border-default)",
               borderRadius: 8,
               padding: "8px 12px",
               color: "var(--text-primary)",
@@ -289,7 +289,7 @@ export default function AssignToButton({
               style={{
                 background: "transparent",
                 color: "var(--text-secondary)",
-                border: "1px solid rgba(255,255,255,0.15)",
+                border: "1px solid var(--border-strong)",
                 padding: "8px 12px",
                 borderRadius: 6,
                 cursor: "pointer",

@@ -27,7 +27,7 @@ export default function IntelligenceStream() {
         minWidth: 0,
         padding: "20px 24px",
         overflowY: "auto",
-        borderInlineEnd: "1px solid rgba(255,255,255,0.10)",
+        borderInlineEnd: "1px solid var(--border-default)",
       }}
     >
       <div
@@ -47,7 +47,7 @@ export default function IntelligenceStream() {
           onTaskClick={() => {}}
           wrapperStyle={{
             background: "var(--bg-surface)",
-            border: "1px solid rgba(255,255,255,0.06)",
+            border: "1px solid var(--border-subtle)",
             borderRadius: 8,
             padding: "16px 18px",
             marginBottom: 0,

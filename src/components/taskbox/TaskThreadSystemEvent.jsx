@@ -15,7 +15,7 @@ export default function TaskThreadSystemEvent({ event }) {
           flex: 1,
           height: 1,
           background:
-            "linear-gradient(90deg, transparent, rgba(255,255,255,0.06), rgba(255,255,255,0.06))",
+            "linear-gradient(90deg, transparent, var(--border-subtle), var(--border-subtle))",
         }}
       />
       <span
@@ -43,7 +43,7 @@ export default function TaskThreadSystemEvent({ event }) {
           flex: 1,
           height: 1,
           background:
-            "linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.06), transparent)",
+            "linear-gradient(90deg, var(--border-subtle), var(--border-subtle), transparent)",
         }}
       />
     </div>

@@ -7,7 +7,7 @@ import { scheduleVendorPayment } from "../../engine/mockEngine";
 
 const inputStyle = {
   width: "100%", background: "var(--bg-surface-sunken)",
-  border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8,
+  border: "1px solid var(--border-default)", borderRadius: 8,
   padding: "10px 12px", color: "var(--text-primary)",
   fontSize: 13, fontFamily: "inherit", outline: "none",
 };
@@ -44,8 +44,8 @@ export default function SchedulePaymentModal({ open, invoice, onClose, onSchedul
   return (
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
-      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 480, background: "var(--panel-bg)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 480, background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>{t("schedule_modal.label")}</div>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: "var(--text-primary)", marginTop: 2 }}>{t("schedule_modal.title")}</div>
@@ -68,7 +68,7 @@ export default function SchedulePaymentModal({ open, invoice, onClose, onSchedul
           <Field label={t("schedule_modal.field_from")}><input value={fromAccount} onChange={(e) => setFromAccount(e.target.value)} style={inputStyle} /></Field>
           <Field label={t("schedule_modal.field_notes")}><textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} style={{ ...inputStyle, resize: "vertical" }} /></Field>
         </div>
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
           <button onClick={onClose} style={btnSecondary}>{t("schedule_modal.cancel")}</button>
           <button onClick={handleSave} disabled={saving} style={btnPrimary(saving)}>
             {saving ? <><Spinner size={13} />&nbsp;{t("schedule_modal.saving")}</> : t("schedule_modal.save")}
@@ -82,5 +82,5 @@ export default function SchedulePaymentModal({ open, invoice, onClose, onSchedul
 function Field({ label, children }) {
   return <div><div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 6 }}>{label}</div>{children}</div>;
 }
-const btnSecondary = { background: "transparent", color: "var(--text-secondary)", border: "1px solid rgba(255,255,255,0.15)", padding: "9px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" };
+const btnSecondary = { background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "9px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" };
 const btnPrimary = (l) => ({ background: "var(--accent-primary)", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 6, cursor: l ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" });

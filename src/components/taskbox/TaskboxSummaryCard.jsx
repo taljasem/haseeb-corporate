@@ -24,7 +24,7 @@ export default function TaskboxSummaryCard({
       style={
         wrapperStyle || {
           background: "var(--bg-surface)",
-          border: "1px solid rgba(255,255,255,0.06)",
+          border: "1px solid var(--border-subtle)",
           borderRadius: 8,
           padding: "18px 20px",
           marginBottom: 16,

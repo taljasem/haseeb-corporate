@@ -28,7 +28,7 @@ export default function SubmitDraftConfirmationModal({ open, departmentName, not
           width: 480,
           maxWidth: "calc(100vw - 32px)",
           background: "var(--panel-bg)",
-          border: "1px solid rgba(255,255,255,0.10)",
+          border: "1px solid var(--border-default)",
           borderRadius: 12,
           zIndex: 301,
           boxShadow: "0 24px 60px rgba(0,0,0,0.7)",
@@ -40,7 +40,7 @@ export default function SubmitDraftConfirmationModal({ open, departmentName, not
             alignItems: "center",
             justifyContent: "space-between",
             padding: "16px 22px",
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            borderBottom: "1px solid var(--border-subtle)",
           }}
         >
           <div>
@@ -81,7 +81,7 @@ export default function SubmitDraftConfirmationModal({ open, departmentName, not
                 marginTop: 14,
                 padding: "10px 12px",
                 background: "var(--bg-surface-sunken)",
-                border: "1px solid rgba(255,255,255,0.08)",
+                border: "1px solid var(--border-default)",
                 borderInlineStart: "2px solid #00C48C",
                 borderRadius: 6,
                 fontSize: 12,
@@ -102,7 +102,7 @@ export default function SubmitDraftConfirmationModal({ open, departmentName, not
             gap: 8,
             justifyContent: "flex-end",
             padding: "14px 22px",
-            borderTop: "1px solid rgba(255,255,255,0.06)",
+            borderTop: "1px solid var(--border-subtle)",
           }}
         >
           <button
@@ -110,7 +110,7 @@ export default function SubmitDraftConfirmationModal({ open, departmentName, not
             style={{
               background: "transparent",
               color: "var(--text-secondary)",
-              border: "1px solid rgba(255,255,255,0.15)",
+              border: "1px solid var(--border-strong)",
               padding: "9px 16px",
               borderRadius: 6,
               cursor: "pointer",

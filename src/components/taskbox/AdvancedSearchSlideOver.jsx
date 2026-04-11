@@ -6,7 +6,7 @@ import useEscapeKey from "../../hooks/useEscapeKey";
 const inputStyle = {
   width: "100%",
   background: "var(--bg-surface-sunken)",
-  border: "1px solid rgba(255,255,255,0.10)",
+  border: "1px solid var(--border-default)",
   borderRadius: 8,
   padding: "9px 12px",
   color: "var(--text-primary)",
@@ -47,12 +47,12 @@ export default function AdvancedSearchSlideOver({ open, filters, people, taskTyp
           position: "fixed", top: 0, insetInlineEnd: 0, bottom: 0,
           width: 460, maxWidth: "calc(100vw - 32px)",
           background: "var(--panel-bg)",
-          borderInlineStart: "1px solid rgba(255,255,255,0.10)",
+          borderInlineStart: "1px solid var(--border-default)",
           zIndex: 301, display: "flex", flexDirection: "column",
           boxShadow: "-24px 0 60px rgba(0,0,0,0.7)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: "var(--text-primary)" }}>{t("search.slideover_title")}</div>
             <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 4 }}>{t("search.slideover_subtitle")}</div>
@@ -101,8 +101,8 @@ export default function AdvancedSearchSlideOver({ open, filters, people, taskTyp
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 8, justifyContent: "space-between", padding: "14px 22px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <button onClick={() => { onReset && onReset(); setDraft({}); }} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid rgba(255,255,255,0.15)", padding: "9px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("search.reset")}</button>
+        <div style={{ display: "flex", gap: 8, justifyContent: "space-between", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
+          <button onClick={() => { onReset && onReset(); setDraft({}); }} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "9px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("search.reset")}</button>
           <button onClick={() => { onApply && onApply(draft); }} style={{ background: "var(--accent-primary)", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>{t("search.apply")}</button>
         </div>
       </div>
@@ -135,7 +135,7 @@ function ChipField({ label, values, selected, onToggle, renderLabel, keyFn }) {
               style={{
                 padding: "5px 12px", borderRadius: 14,
                 background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)",
-                border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
+                border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
                 color: on ? "var(--accent-primary)" : "var(--text-secondary)",
                 fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
               }}

@@ -34,12 +34,12 @@ export default function InvoiceDetailSlideOver({ open, invoiceId, onClose }) {
           position: "fixed", top: 0, insetInlineEnd: 0, bottom: 0,
           width: 520, maxWidth: "calc(100vw - 32px)",
           background: "var(--panel-bg)",
-          borderInlineStart: "1px solid rgba(255,255,255,0.10)",
+          borderInlineStart: "1px solid var(--border-default)",
           zIndex: 301, display: "flex", flexDirection: "column",
           boxShadow: "-24px 0 60px rgba(0,0,0,0.7)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: "var(--text-primary)" }}>
             {t("detail.title")}
           </div>
@@ -62,14 +62,14 @@ export default function InvoiceDetailSlideOver({ open, invoiceId, onClose }) {
               </Section>
 
               <Section label={t("detail.line_items")}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 60px 90px 100px", gap: 8, padding: "6px 0", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-tertiary)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 60px 90px 100px", gap: 8, padding: "6px 0", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-tertiary)", borderBottom: "1px solid var(--border-subtle)" }}>
                   <div>{t("detail.col_desc")}</div>
                   <div style={{ textAlign: "end" }}>{t("detail.col_qty")}</div>
                   <div style={{ textAlign: "end" }}>{t("detail.col_unit")}</div>
                   <div style={{ textAlign: "end" }}>{t("detail.col_total")}</div>
                 </div>
                 {inv.lineItems.map((l, i) => (
-                  <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 60px 90px 100px", gap: 8, padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", fontSize: 12, color: "var(--text-secondary)" }}>
+                  <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 60px 90px 100px", gap: 8, padding: "10px 0", borderBottom: "1px solid var(--border-subtle)", fontSize: 12, color: "var(--text-secondary)" }}>
                     <div>{l.description}</div>
                     <div style={{ textAlign: "end", fontFamily: "'DM Mono', monospace" }}>{l.qty}</div>
                     <div style={{ textAlign: "end", fontFamily: "'DM Mono', monospace" }}><LtrText>{fmtKWD(l.unitPrice)}</LtrText></div>
@@ -91,7 +91,7 @@ export default function InvoiceDetailSlideOver({ open, invoiceId, onClose }) {
                   <div style={{ fontSize: 12, color: "var(--text-tertiary)", fontStyle: "italic" }}>{t("detail.no_payments")}</div>
                 ) : (
                   inv.partialPayments.map((p, i) => (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", fontSize: 12 }}>
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border-subtle)", fontSize: 12 }}>
                       <div>
                         <div style={{ color: "var(--text-primary)" }}>{formatDate(p.date)} · {p.method}</div>
                         {p.reference && <div style={{ fontSize: 10, color: "var(--text-tertiary)", fontFamily: "'DM Mono', monospace" }}><LtrText>{p.reference}</LtrText></div>}
@@ -107,7 +107,7 @@ export default function InvoiceDetailSlideOver({ open, invoiceId, onClose }) {
                   <div style={{ fontSize: 12, color: "var(--text-tertiary)", fontStyle: "italic" }}>{t("detail.no_comms")}</div>
                 ) : (
                   inv.communicationHistory.map((c, i) => (
-                    <div key={i} style={{ padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", fontSize: 12 }}>
+                    <div key={i} style={{ padding: "10px 0", borderBottom: "1px solid var(--border-subtle)", fontSize: 12 }}>
                       <div style={{ color: "var(--text-primary)" }}>{c.type.replace("_", " ")}{c.template ? ` (${c.template})` : ""}</div>
                       <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 2 }}>
                         {c.by || c.sentBy || "—"} · {formatRelativeTime(c.at || c.sentAt)}

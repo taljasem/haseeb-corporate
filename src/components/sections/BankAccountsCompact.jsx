@@ -26,7 +26,7 @@ export default function BankAccountsCompact({ onViewAll, onAccountClick }) {
               gap: 10,
               padding: "10px 10px",
               margin: "0 -10px",
-              borderBottom: "1px solid rgba(255,255,255,0.04)",
+              borderBottom: "1px solid var(--border-subtle)",
               cursor: "pointer",
               borderRadius: 4,
               transition: "background 0.12s ease",

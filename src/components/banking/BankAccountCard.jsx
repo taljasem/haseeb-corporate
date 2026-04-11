@@ -27,7 +27,7 @@ export default function BankAccountCard({ account, selected = false, onSelect })
         minWidth: 260,
         padding: 20,
         background: "var(--bg-surface-sunken)",
-        border: selected ? "1px solid #00C48C" : "1px solid rgba(255,255,255,0.10)",
+        border: selected ? "1px solid #00C48C" : "1px solid var(--border-default)",
         borderInlineStart: `3px solid ${account.accentColor}`,
         borderRadius: 10,
         cursor: "pointer",
@@ -104,7 +104,7 @@ export default function BankAccountCard({ account, selected = false, onSelect })
           gap: 16,
           marginTop: 14,
           paddingTop: 12,
-          borderTop: "1px solid rgba(255,255,255,0.06)",
+          borderTop: "1px solid var(--border-subtle)",
         }}
       >
         <div style={{ flex: 1 }}>

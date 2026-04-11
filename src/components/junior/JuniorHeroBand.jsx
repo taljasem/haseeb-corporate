@@ -17,7 +17,7 @@ function StatusPill({ dotColor, label, pulse = false }) {
         letterSpacing: "0.12em",
         color: "var(--text-tertiary)",
         background: "var(--bg-surface)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        border: "1px solid var(--border-default)",
         padding: "5px 10px",
         borderRadius: 4,
       }}
@@ -88,7 +88,7 @@ function AccuracyPill({ value, previous = 91, label = "ACCURACY" }) {
             right: 0,
             width: 280,
             background: "var(--bg-surface-raised)",
-            border: "1px solid rgba(255,255,255,0.10)",
+            border: "1px solid var(--border-default)",
             borderRadius: 8,
             padding: "12px 14px",
             boxShadow: "0 12px 32px rgba(0,0,0,0.6)",
@@ -125,7 +125,7 @@ function AccuracyPill({ value, previous = 91, label = "ACCURACY" }) {
             categorizations and{" "}
             <span style={{ fontFamily: "'DM Mono', monospace", color: "var(--text-primary)" }}>12</span> reconciliations
           </div>
-          <div style={{ marginTop: 10, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div style={{ marginTop: 10, paddingTop: 8, borderTop: "1px solid var(--border-subtle)" }}>
             <a style={{ fontSize: 11, color: "var(--accent-primary)", cursor: "pointer" }}>
               How is this calculated? →
             </a>
@@ -151,7 +151,7 @@ export default function JuniorHeroBand({ onOpenAminah }) {
         justifyContent: "space-between",
         gap: 24,
         padding: "16px 24px 14px",
-        borderBottom: "1px solid rgba(255,255,255,0.10)",
+        borderBottom: "1px solid var(--border-default)",
         flexShrink: 0,
         flexWrap: "wrap",
       }}

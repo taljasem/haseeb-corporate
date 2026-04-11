@@ -15,7 +15,7 @@ export default function FutureBankOperationsCard() {
         marginTop: 20,
         padding: "18px 20px",
         background: "var(--bg-surface)",
-        border: "1px dashed rgba(255,255,255,0.10)",
+        border: "1px dashed var(--border-default)",
         borderRadius: 10,
       }}
     >
@@ -47,7 +47,7 @@ export default function FutureBankOperationsCard() {
               gap: 10,
               padding: "12px 14px",
               background: "var(--bg-surface)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              border: "1px solid var(--border-default)",
               borderRadius: 8,
               color: "var(--text-tertiary)",
               fontSize: 12,

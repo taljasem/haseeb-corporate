@@ -9,7 +9,7 @@ import { changePassword } from "../../engine/mockEngine";
 const inputStyle = {
   width: "100%",
   background: "var(--bg-surface-sunken)",
-  border: "1px solid rgba(255,255,255,0.10)",
+  border: "1px solid var(--border-default)",
   borderRadius: 8,
   padding: "10px 12px",
   color: "var(--text-primary)",
@@ -77,12 +77,12 @@ export default function ChangePasswordModal({ open, onClose, onSaved }) {
         style={{
           position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
           width: 460, maxWidth: "calc(100vw - 32px)",
-          background: "var(--panel-bg)", border: "1px solid rgba(255,255,255,0.10)",
+          background: "var(--panel-bg)", border: "1px solid var(--border-default)",
           borderRadius: 12, zIndex: 301, display: "flex", flexDirection: "column",
           boxShadow: "0 24px 60px rgba(0,0,0,0.7)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>
               {t("change_password_modal.label")}
@@ -114,7 +114,7 @@ export default function ChangePasswordModal({ open, onClose, onSaved }) {
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
           <button onClick={onClose} style={btnSecondary}>{t("change_password_modal.cancel")}</button>
           <button onClick={handleSave} disabled={saving} style={btnPrimary(saving)}>
             {saving ? <><Spinner size={13} />&nbsp;{t("change_password_modal.saving")}</> : t("change_password_modal.save")}
@@ -131,7 +131,7 @@ function Label({ children }) {
 
 const btnSecondary = {
   background: "transparent", color: "var(--text-secondary)",
-  border: "1px solid rgba(255,255,255,0.15)", padding: "9px 16px",
+  border: "1px solid var(--border-strong)", padding: "9px 16px",
   borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit",
 };
 const btnPrimary = (saving) => ({

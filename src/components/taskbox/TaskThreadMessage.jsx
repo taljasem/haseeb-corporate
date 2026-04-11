@@ -75,7 +75,7 @@ export default function TaskThreadMessage({ event }) {
                   fontSize: 11,
                   color: "var(--text-secondary)",
                   background: "var(--bg-surface-sunken)",
-                  border: "1px solid rgba(255,255,255,0.10)",
+                  border: "1px solid var(--border-default)",
                   padding: "5px 9px",
                   borderRadius: 4,
                 }}

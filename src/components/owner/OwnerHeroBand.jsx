@@ -15,7 +15,7 @@ function StatusPill({ dotColor, label, pulse = false }) {
         letterSpacing: "0.12em",
         color: "var(--text-tertiary)",
         background: "var(--bg-surface)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        border: "1px solid var(--border-default)",
         padding: "5px 10px",
         borderRadius: 4,
       }}
@@ -69,7 +69,7 @@ export default function OwnerHeroBand({ onOpenAminah }) {
         justifyContent: "space-between",
         gap: 24,
         padding: "16px 24px 14px",
-        borderBottom: "1px solid rgba(255,255,255,0.10)",
+        borderBottom: "1px solid var(--border-default)",
         flexShrink: 0,
         flexWrap: "wrap",
       }}

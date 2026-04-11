@@ -64,7 +64,7 @@ export default function OwnerSidebar({ active, setActive, taskboxOpen = 0, pendi
     pendingApprovals > 0
       ? { label: <LtrText>{taskboxOpen}</LtrText>, bg: "var(--semantic-danger)", fg: "#fff" }
       : taskboxOpen > 0
-        ? { label: <LtrText>{taskboxOpen}</LtrText>, bg: "var(--border-default)", fg: "var(--text-secondary)", border: "1px solid rgba(255,255,255,0.12)" }
+        ? { label: <LtrText>{taskboxOpen}</LtrText>, bg: "var(--border-default)", fg: "var(--text-secondary)", border: "1px solid var(--border-default)" }
         : null;
 
   return (

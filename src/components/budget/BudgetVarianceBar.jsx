@@ -23,7 +23,7 @@ export default function BudgetVarianceBar({ percent, status, showLabel = true, w
         style={{
           flex: 1,
           height: 6,
-          background: "rgba(255,255,255,0.05)",
+          background: "var(--border-subtle)",
           borderRadius: 3,
           overflow: "visible",
           position: "relative",

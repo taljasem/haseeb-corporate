@@ -38,7 +38,7 @@ export default function FilterDropdown({ label, options = [], selected = [], onC
           padding: "5px 10px",
           borderRadius: 14,
           background: active ? "rgba(0,196,140,0.08)" : "var(--bg-surface)",
-          border: active ? "1px solid rgba(0,196,140,0.25)" : "1px solid rgba(255,255,255,0.10)",
+          border: active ? "1px solid rgba(0,196,140,0.25)" : "1px solid var(--border-default)",
           color: active ? "var(--accent-primary)" : "var(--text-tertiary)",
           cursor: "pointer",
           fontFamily: "inherit",
@@ -58,7 +58,7 @@ export default function FilterDropdown({ label, options = [], selected = [], onC
           maxHeight,
           overflowY: "auto",
           background: "var(--bg-surface-raised)",
-          border: "1px solid rgba(255,255,255,0.12)",
+          border: "1px solid var(--border-default)",
           borderRadius: 8,
           boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
           zIndex: 201,
@@ -84,7 +84,7 @@ export default function FilterDropdown({ label, options = [], selected = [], onC
                   fontFamily: "inherit",
                   textAlign: "start",
                 }}
-                onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+                onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "var(--border-subtle)"; }}
                 onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
               >
                 <input type="checkbox" checked={isSelected} readOnly style={{ width: 13, height: 13, accentColor: "var(--accent-primary)", pointerEvents: "none" }} />
@@ -95,7 +95,7 @@ export default function FilterDropdown({ label, options = [], selected = [], onC
           {active && (
             <button
               onClick={() => { onChange([]); setOpen(false); }}
-              style={{ width: "100%", padding: "8px 12px", borderTop: "1px solid rgba(255,255,255,0.06)", background: "transparent", border: "none", color: "var(--text-tertiary)", fontSize: 10, cursor: "pointer", fontFamily: "inherit", textAlign: "center", marginTop: 2 }}
+              style={{ width: "100%", padding: "8px 12px", borderTop: "1px solid var(--border-subtle)", background: "transparent", border: "none", color: "var(--text-tertiary)", fontSize: 10, cursor: "pointer", fontFamily: "inherit", textAlign: "center", marginTop: 2 }}
             >
               Clear all
             </button>

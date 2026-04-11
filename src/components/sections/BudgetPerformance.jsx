@@ -54,7 +54,7 @@ export default function BudgetPerformance({ onViewAll }) {
                     style={{
                       width: "100%",
                       height: 4,
-                      background: "rgba(255,255,255,0.05)",
+                      background: "var(--border-subtle)",
                       borderRadius: 2,
                       overflow: "hidden",
                     }}

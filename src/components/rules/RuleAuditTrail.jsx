@@ -20,7 +20,7 @@ export default function RuleAuditTrail({ events = [] }) {
             alignItems: "center",
             gap: 10,
             padding: "8px 0",
-            borderBottom: "1px solid rgba(255,255,255,0.04)",
+            borderBottom: "1px solid var(--border-subtle)",
             fontSize: 12,
           }}
         >
@@ -31,7 +31,7 @@ export default function RuleAuditTrail({ events = [] }) {
               letterSpacing: "0.10em",
               color: "var(--text-tertiary)",
               background: "var(--bg-surface-sunken)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              border: "1px solid var(--border-default)",
               padding: "2px 7px",
               borderRadius: 3,
               textTransform: "uppercase",

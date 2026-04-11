@@ -189,7 +189,7 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
       <aside data-panel="aminah-slideover" style={{ position: "fixed", top: 52, insetInlineEnd: 0, bottom: 0, width: 440, maxWidth: "calc(100vw - 32px)", background: "var(--panel-bg)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderInlineStart: "1px solid var(--border-default)", zIndex: 100, display: "flex", flexDirection: "column", animation: "viewEnter 0.2s ease-out both" }}>
 
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 18px", borderBottom: "1px solid rgba(255,255,255,0.10)", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 18px", borderBottom: "1px solid var(--border-default)", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Sparkles size={16} color="var(--accent-primary)" />
             <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 16, color: "var(--text-primary)", letterSpacing: "0.06em" }}>{t("label")}</span>
@@ -203,9 +203,9 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
 
         {/* Session history strip */}
         {recentSessions.length > 1 && (
-          <div style={{ display: "flex", gap: 6, padding: "8px 18px", borderBottom: "1px solid rgba(255,255,255,0.06)", overflowX: "auto", flexShrink: 0 }}>
+          <div style={{ display: "flex", gap: 6, padding: "8px 18px", borderBottom: "1px solid var(--border-subtle)", overflowX: "auto", flexShrink: 0 }}>
             {recentSessions.slice(0, 5).map((s) => (
-              <button key={s.id} onClick={() => switchSession(s.id)} style={{ fontSize: 10, padding: "4px 10px", borderRadius: 12, border: s.id === sessionId ? "1px solid rgba(0,196,140,0.3)" : "1px solid rgba(255,255,255,0.08)", background: s.id === sessionId ? "rgba(0,196,140,0.08)" : "transparent", color: s.id === sessionId ? "var(--accent-primary)" : "var(--text-tertiary)", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis" }}>
+              <button key={s.id} onClick={() => switchSession(s.id)} style={{ fontSize: 10, padding: "4px 10px", borderRadius: 12, border: s.id === sessionId ? "1px solid rgba(0,196,140,0.3)" : "1px solid var(--border-default)", background: s.id === sessionId ? "rgba(0,196,140,0.08)" : "transparent", color: s.id === sessionId ? "var(--accent-primary)" : "var(--text-tertiary)", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis" }}>
                 {s.preview || "New"}
               </button>
             ))}
@@ -221,7 +221,7 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
               <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: 20, lineHeight: 1.5 }}>{t("empty_state.subtitle")}</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
                 {examples.map((q) => (
-                  <button key={q} onClick={() => sendMessage(q)} style={{ textAlign: "start", padding: "10px 14px", background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "var(--text-secondary)", fontSize: 12, cursor: "pointer", fontFamily: "inherit", maxWidth: 320, width: "100%" }}>{q}</button>
+                  <button key={q} onClick={() => sendMessage(q)} style={{ textAlign: "start", padding: "10px 14px", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 10, color: "var(--text-secondary)", fontSize: 12, cursor: "pointer", fontFamily: "inherit", maxWidth: 320, width: "100%" }}>{q}</button>
                 ))}
               </div>
             </div>
@@ -232,7 +232,7 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
         </div>
 
         {/* Input area */}
-        <div style={{ padding: "12px 18px 16px", borderTop: "1px solid rgba(255,255,255,0.10)", flexShrink: 0 }}>
+        <div style={{ padding: "12px 18px 16px", borderTop: "1px solid var(--border-default)", flexShrink: 0 }}>
           <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
             <textarea
               ref={inputRef}
@@ -242,12 +242,12 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
               placeholder={t("input.placeholder")}
               rows={1}
               disabled={isStreaming}
-              style={{ flex: 1, background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 10, padding: "10px 14px", color: "var(--text-primary)", fontSize: 13, fontFamily: "inherit", outline: "none", resize: "none", minHeight: 40, maxHeight: 100 }}
+              style={{ flex: 1, background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 10, padding: "10px 14px", color: "var(--text-primary)", fontSize: 13, fontFamily: "inherit", outline: "none", resize: "none", minHeight: 40, maxHeight: 100 }}
             />
             {isStreaming ? (
               <button onClick={stopStreaming} style={{ background: "var(--semantic-danger)", color: "#fff", border: "none", borderRadius: 8, padding: "10px 12px", cursor: "pointer", display: "flex", alignItems: "center" }}><Square size={14} /></button>
             ) : (
-              <button onClick={() => sendMessage(draft)} disabled={!draft.trim()} style={{ background: draft.trim() ? "var(--accent-primary)" : "rgba(255,255,255,0.05)", color: draft.trim() ? "#fff" : "var(--text-tertiary)", border: "none", borderRadius: 8, padding: "10px 12px", cursor: draft.trim() ? "pointer" : "not-allowed", display: "flex", alignItems: "center" }}><Send size={14} /></button>
+              <button onClick={() => sendMessage(draft)} disabled={!draft.trim()} style={{ background: draft.trim() ? "var(--accent-primary)" : "var(--border-subtle)", color: draft.trim() ? "#fff" : "var(--text-tertiary)", border: "none", borderRadius: 8, padding: "10px 12px", cursor: draft.trim() ? "pointer" : "not-allowed", display: "flex", alignItems: "center" }}><Send size={14} /></button>
             )}
           </div>
           <div style={{ fontSize: 9, color: "var(--text-tertiary)", marginTop: 6, textAlign: "center" }}>{t("input.disclaimer")}</div>
@@ -306,7 +306,7 @@ function BlockRenderer({ block, t }) {
   if (block.type === "tool_call") {
     const isComplete = block.status === "complete";
     return (
-      <div style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "8px 12px", fontSize: 11 }}>
+      <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "8px 12px", fontSize: 11 }}>
         <button onClick={() => setExpanded(!expanded)} style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", color: "var(--text-secondary)", padding: 0 }}>
           {expanded ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
           <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: "var(--text-tertiary)" }}>{block.toolName}</span>
@@ -322,7 +322,7 @@ function BlockRenderer({ block, t }) {
           </span>
         </button>
         {expanded && (
-          <div style={{ marginTop: 6, paddingTop: 6, borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+          <div style={{ marginTop: 6, paddingTop: 6, borderTop: "1px solid var(--border-subtle)" }}>
             {block.toolInput && (
               <div style={{ marginBottom: 4 }}>
                 <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-tertiary)" }}>{t("tool_call.input_header")}</div>

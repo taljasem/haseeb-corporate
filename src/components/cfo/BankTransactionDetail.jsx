@@ -76,7 +76,7 @@ export default function BankTransactionDetail({ tx, onOpenAminah, onConfirmed })
       <div
         style={{
           background: "var(--bg-surface)",
-          border: "1px solid rgba(255,255,255,0.10)",
+          border: "1px solid var(--border-default)",
           borderRadius: 8,
           padding: "14px 16px",
           marginBottom: 14,

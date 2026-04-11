@@ -26,8 +26,8 @@ const VARIANTS = {
   secondary: {
     background: "transparent",
     color: "var(--text-primary)",
-    border: "1px solid rgba(255,255,255,0.15)",
-    hoverBg: "rgba(255,255,255,0.05)",
+    border: "1px solid var(--border-strong)",
+    hoverBg: "var(--border-subtle)",
   },
   tertiary: {
     background: "transparent",

@@ -35,7 +35,7 @@ function AminahBubble({ children, wide = false }) {
           maxWidth: wide ? "100%" : "88%",
           width: wide ? "100%" : "auto",
           background: "var(--bg-surface-sunken)",
-          border: "1px solid rgba(255,255,255,0.08)",
+          border: "1px solid var(--border-default)",
           borderRadius: 12,
           borderBottomLeftRadius: 4,
           padding: "12px 14px",
@@ -402,7 +402,7 @@ function JuniorExchangeThree({ onOpenBankTx }) {
             letterSpacing: "0.04em",
             color: "var(--text-tertiary)",
             background: "var(--bg-surface)",
-            border: "1px dashed rgba(255,255,255,0.15)",
+            border: "1px dashed var(--border-strong)",
             padding: "8px 14px",
             borderRadius: 8,
             cursor: "pointer",
@@ -440,7 +440,7 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
       <div
         style={{
           padding: "20px 28px 14px",
-          borderBottom: "1px solid rgba(255,255,255,0.10)",
+          borderBottom: "1px solid var(--border-default)",
           flexShrink: 0,
         }}
       >
@@ -487,7 +487,7 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
       <div
         style={{
           padding: "14px 28px 18px",
-          borderTop: "1px solid rgba(255,255,255,0.10)",
+          borderTop: "1px solid var(--border-default)",
           flexShrink: 0,
         }}
       >
@@ -498,7 +498,7 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
             style={{
               width: "100%",
               background: "var(--bg-surface-sunken)",
-              border: "1px solid rgba(255,255,255,0.10)",
+              border: "1px solid var(--border-default)",
               borderRadius: 10,
               padding: "14px 50px 14px 16px",
               color: "var(--text-primary)",

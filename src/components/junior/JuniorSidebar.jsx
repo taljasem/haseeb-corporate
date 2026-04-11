@@ -64,7 +64,7 @@ export default function JuniorSidebar({ active, setActive, taskStats = { open: 0
     taskStats.overdue > 0
       ? { label: <LtrText>{taskStats.open}</LtrText>, bg: "var(--semantic-danger)", fg: "#fff" }
       : taskStats.open > 0
-        ? { label: <LtrText>{taskStats.open}</LtrText>, bg: "var(--border-default)", fg: "var(--text-secondary)", border: "1px solid rgba(255,255,255,0.12)" }
+        ? { label: <LtrText>{taskStats.open}</LtrText>, bg: "var(--border-default)", fg: "var(--text-secondary)", border: "1px solid var(--border-default)" }
         : null;
   return (
     <aside

@@ -83,7 +83,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
               fontSize: 11,
               color: "var(--text-tertiary)",
               background: "var(--bg-surface)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              border: "1px solid var(--border-default)",
               borderInlineStart: "2px solid #5B6570",
               borderRadius: 6,
               padding: "10px 14px",
@@ -216,7 +216,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
                         padding: "6px 12px",
                         borderRadius: 14,
                         background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)",
-                        border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
+                        border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
                         color: on ? "var(--accent-primary)" : "var(--text-tertiary)",
                         cursor: "pointer",
                         fontFamily: "inherit",
@@ -241,7 +241,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
                           padding: "6px 12px",
                           borderRadius: 14,
                           background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)",
-                          border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
+                          border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
                           color: on ? "var(--accent-primary)" : "var(--text-tertiary)",
                           cursor: "pointer",
                           fontFamily: "inherit",
@@ -265,7 +265,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
                     style={{
                       width: "100%",
                       background: "var(--bg-surface-sunken)",
-                      border: "1px solid rgba(255,255,255,0.10)",
+                      border: "1px solid var(--border-default)",
                       borderRadius: 8,
                       padding: "8px 12px 8px 30px",
                       color: "var(--text-primary)",
@@ -281,7 +281,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
             {/* Table */}
             <div
               style={{
-                border: "1px solid rgba(255,255,255,0.08)",
+                border: "1px solid var(--border-default)",
                 borderRadius: 8,
                 overflow: "hidden",
                 marginTop: 12,
@@ -299,7 +299,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
                   style={{
                     background: "transparent",
                     color: "var(--text-secondary)",
-                    border: "1px solid rgba(255,255,255,0.12)",
+                    border: "1px solid var(--border-default)",
                     padding: "7px 14px",
                     borderRadius: 6,
                     cursor: "pointer",

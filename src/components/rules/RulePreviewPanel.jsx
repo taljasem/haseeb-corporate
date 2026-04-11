@@ -123,7 +123,7 @@ export default function RulePreviewPanel({ ruleType, ruleConfig }) {
                   fontWeight: 700,
                   letterSpacing: "0.12em",
                   color: "var(--text-tertiary)",
-                  borderBottom: "1px solid rgba(255,255,255,0.06)",
+                  borderBottom: "1px solid var(--border-subtle)",
                 }}
               >
                 <div>{t("preview.col_date")}</div>
@@ -145,7 +145,7 @@ export default function RulePreviewPanel({ ruleType, ruleConfig }) {
                     gap: 8,
                     padding: "8px 0",
                     fontSize: 11,
-                    borderBottom: "1px solid rgba(255,255,255,0.04)",
+                    borderBottom: "1px solid var(--border-subtle)",
                     alignItems: "center",
                   }}
                 >

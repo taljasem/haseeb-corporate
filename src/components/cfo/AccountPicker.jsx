@@ -23,7 +23,7 @@ function AccountRow({ account, onPick, active = false }) {
   return (
     <button
       onClick={() => onPick(account)}
-      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--border-subtle)")}
       onMouseLeave={(e) =>
         (e.currentTarget.style.background = active ? "var(--bg-selected)" : "transparent")
       }
@@ -35,7 +35,7 @@ function AccountRow({ account, onPick, active = false }) {
         padding: "10px 12px",
         background: active ? "var(--bg-selected)" : "transparent",
         border: "none",
-        borderBottom: "1px solid rgba(255,255,255,0.04)",
+        borderBottom: "1px solid var(--border-subtle)",
         cursor: "pointer",
         textAlign: "start",
         fontFamily: "inherit",
@@ -162,7 +162,7 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
     <div
       style={{
         background: "var(--bg-surface)",
-        border: "1px solid rgba(255,255,255,0.10)",
+        border: "1px solid var(--border-default)",
         borderRadius: 10,
         padding: 14,
       }}
@@ -181,7 +181,7 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
             style={{
               width: "100%",
               background: "var(--bg-surface-sunken)",
-              border: "1px solid rgba(255,255,255,0.10)",
+              border: "1px solid var(--border-default)",
               borderRadius: 10,
               padding: "12px 14px",
               color: "var(--text-primary)",
@@ -196,7 +196,7 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
                 marginTop: 8,
                 maxHeight: 320,
                 overflowY: "auto",
-                border: "1px solid rgba(255,255,255,0.06)",
+                border: "1px solid var(--border-subtle)",
                 borderRadius: 8,
                 background: "rgba(5,7,10,0.6)",
               }}
@@ -253,7 +253,7 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
                     justifyContent: "space-between",
                     padding: "12px 14px",
                     background: "var(--bg-surface-sunken)",
-                    border: "1px solid rgba(255,255,255,0.10)",
+                    border: "1px solid var(--border-default)",
                     borderRadius: 8,
                     cursor: "pointer",
                     color: "var(--text-primary)",
@@ -307,7 +307,7 @@ export default function AccountPicker({ filterCategories = null, onSelect, selec
             style={{
               maxHeight: 320,
               overflowY: "auto",
-              border: "1px solid rgba(255,255,255,0.06)",
+              border: "1px solid var(--border-subtle)",
               borderRadius: 8,
               background: "rgba(5,7,10,0.6)",
             }}

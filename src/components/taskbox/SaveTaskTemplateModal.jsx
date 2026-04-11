@@ -9,7 +9,7 @@ import { createTaskTemplate } from "../../engine/mockEngine";
 const inputStyle = {
   width: "100%",
   background: "var(--bg-surface-sunken)",
-  border: "1px solid rgba(255,255,255,0.10)",
+  border: "1px solid var(--border-default)",
   borderRadius: 8,
   padding: "10px 12px",
   color: "var(--text-primary)",
@@ -68,12 +68,12 @@ export default function SaveTaskTemplateModal({ open, taskDraft, onClose, onSave
         style={{
           position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
           width: 480, maxWidth: "calc(100vw - 32px)",
-          background: "var(--panel-bg)", border: "1px solid rgba(255,255,255,0.10)",
+          background: "var(--panel-bg)", border: "1px solid var(--border-default)",
           borderRadius: 12, zIndex: 311, display: "flex", flexDirection: "column",
           boxShadow: "0 24px 60px rgba(0,0,0,0.7)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>
               {t("templates.save_modal_label")}
@@ -108,7 +108,7 @@ export default function SaveTaskTemplateModal({ open, taskDraft, onClose, onSave
               {[{ id: "my", label: t("templates.visibility_my") }, { id: "role", label: t("templates.visibility_role") }].map((v) => {
                 const on = visibility === v.id;
                 return (
-                  <button key={v.id} onClick={() => setVisibility(v.id)} style={{ flex: 1, padding: "9px 12px", background: on ? "var(--accent-primary-subtle)" : "transparent", border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)", color: on ? "var(--accent-primary)" : "var(--text-secondary)", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "inherit" }}>
+                  <button key={v.id} onClick={() => setVisibility(v.id)} style={{ flex: 1, padding: "9px 12px", background: on ? "var(--accent-primary-subtle)" : "transparent", border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)", color: on ? "var(--accent-primary)" : "var(--text-secondary)", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "inherit" }}>
                     {v.label}
                   </button>
                 );
@@ -116,8 +116,8 @@ export default function SaveTaskTemplateModal({ open, taskDraft, onClose, onSave
             </div>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <button onClick={onClose} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid rgba(255,255,255,0.15)", padding: "9px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("templates.cancel")}</button>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
+          <button onClick={onClose} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "9px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("templates.cancel")}</button>
           <button onClick={handleSave} disabled={saving} style={{ background: "var(--accent-primary)", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 6, cursor: saving ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>
             {saving ? <><Spinner size={13} />&nbsp;{t("templates.saving")}</> : t("templates.save")}
           </button>

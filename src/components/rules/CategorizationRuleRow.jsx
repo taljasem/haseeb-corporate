@@ -10,7 +10,7 @@ export default function CategorizationRuleRow({ rule, expanded, onToggle, onEdit
   return (
     <div
       style={{
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        borderBottom: "1px solid var(--border-subtle)",
         background: expanded ? "var(--bg-surface)" : "transparent",
       }}
     >

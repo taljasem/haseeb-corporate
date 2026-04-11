@@ -62,12 +62,12 @@ export default function CompareScenariosSlideOver({ open, onClose }) {
           position: "fixed", top: 0, insetInlineEnd: 0, bottom: 0,
           width: 560, maxWidth: "calc(100vw - 32px)",
           background: "var(--panel-bg)",
-          borderInlineStart: "1px solid rgba(255,255,255,0.10)",
+          borderInlineStart: "1px solid var(--border-default)",
           zIndex: 301, display: "flex", flexDirection: "column",
           boxShadow: "-24px 0 60px rgba(0,0,0,0.7)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: "var(--text-primary)" }}>{t("compare_slideover.title")}</div>
             <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 4 }}>{t("compare_slideover.subtitle")}</div>
@@ -76,7 +76,7 @@ export default function CompareScenariosSlideOver({ open, onClose }) {
             <X size={18} />
           </button>
         </div>
-        <div style={{ padding: "14px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ padding: "14px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 8 }}>{t("compare_slideover.pick")}</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {saved.map((s) => {
@@ -88,7 +88,7 @@ export default function CompareScenariosSlideOver({ open, onClose }) {
                   style={{
                     padding: "6px 12px", borderRadius: 14,
                     background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)",
-                    border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
+                    border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
                     color: on ? "var(--accent-primary)" : "var(--text-secondary)",
                     fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
                   }}
@@ -123,13 +123,13 @@ export default function CompareScenariosSlideOver({ open, onClose }) {
 function Row({ label, picked, projections, k }) {
   return (
     <>
-      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", padding: "10px 0", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", padding: "10px 0", borderTop: "1px solid var(--border-subtle)" }}>
         {label}
       </div>
       {picked.map((id) => {
         const p = projections[id]?.projection;
         return (
-          <div key={id} style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, color: "var(--text-primary)", padding: "10px 0", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+          <div key={id} style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, color: "var(--text-primary)", padding: "10px 0", borderTop: "1px solid var(--border-subtle)" }}>
             <LtrText>{p ? fmtKWD(p.totals[k]) : "—"}</LtrText>
           </div>
         );

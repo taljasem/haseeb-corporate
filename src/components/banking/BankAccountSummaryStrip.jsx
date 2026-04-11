@@ -41,7 +41,7 @@ export default function BankAccountSummaryStrip({ summary, currency = "KWD" }) {
         gap: 32,
         padding: "14px 18px",
         background: "var(--bg-surface)",
-        border: "1px solid rgba(255,255,255,0.06)",
+        border: "1px solid var(--border-subtle)",
         borderRadius: 8,
       }}
     >

@@ -35,7 +35,7 @@ function Placeholder({ label }) {
           maxWidth: 480,
           padding: "32px 36px",
           background: "var(--bg-surface)",
-          border: "1px solid rgba(255,255,255,0.10)",
+          border: "1px solid var(--border-default)",
           borderRadius: 10,
           textAlign: "center",
         }}

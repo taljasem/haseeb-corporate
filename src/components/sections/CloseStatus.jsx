@@ -52,7 +52,7 @@ export default function CloseStatus() {
         style={{
           width: "100%",
           height: 4,
-          background: "rgba(255,255,255,0.05)",
+          background: "var(--border-subtle)",
           borderRadius: 2,
           overflow: "hidden",
           marginBottom: 14,
@@ -87,7 +87,7 @@ export default function CloseStatus() {
                   width: 8,
                   height: 8,
                   borderRadius: "50%",
-                  border: "1px solid rgba(255,255,255,0.20)",
+                  border: "1px solid var(--border-strong)",
                   background: t.complete ? "var(--accent-primary)" : "transparent",
                   flexShrink: 0,
                 }}

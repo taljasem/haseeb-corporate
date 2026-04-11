@@ -24,7 +24,7 @@ export default function RoutingRuleReadOnlyCard({ rule }) {
     <div
       style={{
         background: "var(--bg-surface)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        border: "1px solid var(--border-default)",
         borderInlineStart: "2px solid #3B82F6",
         borderRadius: 8,
         padding: "16px 18px",
@@ -61,7 +61,7 @@ export default function RoutingRuleReadOnlyCard({ rule }) {
             letterSpacing: "0.10em",
             color: "var(--text-tertiary)",
             background: "var(--bg-surface-sunken)",
-            border: "1px solid rgba(255,255,255,0.15)",
+            border: "1px solid var(--border-strong)",
             padding: "3px 8px",
             borderRadius: 3,
             whiteSpace: "nowrap",
@@ -115,7 +115,7 @@ export default function RoutingRuleReadOnlyCard({ rule }) {
           gap: 14,
           marginTop: 12,
           paddingTop: 10,
-          borderTop: "1px solid rgba(255,255,255,0.06)",
+          borderTop: "1px solid var(--border-subtle)",
           fontSize: 11,
           color: "var(--text-tertiary)",
           flexWrap: "wrap",

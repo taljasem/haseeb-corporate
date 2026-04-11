@@ -175,12 +175,12 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
   return (
     <div data-split="true" style={{ flex: 1, display: "flex", overflow: "hidden" }}>
       {/* List 60% */}
-      <div style={{ flex: "0 0 60%", display: "flex", flexDirection: "column", borderInlineEnd: "1px solid rgba(255,255,255,0.10)", overflow: "hidden" }}>
+      <div style={{ flex: "0 0 60%", display: "flex", flexDirection: "column", borderInlineEnd: "1px solid var(--border-default)", overflow: "hidden" }}>
         {suggestion && (
           <SuggestionBanner suggestion={suggestion} onApply={(s) => { setCatModalPrefill({ name: `${s.merchant} auto-categorization`, merchant: s.merchant }); setCatModalOpen(true); }} onDismiss={() => setSuggestion(null)} />
         )}
 
-        <div style={{ padding: "20px 24px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
+        <div style={{ padding: "20px 24px 14px", borderBottom: "1px solid var(--border-subtle)", flexShrink: 0 }}>
           {/* Header */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, gap: 12 }}>
             <div>
@@ -201,10 +201,10 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
 
           {/* Bulk action bar */}
           {bulkMode && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0", marginBottom: 8, borderBottom: "1px solid rgba(255,255,255,0.06)", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0", marginBottom: 8, borderBottom: "1px solid var(--border-subtle)", flexWrap: "wrap" }}>
               <span style={{ fontSize: 12, fontWeight: 600, color: "var(--accent-primary)" }}>{t("bulk.selected_count", { count: checkedIds.size })}</span>
               <button onClick={selectAllVisible} style={{ fontSize: 10, color: "var(--accent-primary)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", textDecoration: "underline" }}>{t("bulk.select_all_visible")}</button>
-              <span style={{ width: 1, height: 14, background: "rgba(255,255,255,0.08)" }} />
+              <span style={{ width: 1, height: 14, background: "var(--border-default)" }} />
               <div style={{ position: "relative" }}>
                 <ActionButton variant="secondary" size="sm" icon={Tag} label={t("bulk.actions.categorize_all")} onClick={() => setCatPickerOpen(!catPickerOpen)} />
                 {catPickerOpen && <PickerPopover items={categories.map(c => ({ id: c.code, label: `${c.code} ${c.name}` }))} onSelect={(id) => handleBulkCategorize(id)} onClose={() => setCatPickerOpen(false)} />}
@@ -223,9 +223,9 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
             {FILTERS.map((f) => {
               const on = f.id === filter;
-              return <button key={f.id} onClick={() => setFilter(f.id)} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", padding: "5px 12px", borderRadius: 14, background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)", border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)", color: on ? "var(--accent-primary)" : "var(--text-tertiary)", cursor: "pointer", fontFamily: "inherit" }}>{t(`filters.${f.key}`)}</button>;
+              return <button key={f.id} onClick={() => setFilter(f.id)} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", padding: "5px 12px", borderRadius: 14, background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)", border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)", color: on ? "var(--accent-primary)" : "var(--text-tertiary)", cursor: "pointer", fontFamily: "inherit" }}>{t(`filters.${f.key}`)}</button>;
             })}
-            <span style={{ width: 1, height: 16, background: "rgba(255,255,255,0.08)", margin: "0 4px" }} />
+            <span style={{ width: 1, height: 16, background: "var(--border-default)", margin: "0 4px" }} />
             {/* Category filter — DS FilterDropdown with chevron */}
             <FilterDropdown label={t("filters.category_label")} placeholder={t("filters.category_all")} options={categories.map((c) => ({ id: c.code, label: `${c.code} ${c.name}` }))} selected={categoryFilter} onChange={setCategoryFilter} />
             {/* Assignee filter — DS FilterDropdown with chevron */}
@@ -288,8 +288,8 @@ function PickerPopover({ items, onSelect, onClose }) {
   return (
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 200 }} />
-      <div style={{ position: "absolute", top: "100%", insetInlineStart: 0, marginTop: 4, width: 240, maxHeight: 280, background: "var(--bg-surface-raised)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, boxShadow: "0 8px 24px rgba(0,0,0,0.5)", zIndex: 201, display: "flex", flexDirection: "column" }}>
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..." autoFocus style={{ margin: "8px 8px 4px", padding: "6px 10px", background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, color: "var(--text-primary)", fontSize: 11, fontFamily: "inherit", outline: "none" }} />
+      <div style={{ position: "absolute", top: "100%", insetInlineStart: 0, marginTop: 4, width: 240, maxHeight: 280, background: "var(--bg-surface-raised)", border: "1px solid var(--border-default)", borderRadius: 8, boxShadow: "0 8px 24px rgba(0,0,0,0.5)", zIndex: 201, display: "flex", flexDirection: "column" }}>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..." autoFocus style={{ margin: "8px 8px 4px", padding: "6px 10px", background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 6, color: "var(--text-primary)", fontSize: 11, fontFamily: "inherit", outline: "none" }} />
         <div style={{ flex: 1, overflowY: "auto" }}>
           {filtered.map(item => (
             <button key={item.id} onClick={() => onSelect(item.id)} style={{ display: "block", width: "100%", padding: "7px 12px", background: "transparent", border: "none", color: "var(--text-primary)", fontSize: 11, cursor: "pointer", fontFamily: "inherit", textAlign: "start" }}

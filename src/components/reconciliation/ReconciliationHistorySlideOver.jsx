@@ -30,9 +30,9 @@ export default function ReconciliationHistorySlideOver({ open, onClose, accountI
   return (
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
-      <div style={{ position: "fixed", top: 0, insetInlineEnd: 0, bottom: 0, width: 480, maxWidth: "calc(100vw - 32px)", background: "var(--panel-bg)", borderInlineStart: "1px solid rgba(255,255,255,0.10)", zIndex: 301, boxShadow: "-24px 0 60px rgba(0,0,0,0.7)", display: "flex", flexDirection: "column" }}>
+      <div style={{ position: "fixed", top: 0, insetInlineEnd: 0, bottom: 0, width: 480, maxWidth: "calc(100vw - 32px)", background: "var(--panel-bg)", borderInlineStart: "1px solid var(--border-default)", zIndex: 301, boxShadow: "-24px 0 60px rgba(0,0,0,0.7)", display: "flex", flexDirection: "column" }}>
         {/* Header */}
-        <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
+        <div style={{ padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <History size={16} color="var(--accent-primary)" />
@@ -56,7 +56,7 @@ export default function ReconciliationHistorySlideOver({ open, onClose, accountI
             records.map((rec) => {
               const statusColor = STATUS_COLORS[rec.status] || "var(--text-tertiary)";
               return (
-                <button key={rec.id} onClick={() => { onSelectHistorical(rec); onClose(); }} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 22px", background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.04)", cursor: "pointer", fontFamily: "inherit", textAlign: "start", color: "var(--text-primary)" }}
+                <button key={rec.id} onClick={() => { onSelectHistorical(rec); onClose(); }} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "14px 22px", background: "transparent", border: "none", borderBottom: "1px solid var(--border-subtle)", cursor: "pointer", fontFamily: "inherit", textAlign: "start", color: "var(--text-primary)" }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0,196,140,0.04)"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                 >

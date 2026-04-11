@@ -10,7 +10,7 @@ import RulePreviewPanel from "./RulePreviewPanel";
 const inputStyle = {
   width: "100%",
   background: "var(--bg-surface-sunken)",
-  border: "1px solid rgba(255,255,255,0.10)",
+  border: "1px solid var(--border-default)",
   borderRadius: 8,
   padding: "10px 12px",
   color: "var(--text-primary)",
@@ -62,7 +62,7 @@ function SegBtn({ on, onClick, children }) {
         flex: 1,
         padding: "8px 10px",
         background: on ? "var(--accent-primary-subtle)" : "transparent",
-        border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
+        border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
         color: on ? "var(--accent-primary)" : "var(--text-secondary)",
         fontSize: 11,
         fontWeight: 600,
@@ -176,7 +176,7 @@ export default function NewCategorizationRuleModal({ open, onClose, onCreated, p
           maxWidth: "calc(100vw - 32px)",
           maxHeight: "calc(100vh - 80px)",
           background: "var(--panel-bg)",
-          border: "1px solid rgba(255,255,255,0.10)",
+          border: "1px solid var(--border-default)",
           borderRadius: 12,
           zIndex: 301,
           display: "flex",
@@ -190,7 +190,7 @@ export default function NewCategorizationRuleModal({ open, onClose, onCreated, p
             alignItems: "center",
             justifyContent: "space-between",
             padding: "16px 22px",
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            borderBottom: "1px solid var(--border-subtle)",
           }}
         >
           <div>
@@ -270,7 +270,7 @@ export default function NewCategorizationRuleModal({ open, onClose, onCreated, p
                       gap: 10,
                       padding: "10px 12px",
                       background: on ? "var(--bg-selected)" : "var(--bg-surface)",
-                      border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
+                      border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
                       borderRadius: 8,
                       cursor: "pointer",
                       textAlign: "start",
@@ -364,7 +364,7 @@ export default function NewCategorizationRuleModal({ open, onClose, onCreated, p
             gap: 8,
             justifyContent: "flex-end",
             padding: "14px 22px",
-            borderTop: "1px solid rgba(255,255,255,0.06)",
+            borderTop: "1px solid var(--border-subtle)",
           }}
         >
           <button
@@ -372,7 +372,7 @@ export default function NewCategorizationRuleModal({ open, onClose, onCreated, p
             style={{
               background: "transparent",
               color: "var(--text-secondary)",
-              border: "1px solid rgba(255,255,255,0.15)",
+              border: "1px solid var(--border-strong)",
               padding: "9px 16px",
               borderRadius: 6,
               cursor: "pointer",

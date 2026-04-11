@@ -78,7 +78,7 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
           width: 600, maxWidth: "calc(100vw - 32px)",
           maxHeight: "calc(100vh - 80px)",
           background: "var(--panel-bg)",
-          border: "1px solid rgba(255,255,255,0.10)",
+          border: "1px solid var(--border-default)",
           borderRadius: 12, zIndex: 301,
           display: "flex", flexDirection: "column",
           boxShadow: "0 24px 60px rgba(0,0,0,0.7)",
@@ -87,7 +87,7 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
         <div
           style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)",
+            padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)",
           }}
         >
           <div>
@@ -129,7 +129,7 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
                 style={{
                   padding: "12px 14px",
                   background: "var(--bg-surface)",
-                  border: "1px solid rgba(255,255,255,0.08)",
+                  border: "1px solid var(--border-default)",
                   borderRadius: 8,
                   marginBottom: 8,
                 }}
@@ -153,7 +153,7 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
                     onChange={(e) => setAssignments({ ...assignments, [d.id]: e.target.value })}
                     style={{
                       background: "var(--bg-surface-sunken)",
-                      border: "1px solid rgba(255,255,255,0.10)",
+                      border: "1px solid var(--border-default)",
                       borderRadius: 6,
                       padding: "8px 10px",
                       color: "var(--text-primary)",
@@ -197,7 +197,7 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
                       width: "100%",
                       marginTop: 6,
                       background: "var(--bg-surface-sunken)",
-                      border: "1px solid rgba(255,255,255,0.10)",
+                      border: "1px solid var(--border-default)",
                       borderRadius: 6,
                       padding: "8px 10px",
                       color: "var(--text-primary)",
@@ -216,7 +216,7 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
         <div
           style={{
             padding: "14px 22px",
-            borderTop: "1px solid rgba(255,255,255,0.06)",
+            borderTop: "1px solid var(--border-subtle)",
           }}
         >
           <div
@@ -235,7 +235,7 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
               style={{
                 background: "transparent",
                 color: "var(--text-secondary)",
-                border: "1px solid rgba(255,255,255,0.15)",
+                border: "1px solid var(--border-strong)",
                 padding: "9px 16px",
                 borderRadius: 6,
                 cursor: "pointer",

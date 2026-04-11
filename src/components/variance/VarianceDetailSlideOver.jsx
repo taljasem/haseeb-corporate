@@ -46,12 +46,12 @@ export default function VarianceDetailSlideOver({ open, varianceId, onClose }) {
           position: "fixed", top: 0, insetInlineEnd: 0, bottom: 0,
           width: 520, maxWidth: "calc(100vw - 32px)",
           background: "var(--panel-bg)",
-          borderInlineStart: "1px solid rgba(255,255,255,0.10)",
+          borderInlineStart: "1px solid var(--border-default)",
           zIndex: 301, display: "flex", flexDirection: "column",
           boxShadow: "-24px 0 60px rgba(0,0,0,0.7)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: "var(--text-primary)" }}>
             {t("detail.title")}
           </div>
@@ -107,7 +107,7 @@ export default function VarianceDetailSlideOver({ open, varianceId, onClose }) {
               <SectionHead label={t("detail.contributors_title")} />
               <div style={{ marginBottom: 18 }}>
                 {detail.contributors.map((c, i) => (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", fontSize: 12 }}>
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border-subtle)", fontSize: 12 }}>
                     <div style={{ color: "var(--text-primary)" }}>
                       <span style={{ fontFamily: "'DM Mono', monospace", color: "var(--accent-primary)", marginInlineEnd: 8 }}><LtrText>{c.ref}</LtrText></span>
                       {c.desc}
@@ -125,7 +125,7 @@ export default function VarianceDetailSlideOver({ open, varianceId, onClose }) {
                   <div style={{ fontSize: 12, color: "var(--text-tertiary)", fontStyle: "italic" }}>—</div>
                 ) : (
                   detail.notes.map((n) => (
-                    <div key={n.id} style={{ padding: "10px 12px", background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, marginBottom: 6 }}>
+                    <div key={n.id} style={{ padding: "10px 12px", background: "var(--bg-surface-sunken)", border: "1px solid var(--border-subtle)", borderRadius: 8, marginBottom: 6 }}>
                       <div style={{ fontSize: 12, color: "var(--text-primary)", lineHeight: 1.5 }}>{n.note}</div>
                       <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 4 }}>{n.author} · {formatRelativeTime(n.timestamp)}</div>
                     </div>
@@ -170,7 +170,7 @@ export default function VarianceDetailSlideOver({ open, varianceId, onClose }) {
 
 function Stat({ label, value, color }) {
   return (
-    <div style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "10px 12px" }}>
+    <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "10px 12px" }}>
       <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-tertiary)" }}>{label}</div>
       <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 16, color: color || "var(--text-primary)", fontWeight: 600, marginTop: 4 }}>
         <LtrText>{value}</LtrText>
@@ -189,6 +189,6 @@ function SectionHead({ label }) {
 
 const btnSecondary = {
   background: "transparent", color: "var(--text-secondary)",
-  border: "1px solid rgba(255,255,255,0.15)", padding: "9px 16px",
+  border: "1px solid var(--border-strong)", padding: "9px 16px",
   borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit",
 };

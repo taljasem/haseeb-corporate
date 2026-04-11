@@ -48,7 +48,7 @@ export default function TransactionFeed() {
                   borderBottom:
                     idx === txs.length - 1
                       ? "none"
-                      : "1px solid rgba(255,255,255,0.03)",
+                      : "1px solid var(--border-subtle)",
                 }}
               >
                 <div>
@@ -96,7 +96,7 @@ export default function TransactionFeed() {
         style={{
           marginTop: 14,
           paddingTop: 14,
-          borderTop: "1px solid rgba(255,255,255,0.10)",
+          borderTop: "1px solid var(--border-default)",
         }}
       >
         <div

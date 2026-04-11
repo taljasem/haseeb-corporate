@@ -19,7 +19,7 @@ function SectionCard({ label, extra, aminah = true, children }) {
     <div
       style={{
         background: "var(--bg-surface)",
-        border: "1px solid rgba(255,255,255,0.06)",
+        border: "1px solid var(--border-subtle)",
         borderRadius: 10,
         padding: "18px 20px",
         marginBottom: 16,
@@ -46,7 +46,7 @@ function QueueRow({ count, label, onClick }) {
         margin: "4px -14px",
         background: "transparent",
         border: "none",
-        borderBottom: "1px solid rgba(255,255,255,0.04)",
+        borderBottom: "1px solid var(--border-subtle)",
         cursor: "pointer",
         textAlign: "start",
         fontFamily: "inherit",
@@ -243,7 +243,7 @@ export default function JuniorTodayScreen({ setActiveScreen, onOpenTask }) {
                     alignItems: "center",
                     gap: 10,
                     padding: "10px 0",
-                    borderBottom: "1px solid rgba(255,255,255,0.04)",
+                    borderBottom: "1px solid var(--border-subtle)",
                     fontSize: 13,
                     color: "var(--text-secondary)",
                   }}
@@ -281,7 +281,7 @@ export default function JuniorTodayScreen({ setActiveScreen, onOpenTask }) {
                   lineHeight: 1.8,
                   paddingBottom: 8,
                   marginBottom: 8,
-                  borderBottom: "1px solid rgba(255,255,255,0.04)",
+                  borderBottom: "1px solid var(--border-subtle)",
                 }}
               >
                 {renderHighlighted(n.text)}

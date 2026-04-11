@@ -55,7 +55,7 @@ export default function TaskRow({ task, onClick, compact = false, selectable = f
         alignItems: "center",
         gap: 12,
         padding: compact ? "10px 12px" : "12px 16px",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        borderBottom: "1px solid var(--border-subtle)",
         cursor: "pointer",
         transition: "background 0.12s ease",
         background: selected ? "var(--accent-primary-subtle)" : undefined,
@@ -112,7 +112,7 @@ export default function TaskRow({ task, onClick, compact = false, selectable = f
                 letterSpacing: "0.05em",
                 color: "var(--text-tertiary)",
                 background: "var(--bg-surface-sunken)",
-                border: "1px solid rgba(255,255,255,0.08)",
+                border: "1px solid var(--border-default)",
                 padding: "3px 6px",
                 borderRadius: 3,
               }}

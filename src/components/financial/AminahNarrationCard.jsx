@@ -33,7 +33,7 @@ export default function AminahNarrationCard({ text, onAsk }) {
     <div
       style={{
         background: "var(--bg-surface-sunken)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        border: "1px solid var(--border-default)",
         borderInlineStart: "2px solid #00C48C",
         borderRadius: 8,
         padding: "16px 18px",

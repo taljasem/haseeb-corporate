@@ -16,7 +16,7 @@ export default function SuggestedRuleRow({ suggestion, onCreate, onDismiss, comp
         gap: 12,
         padding: compact ? "10px 12px" : "14px 18px",
         background: "rgba(212,168,75,0.04)",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        borderBottom: "1px solid var(--border-subtle)",
         borderInlineStart: "2px solid #D4A84B",
       }}
     >
@@ -62,7 +62,7 @@ export default function SuggestedRuleRow({ suggestion, onCreate, onDismiss, comp
           style={{
             background: "transparent",
             color: "var(--text-tertiary)",
-            border: "1px solid rgba(255,255,255,0.10)",
+            border: "1px solid var(--border-default)",
             padding: "6px 12px",
             borderRadius: 5,
             cursor: "pointer",

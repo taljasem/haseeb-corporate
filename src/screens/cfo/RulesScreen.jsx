@@ -132,7 +132,7 @@ export default function RulesScreen({ initialTab = "categorization" }) {
       <div
         style={{
           padding: "20px 28px 12px",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          borderBottom: "1px solid var(--border-subtle)",
           flexShrink: 0,
         }}
       >
@@ -245,7 +245,7 @@ export default function RulesScreen({ initialTab = "categorization" }) {
                       padding: "5px 12px",
                       borderRadius: 14,
                       background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)",
-                      border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
+                      border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
                       color: on ? "var(--accent-primary)" : "var(--text-tertiary)",
                       cursor: "pointer",
                       textTransform: "capitalize",
@@ -270,7 +270,7 @@ export default function RulesScreen({ initialTab = "categorization" }) {
                 style={{
                   width: "100%",
                   background: "var(--bg-surface-sunken)",
-                  border: "1px solid rgba(255,255,255,0.10)",
+                  border: "1px solid var(--border-default)",
                   borderRadius: 8,
                   padding: "8px 12px 8px 30px",
                   color: "var(--text-primary)",

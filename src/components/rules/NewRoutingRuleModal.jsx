@@ -16,7 +16,7 @@ import RulePreviewPanel from "./RulePreviewPanel";
 const inputStyle = {
   width: "100%",
   background: "var(--bg-surface-sunken)",
-  border: "1px solid rgba(255,255,255,0.10)",
+  border: "1px solid var(--border-default)",
   borderRadius: 8,
   padding: "10px 12px",
   color: "var(--text-primary)",
@@ -158,7 +158,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
           maxWidth: "calc(100vw - 32px)",
           maxHeight: "calc(100vh - 80px)",
           background: "var(--panel-bg)",
-          border: "1px solid rgba(255,255,255,0.10)",
+          border: "1px solid var(--border-default)",
           borderRadius: 12,
           zIndex: 301,
           display: "flex",
@@ -172,7 +172,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
             alignItems: "center",
             justifyContent: "space-between",
             padding: "16px 22px",
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            borderBottom: "1px solid var(--border-subtle)",
           }}
         >
           <div>
@@ -220,7 +220,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
                   padding: "6px 12px",
                   borderRadius: 14,
                   background: selectedTypes.includes("all") ? "var(--accent-primary-subtle)" : "var(--bg-surface)",
-                  border: selectedTypes.includes("all") ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
+                  border: selectedTypes.includes("all") ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
                   color: selectedTypes.includes("all") ? "var(--accent-primary)" : "var(--text-secondary)",
                   fontSize: 11,
                   fontWeight: 600,
@@ -298,7 +298,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
                       gap: 10,
                       padding: "8px 10px",
                       background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)",
-                      border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
+                      border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
                       borderRadius: 8,
                       cursor: "pointer",
                       fontFamily: "inherit",
@@ -329,7 +329,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
                       flex: 1,
                       padding: "8px 10px",
                       background: on ? "var(--accent-primary-subtle)" : "transparent",
-                      border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
+                      border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
                       color: on ? "var(--accent-primary)" : "var(--text-secondary)",
                       fontSize: 11,
                       fontWeight: 600,
@@ -365,7 +365,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
             gap: 8,
             justifyContent: "flex-end",
             padding: "14px 22px",
-            borderTop: "1px solid rgba(255,255,255,0.06)",
+            borderTop: "1px solid var(--border-subtle)",
           }}
         >
           <button
@@ -373,7 +373,7 @@ export default function NewRoutingRuleModal({ open, onClose, onCreated, editingR
             style={{
               background: "transparent",
               color: "var(--text-secondary)",
-              border: "1px solid rgba(255,255,255,0.15)",
+              border: "1px solid var(--border-strong)",
               padding: "9px 16px",
               borderRadius: 6,
               cursor: "pointer",

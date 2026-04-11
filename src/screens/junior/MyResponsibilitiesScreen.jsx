@@ -11,7 +11,7 @@ function Stat({ label, value }) {
     <div
       style={{
         background: "var(--bg-surface)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        border: "1px solid var(--border-default)",
         borderRadius: 8,
         padding: "14px 16px",
       }}

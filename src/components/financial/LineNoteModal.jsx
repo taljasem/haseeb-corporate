@@ -9,7 +9,7 @@ import { addLineNote, updateLineNote, deleteLineNote } from "../../engine/mockEn
 const inputStyle = {
   width: "100%",
   background: "var(--bg-surface-sunken)",
-  border: "1px solid rgba(255,255,255,0.10)",
+  border: "1px solid var(--border-default)",
   borderRadius: 8,
   padding: "10px 12px",
   color: "var(--text-primary)",
@@ -80,12 +80,12 @@ export default function LineNoteModal({ open, accountCode, accountLabel, period,
         style={{
           position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
           width: 500, maxWidth: "calc(100vw - 32px)",
-          background: "var(--panel-bg)", border: "1px solid rgba(255,255,255,0.10)",
+          background: "var(--panel-bg)", border: "1px solid var(--border-default)",
           borderRadius: 12, zIndex: 301, display: "flex", flexDirection: "column",
           boxShadow: "0 24px 60px rgba(0,0,0,0.7)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>
               {t("notes.label")}
@@ -130,7 +130,7 @@ export default function LineNoteModal({ open, accountCode, accountLabel, period,
                     style={{
                       flex: 1, padding: "9px 12px",
                       background: on ? "var(--accent-primary-subtle)" : "transparent",
-                      border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
+                      border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
                       color: on ? "var(--accent-primary)" : "var(--text-secondary)",
                       borderRadius: 6, cursor: "pointer",
                       fontSize: 11, fontWeight: 600, fontFamily: "inherit",
@@ -144,7 +144,7 @@ export default function LineNoteModal({ open, accountCode, accountLabel, period,
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 8, justifyContent: "space-between", alignItems: "center", padding: "14px 22px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ display: "flex", gap: 8, justifyContent: "space-between", alignItems: "center", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
           {existing ? (
             <button onClick={handleDelete} style={{ background: "transparent", color: "var(--semantic-danger)", border: "none", padding: "7px 10px", cursor: "pointer", fontSize: 11, fontFamily: "inherit", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}>
               <Trash2 size={12} /> {t("notes.delete")}
@@ -165,5 +165,5 @@ export default function LineNoteModal({ open, accountCode, accountLabel, period,
 function Label({ children }) {
   return <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 6 }}>{children}</div>;
 }
-const btnSecondary = { background: "transparent", color: "var(--text-secondary)", border: "1px solid rgba(255,255,255,0.15)", padding: "9px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" };
+const btnSecondary = { background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "9px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" };
 const btnPrimary = (saving) => ({ background: "var(--accent-primary)", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 6, cursor: saving ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" });

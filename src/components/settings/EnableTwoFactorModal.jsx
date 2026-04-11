@@ -48,12 +48,12 @@ export default function EnableTwoFactorModal({ open, onClose, onEnabled }) {
         style={{
           position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
           width: 500, maxWidth: "calc(100vw - 32px)",
-          background: "var(--panel-bg)", border: "1px solid rgba(255,255,255,0.10)",
+          background: "var(--panel-bg)", border: "1px solid var(--border-default)",
           borderRadius: 12, zIndex: 301, display: "flex", flexDirection: "column",
           boxShadow: "0 24px 60px rgba(0,0,0,0.7)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>
               {t("enable_2fa_modal.label")}
@@ -87,7 +87,7 @@ export default function EnableTwoFactorModal({ open, onClose, onEnabled }) {
                 placeholder="000000"
                 style={{
                   width: "100%", background: "var(--bg-surface-sunken)",
-                  border: `1px solid ${error ? "var(--semantic-danger)" : "rgba(255,255,255,0.10)"}`,
+                  border: `1px solid ${error ? "var(--semantic-danger)" : "var(--border-default)"}`,
                   borderRadius: 8, padding: "10px 12px", color: "var(--text-primary)",
                   fontSize: 18, fontFamily: "'DM Mono', monospace", letterSpacing: "0.3em",
                   outline: "none", textAlign: "center",
@@ -112,7 +112,7 @@ export default function EnableTwoFactorModal({ open, onClose, onEnabled }) {
                   <div key={c} style={{
                     fontFamily: "'DM Mono', monospace", fontSize: 13,
                     background: "var(--bg-surface-sunken)",
-                    border: "1px solid rgba(255,255,255,0.08)",
+                    border: "1px solid var(--border-default)",
                     padding: "9px 12px", borderRadius: 6, textAlign: "center",
                     color: "var(--text-primary)",
                   }}>
@@ -124,7 +124,7 @@ export default function EnableTwoFactorModal({ open, onClose, onEnabled }) {
           )}
         </div>
 
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
           {!backupCodes ? (
             <>
               <button onClick={onClose} style={btnSecondary}>{t("enable_2fa_modal.cancel")}</button>
@@ -166,7 +166,7 @@ function FakeQR() {
 
 const btnSecondary = {
   background: "transparent", color: "var(--text-secondary)",
-  border: "1px solid rgba(255,255,255,0.15)", padding: "9px 16px",
+  border: "1px solid var(--border-strong)", padding: "9px 16px",
   borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit",
 };
 const btnPrimary = (saving) => ({

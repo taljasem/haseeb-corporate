@@ -9,7 +9,7 @@ function Stat({ label, value, sub, accent = false, varianceColor = null }) {
         minWidth: 240,
         padding: "16px 18px",
         background: "var(--bg-surface)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        border: "1px solid var(--border-default)",
         borderRadius: 10,
       }}
     >

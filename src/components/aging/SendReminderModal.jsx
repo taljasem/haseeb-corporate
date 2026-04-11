@@ -8,7 +8,7 @@ import { sendAgingReminder } from "../../engine/mockEngine";
 
 const inputStyle = {
   width: "100%", background: "var(--bg-surface-sunken)",
-  border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8,
+  border: "1px solid var(--border-default)", borderRadius: 8,
   padding: "10px 12px", color: "var(--text-primary)",
   fontSize: 13, fontFamily: "inherit", outline: "none",
 };
@@ -57,8 +57,8 @@ export default function SendReminderModal({ open, invoice, onClose, onSent }) {
   return (
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
-      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 560, maxWidth: "calc(100vw - 32px)", maxHeight: "calc(100vh - 80px)", background: "var(--panel-bg)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, zIndex: 301, display: "flex", flexDirection: "column", boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 560, maxWidth: "calc(100vw - 32px)", maxHeight: "calc(100vh - 80px)", background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, display: "flex", flexDirection: "column", boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>{t("reminder_modal.label")}</div>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: "var(--text-primary)", marginTop: 2 }}>{t("reminder_modal.title")}</div>
@@ -76,7 +76,7 @@ export default function SendReminderModal({ open, invoice, onClose, onSent }) {
               {["friendly", "firm", "final"].map((k) => {
                 const on = template === k;
                 return (
-                  <button key={k} onClick={() => setTemplate(k)} style={{ flex: 1, padding: "9px 10px", background: on ? "var(--accent-primary-subtle)" : "transparent", border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)", color: on ? "var(--accent-primary)" : "var(--text-secondary)", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "inherit" }}>
+                  <button key={k} onClick={() => setTemplate(k)} style={{ flex: 1, padding: "9px 10px", background: on ? "var(--accent-primary-subtle)" : "transparent", border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)", color: on ? "var(--accent-primary)" : "var(--text-secondary)", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "inherit" }}>
                     {t(`reminder_modal.template_${k}`)}
                   </button>
                 );
@@ -95,7 +95,7 @@ export default function SendReminderModal({ open, invoice, onClose, onSent }) {
             {err("body")}
           </Field>
         </div>
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
           <button onClick={onClose} style={btnSecondary}>{t("reminder_modal.cancel")}</button>
           <button onClick={handleSend} disabled={sending} style={btnPrimary(sending)}>
             {sending ? <><Spinner size={13} />&nbsp;{t("reminder_modal.sending")}</> : t("reminder_modal.send")}
@@ -114,5 +114,5 @@ function Field({ label, children }) {
     </div>
   );
 }
-const btnSecondary = { background: "transparent", color: "var(--text-secondary)", border: "1px solid rgba(255,255,255,0.15)", padding: "9px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" };
+const btnSecondary = { background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "9px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" };
 const btnPrimary = (l) => ({ background: "var(--accent-primary)", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 6, cursor: l ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" });

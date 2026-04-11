@@ -36,7 +36,7 @@ export default function BudgetWorkflowStatusStrip({ budget, role = "CFO", onDele
     <div
       style={{
         background: "var(--bg-surface)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        border: "1px solid var(--border-default)",
         borderRadius: 10,
         padding: "14px 18px",
         marginBottom: 16,
@@ -72,7 +72,7 @@ export default function BudgetWorkflowStatusStrip({ budget, role = "CFO", onDele
               flex: 1,
               height: 10,
               background: SEGMENT_COLOR[d.workflowStatus] || "var(--border-default)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              border: "1px solid var(--border-default)",
               borderRadius: 3,
             }}
           />
@@ -108,7 +108,7 @@ export default function BudgetWorkflowStatusStrip({ budget, role = "CFO", onDele
             style={{
               background: "transparent",
               color: "var(--text-secondary)",
-              border: "1px solid rgba(255,255,255,0.15)",
+              border: "1px solid var(--border-strong)",
               padding: "8px 14px",
               borderRadius: 6,
               cursor: "pointer",

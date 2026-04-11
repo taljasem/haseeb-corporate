@@ -33,7 +33,7 @@ export default function SortHeader({ field, activeField, direction, onSort, labe
         userSelect: "none",
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+        e.currentTarget.style.background = "var(--border-subtle)";
         e.currentTarget.style.textDecoration = "underline";
       }}
       onMouseLeave={(e) => {

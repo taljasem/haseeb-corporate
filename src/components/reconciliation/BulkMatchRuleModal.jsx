@@ -53,9 +53,9 @@ export default function BulkMatchRuleModal({ open, onClose, reconciliationId, on
   return (
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
-      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 520, maxHeight: "80vh", background: "var(--panel-bg)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)", display: "flex", flexDirection: "column" }}>
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 520, maxHeight: "80vh", background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)", display: "flex", flexDirection: "column" }}>
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <Sparkles size={16} color="var(--accent-primary)" />
@@ -86,7 +86,7 @@ export default function BulkMatchRuleModal({ open, onClose, reconciliationId, on
                   {t("bulk_rule.preview_count", { count: matchCount })}
                 </div>
                 {(preview?.matches || []).slice(0, 5).map((m, i) => (
-                  <div key={i} style={{ fontSize: 11, color: "var(--text-secondary)", padding: "4px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", justifyContent: "space-between", gap: 8 }}>
+                  <div key={i} style={{ fontSize: 11, color: "var(--text-secondary)", padding: "4px 0", borderBottom: "1px solid var(--border-subtle)", display: "flex", justifyContent: "space-between", gap: 8 }}>
                     <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{m.bankItem.description}</span>
                     <span style={{ color: "var(--text-tertiary)" }}>↔</span>
                     <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, textAlign: "end" }}>{m.ledgerEntry.description}</span>
@@ -100,9 +100,9 @@ export default function BulkMatchRuleModal({ open, onClose, reconciliationId, on
         </div>
 
         {/* Footer */}
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <button onClick={onClose} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid rgba(255,255,255,0.15)", padding: "9px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("bulk_rule.cancel_button")}</button>
-          <button onClick={handleApply} disabled={matchCount === 0 || applying} style={{ background: matchCount > 0 ? "var(--accent-primary)" : "rgba(255,255,255,0.05)", color: matchCount > 0 ? "#fff" : "var(--text-tertiary)", border: "none", padding: "9px 18px", borderRadius: 6, cursor: matchCount > 0 ? "pointer" : "not-allowed", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>{applying ? "..." : t("bulk_rule.apply_button")}</button>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
+          <button onClick={onClose} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "9px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("bulk_rule.cancel_button")}</button>
+          <button onClick={handleApply} disabled={matchCount === 0 || applying} style={{ background: matchCount > 0 ? "var(--accent-primary)" : "var(--border-subtle)", color: matchCount > 0 ? "#fff" : "var(--text-tertiary)", border: "none", padding: "9px 18px", borderRadius: 6, cursor: matchCount > 0 ? "pointer" : "not-allowed", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>{applying ? "..." : t("bulk_rule.apply_button")}</button>
         </div>
       </div>
     </>
@@ -113,7 +113,7 @@ function InputField({ label, help, value, onChange, step, min, max }) {
   return (
     <div>
       <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 5 }}>{label}</div>
-      <input type="number" value={value} onChange={(e) => onChange(Number(e.target.value))} step={step} min={min} max={max} style={{ width: "100%", background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "8px 10px", color: "var(--text-primary)", fontSize: 13, fontFamily: "'DM Mono', monospace", outline: "none" }} />
+      <input type="number" value={value} onChange={(e) => onChange(Number(e.target.value))} step={step} min={min} max={max} style={{ width: "100%", background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 6, padding: "8px 10px", color: "var(--text-primary)", fontSize: 13, fontFamily: "'DM Mono', monospace", outline: "none" }} />
       {help && <div style={{ fontSize: 9, color: "var(--text-tertiary)", marginTop: 3, lineHeight: 1.4 }}>{help}</div>}
     </div>
   );

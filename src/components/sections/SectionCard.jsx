@@ -5,7 +5,7 @@ export default function SectionCard({ label, extra, aminah = true, children, del
     <div
       style={{
         background: "var(--bg-surface)",
-        border: "1px solid rgba(255,255,255,0.06)",
+        border: "1px solid var(--border-subtle)",
         borderRadius: 8,
         padding: "16px 18px",
         animation: `fadeUp 0.4s ease ${delay}s both`,

@@ -80,7 +80,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
           alignItems: "center",
           justifyContent: "space-between",
           padding: "16px 28px 12px",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          borderBottom: "1px solid var(--border-subtle)",
           flexShrink: 0,
         }}
       >
@@ -150,7 +150,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                 style={{
                   background: "transparent",
                   color: "var(--text-secondary)",
-                  border: "1px solid rgba(255,255,255,0.15)",
+                  border: "1px solid var(--border-strong)",
                   padding: "8px 14px",
                   borderRadius: 6,
                   cursor: "pointer",
@@ -236,7 +236,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
             style={{
               background: "transparent",
               color: "var(--text-tertiary)",
-              border: "1px solid rgba(255,255,255,0.10)",
+              border: "1px solid var(--border-default)",
               padding: 7,
               borderRadius: 6,
               cursor: "pointer",
@@ -285,7 +285,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
               gap: 24,
               padding: "14px 16px",
               background: "var(--bg-surface)",
-              border: "1px solid rgba(255,255,255,0.06)",
+              border: "1px solid var(--border-subtle)",
               borderRadius: 8,
               marginBottom: 16,
             }}
@@ -368,7 +368,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                 style={{
                   width: "100%",
                   background: "var(--bg-surface-sunken)",
-                  border: "1px solid rgba(255,255,255,0.10)",
+                  border: "1px solid var(--border-default)",
                   borderRadius: 8,
                   padding: "10px 12px",
                   color: "var(--text-primary)",
@@ -385,7 +385,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                   style={{
                     background: "transparent",
                     color: "var(--text-secondary)",
-                    border: "1px solid rgba(255,255,255,0.15)",
+                    border: "1px solid var(--border-strong)",
                     padding: "7px 14px",
                     borderRadius: 6,
                     cursor: "pointer",
@@ -446,7 +446,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
             <div
               style={{
                 background: "var(--bg-surface)",
-                border: "1px solid rgba(255,255,255,0.10)",
+                border: "1px solid var(--border-default)",
                 borderInlineStart: "2px solid #3B82F6",
                 borderRadius: 6,
                 padding: "12px 14px",
@@ -488,7 +488,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
 
           {/* Escalation chain breadcrumb */}
           {(isEscalated || isEscalatedFrom) && (
-            <div style={{ marginBottom: 16, padding: "10px 12px", background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8 }}>
+            <div style={{ marginBottom: 16, padding: "10px 12px", background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 8 }}>
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 6 }}>
                 {t("escalate.chain_label")}
               </div>
@@ -537,7 +537,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
           {/* Thread */}
           <div
             style={{
-              borderTop: "1px solid rgba(255,255,255,0.06)",
+              borderTop: "1px solid var(--border-subtle)",
               paddingTop: 4,
             }}
           >
@@ -551,7 +551,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
         <div
           style={{
             padding: "14px 28px 18px",
-            borderTop: "1px solid rgba(255,255,255,0.10)",
+            borderTop: "1px solid var(--border-default)",
             flexShrink: 0,
           }}
         >
@@ -564,7 +564,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
               style={{
                 width: "100%",
                 background: "var(--bg-surface-sunken)",
-                border: "1px solid rgba(255,255,255,0.10)",
+                border: "1px solid var(--border-default)",
                 borderRadius: 10,
                 padding: "12px 14px",
                 color: "var(--text-primary)",
@@ -580,7 +580,7 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
                 aria-label={t("detail.attach")}
                 style={{
                   background: "transparent",
-                  border: "1px solid rgba(255,255,255,0.10)",
+                  border: "1px solid var(--border-default)",
                   borderRadius: 6,
                   padding: "8px 10px",
                   color: "var(--text-tertiary)",

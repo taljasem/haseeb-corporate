@@ -82,7 +82,7 @@ export default function VarianceAnalysisScreen({ onOpenAminah }) {
       <div
         style={{
           padding: "22px 28px 18px",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          borderBottom: "1px solid var(--border-subtle)",
           background: "linear-gradient(180deg, rgba(0,196,140,0.10) 0%, transparent 100%)",
           flexShrink: 0,
           display: "flex",
@@ -127,7 +127,7 @@ export default function VarianceAnalysisScreen({ onOpenAminah }) {
               {PERIODS.map((p) => {
                 const on = period === p;
                 return (
-                  <button key={p} onClick={() => setPeriod(p)} style={{ fontSize: 11, fontWeight: 600, padding: "6px 12px", borderRadius: 14, background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)", border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)", color: on ? "var(--accent-primary)" : "var(--text-tertiary)", cursor: "pointer", fontFamily: "inherit" }}>
+                  <button key={p} onClick={() => setPeriod(p)} style={{ fontSize: 11, fontWeight: 600, padding: "6px 12px", borderRadius: 14, background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)", border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)", color: on ? "var(--accent-primary)" : "var(--text-tertiary)", cursor: "pointer", fontFamily: "inherit" }}>
                     {p.replace("_", " ")}
                   </button>
                 );
@@ -137,7 +137,7 @@ export default function VarianceAnalysisScreen({ onOpenAminah }) {
             <select
               value={comparison}
               onChange={(e) => setComparison(e.target.value)}
-              style={{ background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "6px 10px", color: "var(--text-primary)", fontSize: 12, fontFamily: "inherit", outline: "none" }}
+              style={{ background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 6, padding: "6px 10px", color: "var(--text-primary)", fontSize: 12, fontFamily: "inherit", outline: "none" }}
             >
               {COMPARISONS.map((c) => (
                 <option key={c} value={c}>{t(`controls.compare_${c}`)}</option>
@@ -146,10 +146,10 @@ export default function VarianceAnalysisScreen({ onOpenAminah }) {
           </div>
 
           {/* Top variances */}
-          <div style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "18px 20px", marginBottom: 14 }}>
+          <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 10, padding: "18px 20px", marginBottom: 14 }}>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)", marginBottom: 4 }}>{t("top_variances.title")}</div>
             <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginBottom: 12 }}>{t("top_variances.subtitle")}</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 120px 120px 120px 120px", gap: 8, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.06)", fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-tertiary)" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 120px 120px 120px 120px", gap: 8, padding: "8px 0", borderBottom: "1px solid var(--border-subtle)", fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-tertiary)" }}>
               <div>{t("top_variances.col_category")}</div>
               <div style={{ textAlign: "end" }}>{t("top_variances.col_plan")}</div>
               <div style={{ textAlign: "end" }}>{t("top_variances.col_actual")}</div>
@@ -160,7 +160,7 @@ export default function VarianceAnalysisScreen({ onOpenAminah }) {
               <button
                 key={v.id}
                 onClick={() => setDetailId(v.id)}
-                style={{ width: "100%", display: "grid", gridTemplateColumns: "1fr 120px 120px 120px 120px", gap: 8, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", background: "transparent", border: "none", cursor: "pointer", alignItems: "center", textAlign: "start", fontFamily: "inherit", color: "var(--text-primary)" }}
+                style={{ width: "100%", display: "grid", gridTemplateColumns: "1fr 120px 120px 120px 120px", gap: 8, padding: "12px 0", borderBottom: "1px solid var(--border-subtle)", background: "transparent", border: "none", cursor: "pointer", alignItems: "center", textAlign: "start", fontFamily: "inherit", color: "var(--text-primary)" }}
               >
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 500 }}>{v.category}</div>
@@ -186,7 +186,7 @@ export default function VarianceAnalysisScreen({ onOpenAminah }) {
           )}
 
           {/* Matrix */}
-          <div style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "18px 20px", marginBottom: 14, overflowX: "auto" }}>
+          <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 10, padding: "18px 20px", marginBottom: 14, overflowX: "auto" }}>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)", marginBottom: 4 }}>{t("matrix.title")}</div>
             <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginBottom: 12 }}>{t("matrix.subtitle")}</div>
             <div style={{ minWidth: 800 }}>
@@ -198,7 +198,7 @@ export default function VarianceAnalysisScreen({ onOpenAminah }) {
               {data.matrix.departments.map((dept, r) => {
                 const rowTotal = data.matrix.cells[r].reduce((a, b) => a + b, 0);
                 return (
-                  <div key={dept} style={{ display: "grid", gridTemplateColumns: `120px repeat(${data.matrix.categories.length}, minmax(80px, 1fr)) 100px`, gap: 4, padding: "4px 0", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+                  <div key={dept} style={{ display: "grid", gridTemplateColumns: `120px repeat(${data.matrix.categories.length}, minmax(80px, 1fr)) 100px`, gap: 4, padding: "4px 0", borderTop: "1px solid var(--border-subtle)" }}>
                     <div style={{ fontSize: 11, color: "var(--text-primary)", fontWeight: 500, display: "flex", alignItems: "center" }}>{dept}</div>
                     {data.matrix.cells[r].map((cell, c) => {
                       const id = `var-${r}-${c}`;
@@ -212,7 +212,7 @@ export default function VarianceAnalysisScreen({ onOpenAminah }) {
                             textAlign: "end",
                             padding: "8px 10px",
                             background: cellColor(cell, maxVariance),
-                            border: "1px solid rgba(255,255,255,0.04)",
+                            border: "1px solid var(--border-subtle)",
                             borderRadius: 4,
                             color: cell >= 0 ? "var(--accent-primary)" : "var(--semantic-danger)",
                             cursor: "pointer",
@@ -229,7 +229,7 @@ export default function VarianceAnalysisScreen({ onOpenAminah }) {
                   </div>
                 );
               })}
-              <div style={{ display: "grid", gridTemplateColumns: `120px repeat(${data.matrix.categories.length}, minmax(80px, 1fr)) 100px`, gap: 4, padding: "8px 0", borderTop: "2px solid rgba(255,255,255,0.08)" }}>
+              <div style={{ display: "grid", gridTemplateColumns: `120px repeat(${data.matrix.categories.length}, minmax(80px, 1fr)) 100px`, gap: 4, padding: "8px 0", borderTop: "2px solid var(--border-default)" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-tertiary)" }}>{t("matrix.row_total")}</div>
                 {data.matrix.categories.map((_c, i) => {
                   const colTotal = data.matrix.cells.reduce((s, row) => s + row[i], 0);
@@ -247,7 +247,7 @@ export default function VarianceAnalysisScreen({ onOpenAminah }) {
           </div>
 
           {/* Trend chart */}
-          <div style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "18px 20px" }}>
+          <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 10, padding: "18px 20px" }}>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)", marginBottom: 4 }}>{t("trend.title")}</div>
             <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginBottom: 12 }}>{t("trend.subtitle")}</div>
             <TrendChart trend={data.trend} maxTrend={maxTrend} />
@@ -301,7 +301,7 @@ function TrendChart({ trend, maxTrend }) {
 
 function NarrationList({ label, items, color, Icon }) {
   return (
-    <div style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "14px 16px" }}>
+    <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 10, padding: "14px 16px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color, marginBottom: 8 }}>
         <Icon size={12} /> {label}
       </div>
@@ -319,7 +319,7 @@ function NarrationList({ label, items, color, Icon }) {
 
 const exportBtn = {
   background: "transparent", color: "var(--text-secondary)",
-  border: "1px solid rgba(255,255,255,0.12)", padding: "7px 14px",
+  border: "1px solid var(--border-default)", padding: "7px 14px",
   borderRadius: 6, cursor: "pointer",
   fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", fontFamily: "inherit",
 };

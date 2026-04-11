@@ -288,7 +288,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {/* Header */}
-      <div style={{ padding: "20px 28px 12px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
+      <div style={{ padding: "20px 28px 12px", borderBottom: "1px solid var(--border-subtle)", flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <div>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: "var(--text-primary)", letterSpacing: "-0.3px", lineHeight: 1 }}>
@@ -308,7 +308,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
         </div>
 
         {/* Top-level tab bar: Tasks | Templates */}
-        <div style={{ display: "flex", gap: 4, marginBottom: 10, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ display: "flex", gap: 4, marginBottom: 10, borderBottom: "1px solid var(--border-subtle)" }}>
           {["tasks", "templates"].map((key) => {
             const on = tab === key;
             return (
@@ -364,7 +364,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder={t("search.placeholder")}
-                    style={{ width: "100%", background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, padding: "8px 30px 8px 30px", color: "var(--text-primary)", fontSize: 12, fontFamily: "inherit", outline: "none" }}
+                    style={{ width: "100%", background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "8px 30px 8px 30px", color: "var(--text-primary)", fontSize: 12, fontFamily: "inherit", outline: "none" }}
                   />
                   {query && (
                     <button onClick={() => setQuery("")} aria-label={t("search.clear")} style={{ position: "absolute", insetInlineEnd: 8, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 0 }}>
@@ -377,7 +377,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 4,
                     background: hasAdvancedFilters ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)",
-                    border: hasAdvancedFilters ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
+                    border: hasAdvancedFilters ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
                     color: hasAdvancedFilters ? "var(--accent-primary)" : "var(--text-tertiary)",
                     padding: "8px 12px", borderRadius: 8, cursor: "pointer",
                     fontSize: 11, fontWeight: 600, fontFamily: "inherit",
@@ -601,7 +601,7 @@ function TemplatesTab({ role, onRefresh, onToast }) {
 
   return (
     <div style={{ padding: "18px 28px 28px" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 120px 80px 120px 40px", gap: 10, padding: "10px 14px", fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-tertiary)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 120px 80px 120px 40px", gap: 10, padding: "10px 14px", fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-tertiary)", borderBottom: "1px solid var(--border-default)" }}>
         <div>{t("templates.col_name")}</div>
         <div>{t("templates.col_type")}</div>
         <div>{t("templates.col_visibility")}</div>
@@ -610,7 +610,7 @@ function TemplatesTab({ role, onRefresh, onToast }) {
         <div />
       </div>
       {templates.map((tpl) => (
-        <div key={tpl.id} style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 120px 80px 120px 40px", gap: 10, padding: "14px", borderBottom: "1px solid rgba(255,255,255,0.04)", alignItems: "center", position: "relative" }}>
+        <div key={tpl.id} style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 120px 80px 120px 40px", gap: 10, padding: "14px", borderBottom: "1px solid var(--border-subtle)", alignItems: "center", position: "relative" }}>
           <div>
             <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>{tpl.name}</div>
             {tpl.description && <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>{tpl.description}</div>}
@@ -628,7 +628,7 @@ function TemplatesTab({ role, onRefresh, onToast }) {
               <MoreVertical size={14} />
             </button>
             {menuOpenId === tpl.id && (
-              <div data-popover-anchor="end" style={{ position: "absolute", top: "calc(100% + 4px)", insetInlineEnd: 0, width: 200, background: "var(--panel-bg)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, boxShadow: "0 12px 32px rgba(0,0,0,0.6)", zIndex: 150, padding: "6px 0" }}>
+              <div data-popover-anchor="end" style={{ position: "absolute", top: "calc(100% + 4px)", insetInlineEnd: 0, width: 200, background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 8, boxShadow: "var(--panel-shadow)", zIndex: 150, padding: "6px 0" }}>
                 <MenuItem label={t("templates.kebab_duplicate")} onClick={() => { setMenuOpenId(null); handleDuplicate(tpl.id); }} />
                 {tpl.visibility === "my" ? (
                   <MenuItem label={t("templates.kebab_share_role")} onClick={() => { setMenuOpenId(null); handleShare(tpl.id, "role"); }} />
@@ -672,9 +672,9 @@ function BulkRejectModal({ open, count, onClose, onConfirm }) {
   if (!open) return null;
   return (
     <>
-      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
-      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 480, background: "var(--panel-bg)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
-        <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "var(--overlay-backdrop)", backdropFilter: "blur(4px)", zIndex: 300 }} />
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 480, background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "var(--shadow-xl)" }}>
+        <div style={{ padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: "var(--text-primary)" }}>
             {t("bulk.reject_modal_title", { count })}
           </div>
@@ -688,11 +688,11 @@ function BulkRejectModal({ open, count, onClose, onConfirm }) {
             onChange={(e) => setReason(e.target.value)}
             placeholder={t("bulk.reject_reason_placeholder")}
             rows={4}
-            style={{ width: "100%", background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, padding: "10px 12px", color: "var(--text-primary)", fontSize: 13, fontFamily: "inherit", outline: "none", resize: "vertical" }}
+            style={{ width: "100%", background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "10px 12px", color: "var(--text-primary)", fontSize: 13, fontFamily: "inherit", outline: "none", resize: "vertical" }}
           />
         </div>
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <button onClick={onClose} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid rgba(255,255,255,0.15)", padding: "9px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("bulk.cancel")}</button>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
+          <button onClick={onClose} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "9px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("bulk.cancel")}</button>
           <button onClick={() => onConfirm(reason)} style={{ background: "var(--semantic-danger)", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>{t("bulk.confirm")}</button>
         </div>
       </div>
@@ -718,9 +718,9 @@ function BulkAssignModal({ open, count, role, onClose, onConfirm }) {
 
   return (
     <>
-      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
-      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 480, background: "var(--panel-bg)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
-        <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "var(--overlay-backdrop)", backdropFilter: "blur(4px)", zIndex: 300 }} />
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 480, background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "var(--shadow-xl)" }}>
+        <div style={{ padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: "var(--text-primary)" }}>
             {t("bulk.assign_modal_title", { count })}
           </div>
@@ -736,7 +736,7 @@ function BulkAssignModal({ open, count, role, onClose, onConfirm }) {
               style={{
                 display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
                 background: picked === p.id ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)",
-                border: picked === p.id ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.08)",
+                border: picked === p.id ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
                 borderRadius: 8, cursor: "pointer", fontFamily: "inherit", textAlign: "start",
               }}
             >
@@ -745,8 +745,8 @@ function BulkAssignModal({ open, count, role, onClose, onConfirm }) {
             </button>
           ))}
         </div>
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <button onClick={onClose} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid rgba(255,255,255,0.15)", padding: "9px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("bulk.cancel")}</button>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
+          <button onClick={onClose} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "9px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("bulk.cancel")}</button>
           <button onClick={() => onConfirm(picked)} style={{ background: "var(--accent-primary)", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>{t("bulk.confirm")}</button>
         </div>
       </div>

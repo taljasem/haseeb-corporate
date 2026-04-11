@@ -119,7 +119,7 @@ export default function AgingReportsScreen({ onOpenAminah }) {
       <div
         style={{
           padding: "22px 28px 18px",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          borderBottom: "1px solid var(--border-subtle)",
           background: "linear-gradient(180deg, rgba(0,196,140,0.10) 0%, transparent 100%)",
           flexShrink: 0,
           display: "flex",
@@ -153,7 +153,7 @@ export default function AgingReportsScreen({ onOpenAminah }) {
       <div style={{ flex: 1, overflowY: "auto", padding: "22px 28px 32px" }}>
         <div style={{ maxWidth: 1240, margin: "0 auto" }}>
           {/* AR/AP tabs */}
-          <div style={{ display: "flex", gap: 4, marginBottom: 16, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div style={{ display: "flex", gap: 4, marginBottom: 16, borderBottom: "1px solid var(--border-subtle)" }}>
             {["AR", "AP"].map((tp) => {
               const on = type === tp;
               return (
@@ -178,7 +178,7 @@ export default function AgingReportsScreen({ onOpenAminah }) {
                   onClick={() => setBucketFilter(on ? null : b)}
                   style={{
                     background: "var(--bg-surface)",
-                    border: on ? `2px solid ${color}` : "1px solid rgba(255,255,255,0.08)",
+                    border: on ? `2px solid ${color}` : "1px solid var(--border-default)",
                     borderRadius: 10, padding: "14px 16px",
                     textAlign: "start", cursor: "pointer", fontFamily: "inherit",
                     borderInlineStart: `3px solid ${color}`,
@@ -211,7 +211,7 @@ export default function AgingReportsScreen({ onOpenAminah }) {
 
           {/* DSO/DPO */}
           <div style={{ display: "flex", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
-            <div style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "10px 16px" }}>
+            <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "10px 16px" }}>
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-tertiary)" }}>
                 {type === "AR" ? t("dso") : t("dpo")}
               </div>
@@ -236,10 +236,10 @@ export default function AgingReportsScreen({ onOpenAminah }) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t("table.search_placeholder")}
-                style={{ width: "100%", background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, padding: "8px 12px 8px 30px", color: "var(--text-primary)", fontSize: 12, fontFamily: "inherit", outline: "none" }}
+                style={{ width: "100%", background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "8px 12px 8px 30px", color: "var(--text-primary)", fontSize: 12, fontFamily: "inherit", outline: "none" }}
               />
             </div>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "8px 10px", color: "var(--text-primary)", fontSize: 12, fontFamily: "inherit", outline: "none" }}>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 6, padding: "8px 10px", color: "var(--text-primary)", fontSize: 12, fontFamily: "inherit", outline: "none" }}>
               <option value="all">{t("table.filter_all")}</option>
               {["outstanding", "partial", "disputed", "paid", "written_off"].map((s) => (
                 <option key={s} value={s}>{t(`status.${s}`)}</option>
@@ -262,8 +262,8 @@ export default function AgingReportsScreen({ onOpenAminah }) {
           )}
 
           {/* Table */}
-          <div style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, overflow: "hidden" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "30px 1.5fr 1fr 100px 100px 70px 110px 100px 110px 40px", gap: 8, padding: "10px 16px", background: "var(--bg-surface-sunken)", borderBottom: "1px solid rgba(255,255,255,0.08)", fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-tertiary)" }}>
+          <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 10, overflow: "hidden" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "30px 1.5fr 1fr 100px 100px 70px 110px 100px 110px 40px", gap: 8, padding: "10px 16px", background: "var(--bg-surface-sunken)", borderBottom: "1px solid var(--border-default)", fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-tertiary)" }}>
               <div />
               <HeaderCell label={type === "AR" ? t("table.col_party_ar") : t("table.col_party_ap")} col="partyName" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
               <HeaderCell label={t("table.col_invoice")} col="invoiceNumber" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
@@ -299,7 +299,7 @@ export default function AgingReportsScreen({ onOpenAminah }) {
           </div>
 
           {/* Trend chart */}
-          <div style={{ marginTop: 14, background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "18px 20px" }}>
+          <div style={{ marginTop: 14, background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 10, padding: "18px 20px" }}>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)" }}>{t("trend.title")}</div>
             <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginBottom: 12 }}>{t("trend.subtitle")}</div>
             <TrendChart trend={data.trend} />
@@ -331,7 +331,7 @@ function HeaderCell({ label, col, sortBy, sortDir, onSort, align }) {
 
 function Row({ inv, type, t, selected, onToggleSelect, menuOpen, setMenuOpen, onOpenAction }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "30px 1.5fr 1fr 100px 100px 70px 110px 100px 110px 40px", gap: 8, padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.04)", alignItems: "center", position: "relative" }}>
+    <div style={{ display: "grid", gridTemplateColumns: "30px 1.5fr 1fr 100px 100px 70px 110px 100px 110px 40px", gap: 8, padding: "12px 16px", borderBottom: "1px solid var(--border-subtle)", alignItems: "center", position: "relative" }}>
       <input type="checkbox" checked={selected} onChange={onToggleSelect} />
       <div style={{ fontSize: 12, color: "var(--text-primary)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{inv.partyName}</div>
       <div style={{ fontSize: 11, color: "var(--text-secondary)", fontFamily: "'DM Mono', monospace" }}><LtrText>{inv.invoiceNumber}</LtrText></div>
@@ -354,7 +354,7 @@ function Row({ inv, type, t, selected, onToggleSelect, menuOpen, setMenuOpen, on
         {menuOpen && (
           <div
             data-popover-anchor="end"
-            style={{ position: "absolute", top: "calc(100% + 4px)", insetInlineEnd: 0, width: 220, background: "var(--bg-surface-raised)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, boxShadow: "0 12px 32px rgba(0,0,0,0.6)", zIndex: 150, padding: "6px 0" }}
+            style={{ position: "absolute", top: "calc(100% + 4px)", insetInlineEnd: 0, width: 220, background: "var(--bg-surface-raised)", border: "1px solid var(--border-default)", borderRadius: 8, boxShadow: "var(--panel-shadow)", zIndex: 150, padding: "6px 0" }}
           >
             {type === "AR" ? (
               <>
@@ -426,7 +426,7 @@ function TrendChart({ trend }) {
 
 const exportBtn = {
   background: "transparent", color: "var(--text-secondary)",
-  border: "1px solid rgba(255,255,255,0.12)", padding: "7px 14px",
+  border: "1px solid var(--border-default)", padding: "7px 14px",
   borderRadius: 6, cursor: "pointer",
   fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", fontFamily: "inherit",
 };

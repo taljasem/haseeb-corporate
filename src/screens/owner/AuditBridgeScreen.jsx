@@ -90,7 +90,7 @@ export default function AuditBridgeScreen({ onOpenAminah }) {
           <PersistentBanner open title={`Viewing as ${selectedEng.leadAuditor || "Auditor"}`} body="This is what the auditor sees — read-only mode" icon={Eye} variant="warning" onDismiss={() => setPreviewMode(false)} />
         )}
         {/* Header */}
-        <div style={{ padding: "16px 28px 12px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
+        <div style={{ padding: "16px 28px 12px", borderBottom: "1px solid var(--border-subtle)", flexShrink: 0 }}>
           <button onClick={() => { setView("list"); setPreviewMode(false); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "transparent", border: "none", color: "var(--text-secondary)", fontSize: 12, cursor: "pointer", fontFamily: "inherit", marginBottom: 8 }}>
             <ChevronLeft size={14} className="rtl-flip" /> {t("back_to_list")}
           </button>
@@ -132,7 +132,7 @@ export default function AuditBridgeScreen({ onOpenAminah }) {
   // Engagement list view
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      <div style={{ padding: "20px 28px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
+      <div style={{ padding: "20px 28px 16px", borderBottom: "1px solid var(--border-subtle)", flexShrink: 0 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: "var(--text-primary)", letterSpacing: "-0.3px" }}>{t("title")}</div>
@@ -147,12 +147,12 @@ export default function AuditBridgeScreen({ onOpenAminah }) {
         ) : engagements.length === 0 ? (
           <EmptyState icon={Shield} title="No audit engagements" description="Create your first engagement to start" />
         ) : (
-          <div style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, overflow: "hidden" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 100px 100px 80px 80px 100px", gap: 12, padding: "10px 18px", background: "var(--bg-surface-sunken)", borderBottom: "1px solid rgba(255,255,255,0.08)", fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>
+          <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 10, overflow: "hidden" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 100px 100px 80px 80px 100px", gap: 12, padding: "10px 18px", background: "var(--bg-surface-sunken)", borderBottom: "1px solid var(--border-default)", fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>
               <div>FIRM</div><div>LEAD AUDITOR</div><div>PERIOD</div><div>STATUS</div><div>CHECKS</div><div>CLARS</div><div>CREATED</div>
             </div>
             {engagements.map((eng) => (
-              <button key={eng.id} onClick={() => openEngagement(eng.id)} style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 100px 100px 80px 80px 100px", gap: 12, padding: "14px 18px", width: "100%", background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.04)", cursor: "pointer", fontFamily: "inherit", textAlign: "start", color: "var(--text-primary)", fontSize: 12 }}
+              <button key={eng.id} onClick={() => openEngagement(eng.id)} style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 100px 100px 80px 80px 100px", gap: 12, padding: "14px 18px", width: "100%", background: "transparent", border: "none", borderBottom: "1px solid var(--border-subtle)", cursor: "pointer", fontFamily: "inherit", textAlign: "start", color: "var(--text-primary)", fontSize: 12 }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0,196,140,0.03)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
                 <div style={{ fontWeight: 500 }}><LtrText>{eng.auditorFirm}</LtrText></div>
@@ -233,7 +233,7 @@ function ChecksTab({ eng, onRunCheck, onRunAll, previewMode, onOpenAminah }) {
             const color = CHECK_COLORS[c.status] || "var(--text-tertiary)";
             const isExpanded = expandedId === c.id;
             return (
-              <div key={c.id} style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderInlineStart: `3px solid ${color}`, borderRadius: 6, marginBottom: 6, overflow: "hidden" }}>
+              <div key={c.id} style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderInlineStart: `3px solid ${color}`, borderRadius: 6, marginBottom: 6, overflow: "hidden" }}>
                 <button onClick={() => setExpandedId(isExpanded ? null : c.id)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 14px", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", textAlign: "start" }}>
                   {isExpanded ? <ChevronDown size={12} color="var(--text-tertiary)" /> : <ChevronRight size={12} color="var(--text-tertiary)" />}
                   <Icon size={14} color={color} />
@@ -242,7 +242,7 @@ function ChecksTab({ eng, onRunCheck, onRunAll, previewMode, onOpenAminah }) {
                   <span style={{ fontSize: 10, color: "var(--text-tertiary)", fontFamily: "'DM Mono', monospace" }}><LtrText>{c.id}</LtrText></span>
                 </button>
                 {isExpanded && (
-                  <div style={{ padding: "10px 14px 14px 40px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+                  <div style={{ padding: "10px 14px 14px 40px", borderTop: "1px solid var(--border-subtle)" }}>
                     <div style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 8 }}>{c.result}</div>
                     <div style={{ fontSize: 11, color: "var(--text-tertiary)", fontStyle: "italic", marginBottom: 8, lineHeight: 1.5 }}>{c.explanation}</div>
                     {c.failReason && <div style={{ fontSize: 11, color: "var(--semantic-danger)", marginBottom: 8 }}>Fail: {c.failReason}</div>}
@@ -280,26 +280,26 @@ function ClarificationsTab({ engagementId, clarifications, onRefresh }) {
   };
   return (
     <div style={{ display: "flex", gap: 14, minHeight: 400 }}>
-      <div style={{ flex: "0 0 45%", background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, overflow: "hidden" }}>
-        <div style={{ padding: "10px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)", fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>CLARIFICATIONS · {clarifications.length}</div>
+      <div style={{ flex: "0 0 45%", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 8, overflow: "hidden" }}>
+        <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--border-subtle)", fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>CLARIFICATIONS · {clarifications.length}</div>
         {clarifications.map((c) => (
-          <button key={c.id} onClick={() => setSelectedId(c.id)} style={{ display: "block", width: "100%", padding: "10px 14px", background: selectedId === c.id ? "rgba(0,196,140,0.04)" : "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.04)", cursor: "pointer", fontFamily: "inherit", textAlign: "start" }}>
+          <button key={c.id} onClick={() => setSelectedId(c.id)} style={{ display: "block", width: "100%", padding: "10px 14px", background: selectedId === c.id ? "rgba(0,196,140,0.04)" : "transparent", border: "none", borderBottom: "1px solid var(--border-subtle)", cursor: "pointer", fontFamily: "inherit", textAlign: "start" }}>
             <div style={{ fontSize: 12, color: "var(--text-primary)", fontWeight: 500 }}>{c.subject}</div>
             <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 2 }}>{c.raisedByName} · <StatusPill status={c.status} /> · {c.messages.length} messages</div>
           </button>
         ))}
       </div>
-      <div style={{ flex: 1, background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 8, display: "flex", flexDirection: "column" }}>
         {selected ? (
           <>
-            <div style={{ padding: "12px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div style={{ padding: "12px 14px", borderBottom: "1px solid var(--border-subtle)" }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{selected.subject}</div>
               <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 2 }}>{selected.context.type} · {selected.raisedByName}</div>
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: "10px 14px" }}>
               {selected.messages.map((m, i) => (
                 <div key={i} style={{ marginBottom: 10, display: "flex", justifyContent: m.role === "cfo" ? "flex-end" : "flex-start" }}>
-                  <div style={{ maxWidth: "80%", background: m.role === "cfo" ? "rgba(0,196,140,0.08)" : "var(--bg-surface-sunken)", border: `1px solid ${m.role === "cfo" ? "rgba(0,196,140,0.2)" : "rgba(255,255,255,0.06)"}`, borderRadius: 10, padding: "8px 12px" }}>
+                  <div style={{ maxWidth: "80%", background: m.role === "cfo" ? "rgba(0,196,140,0.08)" : "var(--bg-surface-sunken)", border: `1px solid ${m.role === "cfo" ? "rgba(0,196,140,0.2)" : "var(--border-subtle)"}`, borderRadius: 10, padding: "8px 12px" }}>
                     <div style={{ fontSize: 9, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 3 }}>{m.author} · {m.role.toUpperCase()}</div>
                     <div style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5 }}>{m.content}</div>
                   </div>
@@ -308,8 +308,8 @@ function ClarificationsTab({ engagementId, clarifications, onRefresh }) {
               {selected.resolution && <div style={{ fontSize: 11, color: "var(--accent-primary)", padding: "8px 0", fontWeight: 500 }}>Resolved: {selected.resolution}</div>}
             </div>
             {selected.status !== "resolved" && (
-              <div style={{ padding: "10px 14px", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", gap: 6 }}>
-                <input value={replyDraft} onChange={(e) => setReplyDraft(e.target.value)} placeholder="Reply..." onKeyDown={(e) => { if (e.key === "Enter") handleReply(); }} style={{ flex: 1, background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, padding: "8px 10px", color: "var(--text-primary)", fontSize: 12, fontFamily: "inherit", outline: "none" }} />
+              <div style={{ padding: "10px 14px", borderTop: "1px solid var(--border-subtle)", display: "flex", gap: 6 }}>
+                <input value={replyDraft} onChange={(e) => setReplyDraft(e.target.value)} placeholder="Reply..." onKeyDown={(e) => { if (e.key === "Enter") handleReply(); }} style={{ flex: 1, background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 6, padding: "8px 10px", color: "var(--text-primary)", fontSize: 12, fontFamily: "inherit", outline: "none" }} />
                 <ActionButton variant="primary" size="sm" label="Send" onClick={handleReply} disabled={!replyDraft.trim()} />
                 <ActionButton variant="secondary" size="sm" label="Resolve" onClick={handleResolve} />
               </div>
@@ -335,14 +335,14 @@ function ExportTab({ eng, onExport }) {
   return (
     <div>
       <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginBottom: 14 }}>Audit package contents — {files.length} files</div>
-      <div style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, overflow: "hidden", marginBottom: 16 }}>
+      <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 8, overflow: "hidden", marginBottom: 16 }}>
         {files.map((f, i) => (
-          <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.04)", fontSize: 12 }}>
+          <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 16px", borderBottom: "1px solid var(--border-subtle)", fontSize: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <FileText size={13} color="var(--text-tertiary)" />
               <span style={{ color: "var(--text-primary)", fontFamily: "'DM Mono', monospace", fontSize: 11 }}><LtrText>{f.name}</LtrText></span>
             </div>
-            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-tertiary)", background: "rgba(255,255,255,0.04)", padding: "2px 6px", borderRadius: 3 }}>{f.type}</span>
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-tertiary)", background: "var(--border-subtle)", padding: "2px 6px", borderRadius: 3 }}>{f.type}</span>
           </div>
         ))}
       </div>
@@ -356,9 +356,9 @@ function AuditTrailTab({ trail }) {
   return (
     <div>
       <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", marginBottom: 10 }}>IMMUTABLE AUDIT TRAIL — CRYPTOGRAPHICALLY VERIFIED</div>
-      <div style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, overflow: "hidden" }}>
+      <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 8, overflow: "hidden" }}>
         {(trail || []).map((e) => (
-          <div key={e.id} style={{ display: "flex", gap: 12, padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.04)", fontSize: 11, alignItems: "center" }}>
+          <div key={e.id} style={{ display: "flex", gap: 12, padding: "10px 16px", borderBottom: "1px solid var(--border-subtle)", fontSize: 11, alignItems: "center" }}>
             <span style={{ fontSize: 10, color: "var(--text-tertiary)", fontFamily: "'DM Mono', monospace", minWidth: 60 }}>{formatDate(e.timestamp)}</span>
             <span style={{ color: "var(--text-secondary)", fontWeight: 500, minWidth: 80 }}>{e.actor}</span>
             <span style={{ color: "var(--text-primary)", flex: 1 }}>{(e.action || "").replace(/_/g, " ")}</span>
@@ -372,7 +372,7 @@ function AuditTrailTab({ trail }) {
 
 function Card({ title, children }) {
   return (
-    <div style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "14px 18px" }}>
+    <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "14px 18px" }}>
       <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 10 }}>{title}</div>
       {children}
     </div>
@@ -381,7 +381,7 @@ function Card({ title, children }) {
 
 function Field({ label, value, mono }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid rgba(255,255,255,0.03)", fontSize: 12 }}>
+    <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid var(--border-subtle)", fontSize: 12 }}>
       <span style={{ color: "var(--text-tertiary)" }}>{label}</span>
       <span style={{ color: "var(--text-primary)", fontFamily: mono ? "'DM Mono', monospace" : "inherit", fontSize: mono ? 11 : 12 }}>{value || "—"}</span>
     </div>

@@ -213,7 +213,7 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
         <div
           style={{
             padding: "22px 28px 18px",
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            borderBottom: "1px solid var(--border-subtle)",
             background: `linear-gradient(180deg, ${heroAccent}1A 0%, transparent 100%)`,
             flexShrink: 0,
             display: "flex",
@@ -241,7 +241,7 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
                 display: "inline-flex", alignItems: "center", gap: 6,
                 padding: "8px 14px",
                 background: adjustingOpen ? "var(--accent-primary-subtle)" : "var(--bg-surface)",
-                border: adjustingOpen ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
+                border: adjustingOpen ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
                 color: adjustingOpen ? "var(--accent-primary)" : "var(--text-secondary)",
                 borderRadius: 6, cursor: "pointer",
                 fontSize: 11, fontWeight: 600, fontFamily: "inherit",
@@ -305,7 +305,7 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
                         fontSize: 11, fontWeight: 600,
                         padding: "6px 12px", borderRadius: 14,
                         background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)",
-                        border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
+                        border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
                         color: on ? "var(--accent-primary)" : "var(--text-tertiary)",
                         cursor: "pointer", fontFamily: "inherit",
                       }}
@@ -323,7 +323,7 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
                 display: "flex",
                 gap: 4,
                 marginBottom: 16,
-                borderBottom: "1px solid rgba(255,255,255,0.06)",
+                borderBottom: "1px solid var(--border-subtle)",
               }}
             >
               {TAB_IDS.map((tid) => {
@@ -368,7 +368,7 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
                   onChange={(e) => setMaterialityId(e.target.value)}
                   style={{
                     background: "var(--bg-surface-sunken)",
-                    border: "1px solid rgba(255,255,255,0.10)",
+                    border: "1px solid var(--border-default)",
                     borderRadius: 6,
                     padding: "6px 10px",
                     color: "var(--text-primary)",
@@ -441,7 +441,7 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
                     style={{
                       marginTop: 14,
                       background: "var(--bg-surface)",
-                      border: "1px solid rgba(255,255,255,0.08)",
+                      border: "1px solid var(--border-default)",
                       borderRadius: 10,
                       padding: "16px 18px",
                     }}
@@ -460,7 +460,7 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
                             style={{
                               textAlign: "start",
                               background: "var(--bg-surface-sunken)",
-                              border: "1px solid rgba(255,255,255,0.06)",
+                              border: "1px solid var(--border-subtle)",
                               borderRadius: 8,
                               padding: "10px 12px",
                               cursor: "pointer",
@@ -508,13 +508,13 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
           <aside
             style={{
               width: 380, flexShrink: 0,
-              borderInlineStart: "1px solid rgba(255,255,255,0.08)",
+              borderInlineStart: "1px solid var(--border-default)",
               background: "var(--bg-surface)",
               display: "flex", flexDirection: "column",
               overflow: "hidden",
             }}
           >
-            <div style={{ padding: "16px 18px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ padding: "16px 18px", borderBottom: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
                 <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)", letterSpacing: "-0.2px", lineHeight: 1 }}>
                   {t("adjusting.title")}
@@ -527,7 +527,7 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
                 <X size={16} />
               </button>
             </div>
-            <div style={{ padding: "10px 18px", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", gap: 4 }}>
+            <div style={{ padding: "10px 18px", borderBottom: "1px solid var(--border-subtle)", display: "flex", gap: 4 }}>
               {["all", "week", "month"].map((f) => {
                 const on = adjustingFilter === f;
                 return (
@@ -538,7 +538,7 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
                       fontSize: 10, fontWeight: 600,
                       padding: "4px 10px", borderRadius: 12,
                       background: on ? "var(--accent-primary-subtle)" : "transparent",
-                      border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
+                      border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
                       color: on ? "var(--accent-primary)" : "var(--text-tertiary)",
                       cursor: "pointer", fontFamily: "inherit",
                     }}
@@ -591,7 +591,7 @@ function AdjustingRow({ je }) {
     <div
       style={{
         padding: "12px 18px",
-        borderBottom: "1px solid rgba(255,255,255,0.04)",
+        borderBottom: "1px solid var(--border-subtle)",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
@@ -615,7 +615,7 @@ function AdjustingRow({ je }) {
 const exportBtn = {
   background: "transparent",
   color: "var(--text-secondary)",
-  border: "1px solid rgba(255,255,255,0.12)",
+  border: "1px solid var(--border-default)",
   padding: "7px 14px",
   borderRadius: 6,
   cursor: "pointer",

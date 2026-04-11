@@ -76,7 +76,7 @@ export default function SettingsScreen({ role: roleRaw = "CFO" }) {
       <div
         style={{
           padding: "22px 28px 18px",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          borderBottom: "1px solid var(--border-subtle)",
           background: `linear-gradient(180deg, ${accent}1A 0%, transparent 100%)`,
           flexShrink: 0,
         }}
@@ -95,7 +95,7 @@ export default function SettingsScreen({ role: roleRaw = "CFO" }) {
           style={{
             width: 220, flexShrink: 0,
             background: "var(--bg-surface)",
-            borderInlineEnd: "1px solid rgba(255,255,255,0.08)",
+            borderInlineEnd: "1px solid var(--border-default)",
             padding: "18px 0",
             overflowY: "auto",
           }}
@@ -149,7 +149,7 @@ function Card({ title, description, children }) {
     <div
       style={{
         background: "var(--bg-surface)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        border: "1px solid var(--border-default)",
         borderRadius: 10,
         padding: "20px 22px",
         marginBottom: 14,
@@ -171,7 +171,7 @@ function Card({ title, description, children }) {
 
 function FieldRow({ label, value, mono = false }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid var(--border-subtle)" }}>
       <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)" }}>{label}</div>
       <div style={{ fontSize: 13, color: "var(--text-primary)", fontFamily: mono ? "'DM Mono', monospace" : "inherit" }}>{value}</div>
     </div>
@@ -180,7 +180,7 @@ function FieldRow({ label, value, mono = false }) {
 
 function Toggle({ on, onChange, label, sub }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", gap: 14 }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid var(--border-subtle)", gap: 14 }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>{label}</div>
         {sub && <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>{sub}</div>}
@@ -213,7 +213,7 @@ const btnPrimary = (saving = false) => ({
 });
 const btnSecondary = {
   background: "transparent", color: "var(--text-secondary)",
-  border: "1px solid rgba(255,255,255,0.15)", padding: "9px 16px",
+  border: "1px solid var(--border-strong)", padding: "9px 16px",
   borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit",
 };
 const btnDanger = {
@@ -303,7 +303,7 @@ function ThemeSection() {
               style={{
                 flex: 1, padding: "14px 16px",
                 background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)",
-                border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.08)",
+                border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
                 color: on ? "var(--accent-primary)" : "var(--text-secondary)",
                 borderRadius: 8, cursor: "pointer",
                 fontSize: 12, fontWeight: 600, fontFamily: "inherit",
@@ -343,7 +343,7 @@ function LanguageSection() {
                 style={{
                   flex: 1, padding: "12px 14px",
                   background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)",
-                  border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.08)",
+                  border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
                   color: on ? "var(--accent-primary)" : "var(--text-secondary)",
                   borderRadius: 8, cursor: "pointer",
                   fontSize: 13, fontWeight: 600, fontFamily: "inherit",
@@ -458,7 +458,7 @@ function SecuritySection() {
     <>
       <Toast text={toast} onClear={() => setToast(null)} />
       <Card title={t("security.title")} description={t("security.description")}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", gap: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid var(--border-subtle)", gap: 14 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>
               {t("security.two_factor_heading")}
@@ -507,7 +507,7 @@ function SessionRow({ s, onSignOut }) {
   const { t } = useTranslation("settings");
   const Icon = /iPhone|Mobile/i.test(s.device) ? Smartphone : /iPad|Tablet/i.test(s.device) ? Tablet : Monitor;
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: "1px solid var(--border-subtle)" }}>
       <Icon size={16} color="var(--text-tertiary)" />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>
@@ -582,7 +582,7 @@ function IntegrationRow({ i, onConfigure, onDisconnect }) {
     error:        t("integrations.status_error"),
   }[i.status];
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 0", borderBottom: "1px solid var(--border-subtle)" }}>
       <div style={{ width: 32, height: 32, borderRadius: 8, background: "var(--bg-surface-sunken)", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <Plug size={14} color="var(--text-tertiary)" />
       </div>
@@ -633,7 +633,7 @@ function AuditLogSection() {
                 fontSize: 11, fontWeight: 600, padding: "5px 12px",
                 borderRadius: 14,
                 background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)",
-                border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid rgba(255,255,255,0.10)",
+                border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
                 color: on ? "var(--accent-primary)" : "var(--text-tertiary)",
                 cursor: "pointer", fontFamily: "inherit",
               }}
@@ -649,7 +649,7 @@ function AuditLogSection() {
         <EmptyState icon={ClipboardList} title={t("empty_audit")} description="" />
       ) : (
         <div>
-          <div style={{ display: "grid", gridTemplateColumns: "110px 150px 140px 1fr 110px", gap: 10, padding: "8px 0", fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-tertiary)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "110px 150px 140px 1fr 110px", gap: 10, padding: "8px 0", fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-tertiary)", borderBottom: "1px solid var(--border-subtle)" }}>
             <div>{t("audit_log.col_time")}</div>
             <div>{t("audit_log.col_actor")}</div>
             <div>{t("audit_log.col_action")}</div>
@@ -657,7 +657,7 @@ function AuditLogSection() {
             <div>{t("audit_log.col_ip")}</div>
           </div>
           {items.map((e) => (
-            <div key={e.id} style={{ display: "grid", gridTemplateColumns: "110px 150px 140px 1fr 110px", gap: 10, padding: "10px 0", fontSize: 12, color: "var(--text-secondary)", borderBottom: "1px solid rgba(255,255,255,0.04)", alignItems: "center" }}>
+            <div key={e.id} style={{ display: "grid", gridTemplateColumns: "110px 150px 140px 1fr 110px", gap: 10, padding: "10px 0", fontSize: 12, color: "var(--text-secondary)", borderBottom: "1px solid var(--border-subtle)", alignItems: "center" }}>
               <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "var(--text-tertiary)" }}>{formatRelativeTime(e.timestamp)}</div>
               <div style={{ color: "var(--text-primary)" }}>{e.actor}</div>
               <div style={{ fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-tertiary)" }}>{t(`audit_log.filter_${e.action}`, { defaultValue: e.action })}</div>

@@ -134,7 +134,7 @@ export default function ReconciliationScreen({ role = "CFO" }) {
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      <div style={{ padding: "20px 28px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
+      <div style={{ padding: "20px 28px 16px", borderBottom: "1px solid var(--border-subtle)", flexShrink: 0 }}>
         <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: "var(--text-primary)", letterSpacing: "-0.3px", lineHeight: 1 }}>{t("title")}</div>
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginTop: 6 }}>{t("period_label")}</div>
       </div>
@@ -161,7 +161,7 @@ function ReconciliationAccountCard({ row, onOpen }) {
   const pct = row.totalCount > 0 ? Math.round((row.matchedCount / row.totalCount) * 100) : 0;
   return (
     <button onClick={() => row.currentReconciliationId && onOpen(row.currentReconciliationId)} disabled={!row.currentReconciliationId}
-      style={{ textAlign: "start", background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 10, padding: "16px 18px", cursor: row.currentReconciliationId ? "pointer" : "default", fontFamily: "inherit", color: "var(--text-primary)", transition: "all 0.15s" }}
+      style={{ textAlign: "start", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 10, padding: "16px 18px", cursor: row.currentReconciliationId ? "pointer" : "default", fontFamily: "inherit", color: "var(--text-primary)", transition: "all 0.15s" }}
       onMouseEnter={(e) => { if (row.currentReconciliationId) { e.currentTarget.style.borderColor = "rgba(0,196,140,0.35)"; e.currentTarget.style.background = "rgba(0,196,140,0.04)"; } }}
       onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border-default)"; e.currentTarget.style.background = "var(--bg-surface)"; }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 }}>
@@ -172,7 +172,7 @@ function ReconciliationAccountCard({ row, onOpen }) {
         <StatusPill status={row.status} />
       </div>
       <div style={{ marginBottom: 10 }}>
-        <div style={{ height: 6, background: "rgba(255,255,255,0.05)", borderRadius: 3, overflow: "hidden" }}>
+        <div style={{ height: 6, background: "var(--border-subtle)", borderRadius: 3, overflow: "hidden" }}>
           <div style={{ height: "100%", width: `${pct}%`, background: meta.color, transition: "width 0.3s" }} />
         </div>
       </div>
@@ -319,7 +319,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
       )}
 
       {/* Header */}
-      <div style={{ padding: "16px 28px 12px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
+      <div style={{ padding: "16px 28px 12px", borderBottom: "1px solid var(--border-subtle)", flexShrink: 0 }}>
         <button onClick={onBack} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "transparent", border: "none", color: "var(--text-secondary)", fontSize: 12, cursor: "pointer", padding: "4px 0", fontFamily: "inherit", marginBottom: 8 }}>
           <span className="rtl-flip" style={{ display: "inline-flex" }}><ChevronLeft size={14} /></span>
           {readOnly ? t("detail.back") : t("detail.back")}
@@ -347,7 +347,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
             )}
             {/* Complete — in-progress only */}
             {!readOnly && rec.status === "in-progress" && (
-              <button onClick={() => setCompleteModalOpen(true)} disabled={false} style={{ background: isClean ? "var(--accent-primary)" : "rgba(255,255,255,0.05)", color: isClean ? "#fff" : "var(--text-secondary)", border: isClean ? "none" : "1px solid rgba(255,255,255,0.15)", padding: "8px 14px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+              <button onClick={() => setCompleteModalOpen(true)} disabled={false} style={{ background: isClean ? "var(--accent-primary)" : "var(--border-subtle)", color: isClean ? "#fff" : "var(--text-secondary)", border: isClean ? "none" : "1px solid var(--border-strong)", padding: "8px 14px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
                 {t("detail.complete")}
               </button>
             )}
@@ -369,7 +369,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
       )}
 
       {/* Summary strip */}
-      <div style={{ display: "grid", gridTemplateColumns: suggestionsCount > 0 ? "repeat(5, 1fr)" : "repeat(4, 1fr)", gap: 1, background: "var(--border-subtle)", margin: "14px 28px 0", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, overflow: "hidden" }}>
+      <div style={{ display: "grid", gridTemplateColumns: suggestionsCount > 0 ? "repeat(5, 1fr)" : "repeat(4, 1fr)", gap: 1, background: "var(--border-subtle)", margin: "14px 28px 0", border: "1px solid var(--border-default)", borderRadius: 8, overflow: "hidden" }}>
         <SummaryCell label={t("summary.opening_balance")} value={fmtKWD(rec.openingBalance)} />
         <SummaryCell label={t("summary.closing_bank")} value={fmtKWD(rec.closingBalance)} />
         <SummaryCell label={t("summary.closing_ledger")} value={fmtKWD(rec.closingLedgerBalance)} />
@@ -427,7 +427,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
                 const ledgerItem = rec.unmatchedLedgerItems.find((l) => l.id === sugg.ledgerEntryId);
                 const stale = !bankItem || !ledgerItem;
                 return (
-                  <div key={sugg.id} style={{ padding: "12px 16px", background: stale ? "rgba(255,255,255,0.02)" : "rgba(59,130,246,0.04)", border: `1px solid ${stale ? "rgba(255,255,255,0.06)" : "rgba(59,130,246,0.2)"}`, borderRadius: 8 }}>
+                  <div key={sugg.id} style={{ padding: "12px 16px", background: stale ? "var(--bg-surface)" : "rgba(59,130,246,0.04)", border: `1px solid ${stale ? "var(--border-subtle)" : "rgba(59,130,246,0.2)"}`, borderRadius: 8 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -449,7 +449,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
                         {!stale && (
                           <button onClick={() => handleConfirmSuggestion(sugg.id)} style={{ background: "#3b82f6", color: "#fff", border: "none", padding: "6px 12px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{t("suggestions.confirm_button")}</button>
                         )}
-                        <button onClick={() => handleDismissSuggestion(sugg.id)} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid rgba(255,255,255,0.15)", padding: "6px 12px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{t("suggestions.dismiss_button")}</button>
+                        <button onClick={() => handleDismissSuggestion(sugg.id)} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "6px 12px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{t("suggestions.dismiss_button")}</button>
                       </div>
                     </div>
                   </div>
@@ -548,20 +548,20 @@ function StatementColumn({ title, sub, matchedCount, matchedItems, unmatched, ex
   const { t } = useTranslation("reconciliation");
   const [expanded, setExpanded] = useState(false);
   return (
-    <div style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, overflow: "hidden" }}>
-      <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "var(--bg-surface)" }}>
+    <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 8, overflow: "hidden" }}>
+      <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border-subtle)", background: "var(--bg-surface)" }}>
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-secondary)" }}>{title}</div>
         <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 3 }}>{sub}</div>
       </div>
       <div style={{ padding: "8px 0" }}>
         {/* Matched items — expandable */}
-        <button onClick={() => setExpanded(!expanded)} style={{ width: "100%", padding: "8px 16px", display: "flex", alignItems: "center", gap: 8, color: "var(--text-tertiary)", fontSize: 11, borderBottom: "1px solid rgba(255,255,255,0.04)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", textAlign: "start" }}>
+        <button onClick={() => setExpanded(!expanded)} style={{ width: "100%", padding: "8px 16px", display: "flex", alignItems: "center", gap: 8, color: "var(--text-tertiary)", fontSize: 11, borderBottom: "1px solid var(--border-subtle)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", textAlign: "start" }}>
           {expanded ? <ChevronDown size={12} color="var(--accent-primary)" /> : <ChevronRight size={12} color="var(--accent-primary)" />}
           <CheckCircle2 size={12} color="var(--accent-primary)" />
           <span style={{ color: "var(--text-secondary)" }}>{t("columns.matched_collapsed", { count: matchedCount })}</span>
         </button>
         {expanded && matchedItems && matchedItems.map((m) => (
-          <div key={m.id} style={{ padding: "6px 16px 6px 36px", borderBottom: "1px solid rgba(255,255,255,0.02)", display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: "var(--text-tertiary)" }}>
+          <div key={m.id} style={{ padding: "6px 16px 6px 36px", borderBottom: "1px solid var(--bg-surface)", display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: "var(--text-tertiary)" }}>
             <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 10 }}>{m.bankItemId} ↔ {m.ledgerEntryId}</span>
             <TierPill tier={m.matchTier || "exact"} />
           </div>
@@ -586,7 +586,7 @@ function StatementRow({ item, exception, isBank }) {
       : "var(--semantic-info)"
     : "var(--text-tertiary)";
   return (
-    <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", alignItems: "flex-start", gap: 10 }}>
+    <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--border-subtle)", display: "flex", alignItems: "flex-start", gap: 10 }}>
       <div style={{ width: 6, height: 6, borderRadius: "50%", background: sev, marginTop: 7, flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
@@ -640,7 +640,7 @@ function ExceptionRow({ exc, readOnly, onResolve, onOpenJE }) {
             <button onClick={() => onResolve(exc.id, t("exceptions.resolution_accepted"))} style={{ background: "var(--accent-primary)", color: "#fff", border: "none", padding: "6px 12px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{t("exceptions.accept_match")}</button>
           )}
           {exc.suggestedAction === "investigate" && (
-            <button onClick={() => onResolve(exc.id, t("exceptions.resolution_investigated"))} style={{ background: "var(--border-subtle)", color: "var(--text-primary)", border: "1px solid rgba(255,255,255,0.15)", padding: "6px 12px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{t("exceptions.mark_resolved")}</button>
+            <button onClick={() => onResolve(exc.id, t("exceptions.resolution_investigated"))} style={{ background: "var(--border-subtle)", color: "var(--text-primary)", border: "1px solid var(--border-strong)", padding: "6px 12px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{t("exceptions.mark_resolved")}</button>
           )}
         </div>
       )}
@@ -664,9 +664,9 @@ function InlineJEComposer({ exception, bankItem, onCancel, onConfirm }) {
 
   return (
     <>
-      <div onClick={onCancel} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
-      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 480, background: "var(--panel-bg)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      <div onClick={onCancel} style={{ position: "fixed", inset: 0, background: "var(--overlay-backdrop)", backdropFilter: "blur(4px)", zIndex: 300 }} />
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 480, background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "var(--shadow-xl)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>{t("je_composer.label")}</div>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)", marginTop: 4 }}>{t("je_composer.title")}</div>
@@ -677,15 +677,15 @@ function InlineJEComposer({ exception, bankItem, onCancel, onConfirm }) {
           <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 14, lineHeight: 1.5 }}>{bankItem.description} · {fmtKWD(bankItem.amount)} · {fmtDate(bankItem.date)}</div>
           <div style={{ marginBottom: 12 }}>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 5 }}>{t("je_composer.debit_account")}</div>
-            <input value={debit} onChange={(e) => setDebit(e.target.value)} style={{ width: "100%", background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, fontFamily: "inherit", outline: "none" }} />
+            <input value={debit} onChange={(e) => setDebit(e.target.value)} style={{ width: "100%", background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 6, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, fontFamily: "inherit", outline: "none" }} />
           </div>
           <div>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 5 }}>{t("je_composer.credit_account")}</div>
-            <input value={credit} onChange={(e) => setCredit(e.target.value)} style={{ width: "100%", background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, fontFamily: "inherit", outline: "none" }} />
+            <input value={credit} onChange={(e) => setCredit(e.target.value)} style={{ width: "100%", background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 6, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, fontFamily: "inherit", outline: "none" }} />
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <button onClick={onCancel} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid rgba(255,255,255,0.15)", padding: "9px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("je_composer.cancel")}</button>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
+          <button onClick={onCancel} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "9px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("je_composer.cancel")}</button>
           <button onClick={() => onConfirm(exception.bankItemId, debit, credit)} style={{ background: "var(--accent-primary)", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>{t("je_composer.confirm")}</button>
         </div>
       </div>

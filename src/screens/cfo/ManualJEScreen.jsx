@@ -381,7 +381,7 @@ function ListItem({ item, tab, selected, onClick, onRefresh }) {
       style={{
         display: "block", width: "100%", textAlign: "start", padding: "12px 16px",
         background: selected ? "var(--bg-selected)" : "transparent",
-        border: "none", borderBottom: `1px solid rgba(255,255,255,0.04)`,
+        border: "none", borderBottom: `1px solid var(--border-subtle)`,
         borderInlineStart: selected ? `2px solid ${COLORS.teal}` : "2px solid transparent",
         cursor: "pointer", fontFamily: "inherit", color: COLORS.text,
       }}
@@ -569,7 +569,7 @@ function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedul
                   onClick={onPost}
                   disabled={!canPost}
                   title={isHardClosed ? t("period_lock.post_blocked") : undefined}
-                  style={{ background: canPost ? COLORS.teal : "rgba(255,255,255,0.05)", color: canPost ? "#fff" : COLORS.textFaint, border: "none", padding: "8px 16px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: canPost ? "pointer" : "not-allowed", fontFamily: "inherit" }}
+                  style={{ background: canPost ? COLORS.teal : "var(--border-subtle)", color: canPost ? "#fff" : COLORS.textFaint, border: "none", padding: "8px 16px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: canPost ? "pointer" : "not-allowed", fontFamily: "inherit" }}
                 >
                   {postLabel}
                 </button>
@@ -782,7 +782,7 @@ function LineRow({ line, idx, readOnly, onUpdate, onRemove, canRemove }) {
       display: "grid", gridTemplateColumns: "1fr 130px 130px 1fr 32px", gap: 8,
       padding: "10px 14px", alignItems: "center",
       background: idx % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)",
-      borderBottom: `1px solid rgba(255,255,255,0.04)`,
+      borderBottom: `1px solid var(--border-subtle)`,
     }}>
       <CompactAccountPicker
         value={line.accountCode ? { code: line.accountCode, name: line.accountName } : null}
@@ -885,7 +885,7 @@ function CompactAccountPicker({ value, readOnly, onSelect, onClear }) {
         <div style={{
           position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4,
           background: "var(--bg-surface-raised)", border: `1px solid ${COLORS.border}`, borderRadius: 6,
-          boxShadow: "0 12px 32px rgba(0,0,0,0.6)", zIndex: 100, maxHeight: 280, overflowY: "auto",
+          boxShadow: "var(--panel-shadow)", zIndex: 100, maxHeight: 280, overflowY: "auto",
         }}>
           {filtered.map((a, i) => (
             <div
@@ -895,7 +895,7 @@ function CompactAccountPicker({ value, readOnly, onSelect, onClear }) {
               style={{
                 padding: "8px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
                 background: i === highlight ? "var(--accent-primary-subtle)" : "transparent",
-                borderBottom: `1px solid rgba(255,255,255,0.04)`,
+                borderBottom: `1px solid var(--border-subtle)`,
               }}
             >
               <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: COLORS.textFaint, minWidth: 40 }}>{a.code}</span>
@@ -933,7 +933,7 @@ function TemplateDetail({ template, onUse }) {
           {template.lines.map((l, i) => (
             <div key={l.id} style={{
               display: "flex", justifyContent: "space-between", padding: "10px 14px",
-              borderBottom: i < template.lines.length - 1 ? `1px solid rgba(255,255,255,0.04)` : "none",
+              borderBottom: i < template.lines.length - 1 ? `1px solid var(--border-subtle)` : "none",
               alignItems: "center",
             }}>
               <div>
@@ -967,12 +967,12 @@ function ModalShell({ title, sub, onCancel, children, footer }) {
   useEscapeKey(onCancel);
   return (
     <>
-      <div onClick={onCancel} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
+      <div onClick={onCancel} style={{ position: "fixed", inset: 0, background: "var(--overlay-backdrop)", backdropFilter: "blur(4px)", zIndex: 300 }} />
       <div style={{
         position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
         width: 480, maxWidth: "calc(100vw - 32px)", background: "var(--bg-surface-raised)",
         border: `1px solid ${COLORS.border}`, borderRadius: 12, zIndex: 301,
-        boxShadow: "0 24px 60px rgba(0,0,0,0.7)",
+        boxShadow: "var(--shadow-xl)",
       }}>
         <div style={{ padding: "16px 22px", borderBottom: `1px solid ${COLORS.border}`, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
@@ -1002,7 +1002,7 @@ function ReverseModal({ je, onCancel, onConfirm }) {
         <>
           <button onClick={onCancel} style={{ background: "transparent", color: COLORS.textDim, border: `1px solid ${COLORS.border}`, padding: "9px 16px", borderRadius: 6, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>{t("reverse_modal.cancel")}</button>
           <button onClick={() => onConfirm(reason)} disabled={!reason.trim()}
-            style={{ background: reason.trim() ? COLORS.amber : "rgba(255,255,255,0.05)", color: reason.trim() ? "#fff" : COLORS.textFaint, border: "none", padding: "9px 18px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: reason.trim() ? "pointer" : "not-allowed", fontFamily: "inherit" }}>
+            style={{ background: reason.trim() ? COLORS.amber : "var(--border-subtle)", color: reason.trim() ? "#fff" : COLORS.textFaint, border: "none", padding: "9px 18px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: reason.trim() ? "pointer" : "not-allowed", fontFamily: "inherit" }}>
             {t("reverse_modal.confirm")}
           </button>
         </>
@@ -1079,7 +1079,7 @@ function SaveTemplateModal({ onCancel, onConfirm }) {
         <>
           <button onClick={onCancel} style={{ background: "transparent", color: COLORS.textDim, border: `1px solid ${COLORS.border}`, padding: "9px 16px", borderRadius: 6, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>{t("save_template_modal.cancel")}</button>
           <button onClick={() => onConfirm(name, desc)} disabled={!name.trim()}
-            style={{ background: name.trim() ? COLORS.teal : "rgba(255,255,255,0.05)", color: name.trim() ? "#fff" : COLORS.textFaint, border: "none", padding: "9px 18px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: name.trim() ? "pointer" : "not-allowed", fontFamily: "inherit" }}>
+            style={{ background: name.trim() ? COLORS.teal : "var(--border-subtle)", color: name.trim() ? "#fff" : COLORS.textFaint, border: "none", padding: "9px 18px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: name.trim() ? "pointer" : "not-allowed", fontFamily: "inherit" }}>
             {t("save_template_modal.confirm")}
           </button>
         </>
@@ -1128,7 +1128,7 @@ function TemplateKebab({ templateId, onRefresh }) {
       {open && (
         <>
           <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 200 }} />
-          <div style={{ position: "absolute", top: "100%", insetInlineEnd: 0, marginTop: 4, width: 160, background: "var(--bg-surface-raised)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, boxShadow: "0 8px 24px rgba(0,0,0,0.5)", zIndex: 201, padding: "4px 0" }}>
+          <div style={{ position: "absolute", top: "100%", insetInlineEnd: 0, marginTop: 4, width: 160, background: "var(--bg-surface-raised)", border: "1px solid var(--border-default)", borderRadius: 8, boxShadow: "var(--panel-shadow)", zIndex: 201, padding: "4px 0" }}>
             <KebabItem label={t("templates.kebab.duplicate")} onClick={handleDuplicate} />
             <KebabItem label={t("templates.kebab.share")} onClick={handleShare} />
             <KebabItem label={t("templates.kebab.delete")} onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); setOpen(false); }} danger />
@@ -1137,12 +1137,12 @@ function TemplateKebab({ templateId, onRefresh }) {
       )}
       {confirmDelete && (
         <>
-          <div onClick={() => setConfirmDelete(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 300 }} />
-          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 360, background: "var(--bg-surface-raised)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)", padding: "20px 22px" }}>
+          <div onClick={() => setConfirmDelete(false)} style={{ position: "fixed", inset: 0, background: "var(--overlay-backdrop)", zIndex: 300 }} />
+          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 360, background: "var(--bg-surface-raised)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "var(--shadow-xl)", padding: "20px 22px" }}>
             <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 8 }}>{t("templates.delete.confirm_title")}</div>
             <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 16, lineHeight: 1.5 }}>{t("templates.delete.confirm_body")}</div>
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <button onClick={() => setConfirmDelete(false)} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid rgba(255,255,255,0.15)", padding: "8px 14px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("save_template_modal.cancel")}</button>
+              <button onClick={() => setConfirmDelete(false)} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "8px 14px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("save_template_modal.cancel")}</button>
               <button onClick={handleDelete} style={{ background: "var(--semantic-danger)", color: "#fff", border: "none", padding: "8px 14px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>{t("templates.kebab.delete")}</button>
             </div>
           </div>
@@ -1155,7 +1155,7 @@ function TemplateKebab({ templateId, onRefresh }) {
 function KebabItem({ label, onClick, danger }) {
   return (
     <button onClick={onClick} style={{ display: "block", width: "100%", padding: "7px 14px", background: "transparent", border: "none", color: danger ? "var(--semantic-danger)" : "var(--text-primary)", fontSize: 12, cursor: "pointer", fontFamily: "inherit", textAlign: "start" }}
-      onMouseEnter={(e) => { e.currentTarget.style.background = danger ? "rgba(239,68,68,0.06)" : "rgba(255,255,255,0.04)"; }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = danger ? "rgba(239,68,68,0.06)" : "var(--border-subtle)"; }}
       onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
       {label}
     </button>

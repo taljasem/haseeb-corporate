@@ -133,7 +133,7 @@ export default function ForecastScreen({ onOpenAminah }) {
       <div
         style={{
           padding: "22px 28px 18px",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          borderBottom: "1px solid var(--border-subtle)",
           background: `linear-gradient(180deg, ${heroAccent}1A 0%, transparent 100%)`,
           flexShrink: 0,
           display: "flex",
@@ -166,7 +166,7 @@ export default function ForecastScreen({ onOpenAminah }) {
                   fontSize: 11, fontWeight: 600, padding: "7px 14px",
                   borderRadius: 14,
                   background: on ? `${color}14` : "var(--bg-surface)",
-                  border: on ? `1px solid ${color}66` : "1px solid rgba(255,255,255,0.10)",
+                  border: on ? `1px solid ${color}66` : "1px solid var(--border-default)",
                   color: on ? color : "var(--text-tertiary)",
                   cursor: "pointer", fontFamily: "inherit",
                 }}
@@ -206,7 +206,7 @@ export default function ForecastScreen({ onOpenAminah }) {
           )}
 
           {/* Monthly breakdown table */}
-          <div style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "16px 18px", marginBottom: 14, overflowX: "auto" }}>
+          <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 10, padding: "16px 18px", marginBottom: 14, overflowX: "auto" }}>
             <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 10 }}>
               <div>
                 <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)" }}>{t("table.title")}</div>
@@ -224,7 +224,7 @@ export default function ForecastScreen({ onOpenAminah }) {
           </div>
 
           {/* Assumptions */}
-          <div style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "18px 20px", marginBottom: 14 }}>
+          <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 10, padding: "18px 20px", marginBottom: 14 }}>
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)" }}>{t("assumptions.title")}</div>
               <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>{t("assumptions.subtitle")}</div>
@@ -248,14 +248,14 @@ export default function ForecastScreen({ onOpenAminah }) {
           </div>
 
           {/* Saved scenarios */}
-          <div style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "18px 20px" }}>
+          <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 10, padding: "18px 20px" }}>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)", marginBottom: 10 }}>{t("saved.title")}</div>
             {saved.length === 0 ? (
               <div style={{ fontSize: 12, color: "var(--text-tertiary)" }}>{t("saved.empty")}</div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {saved.map((s) => (
-                  <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8 }}>
+                  <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "var(--bg-surface-sunken)", border: "1px solid var(--border-subtle)", borderRadius: 8 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>{s.name}</div>
                       <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 2 }}>{t(`scenarios.${s.scenario}`)} · {s.author}</div>
@@ -284,7 +284,7 @@ export default function ForecastScreen({ onOpenAminah }) {
 function KpiCard({ label, value, delta, invert }) {
   const deltaColor = (invert ? -delta : delta) >= 0 ? "var(--accent-primary)" : "var(--semantic-danger)";
   return (
-    <div style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "16px 18px" }}>
+    <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 10, padding: "16px 18px" }}>
       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>{label}</div>
       <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 24, fontWeight: 500, color: "var(--text-primary)", marginTop: 8, fontVariantNumeric: "tabular-nums" }}>
         <LtrText>{fmtKWD(value)}</LtrText>
@@ -298,7 +298,7 @@ function KpiCard({ label, value, delta, invert }) {
 
 function NarrationList({ label, items, color, Icon }) {
   return (
-    <div style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "14px 16px" }}>
+    <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 10, padding: "14px 16px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color, marginBottom: 8 }}>
         <Icon size={12} /> {label}
       </div>
@@ -324,7 +324,7 @@ function MonthlyTable({ projection, expandedRevenue, expandedExpenses, onToggleR
 
   return (
     <div style={{ minWidth: 900 }}>
-      <div style={{ display: "grid", gridTemplateColumns: cols, gap: 6, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.08)", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-tertiary)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: cols, gap: 6, padding: "8px 0", borderBottom: "1px solid var(--border-default)", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-tertiary)" }}>
         <div>{t("table.col_row")}</div>
         {months.map((m) => (
           <div key={m.month} style={{ textAlign: "end" }}>
@@ -403,7 +403,7 @@ function TableRow({ label, values, total, expandable, expanded, onToggle, sub, b
         gridTemplateColumns: cols,
         gap: 6,
         padding: "9px 0",
-        borderBottom: "1px solid rgba(255,255,255,0.04)",
+        borderBottom: "1px solid var(--border-subtle)",
         alignItems: "baseline",
         cursor: expandable ? "pointer" : "default",
       }}
@@ -448,7 +448,7 @@ function AssumptionGrid({ assumptions, onApply, applying }) {
               style={{
                 width: "100%",
                 background: "var(--bg-surface-sunken)",
-                border: "1px solid rgba(255,255,255,0.10)",
+                border: "1px solid var(--border-default)",
                 borderRadius: 8,
                 padding: "9px 12px",
                 color: "var(--text-primary)",
@@ -479,12 +479,12 @@ const btnPrimary = (loading) => ({
 });
 const btnSecondary = {
   background: "transparent", color: "var(--text-secondary)",
-  border: "1px solid rgba(255,255,255,0.15)", padding: "9px 16px",
+  border: "1px solid var(--border-strong)", padding: "9px 16px",
   borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit",
 };
 const exportBtn = {
   background: "transparent", color: "var(--text-secondary)",
-  border: "1px solid rgba(255,255,255,0.12)", padding: "7px 14px",
+  border: "1px solid var(--border-default)", padding: "7px 14px",
   borderRadius: 6, cursor: "pointer",
   fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", fontFamily: "inherit",
 };

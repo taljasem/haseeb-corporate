@@ -262,7 +262,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                     alignItems: "center",
                     gap: 8,
                     background: "var(--bg-surface)",
-                    border: "1px solid rgba(255,255,255,0.10)",
+                    border: "1px solid var(--border-default)",
                     borderRadius: 6,
                     padding: "6px 12px",
                     cursor: "pointer",
@@ -285,9 +285,9 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                       left: 0,
                       width: 280,
                       background: "var(--bg-surface-raised)",
-                      border: "1px solid rgba(255,255,255,0.10)",
+                      border: "1px solid var(--border-default)",
                       borderRadius: 10,
-                      boxShadow: "0 12px 32px rgba(0,0,0,0.6)",
+                      boxShadow: "var(--panel-shadow)",
                       zIndex: 200,
                       overflow: "hidden",
                     }}
@@ -316,7 +316,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                             padding: "10px 14px",
                             background: on ? "var(--bg-selected)" : "transparent",
                             border: "none",
-                            borderBottom: "1px solid rgba(255,255,255,0.04)",
+                            borderBottom: "1px solid var(--border-subtle)",
                             cursor: "pointer",
                             fontFamily: "inherit",
                             textAlign: "start",
@@ -388,7 +388,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                 style={{
                   background: "transparent",
                   color: "var(--text-secondary)",
-                  border: "1px solid rgba(255,255,255,0.15)",
+                  border: "1px solid var(--border-strong)",
                   padding: "8px 14px",
                   borderRadius: 6,
                   cursor: "pointer",
@@ -404,7 +404,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                 style={{
                   background: "transparent",
                   color: "var(--text-secondary)",
-                  border: "1px solid rgba(255,255,255,0.15)",
+                  border: "1px solid var(--border-strong)",
                   padding: "8px 14px",
                   borderRadius: 6,
                   cursor: "pointer",
@@ -429,7 +429,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
             {role !== "Junior" && (
               <div style={{ display: "flex", gap: 4 }}>
                 {[2024, 2025, 2026].map((yr) => (
-                  <button key={yr} onClick={() => switchToYear(yr)} style={{ fontSize: 10, fontWeight: 600, padding: "4px 10px", borderRadius: 12, background: (viewingYear === yr || (viewingYear === null && yr === (budget?.period?.fiscalYear || 2026))) ? "rgba(0,196,140,0.08)" : "transparent", border: (viewingYear === yr || (viewingYear === null && yr === (budget?.period?.fiscalYear || 2026))) ? "1px solid rgba(0,196,140,0.3)" : "1px solid rgba(255,255,255,0.08)", color: (viewingYear === yr || (viewingYear === null && yr === (budget?.period?.fiscalYear || 2026))) ? "var(--accent-primary)" : "var(--text-tertiary)", cursor: "pointer", fontFamily: "inherit" }}>
+                  <button key={yr} onClick={() => switchToYear(yr)} style={{ fontSize: 10, fontWeight: 600, padding: "4px 10px", borderRadius: 12, background: (viewingYear === yr || (viewingYear === null && yr === (budget?.period?.fiscalYear || 2026))) ? "rgba(0,196,140,0.08)" : "transparent", border: (viewingYear === yr || (viewingYear === null && yr === (budget?.period?.fiscalYear || 2026))) ? "1px solid rgba(0,196,140,0.3)" : "1px solid var(--border-default)", color: (viewingYear === yr || (viewingYear === null && yr === (budget?.period?.fiscalYear || 2026))) ? "var(--accent-primary)" : "var(--text-tertiary)", cursor: "pointer", fontFamily: "inherit" }}>
                     {yr === (budget?.period?.fiscalYear || 2026) ? t("historical.current", { year: yr }) : yr}
                   </button>
                 ))}
@@ -493,7 +493,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
         <div
           style={{
             background: "var(--bg-surface)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            border: "1px solid var(--border-default)",
             borderRadius: 10,
             overflow: "hidden",
           }}
@@ -505,7 +505,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
               gap: 12,
               padding: "12px 18px",
               background: "var(--bg-surface-sunken)",
-              borderBottom: "1px solid rgba(255,255,255,0.08)",
+              borderBottom: "1px solid var(--border-default)",
             }}
           >
             <HeaderCell>{t("columns.department")}</HeaderCell>
@@ -552,7 +552,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
             style={{
               marginTop: 18,
               background: "var(--bg-surface)",
-              border: "1px solid rgba(255,255,255,0.06)",
+              border: "1px solid var(--border-subtle)",
               borderRadius: 10,
               padding: "14px 18px",
             }}
@@ -576,7 +576,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                   justifyContent: "space-between",
                   alignItems: "center",
                   padding: "8px 0",
-                  borderBottom: "1px solid rgba(255,255,255,0.04)",
+                  borderBottom: "1px solid var(--border-subtle)",
                   fontSize: 12,
                 }}
               >
@@ -636,9 +636,9 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
       {/* Approval workflow slide-over */}
       {approvalOpen && approvalState && (
         <>
-          <div onClick={() => setApprovalOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 300 }} />
-          <div style={{ position: "fixed", top: 0, insetInlineEnd: 0, bottom: 0, width: 420, maxWidth: "calc(100vw - 32px)", background: "var(--bg-surface-raised)", borderInlineStart: "1px solid rgba(255,255,255,0.10)", zIndex: 301, boxShadow: "-24px 0 60px rgba(0,0,0,0.7)", display: "flex", flexDirection: "column" }}>
-            <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div onClick={() => setApprovalOpen(false)} style={{ position: "fixed", inset: 0, background: "var(--overlay-backdrop)", zIndex: 300 }} />
+          <div style={{ position: "fixed", top: 0, insetInlineEnd: 0, bottom: 0, width: 420, maxWidth: "calc(100vw - 32px)", background: "var(--bg-surface-raised)", borderInlineStart: "1px solid var(--border-default)", zIndex: 301, boxShadow: "-24px 0 60px rgba(0,0,0,0.7)", display: "flex", flexDirection: "column" }}>
+            <div style={{ padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: "var(--text-primary)" }}>{t("approval.workflow_title")}</div>
               <button onClick={() => setApprovalOpen(false)} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer" }}><X size={16} /></button>
             </div>
@@ -650,7 +650,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
               <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 16 }}>{t("approval.next_action", { action: approvalState.nextAction })}</div>
               <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 8 }}>REVIEWERS</div>
               {(approvalState.reviewers || []).map((r, i) => (
-                <div key={i} style={{ padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", fontSize: 12, display: "flex", justifyContent: "space-between" }}>
+                <div key={i} style={{ padding: "8px 0", borderBottom: "1px solid var(--border-subtle)", fontSize: 12, display: "flex", justifyContent: "space-between" }}>
                   <span style={{ color: "var(--text-primary)" }}>{r.role}</span>
                   <span style={{ color: r.status === "approved" ? "var(--accent-primary)" : "var(--text-tertiary)", fontWeight: 600, fontSize: 10 }}>{r.status.toUpperCase()}</span>
                 </div>
@@ -659,7 +659,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                 <>
                   <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginTop: 16, marginBottom: 8 }}>WORKFLOW HISTORY</div>
                   {approvalState.history.map((h, i) => (
-                    <div key={i} style={{ padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.03)", fontSize: 11, color: "var(--text-tertiary)" }}>
+                    <div key={i} style={{ padding: "6px 0", borderBottom: "1px solid var(--border-subtle)", fontSize: 11, color: "var(--text-tertiary)" }}>
                       <span style={{ color: "var(--text-secondary)" }}>{h.fromState || "—"} → {h.toState}</span>
                       {h.byUserId && <span> · {h.byUserId}</span>}
                       {h.note && <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 2, fontStyle: "italic" }}>{h.note}</div>}
@@ -674,8 +674,8 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
 
       {/* Comment thread panel (inline below budget table) */}
       {commentLineId && (
-        <div style={{ position: "fixed", bottom: 0, insetInlineEnd: 0, width: 380, maxWidth: "calc(100vw - 32px)", background: "var(--bg-surface-raised)", borderInlineStart: "1px solid rgba(255,255,255,0.10)", borderTop: "1px solid rgba(255,255,255,0.10)", zIndex: 250, boxShadow: "-8px -8px 24px rgba(0,0,0,0.5)", display: "flex", flexDirection: "column", maxHeight: "50vh" }}>
-          <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ position: "fixed", bottom: 0, insetInlineEnd: 0, width: 380, maxWidth: "calc(100vw - 32px)", background: "var(--bg-surface-raised)", borderInlineStart: "1px solid var(--border-default)", borderTop: "1px solid var(--border-default)", zIndex: 250, boxShadow: "-8px -8px 24px rgba(0,0,0,0.5)", display: "flex", flexDirection: "column", maxHeight: "50vh" }}>
+          <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border-subtle)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)" }}>{t("comments.title", { count: comments.length })}</div>
             <button onClick={() => setCommentLineId(null)} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer" }}><X size={14} /></button>
           </div>
@@ -683,7 +683,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
             {comments.length === 0 ? (
               <div style={{ fontSize: 11, color: "var(--text-tertiary)", textAlign: "center", padding: 16 }}>{t("comments.empty")}</div>
             ) : comments.map((c) => (
-              <div key={c.id} style={{ marginBottom: 10, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+              <div key={c.id} style={{ marginBottom: 10, padding: "8px 0", borderBottom: "1px solid var(--border-subtle)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--text-tertiary)", marginBottom: 3 }}>
                   <span style={{ fontWeight: 600, color: "var(--text-secondary)" }}>{c.authorRole}</span>
                   <span>{new Date(c.createdAt).toLocaleDateString()}</span>
@@ -693,8 +693,8 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
             ))}
           </div>
           {!readOnly && (
-            <div style={{ padding: "10px 16px", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", gap: 8 }}>
-              <input value={commentDraft} onChange={(e) => setCommentDraft(e.target.value)} placeholder={t("comments.placeholder")} onKeyDown={(e) => { if (e.key === "Enter") postComment(); }} style={{ flex: 1, background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "8px 10px", color: "var(--text-primary)", fontSize: 12, fontFamily: "inherit", outline: "none" }} />
+            <div style={{ padding: "10px 16px", borderTop: "1px solid var(--border-subtle)", display: "flex", gap: 8 }}>
+              <input value={commentDraft} onChange={(e) => setCommentDraft(e.target.value)} placeholder={t("comments.placeholder")} onKeyDown={(e) => { if (e.key === "Enter") postComment(); }} style={{ flex: 1, background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 6, padding: "8px 10px", color: "var(--text-primary)", fontSize: 12, fontFamily: "inherit", outline: "none" }} />
               <ActionButton variant="primary" size="sm" label={t("comments.post_button")} onClick={postComment} disabled={!commentDraft.trim()} />
             </div>
           )}

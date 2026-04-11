@@ -233,7 +233,7 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
         <div
           style={{
             padding: "22px 28px 18px",
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            borderBottom: "1px solid var(--border-subtle)",
             background: `linear-gradient(180deg, ${heroAccent}1A 0%, transparent 100%)`,
             flexShrink: 0,
             display: "flex",
@@ -380,7 +380,7 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
           <div
             style={{
               background: "var(--bg-surface)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              border: "1px solid var(--border-default)",
               borderRadius: 10,
               padding: "16px 18px",
               marginBottom: 18,
@@ -394,7 +394,7 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
                 {t("tasks_complete_label", { pct })}
               </div>
             </div>
-            <div style={{ width: "100%", height: 4, background: "rgba(255,255,255,0.05)", borderRadius: 2, overflow: "hidden" }}>
+            <div style={{ width: "100%", height: 4, background: "var(--border-subtle)", borderRadius: 2, overflow: "hidden" }}>
               <div style={{ width: `${pct}%`, height: "100%", background: "var(--accent-primary)" }} />
             </div>
           </div>
@@ -403,7 +403,7 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
           <div
             style={{
               background: "var(--bg-surface)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              border: "1px solid var(--border-default)",
               borderRadius: 10,
               overflow: "hidden",
               marginBottom: 18,
@@ -414,7 +414,7 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
                 padding: "12px 14px",
                 fontSize: 10, fontWeight: 600, letterSpacing: "0.15em",
                 color: "var(--text-tertiary)",
-                borderBottom: "1px solid rgba(255,255,255,0.06)",
+                borderBottom: "1px solid var(--border-subtle)",
               }}
             >
               {t("close_checklist")}
@@ -503,7 +503,7 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
               <button
                 style={{
                   background: "transparent", color: "var(--text-secondary)",
-                  border: "1px solid rgba(255,255,255,0.15)", padding: "10px 16px",
+                  border: "1px solid var(--border-strong)", padding: "10px 16px",
                   borderRadius: 6, cursor: "pointer",
                   fontSize: 12, fontFamily: "inherit",
                 }}
@@ -518,13 +518,13 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
             <div
               style={{
                 background: "var(--bg-surface)",
-                border: "1px solid rgba(255,255,255,0.08)",
+                border: "1px solid var(--border-default)",
                 borderRadius: 10,
                 overflow: "hidden",
                 marginBottom: 18,
               }}
             >
-              <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border-subtle)" }}>
                 <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)", letterSpacing: "-0.2px", lineHeight: 1 }}>
                   {t("validations_panel.title")}
                 </div>
@@ -539,7 +539,7 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
               ) : (
                 <>
                   {validations.map((v) => <ValidationRow key={v.checkId} v={v} onFix={onNavigate} />)}
-                  <div style={{ padding: "10px 16px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+                  <div style={{ padding: "10px 16px", borderTop: "1px solid var(--border-subtle)" }}>
                     <button onClick={handleRunValidations} style={btnSecondary}>
                       {t("validations_panel.rerun")}
                     </button>
@@ -554,12 +554,12 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
             <div
               style={{
                 background: "var(--bg-surface)",
-                border: "1px solid rgba(255,255,255,0.08)",
+                border: "1px solid var(--border-default)",
                 borderRadius: 10,
                 overflow: "hidden",
               }}
             >
-              <div style={{ padding: "12px 14px", fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div style={{ padding: "12px 14px", fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)", borderBottom: "1px solid var(--border-subtle)" }}>
                 {t("preclose_validations")}
               </div>
               {(data?.validations || []).map((v, i) => (
@@ -586,18 +586,18 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
       {/* Re-open modal */}
       {reopenOpen && (
         <>
-          <div onClick={() => setReopenOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
-          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 460, background: "var(--bg-surface-raised)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
-            <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div onClick={() => setReopenOpen(false)} style={{ position: "fixed", inset: 0, background: "var(--overlay-backdrop)", backdropFilter: "blur(4px)", zIndex: 300 }} />
+          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 460, background: "var(--bg-surface-raised)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "var(--shadow-xl)" }}>
+            <div style={{ padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)" }}>{t("reopen.modal_title")}</div>
               <button onClick={() => setReopenOpen(false)} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer" }}><X size={16} /></button>
             </div>
             <div style={{ padding: "18px 22px" }}>
               <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>{t("reopen.modal_body")}</div>
               <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 5 }}>{t("reopen.reason_label")}</div>
-              <textarea value={reopenReason} onChange={(e) => setReopenReason(e.target.value)} placeholder={t("reopen.reason_placeholder")} rows={3} style={{ width: "100%", background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, fontFamily: "inherit", outline: "none", resize: "vertical" }} />
+              <textarea value={reopenReason} onChange={(e) => setReopenReason(e.target.value)} placeholder={t("reopen.reason_placeholder")} rows={3} style={{ width: "100%", background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 6, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, fontFamily: "inherit", outline: "none", resize: "vertical" }} />
             </div>
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
               <ActionButton variant="secondary" label={t("reopen.cancel_button")} onClick={() => setReopenOpen(false)} />
               <ActionButton variant="primary" label={t("reopen.confirm_button")} onClick={handleReopen} disabled={!reopenReason.trim()} />
             </div>
@@ -608,9 +608,9 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
       {/* Close summary slide-over */}
       {summaryOpen && closeSummary && (
         <>
-          <div onClick={() => setSummaryOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 300 }} />
-          <div style={{ position: "fixed", top: 0, insetInlineEnd: 0, bottom: 0, width: 520, maxWidth: "calc(100vw - 32px)", background: "var(--bg-surface-raised)", borderInlineStart: "1px solid rgba(255,255,255,0.10)", zIndex: 301, boxShadow: "-24px 0 60px rgba(0,0,0,0.7)", display: "flex", flexDirection: "column" }}>
-            <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div onClick={() => setSummaryOpen(false)} style={{ position: "fixed", inset: 0, background: "var(--overlay-backdrop)", zIndex: 300 }} />
+          <div style={{ position: "fixed", top: 0, insetInlineEnd: 0, bottom: 0, width: 520, maxWidth: "calc(100vw - 32px)", background: "var(--bg-surface-raised)", borderInlineStart: "1px solid var(--border-default)", zIndex: 301, boxShadow: "-24px 0 60px rgba(0,0,0,0.7)", display: "flex", flexDirection: "column" }}>
+            <div style={{ padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: "var(--text-primary)" }}>{t("post_close.view_summary")}</div>
               <button onClick={() => setSummaryOpen(false)} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer" }}><X size={16} /></button>
             </div>
@@ -622,7 +622,7 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
               {closeSummary.closedBy && <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginBottom: 12 }}>{t("post_close.closed_by", { user: closeSummary.closedBy, date: closeSummary.closedAt || "" })}</div>}
               <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 8 }}>CHECKS</div>
               {(closeSummary.checks || []).map((c, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.03)", fontSize: 12 }}>
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--border-subtle)", fontSize: 12 }}>
                   <span style={{ color: "var(--text-secondary)" }}>{c.name}</span>
                   <span style={{ fontSize: 10, fontWeight: 600, color: c.status === "complete" ? "var(--accent-primary)" : "var(--semantic-warning)" }}>{c.status.toUpperCase()}</span>
                 </div>
@@ -631,7 +631,7 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
                 <>
                   <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--semantic-warning)", marginTop: 16, marginBottom: 8 }}>OVERRIDES</div>
                   {closeSummary.forcedItems.map((f, i) => (
-                    <div key={i} style={{ padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.03)", fontSize: 11, color: "var(--text-tertiary)" }}>
+                    <div key={i} style={{ padding: "6px 0", borderBottom: "1px solid var(--border-subtle)", fontSize: 11, color: "var(--text-tertiary)" }}>
                       Check: {f.checkId} · {f.reason} · by {f.overriddenBy}
                     </div>
                   ))}
@@ -648,16 +648,16 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
       {/* Override modal */}
       {overrideCheckId && (
         <>
-          <div onClick={() => setOverrideCheckId(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 310 }} />
-          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 420, background: "var(--bg-surface-raised)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, zIndex: 311, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
-            <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div onClick={() => setOverrideCheckId(null)} style={{ position: "fixed", inset: 0, background: "var(--overlay-backdrop)", backdropFilter: "blur(4px)", zIndex: 310 }} />
+          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 420, background: "var(--bg-surface-raised)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 311, boxShadow: "var(--shadow-xl)" }}>
+            <div style={{ padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: "var(--text-primary)" }}>{t("checks.override_button")}</div>
             </div>
             <div style={{ padding: "16px 22px" }}>
               <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 5 }}>{t("checks.override_reason_label")}</div>
-              <textarea value={overrideReason} onChange={(e) => setOverrideReason(e.target.value)} rows={3} style={{ width: "100%", background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, fontFamily: "inherit", outline: "none", resize: "vertical" }} />
+              <textarea value={overrideReason} onChange={(e) => setOverrideReason(e.target.value)} rows={3} style={{ width: "100%", background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 6, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, fontFamily: "inherit", outline: "none", resize: "vertical" }} />
             </div>
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
               <ActionButton variant="secondary" label={t("reopen.cancel_button")} onClick={() => setOverrideCheckId(null)} />
               <ActionButton variant="primary" label={t("checks.override_confirm")} onClick={handleOverrideCheck} disabled={!overrideReason.trim()} />
             </div>
@@ -699,7 +699,7 @@ function ChecklistRow({ task, editable, expanded, onToggle, onMarkComplete, cfoE
   return (
     <div
       style={{
-        borderBottom: "1px solid rgba(255,255,255,0.04)",
+        borderBottom: "1px solid var(--border-subtle)",
         opacity: isDone ? 0.85 : 1,
       }}
     >
@@ -761,7 +761,7 @@ function ChecklistRow({ task, editable, expanded, onToggle, onMarkComplete, cfoE
           style={{
             padding: "14px 16px 16px 42px",
             background: "var(--bg-surface-sunken)",
-            borderTop: "1px solid rgba(255,255,255,0.04)",
+            borderTop: "1px solid var(--border-subtle)",
             display: "flex",
             flexDirection: "column",
             gap: 10,
@@ -781,7 +781,7 @@ function ChecklistRow({ task, editable, expanded, onToggle, onMarkComplete, cfoE
               style={{
                 width: "100%",
                 background: "var(--bg-surface)",
-                border: "1px solid rgba(255,255,255,0.10)",
+                border: "1px solid var(--border-default)",
                 borderRadius: 8,
                 padding: "9px 12px",
                 color: "var(--text-primary)",
@@ -803,7 +803,7 @@ function ChecklistRow({ task, editable, expanded, onToggle, onMarkComplete, cfoE
                       display: "inline-flex", alignItems: "center", gap: 6,
                       fontSize: 11,
                       background: "var(--bg-surface)",
-                      border: "1px solid rgba(255,255,255,0.10)",
+                      border: "1px solid var(--border-default)",
                       borderRadius: 14,
                       padding: "4px 10px",
                       color: "var(--text-secondary)",
@@ -852,19 +852,19 @@ function ChecklistRow({ task, editable, expanded, onToggle, onMarkComplete, cfoE
             {t("checks.notes_header")} · {t("checks.attachments_header")}
           </button>
           {checkExpanded && (
-            <div style={{ padding: "8px 0 12px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+            <div style={{ padding: "8px 0 12px", borderBottom: "1px solid var(--border-subtle)" }}>
               {/* Notes */}
               <div style={{ marginBottom: 8 }}>
                 <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 4 }}>{t("checks.notes_header")}</div>
                 {(checkNotes || []).length === 0 ? (
                   <div style={{ fontSize: 11, color: "var(--text-tertiary)", fontStyle: "italic" }}>No notes yet</div>
                 ) : (checkNotes || []).map((n) => (
-                  <div key={n.id} style={{ fontSize: 11, color: "var(--text-secondary)", padding: "3px 0", borderBottom: "1px solid rgba(255,255,255,0.02)" }}>
+                  <div key={n.id} style={{ fontSize: 11, color: "var(--text-secondary)", padding: "3px 0", borderBottom: "1px solid var(--bg-surface)" }}>
                     <span style={{ fontWeight: 600, fontSize: 10, color: "var(--text-tertiary)" }}>{n.user}</span> · {n.note}
                   </div>
                 ))}
                 <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
-                  <input value={noteDraft} onChange={(e) => onNoteDraftChange(e.target.value)} placeholder={t("checks.add_note_button")} onKeyDown={(e) => { if (e.key === "Enter") onAddNote(); }} style={{ flex: 1, background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 4, padding: "5px 8px", color: "var(--text-primary)", fontSize: 11, fontFamily: "inherit", outline: "none" }} />
+                  <input value={noteDraft} onChange={(e) => onNoteDraftChange(e.target.value)} placeholder={t("checks.add_note_button")} onKeyDown={(e) => { if (e.key === "Enter") onAddNote(); }} style={{ flex: 1, background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 4, padding: "5px 8px", color: "var(--text-primary)", fontSize: 11, fontFamily: "inherit", outline: "none" }} />
                   <ActionButton variant="secondary" size="sm" label={t("checks.add_note_button")} onClick={onAddNote} disabled={!noteDraft?.trim()} />
                 </div>
               </div>
@@ -901,7 +901,7 @@ function ValidationRow({ v, onFix }) {
       style={{
         display: "flex", alignItems: "center", gap: 12,
         padding: "12px 16px",
-        borderBottom: "1px solid rgba(255,255,255,0.04)",
+        borderBottom: "1px solid var(--border-subtle)",
       }}
     >
       <span
@@ -944,7 +944,7 @@ function OwnerValidationRow({ v, onResolve }) {
       style={{
         display: "flex", alignItems: "center", gap: 10,
         padding: "10px 14px",
-        borderBottom: "1px solid rgba(255,255,255,0.04)",
+        borderBottom: "1px solid var(--border-subtle)",
         fontSize: 13,
       }}
     >
@@ -972,7 +972,7 @@ function OwnerValidationRow({ v, onResolve }) {
 const btnSecondary = {
   background: "transparent",
   color: "var(--text-secondary)",
-  border: "1px solid rgba(255,255,255,0.15)",
+  border: "1px solid var(--border-strong)",
   padding: "9px 16px",
   borderRadius: 6,
   cursor: "pointer",

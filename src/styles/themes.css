@@ -5,6 +5,22 @@
    attribute set by ThemeContext / the pre-hydration script.
    ============================================================ */
 
+/* ── Global spacing + typography tokens (theme-independent) ── */
+:root {
+  --space-1: 8px;
+  --space-2: 12px;
+  --space-3: 16px;
+  --space-4: 24px;
+
+  --text-emphasis-primary:   600;
+  --text-emphasis-title:     500;
+  --text-emphasis-secondary: 400;
+
+  --text-opacity-primary:    1.0;
+  --text-opacity-title:      1.0;
+  --text-opacity-secondary:  0.6;
+}
+
 html[data-theme="dark"] {
   /* ---------------- Surfaces ---------------- */
   --bg-base:            #05070A;
@@ -15,7 +31,7 @@ html[data-theme="dark"] {
   --bg-selected:        rgba(0, 196, 140, 0.06);
 
   /* ---------------- Borders ----------------- */
-  --border-subtle:      rgba(255, 255, 255, 0.06);
+  --border-subtle:      rgba(255, 255, 255, 0.04);
   --border-default:     rgba(255, 255, 255, 0.10);
   --border-strong:      rgba(255, 255, 255, 0.15);
   --border-focus:       rgba(0, 196, 140, 0.30);
@@ -86,7 +102,7 @@ html[data-theme="dark"] {
 
 html[data-theme="light"] {
   /* ---------------- Surfaces (3-step hierarchy, translucent for ambient bleed-through) -- */
-  --bg-base:            #EEF1F5;
+  --bg-base:            #F8F6F2;
   --bg-surface:         rgba(255, 255, 255, 0.55);
   --bg-surface-raised:  rgba(255, 255, 255, 0.75);
   --bg-surface-sunken:  rgba(0, 0, 0, 0.03);
@@ -100,9 +116,9 @@ html[data-theme="light"] {
   --border-focus:       rgba(0, 166, 132, 0.40);
 
   /* ---------------- Text -------------------- */
-  --text-primary:       #0B0F14;
-  --text-secondary:     #4B5563;
-  --text-tertiary:      #6B7280;
+  --text-primary:       #1A1F26;
+  --text-secondary:     #4A5260;
+  --text-tertiary:      #7A8290;
   --text-disabled:      rgba(107, 114, 128, 0.5);
   --text-inverse:       #FFFFFF;
 
@@ -222,6 +238,23 @@ html[data-theme="light"] textarea:focus,
 html[data-theme="light"] select:focus {
   border-color: var(--border-focus);
   outline: none;
+}
+
+/* Typography utility classes */
+.text-primary {
+  font-weight: var(--text-emphasis-primary);
+  color: var(--text-primary);
+  opacity: var(--text-opacity-primary);
+}
+.text-title {
+  font-weight: var(--text-emphasis-title);
+  color: var(--text-primary);
+  opacity: var(--text-opacity-title);
+}
+.text-secondary {
+  font-weight: var(--text-emphasis-secondary);
+  color: var(--text-secondary);
+  opacity: var(--text-opacity-secondary);
 }
 
 /* Ambient background layers (theme-aware via CSS variables) */

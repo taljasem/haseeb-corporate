@@ -105,8 +105,8 @@ export default function TeamScreen() {
         </div>
 
         {/* Table */}
-        <div style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, overflow: "hidden", marginBottom: 24 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 100px 90px 100px 120px", gap: 12, padding: "10px 18px", background: "var(--bg-surface-sunken)", borderBottom: "1px solid rgba(255,255,255,0.08)", alignItems: "center" }}>
+        <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 10, overflow: "hidden", marginBottom: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 100px 90px 100px 120px", gap: 12, padding: "10px 18px", background: "var(--bg-surface-sunken)", borderBottom: "1px solid var(--border-default)", alignItems: "center" }}>
             <SortHeader field="name" activeField={sortField} direction={sortDir} onSort={handleSort} label={t("columns.name")} />
             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>{t("columns.access_level")}</div>
             <SortHeader field="role" activeField={sortField} direction={sortDir} onSort={handleSort} label={t("columns.role")} />
@@ -119,7 +119,7 @@ export default function TeamScreen() {
             const roleColor = ROLE_COLORS[m.role] || "var(--text-secondary)";
             const isOwner = m.role === "owner";
             return (
-              <div key={m.id} style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 100px 90px 100px 120px", gap: 12, alignItems: "center", padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+              <div key={m.id} style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 100px 90px 100px 120px", gap: 12, alignItems: "center", padding: "14px 18px", borderBottom: "1px solid var(--border-subtle)" }}>
                 <div onClick={async () => { setActivityMember(m); const log = await getTeamActivityLog(m.id, 10); setActivityLog(log || []); }} style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, cursor: "pointer" }}>
                   <Avatar person={m} size={30} />
                   <div style={{ minWidth: 0 }}>
@@ -162,15 +162,15 @@ export default function TeamScreen() {
       {/* Remove confirmation modal */}
       {removingMember && (
         <>
-          <div onClick={() => setRemovingMember(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
-          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 420, background: "var(--bg-surface-raised)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
-            <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div onClick={() => setRemovingMember(null)} style={{ position: "fixed", inset: 0, background: "var(--overlay-backdrop)", backdropFilter: "blur(4px)", zIndex: 300 }} />
+          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 420, background: "var(--bg-surface-raised)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "var(--shadow-xl)" }}>
+            <div style={{ padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: "var(--text-primary)" }}>{t("remove.modal_title")}</div>
             </div>
             <div style={{ padding: "18px 22px", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
               {t("remove.confirm_body", { name: removingMember.name })}
             </div>
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
               <ActionButton variant="secondary" label={t("remove.cancel_button")} onClick={() => setRemovingMember(null)} />
               <button onClick={handleRemove} style={{ background: "var(--semantic-danger)", color: "#fff", border: "none", padding: "8px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>{t("remove.confirm_button")}</button>
             </div>
@@ -181,9 +181,9 @@ export default function TeamScreen() {
       {/* Activity slide-over */}
       {activityMember && (
         <>
-          <div onClick={() => setActivityMember(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 300 }} />
-          <div style={{ position: "fixed", top: 0, insetInlineEnd: 0, bottom: 0, width: 400, maxWidth: "calc(100vw - 32px)", background: "var(--bg-surface-raised)", borderInlineStart: "1px solid rgba(255,255,255,0.10)", zIndex: 301, boxShadow: "-24px 0 60px rgba(0,0,0,0.7)", display: "flex", flexDirection: "column" }}>
-            <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div onClick={() => setActivityMember(null)} style={{ position: "fixed", inset: 0, background: "var(--overlay-backdrop)", zIndex: 300 }} />
+          <div style={{ position: "fixed", top: 0, insetInlineEnd: 0, bottom: 0, width: 400, maxWidth: "calc(100vw - 32px)", background: "var(--bg-surface-raised)", borderInlineStart: "1px solid var(--border-default)", zIndex: 301, boxShadow: "-24px 0 60px rgba(0,0,0,0.7)", display: "flex", flexDirection: "column" }}>
+            <div style={{ padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>{activityMember.name}</div>
                 <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 2 }}>{activityMember.role?.toUpperCase()} · Activity log</div>
@@ -194,7 +194,7 @@ export default function TeamScreen() {
               {activityLog.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-tertiary)", fontSize: 12 }}>No recent activity</div>
               ) : activityLog.map((e) => (
-                <div key={e.id} style={{ padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.03)", display: "flex", gap: 10, fontSize: 11 }}>
+                <div key={e.id} style={{ padding: "8px 0", borderBottom: "1px solid var(--border-subtle)", display: "flex", gap: 10, fontSize: 11 }}>
                   <span style={{ fontSize: 10, color: "var(--text-tertiary)", fontFamily: "'DM Mono', monospace", minWidth: 60 }}>{formatRelativeTime(e.timestamp)}</span>
                   <span style={{ color: "var(--text-secondary)" }}>{e.detail}</span>
                 </div>
@@ -213,7 +213,7 @@ export default function TeamScreen() {
 function RoleCard({ icon: Icon, title, bullets, color }) {
   const lines = (bullets || "").split("\n").filter(Boolean);
   return (
-    <div style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "14px 16px", borderTop: `2px solid ${color}` }}>
+    <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "14px 16px", borderTop: `2px solid ${color}` }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
         <Icon size={16} color={color} />
         <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{title}</div>
@@ -239,9 +239,9 @@ function InviteMemberModal({ onClose, onInvite }) {
   const canSubmit = name.trim() && email.trim() && email.includes("@") && role;
   return (
     <>
-      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
-      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 460, background: "var(--bg-surface-raised)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "var(--overlay-backdrop)", backdropFilter: "blur(4px)", zIndex: 300 }} />
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 460, background: "var(--bg-surface-raised)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "var(--shadow-xl)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)" }}>{t("invite_modal.title")}</div>
           <button onClick={onClose} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer" }}><X size={16} /></button>
         </div>
@@ -263,7 +263,7 @@ function InviteMemberModal({ onClose, onInvite }) {
             <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder={t("invite_modal.field_message_placeholder")} rows={2} style={{ ...inputStyle, resize: "vertical" }} />
           </Field>
         </div>
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
           <ActionButton variant="secondary" label={t("invite_modal.cancel_button")} onClick={onClose} />
           <ActionButton variant="primary" label={t("invite_modal.send_button")} onClick={() => onInvite({ name, email, role })} disabled={!canSubmit} />
         </div>
@@ -284,7 +284,7 @@ function Field({ label, children }) {
 const inputStyle = {
   width: "100%",
   background: "var(--bg-surface-sunken)",
-  border: "1px solid rgba(255,255,255,0.10)",
+  border: "1px solid var(--border-default)",
   borderRadius: 6,
   padding: "9px 12px",
   color: "var(--text-primary)",

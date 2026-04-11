@@ -55,7 +55,7 @@ export default function SetupScreen() {
       <div
         style={{
           padding: "22px 28px 18px",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          borderBottom: "1px solid var(--border-subtle)",
           background: "linear-gradient(180deg, rgba(0,196,140,0.10) 0%, transparent 100%)",
           flexShrink: 0,
         }}
@@ -72,7 +72,7 @@ export default function SetupScreen() {
       </div>
 
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-        <aside style={{ width: 220, flexShrink: 0, background: "var(--bg-surface)", borderInlineEnd: "1px solid rgba(255,255,255,0.08)", padding: "18px 0", overflowY: "auto" }}>
+        <aside style={{ width: 220, flexShrink: 0, background: "var(--bg-surface)", borderInlineEnd: "1px solid var(--border-default)", padding: "18px 0", overflowY: "auto" }}>
           {SECTIONS.map((s) => {
             const on = active === s.id;
             const Icon = s.icon;
@@ -118,7 +118,7 @@ export default function SetupScreen() {
 
 function Card({ title, description, extra, children }) {
   return (
-    <div style={{ background: "var(--bg-surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "20px 22px", marginBottom: 14 }}>
+    <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 10, padding: "20px 22px", marginBottom: 14 }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: description ? 4 : 14, gap: 10 }}>
         <div>
           <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)", letterSpacing: "-0.2px", lineHeight: 1.1 }}>{title}</div>
@@ -184,9 +184,9 @@ function ChartSection() {
       <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
         <div style={{ position: "relative", flex: 1 }}>
           <Search size={13} color="var(--text-tertiary)" style={{ position: "absolute", insetInlineStart: 10, top: "50%", transform: "translateY(-50%)" }} />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("chart.search_placeholder")} style={{ width: "100%", background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, padding: "8px 12px 8px 30px", color: "var(--text-primary)", fontSize: 12, fontFamily: "inherit", outline: "none" }} />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("chart.search_placeholder")} style={{ width: "100%", background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "8px 12px 8px 30px", color: "var(--text-primary)", fontSize: 12, fontFamily: "inherit", outline: "none" }} />
         </div>
-        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} style={{ background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "8px 10px", color: "var(--text-primary)", fontSize: 12, fontFamily: "inherit", outline: "none" }}>
+        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} style={{ background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 6, padding: "8px 10px", color: "var(--text-primary)", fontSize: 12, fontFamily: "inherit", outline: "none" }}>
           <option value="all">{t("chart.filter_all")}</option>
           {["Assets", "Liabilities", "Equity", "Revenue", "Expenses"].map((tp) => <option key={tp} value={tp}>{t(`chart.types.${tp}`)}</option>)}
         </select>
@@ -196,11 +196,11 @@ function ChartSection() {
         if (list.length === 0) return null;
         return (
           <div key={tp} style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", padding: "8px 0", borderBottom: "1px solid var(--border-subtle)" }}>
               {t(`chart.types.${tp}`)} ({list.length})
             </div>
             {list.map((a) => (
-              <div key={a.code} style={{ display: "grid", gridTemplateColumns: "80px 1fr 200px 140px 80px 40px", gap: 8, padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", alignItems: "center", position: "relative" }}>
+              <div key={a.code} style={{ display: "grid", gridTemplateColumns: "80px 1fr 200px 140px 80px 40px", gap: 8, padding: "10px 0", borderBottom: "1px solid var(--border-subtle)", alignItems: "center", position: "relative" }}>
                 <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "var(--accent-primary)" }}><LtrText>{a.code}</LtrText></div>
                 <div style={{ fontSize: 13, color: "var(--text-primary)" }}>{a.name}</div>
                 <div style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{a.subtype}</div>
@@ -215,7 +215,7 @@ function ChartSection() {
                     <Edit3 size={12} />
                   </button>
                   {menuOpenCode === a.code && (
-                    <div style={{ position: "absolute", top: "calc(100% + 4px)", insetInlineEnd: 0, width: 180, background: "var(--bg-surface-raised)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, boxShadow: "0 12px 32px rgba(0,0,0,0.6)", zIndex: 150, padding: "6px 0" }}>
+                    <div style={{ position: "absolute", top: "calc(100% + 4px)", insetInlineEnd: 0, width: 180, background: "var(--bg-surface-raised)", border: "1px solid var(--border-default)", borderRadius: 8, boxShadow: "var(--panel-shadow)", zIndex: 150, padding: "6px 0" }}>
                       <MenuItem label={t("chart.kebab.edit")} onClick={() => { setActiveAccount(a); setModalMode("edit"); setMenuOpenCode(null); }} />
                       <MenuItem label={t("chart.kebab.deactivate")} onClick={() => { setActiveAccount(a); setDeactivateOpen(true); setMenuOpenCode(null); }} />
                     </div>
@@ -273,7 +273,7 @@ function FiscalSection() {
           {data.periods.map((p) => {
             const pillColor = p.status === "hard_closed" ? "var(--text-tertiary)" : p.status === "open" ? "var(--accent-primary)" : p.status === "soft_closed" ? "var(--semantic-warning)" : "var(--border-default)";
             return (
-              <div key={p.month} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+              <div key={p.month} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid var(--border-subtle)" }}>
                 <div style={{ fontSize: 12, color: "var(--text-primary)", fontWeight: 500 }}>{p.month}</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: pillColor, background: `${pillColor}14`, border: `1px solid ${pillColor}55`, padding: "3px 8px", borderRadius: 4 }}>
@@ -292,7 +292,7 @@ function FiscalSection() {
         </div>
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginTop: 16, marginBottom: 8 }}>{t("fiscal.milestones_heading")}</div>
         {data.milestones.map((m, i) => (
-          <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", fontSize: 12 }}>
+          <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border-subtle)", fontSize: 12 }}>
             <div style={{ color: "var(--text-primary)" }}>{m.label}</div>
             <div style={{ color: "var(--text-tertiary)", fontFamily: "'DM Mono', monospace", fontSize: 11 }}>{new Date(m.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
           </div>
@@ -361,7 +361,7 @@ function TaxSection() {
       </FormRow>
       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginTop: 14, marginBottom: 8 }}>{t("tax.exemptions_heading")}</div>
       {cfg.exemptions.map((e, i) => (
-        <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", fontSize: 12 }}>
+        <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border-subtle)", fontSize: 12 }}>
           <div style={{ color: "var(--text-primary)" }}>{e.partyName}</div>
           <div style={{ color: "var(--text-tertiary)" }}>{e.reason}</div>
         </div>
@@ -410,7 +410,7 @@ function CurrenciesSection() {
       </FormRow>
       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginTop: 14, marginBottom: 8 }}>{t("currencies.enabled_heading")}</div>
       {Object.keys(cfg.enabled).map((c) => (
-        <div key={c} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+        <div key={c} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid var(--border-subtle)" }}>
           <div style={{ fontSize: 13, color: "var(--text-primary)", fontFamily: "'DM Mono', monospace" }}><LtrText>{c}</LtrText></div>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{ fontSize: 12, color: "var(--text-tertiary)", fontFamily: "'DM Mono', monospace" }}><LtrText>{cfg.rates[c]?.toFixed(4)}</LtrText></div>
@@ -470,7 +470,7 @@ function IntegrationsSection() {
       {items.map((i) => {
         const color = i.status === "connected" ? "var(--accent-primary)" : i.status === "error" ? "var(--semantic-danger)" : "var(--text-tertiary)";
         return (
-          <div key={i.id} style={{ padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+          <div key={i.id} style={{ padding: "12px 0", borderBottom: "1px solid var(--border-subtle)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>{i.name}</div>
@@ -498,7 +498,7 @@ function IntegrationsSection() {
               </div>
             )}
             {syncLogsFor === i.id && logs.length > 0 && (
-              <div style={{ marginTop: 10, background: "var(--bg-surface-sunken)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 6, padding: "10px 12px" }}>
+              <div style={{ marginTop: 10, background: "var(--bg-surface-sunken)", border: "1px solid var(--border-subtle)", borderRadius: 6, padding: "10px 12px" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-tertiary)", marginBottom: 6 }}>{t("integrations.sync_logs_heading")}</div>
                 {logs.map((l, li) => (
                   <div key={li} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "4px 0" }}>
@@ -542,14 +542,14 @@ function TeamAccessSection() {
       <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginBottom: 10, fontStyle: "italic" }}>{t("team_access.sensitive_note")}</div>
       <div style={{ overflowX: "auto" }}>
         <div style={{ minWidth: 900 }}>
-          <div style={{ display: "grid", gridTemplateColumns: `180px 120px repeat(${permKeys.length}, 1fr) 110px`, gap: 8, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.08)", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-tertiary)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: `180px 120px repeat(${permKeys.length}, 1fr) 110px`, gap: 8, padding: "8px 0", borderBottom: "1px solid var(--border-default)", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-tertiary)" }}>
             <div>{t("team_access.col_member")}</div>
             <div>{t("team_access.col_role")}</div>
             {permKeys.map((p) => <div key={p} style={{ textAlign: "center", fontSize: 9 }}>{t(`team_access.permissions.${p}`)}</div>)}
             <div>{t("team_access.col_template")}</div>
           </div>
           {members.map((m) => (
-            <div key={m.memberId} style={{ display: "grid", gridTemplateColumns: `180px 120px repeat(${permKeys.length}, 1fr) 110px`, gap: 8, padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", alignItems: "center" }}>
+            <div key={m.memberId} style={{ display: "grid", gridTemplateColumns: `180px 120px repeat(${permKeys.length}, 1fr) 110px`, gap: 8, padding: "10px 0", borderBottom: "1px solid var(--border-subtle)", alignItems: "center" }}>
               <div style={{ fontSize: 12, color: "var(--text-primary)", fontWeight: 500 }}>{m.name}</div>
               <div style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{m.role}</div>
               {permKeys.map((p) => (
@@ -594,7 +594,7 @@ function EngineRulesSection() {
     <Card title={t("engine_rules.title")} description={t("engine_rules.description")}>
       <Toast text={toast} onClear={() => setToast(null)} />
       {RULES.map((r) => (
-        <div key={r.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+        <div key={r.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid var(--border-subtle)" }}>
           <div>
             <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>{t(`engine_rules.${r.label}`)}</div>
             <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, color: "var(--accent-primary)", marginTop: 2 }}><LtrText>{cfg[r.key]}</LtrText></div>
@@ -616,14 +616,14 @@ function EngineRulesSection() {
 // Shared styles
 const inputStyle = {
   width: "100%", background: "var(--bg-surface-sunken)",
-  border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8,
+  border: "1px solid var(--border-default)", borderRadius: 8,
   padding: "10px 12px", color: "var(--text-primary)",
   fontSize: 13, fontFamily: "inherit", outline: "none",
 };
 const selectStyle = { ...inputStyle, appearance: "none" };
 const btnMini = {
   background: "transparent", color: "var(--text-secondary)",
-  border: "1px solid rgba(255,255,255,0.15)", padding: "6px 12px",
+  border: "1px solid var(--border-strong)", padding: "6px 12px",
   borderRadius: 5, cursor: "pointer", fontSize: 11, fontFamily: "inherit", fontWeight: 600,
 };
 const btnPrimary = (l) => ({ background: "var(--accent-primary)", color: "#fff", border: "none", padding: "9px 16px", borderRadius: 6, cursor: l ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" });

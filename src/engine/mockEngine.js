@@ -22,6 +22,14 @@ export function getCurrentTenant() {
   return TENANTS[_currentTenantId] || TENANTS[DEFAULT_TENANT_ID];
 }
 
+let _currentRole = "Owner";
+export function setCurrentRole(role) { _currentRole = role; }
+export function getCurrentRole() { return _currentRole; }
+function _currentUserDisplayName() {
+  const labels = { Owner: "Owner", CFO: "CFO", Junior: "Junior Accountant" };
+  return `You (${labels[_currentRole] || _currentRole})`;
+}
+
 // Source-tenant tokens that exist in the seed data.
 const SOURCE_TOKENS = {
   companyName: "Al Manara Trading",
@@ -78,11 +86,14 @@ function _brand(str) {
 }
 
 // Recursive branding — walks an object and brands any string fields we care about.
+// Also replaces "You (CFO)" with the current role-aware display name.
 function _brandObj(obj) {
   if (obj == null) return obj;
-  if (_currentTenantId === DEFAULT_TENANT_ID) return obj;
   if (Array.isArray(obj)) return obj.map(_brandObj);
-  if (typeof obj === "string") return _brand(obj);
+  if (typeof obj === "string") {
+    const s = _currentTenantId === DEFAULT_TENANT_ID ? obj : _brand(obj);
+    return s === "You (CFO)" ? _currentUserDisplayName() : s.includes("You (CFO)") ? s.replace(/You \(CFO\)/g, _currentUserDisplayName()) : s;
+  }
   if (typeof obj !== "object") return obj;
   const out = {};
   for (const k of Object.keys(obj)) {

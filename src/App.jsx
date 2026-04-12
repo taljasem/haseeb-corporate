@@ -1,6 +1,7 @@
-import { useRef, useState, useCallback, lazy, Suspense } from "react";
+import { useRef, useState, useCallback, useEffect, lazy, Suspense } from "react";
 import AmbientBackground from "./components/AmbientBackground";
 import Header from "./components/Header";
+import { setCurrentRole } from "./engine/mockEngine";
 const OwnerView = lazy(() => import("./screens/owner/OwnerView"));
 const CFOView = lazy(() => import("./screens/cfo/CFOView"));
 const JuniorView = lazy(() => import("./screens/junior/JuniorView"));
@@ -17,6 +18,7 @@ function ViewFallback() {
 
 function AppInner() {
   const [role, setRole] = useState("Owner");
+  useEffect(() => { setCurrentRole(role); }, [role]);
   const { tenantId } = useTenant();
 
   // Active role view registers its handlers here on mount.

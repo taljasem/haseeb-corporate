@@ -727,7 +727,7 @@ function ChecklistRow({ task, editable, expanded, onToggle, onMarkComplete, cfoE
         </div>
         <Avatar person={task.assignee} size={22} />
         <div style={{ minWidth: 120, fontSize: 11, color: "var(--text-tertiary)" }}>
-          {task.assignee.name.replace("You (CFO)", t("you_cfo_self"))}
+          {task.assignee.name}
         </div>
         <div
           style={{

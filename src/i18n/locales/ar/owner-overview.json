@@ -24,9 +24,7 @@
   "pending_approvals": {
     "label": "اعتمادات معلقة",
     "from": "{{count}} من {{name}}",
-    "view_all": "عرض الكل في صندوق المهام ←",
-    "you_role": "أنت ({{role}})",
-    "role_owner": "المالك"
+    "view_all": "عرض الكل في صندوق المهام ←"
   },
   "budget_performance": {
     "used_pct": "{{pct}}% مستخدم",

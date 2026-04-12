@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Paperclip, ArrowLeft, MoreHorizontal, Link2, ChevronRight } from "lucide-react";
 import Avatar from "./Avatar";
@@ -49,6 +49,27 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
   const [jePosted, setJePosted] = useState(false);
   const [localAttachments, setLocalAttachments] = useState(null);
   const [escalateOpen, setEscalateOpen] = useState(false);
+  const [kebabOpen, setKebabOpen] = useState(false);
+  const kebabRef = useRef(null);
+
+  useEffect(() => {
+    if (!kebabOpen) return;
+    const handleClick = (e) => {
+      if (kebabRef.current && !kebabRef.current.contains(e.target)) setKebabOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [kebabOpen]);
+
+  useEffect(() => {
+    if (!kebabOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") setKebabOpen(false);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [kebabOpen]);
+
   if (!task) return null;
 
   const attachments = localAttachments !== null ? localAttachments : (task.attachments || []);
@@ -231,21 +252,50 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
               </button>
             </>
           )}
-          <button
-            aria-label={t("detail.more")}
-            style={{
-              background: "transparent",
-              color: "var(--text-tertiary)",
-              border: "1px solid var(--border-default)",
-              padding: 7,
-              borderRadius: 6,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            <MoreHorizontal size={14} />
-          </button>
+          <div ref={kebabRef} style={{ position: "relative" }}>
+            <button
+              aria-label={t("detail.more")}
+              aria-haspopup="true"
+              aria-expanded={kebabOpen}
+              onClick={() => setKebabOpen((o) => !o)}
+              style={{
+                background: kebabOpen ? "var(--bg-surface-sunken)" : "transparent",
+                color: "var(--text-tertiary)",
+                border: "1px solid var(--border-default)",
+                padding: 7,
+                borderRadius: 6,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              <MoreHorizontal size={14} />
+            </button>
+            {kebabOpen && (
+              <div
+                role="menu"
+                data-popover-anchor="end"
+                style={{
+                  position: "absolute",
+                  top: "calc(100% + 4px)",
+                  insetInlineEnd: 0,
+                  width: 200,
+                  background: "var(--panel-bg)",
+                  border: "1px solid var(--border-default)",
+                  borderRadius: 8,
+                  boxShadow: "var(--panel-shadow)",
+                  zIndex: 150,
+                  padding: "6px 0",
+                }}
+              >
+                <KebabMenuItem label={t("detail.menu_view_details")} onClick={() => setKebabOpen(false)} />
+                {!isCompleted && (
+                  <KebabMenuItem label={t("detail.menu_mark_reviewed")} onClick={() => { setKebabOpen(false); onComplete && onComplete(task); }} />
+                )}
+                <KebabMenuItem label={t("detail.menu_dismiss")} danger onClick={() => { setKebabOpen(false); onComplete && onComplete(task); }} />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -626,5 +676,25 @@ export default function TaskDetail({ task, onBack, onComplete, onReply, onApprov
         }}
       />
     </div>
+  );
+}
+
+function KebabMenuItem({ label, onClick, danger }) {
+  return (
+    <button
+      role="menuitem"
+      onClick={onClick}
+      style={{
+        width: "100%", background: "transparent", border: "none",
+        textAlign: "start", padding: "9px 14px",
+        fontSize: 12, fontFamily: "inherit",
+        color: danger ? "var(--semantic-danger)" : "var(--text-primary)",
+        cursor: "pointer",
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-surface-sunken)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+    >
+      {label}
+    </button>
   );
 }

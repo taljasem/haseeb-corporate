@@ -76,7 +76,10 @@
     "open_link": "Open →",
     "reply_placeholder": "Write a reply...",
     "reply": "Reply",
-    "attach": "Attach"
+    "attach": "Attach",
+    "menu_view_details": "View details",
+    "menu_mark_reviewed": "Mark as reviewed",
+    "menu_dismiss": "Dismiss"
   },
   "status": {
     "open": "OPEN",

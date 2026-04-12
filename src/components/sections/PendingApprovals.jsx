@@ -11,13 +11,22 @@ export default function PendingApprovals({ onViewAll }) {
   }, []);
 
   const open = (tasks || []).filter((t) => t.status !== "completed" && t.status !== "rejected");
-  const bySender = {};
-  open.forEach((t) => {
-    const name = t.sender.name.replace("You (", "").replace(")", "");
-    bySender[name] = (bySender[name] || 0) + 1;
+  const bySenderId = {};
+  const senderNames = {};
+  open.forEach((task) => {
+    const sid = task.sender.id;
+    bySenderId[sid] = (bySenderId[sid] || 0) + 1;
+    if (!senderNames[sid]) {
+      if (sid === "owner") {
+        senderNames[sid] = t("pending_approvals.you_role", { role: t("pending_approvals.role_owner") });
+      } else {
+        const raw = task.sender.name;
+        senderNames[sid] = raw.replace(/^You \(.*?\)$/, task.sender.role || raw);
+      }
+    }
   });
-  const breakdown = Object.entries(bySender)
-    .map(([name, count]) => t("pending_approvals.from", { count, name }))
+  const breakdown = Object.entries(bySenderId)
+    .map(([sid, count]) => t("pending_approvals.from", { count, name: senderNames[sid] }))
     .join(" · ");
 
   return (

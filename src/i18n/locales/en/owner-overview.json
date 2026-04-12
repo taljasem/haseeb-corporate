@@ -24,7 +24,9 @@
   "pending_approvals": {
     "label": "PENDING APPROVALS",
     "from": "{{count}} from {{name}}",
-    "view_all": "View all in Taskbox →"
+    "view_all": "View all in Taskbox →",
+    "you_role": "You ({{role}})",
+    "role_owner": "Owner"
   },
   "budget_performance": {
     "used_pct": "{{pct}}% used",

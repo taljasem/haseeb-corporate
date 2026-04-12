@@ -22,6 +22,7 @@ import ForecastScreen from "./ForecastScreen";
 import VarianceAnalysisScreen from "./VarianceAnalysisScreen";
 import AgingReportsScreen from "./AgingReportsScreen";
 import SetupScreen from "./SetupScreen";
+import AuditBridgeScreen from "../owner/AuditBridgeScreen";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
 
@@ -127,6 +128,8 @@ export default function CFOView({ registerNav }) {
         return <AgingReportsScreen onOpenAminah={openAminah} />;
       case "setup":
         return <SetupScreen />;
+      case "audit-bridge":
+        return <AuditBridgeScreen onOpenAminah={openAminah} />;
       default:
         return (
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-tertiary)", fontSize: 13 }}>

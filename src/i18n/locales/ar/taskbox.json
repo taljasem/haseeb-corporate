@@ -76,7 +76,10 @@
     "open_link": "فتح ←",
     "reply_placeholder": "اكتب رداً...",
     "reply": "رد",
-    "attach": "إرفاق"
+    "attach": "إرفاق",
+    "menu_view_details": "عرض التفاصيل",
+    "menu_mark_reviewed": "وسم كمُراجَع",
+    "menu_dismiss": "تجاهل"
   },
   "status": {
     "open": "مفتوحة",

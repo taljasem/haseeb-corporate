@@ -4648,6 +4648,9 @@ export async function getTransactionAttachments(txId) {
   return _brandObj(_txAttachmentStore[txId] ? [..._txAttachmentStore[txId]] : []);
 }
 
+// Hoisted from line ~6752 to fix TDZ crash (BUG-005): IIFE below references this const at module init time.
+const _MOCK_PDF_URL = "data:application/pdf;base64,JVBERi0xLjMKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0NvdW50IDEvS2lkc1szIDAgUl0+PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXT4+CmVuZG9iagp4cmVmCjAgNAowMDAwMDAwMDAwIDY1NTM1IGYKMDAwMDAwMDAxMCAwMDAwMCBuCjAwMDAwMDAwNTMgMDAwMDAgbgowMDAwMDAwMDk0IDAwMDAwIG4KdHJhaWxlcgo8PC9TaXplIDQvUm9vdCAxIDAgUj4+CnN0YXJ0eHJlZgoxNDcKJSVFT0YK";
+
 // Seed attachments on a few existing transactions
 (function _seedTxAttachments() {
   _txAttachmentStore["bt-1"] = [{ id: "txa-s1", name: "fuel_receipt_knpc.pdf", size: 84000, type: "application/pdf", uploadedBy: "sara", uploadedAt: _daysAgo(1), dataUrl: _MOCK_PDF_URL }];
@@ -6747,9 +6750,8 @@ export async function updateEngineConfiguration(config) {
 // ── Attachments ──────────────────────────────────────────────────
 let _attachmentSeq = 1;
 
-// Seed a tiny 1x1 green PNG and a minimal PDF stub as data URLs.
+// Seed a tiny 1x1 green PNG as a data URL. (_MOCK_PDF_URL hoisted to line ~4651 to fix BUG-005 TDZ.)
 const _MOCK_PNG_URL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4//8/AwAI/AL+X6Jz0AAAAABJRU5ErkJggg==";
-const _MOCK_PDF_URL = "data:application/pdf;base64,JVBERi0xLjMKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PgplbmRvYmoKMiAwIG9iago8PC9UeXBlL1BhZ2VzL0NvdW50IDEvS2lkc1szIDAgUl0+PgplbmRvYmoKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA2MTIgNzkyXT4+CmVuZG9iagp4cmVmCjAgNAowMDAwMDAwMDAwIDY1NTM1IGYKMDAwMDAwMDAxMCAwMDAwMCBuCjAwMDAwMDAwNTMgMDAwMDAgbgowMDAwMDAwMDk0IDAwMDAwIG4KdHJhaWxlcgo8PC9TaXplIDQvUm9vdCAxIDAgUj4+CnN0YXJ0eHJlZgoxNDcKJSVFT0YK";
 
 function _seedAttachment(name, type, size, uploaderId, daysAgoN) {
   let dataUrl = "";

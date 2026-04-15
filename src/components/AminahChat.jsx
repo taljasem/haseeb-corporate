@@ -1,6 +1,13 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Send, Sparkles, Loader2, CheckCircle2, ChevronRight } from "lucide-react";
-import { runAminahSession } from "../engine/aminah/stubBackend";
+// Wave 3: `runAminahSession` now comes from the engine router, which
+// picks between the scripted `stubBackend` generator in MOCK mode and
+// the live `chat-adapter.runLiveChatSession` in LIVE mode. Both speak
+// the same block-event protocol, so the `for await` loop below is
+// unchanged. The advisor surface always uses agent='aminah' which the
+// Corporate API treats as read-only: the server strips any
+// pendingJournalEntry from the response.
+import { runAminahSession } from "../engine";
 import { createAminahSession, listRecentAminahSessions, getAminahSession, appendMessageToSession } from "../engine/mockEngine";
 
 const PROMPTS = [
@@ -24,6 +31,11 @@ function renderBold(text) {
 export default function AminahChat({ role = "cfo" }) {
   const [messages, setMessages] = useState([]);
   const [sessionId, setSessionId] = useState(null);
+  // Wave 3: the server-side conversation id returned from /api/ai/chat.
+  // In MOCK mode this stays null (the stub uses sessionId instead). In
+  // LIVE mode we capture it from message.complete events and echo it
+  // back on subsequent sends so the thread persists server-side.
+  const [conversationId, setConversationId] = useState(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [draft, setDraft] = useState("");
   const scrollRef = useRef(null);
@@ -69,9 +81,22 @@ export default function AminahChat({ role = "cfo" }) {
         if (tc >= 0) msg.blocks[tc] = { ...msg.blocks[tc], status: "complete" };
       } else if (event.type === "message.complete") {
         msg.complete = true;
+      } else if (event.type === "error") {
+        // Wave 3: live-adapter error events get rendered as an inline
+        // error bubble so the user can see what went wrong and retry.
+        msg.blocks.push({
+          type: "text",
+          text: event.message || "Something went wrong.",
+          isError: true,
+        });
       }
       return msgs;
     });
+    // Capture the server-side conversation id from completion events so
+    // subsequent sends echo it back and the thread persists.
+    if (event.type === "message.complete" && event.conversationId) {
+      setConversationId(event.conversationId);
+    }
   }, []);
 
   const sendMessage = async (text) => {
@@ -83,7 +108,15 @@ export default function AminahChat({ role = "cfo" }) {
     const asstId = `msg-a-${Date.now()}`;
     setMessages((prev) => [...prev, { id: asstId, role: "assistant", blocks: [], createdAt: new Date().toISOString(), complete: false }]);
     try {
-      const gen = runAminahSession(sessionId, text.trim(), { role });
+      // Advisor is read-only: agent='aminah' makes the server strip
+      // pendingJournalEntry from the response, so the for-await loop
+      // never sees a confirmation prompt on this surface.
+      const gen = runAminahSession(sessionId, text.trim(), {
+        role,
+        agent: "aminah",
+        conversationId,
+        thinkingLabel: "Checking your books...",
+      });
       streamRef.current = gen;
       for await (const event of gen) {
         applyEvent(asstId, event);

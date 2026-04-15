@@ -4,7 +4,9 @@ import { X } from "lucide-react";
 import useEscapeKey from "../../hooks/useEscapeKey";
 import Spinner from "../shared/Spinner";
 import { runValidators, required, minLength } from "../../utils/validation";
-import { changePassword } from "../../engine/mockEngine";
+// Wave 2: changePassword routes through the engine router (real
+// /api/auth/change-password in LIVE mode, mock in MOCK mode).
+import { changePassword } from "../../engine";
 
 const inputStyle = {
   width: "100%",

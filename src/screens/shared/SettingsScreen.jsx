@@ -12,8 +12,12 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { useLanguage } from "../../i18n/LanguageContext";
 import { formatRelativeTime } from "../../utils/relativeTime";
 import { formatDate } from "../../utils/format";
+// Wave 2: profile comes from the engine router (GET /api/auth/me adapted
+// to the mock profile shape in src/api/settings.js). Notifications,
+// sessions list, 2FA, integrations, audit log have no backend support
+// and stay on mockEngine (mock_fallback in LIVE mode, one-shot warn).
+import { getUserProfile } from "../../engine";
 import {
-  getUserProfile,
   getNotificationPreferences,
   updateNotificationPreferences,
   getActiveSessions,
@@ -26,6 +30,7 @@ import {
   addIntegration,
   getAccountAuditLog,
 } from "../../engine/mockEngine";
+import { useAuth } from "../../contexts/AuthContext";
 import ChangePasswordModal from "../../components/settings/ChangePasswordModal";
 import EnableTwoFactorModal from "../../components/settings/EnableTwoFactorModal";
 import ConfigureIntegrationModal from "../../components/settings/ConfigureIntegrationModal";
@@ -250,13 +255,59 @@ function AccountSection({ role }) {
   const { t } = useTranslation("settings");
   const { t: ts } = useTranslation("sidebar");
   const { tenant } = useTenant();
+  const { logout, user: authUser, tenant: authTenant } = useAuth();
   const [profile, setProfile] = useState(null);
+  const [profileError, setProfileError] = useState(null);
   const [pwOpen, setPwOpen] = useState(false);
   const [toast, setToast] = useState(null);
+  const [loggingOut, setLoggingOut] = useState(false);
 
-  useEffect(() => { getUserProfile().then(setProfile); }, []);
+  useEffect(() => {
+    let cancelled = false;
+    setProfileError(null);
+    getUserProfile()
+      .then((p) => {
+        if (!cancelled) setProfile(p);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setProfileError(
+          err?.code === "NETWORK_ERROR"
+            ? "Can't reach the server. Check your connection and try again."
+            : err?.message || "Something went wrong loading your profile."
+        );
+        // Fall back to auth context data so the page still shows something.
+        if (authUser) {
+          setProfile({
+            id: authUser.id,
+            name: authUser.nameEn || authUser.name || authUser.email || "User",
+            email: authUser.email || "",
+            role: authUser.role || role,
+            joinedAt: authUser.createdAt || null,
+          });
+        }
+      });
+    return () => { cancelled = true; };
+  }, [authUser, role]);
 
-  if (!profile) return <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>{t("loading")}</div>;
+  const handleSignOut = async () => {
+    setLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setLoggingOut(false);
+    }
+    // ProtectedRoute will swap in the LoginScreen automatically.
+  };
+
+  if (!profile && !profileError) return <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>{t("loading")}</div>;
+  if (!profile) {
+    return (
+      <div role="alert" style={{ color: "var(--semantic-danger)", fontSize: 12, padding: "12px 0" }}>
+        {profileError}
+      </div>
+    );
+  }
 
   const roleLabel = ts(`items.${role === "Owner" ? "today" : role === "CFO" ? "today" : "today"}`, { defaultValue: role });
   const roleNameKey = role === "Owner" ? "role_owner" : role === "CFO" ? "role_cfo" : "role_junior";
@@ -269,9 +320,32 @@ function AccountSection({ role }) {
         <FieldRow label={t("account.field_role")} value={t(`change_password_modal.title`, { defaultValue: role }) && role} />
         <FieldRow label={t("account.field_tenant")} value={<LtrText>{tenant?.company?.name || "—"}</LtrText>} />
         <FieldRow label={t("account.field_joined")} value={formatDate(profile.joinedAt, { withYear: true })} />
-        <div style={{ marginTop: 14 }}>
+        <div style={{ marginTop: 14, display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button onClick={() => setPwOpen(true)} style={btnPrimary(false)}>
             {t("account.change_password")}
+          </button>
+          <button
+            onClick={handleSignOut}
+            disabled={loggingOut}
+            aria-busy={loggingOut}
+            aria-label="Sign out"
+            style={{
+              background: "transparent",
+              color: "var(--semantic-danger)",
+              border: "1px solid rgba(253,54,28,0.35)",
+              padding: "9px 16px",
+              borderRadius: 6,
+              cursor: loggingOut ? "not-allowed" : "pointer",
+              fontSize: 12,
+              fontWeight: 600,
+              fontFamily: "inherit",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <LogOut size={12} aria-hidden="true" />
+            {loggingOut ? "Signing out…" : "Sign out"}
           </button>
         </div>
       </Card>

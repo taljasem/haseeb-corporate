@@ -9,9 +9,17 @@ import Spinner from "../../components/shared/Spinner";
 import { mustBalance } from "../../utils/validation";
 import { formatDate } from "../../utils/format";
 import { formatRelativeTime } from "../../utils/relativeTime";
+// Wave 2: read-only list/detail calls route through the engine router
+// (real API in LIVE mode, mock in MOCK mode). Everything that writes to
+// the ledger (create draft, post, reverse, schedule, attach files, etc.)
+// is not wired in Wave 2 and continues to hit mockEngine directly. In
+// LIVE mode the engine router's WRITE_THROW set will loudly refuse these
+// calls against the real API — this is intentional: Wave 3 wires them.
 import {
   getManualJEs,
   getManualJEById,
+} from "../../engine";
+import {
   getManualJETemplates,
   createManualJEDraft,
   updateManualJEDraft,
@@ -90,18 +98,39 @@ export default function ManualJEScreen({ onOpenAminah }) {
     setTimeout(() => setToast(null), 2500);
   };
 
+  // Wave 2: per-source loading so a failing drafts call doesn't hide
+  // the recent-posted list that's actually populated in a real tenant.
+  const [loadError, setLoadError] = useState(null);
   useEffect(() => {
+    let cancelled = false;
+    setLoadError(null);
+    const safe = (p) =>
+      p.catch((err) => {
+        if (!cancelled) {
+          setLoadError({
+            message:
+              err?.code === "NETWORK_ERROR"
+                ? "Can't reach the server. Check your connection and try again."
+                : err?.message || "Something went wrong loading journal entries.",
+          });
+        }
+        return [];
+      });
     Promise.all([
-      getManualJEs("drafts"),
-      getManualJEs("recent-posted"),
-      getManualJETemplates(),
-      getManualJEs("scheduled"),
+      safe(Promise.resolve().then(() => getManualJEs("drafts"))),
+      safe(Promise.resolve().then(() => getManualJEs("recent-posted"))),
+      safe(Promise.resolve().then(() => getManualJETemplates())),
+      safe(Promise.resolve().then(() => getManualJEs("scheduled"))),
     ]).then(([d, r, t, s]) => {
-      setDrafts(d);
-      setRecent(r);
-      setTemplates(t);
-      setScheduled(s);
+      if (cancelled) return;
+      setDrafts(d || []);
+      setRecent(r || []);
+      setTemplates(t || []);
+      setScheduled(s || []);
     });
+    return () => {
+      cancelled = true;
+    };
   }, [tick]);
 
   useEffect(() => {

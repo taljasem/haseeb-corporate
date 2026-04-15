@@ -11,10 +11,16 @@ import ReclassifyLineModal from "../../components/financial/ReclassifyLineModal"
 import LineNoteModal from "../../components/financial/LineNoteModal";
 import { useTenant } from "../../components/shared/TenantContext";
 import { formatRelativeTime } from "../../utils/relativeTime";
+// Wave 2: IS/BS/CF come from the engine router (real API in LIVE mode,
+// mock in MOCK mode, with shape adapters in src/api/reports.js).
+// Adjusting entries, line notes, and export helpers have no backend yet
+// and stay on mockEngine (mock_fallback in LIVE mode, with a one-shot warn).
 import {
   getIncomeStatement,
   getBalanceSheet,
   getCashFlowStatement,
+} from "../../engine";
+import {
   getAdjustingEntries,
   getLineNotes,
   exportStatement,
@@ -156,12 +162,59 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
   const [reclassifySource, setReclassifySource] = useState(null);
   const [noteTarget, setNoteTarget] = useState(null);
   const [toast, setToast] = useState(null);
+  // Wave 2: loading + error state for the three reports. Null-safe so the
+  // existing render path keeps working.
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
 
   useEffect(() => {
-    getIncomeStatement(period).then(setIncome);
-    getBalanceSheet(period).then(setBalance);
-    getCashFlowStatement(period).then(setCashFlow);
+    let cancelled = false;
+    setLoading(true);
+    setLoadError(null);
+    Promise.all([
+      getIncomeStatement(period),
+      getBalanceSheet(period),
+      getCashFlowStatement(period),
+    ])
+      .then(([is, bs, cf]) => {
+        if (cancelled) return;
+        setIncome(is);
+        setBalance(bs);
+        setCashFlow(cf);
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setLoading(false);
+        setLoadError({
+          code: err?.code || "UNKNOWN",
+          message:
+            err?.code === "NETWORK_ERROR"
+              ? "Can't reach the server. Check your connection and try again."
+              : err?.message || "Something went wrong loading financial statements.",
+        });
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [period]);
+
+  // Detect empty-ledger state: every section line is zero.
+  const isEmptyLedger = useMemo(() => {
+    if (loading || loadError) return false;
+    const any = income || balance || cashFlow;
+    if (!any) return false;
+    const total = [income, balance, cashFlow].reduce((sum, r) => {
+      if (!r?.sections) return sum;
+      let s = 0;
+      for (const sec of r.sections) {
+        if (sec.lines) for (const l of sec.lines) s += Math.abs(Number(l.current || 0));
+        if (sec.current != null) s += Math.abs(Number(sec.current || 0));
+      }
+      return sum + s;
+    }, 0);
+    return total === 0;
+  }, [income, balance, cashFlow, loading, loadError]);
 
   useEffect(() => {
     if (role !== "CFO") return;
@@ -405,7 +458,82 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
               </div>
             )}
 
-            {current && (
+            {/* Wave 2: loading / error / empty states */}
+            {loading && (
+              <div
+                role="status"
+                aria-live="polite"
+                style={{
+                  marginBottom: 12,
+                  background: "var(--bg-surface)",
+                  border: "1px solid var(--border-default)",
+                  borderRadius: 10,
+                  padding: "28px 20px",
+                  textAlign: "center",
+                  color: "var(--text-tertiary)",
+                  fontSize: 12,
+                  letterSpacing: "0.04em",
+                }}
+              >
+                Loading financial statements…
+              </div>
+            )}
+            {loadError && (
+              <div
+                role="alert"
+                aria-live="polite"
+                style={{
+                  marginBottom: 12,
+                  background: "rgba(253,54,28,0.08)",
+                  border: "1px solid rgba(253,54,28,0.3)",
+                  color: "var(--semantic-danger)",
+                  padding: "14px 18px",
+                  borderRadius: 10,
+                  fontSize: 12,
+                  display: "flex",
+                  gap: 10,
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                }}
+              >
+                <div>{loadError.message}</div>
+                <button
+                  onClick={() => setPeriod((p) => p)}
+                  style={{
+                    background: "transparent",
+                    border: "1px solid rgba(253,54,28,0.35)",
+                    color: "var(--semantic-danger)",
+                    padding: "6px 12px",
+                    borderRadius: 6,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+            {!loading && !loadError && isEmptyLedger && (
+              <div
+                role="status"
+                style={{
+                  marginBottom: 12,
+                  background: "var(--accent-primary-subtle)",
+                  border: "1px solid rgba(0,196,140,0.30)",
+                  color: "var(--text-secondary)",
+                  padding: "14px 18px",
+                  borderRadius: 10,
+                  fontSize: 12,
+                }}
+              >
+                Not enough activity to generate this report. Record some transactions first, then come back.
+              </div>
+            )}
+
+            {!loading && !loadError && current && (
               <>
                 <AminahNarrationCard
                   text={current.aminahNarration}

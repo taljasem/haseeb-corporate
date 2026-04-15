@@ -9,8 +9,13 @@ import EmptyState from "../../components/shared/EmptyState";
 import Spinner from "../../components/shared/Spinner";
 import { useTenant } from "../../components/shared/TenantContext";
 import { formatRelativeTime } from "../../utils/relativeTime";
+// Wave 2: COA tree pulls from the engine router (real /api/accounts in
+// LIVE mode, mock in MOCK mode). Everything else on the setup screen
+// (fiscal, tax, currencies, integrations, team access, engine rules) has
+// no backend yet and stays on the mockEngine direct path — the router
+// will fall back to mock in LIVE mode with a one-shot warn.
+import { getSetupChartOfAccounts } from "../../engine";
 import {
-  getSetupChartOfAccounts,
   getFiscalYearConfig,
   getTaxConfiguration,
   updateTaxConfiguration,
@@ -150,7 +155,27 @@ function ChartSection() {
   const [toast, setToast] = useState(null);
   const [menuOpenCode, setMenuOpenCode] = useState(null);
 
-  const reload = () => getSetupChartOfAccounts().then(setAccounts);
+  // Wave 2: explicit loading/error state for the COA fetch.
+  const [coaLoading, setCoaLoading] = useState(true);
+  const [coaError, setCoaError] = useState(null);
+  const reload = () => {
+    setCoaLoading(true);
+    setCoaError(null);
+    return getSetupChartOfAccounts()
+      .then((data) => {
+        setAccounts(Array.isArray(data) ? data : []);
+        setCoaLoading(false);
+      })
+      .catch((err) => {
+        setCoaError({
+          message:
+            err?.code === "NETWORK_ERROR"
+              ? "Can't reach the server. Check your connection and try again."
+              : err?.message || "Something went wrong loading the chart of accounts.",
+        });
+        setCoaLoading(false);
+      });
+  };
   useEffect(() => { reload(); }, []);
 
   const filtered = useMemo(() => {
@@ -191,6 +216,24 @@ function ChartSection() {
           {["Assets", "Liabilities", "Equity", "Revenue", "Expenses"].map((tp) => <option key={tp} value={tp}>{t(`chart.types.${tp}`)}</option>)}
         </select>
       </div>
+      {coaLoading && (
+        <div role="status" aria-live="polite" style={{ padding: "18px 0", color: "var(--text-tertiary)", fontSize: 12 }}>
+          Loading chart of accounts…
+        </div>
+      )}
+      {coaError && !coaLoading && (
+        <div role="alert" style={{ padding: "14px 16px", marginBottom: 10, background: "rgba(253,54,28,0.08)", border: "1px solid rgba(253,54,28,0.3)", color: "var(--semantic-danger)", borderRadius: 8, fontSize: 12, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+          <span>{coaError.message}</span>
+          <button onClick={reload} style={{ background: "transparent", border: "1px solid rgba(253,54,28,0.35)", color: "var(--semantic-danger)", padding: "5px 10px", borderRadius: 6, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>Retry</button>
+        </div>
+      )}
+      {!coaLoading && !coaError && accounts.length === 0 && (
+        <EmptyState
+          icon={BookOpen}
+          title="Chart of accounts is being set up"
+          description="Your chart of accounts is being provisioned. Please refresh in a moment — this usually takes a few seconds."
+        />
+      )}
       {Object.keys(grouped).map((tp) => {
         const list = grouped[tp];
         if (list.length === 0) return null;

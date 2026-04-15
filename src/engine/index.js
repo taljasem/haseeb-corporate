@@ -293,28 +293,56 @@ function buildLiveSurface() {
  *   • runAminahSession → the stub scripted generator.
  *   • getConversationMessages → [] (no server in mock mode).
  *   • createJournalEntry / updateJournalEntryDraft / postJournalEntry /
- *     reverseJournalEntry / voidJournalEntry → throw with a clear
- *     instruction that Wave 3 writes only run against LIVE. In mock
- *     mode, the ManualJEComposer can fall back to a mock-only path if
- *     needed, but we prefer loud failures so the MOCK demo doesn't
- *     pretend a draft was saved.
+ *     reverseJournalEntry / voidJournalEntry → minimal client-side
+ *     mock that fabricates a plausible response so the demo flows
+ *     still work end-to-end without a backend. Not persisted to
+ *     mockEngine's state store — the point of the reshape is that the
+ *     composer holds draft state locally, so even in MOCK mode the
+ *     round-trip is purely cosmetic.
  */
 function buildMockExtras() {
-  const notSupportedInMock = (fnName) => async () => {
-    throw new Error(
-      `[engine] ${fnName}() is a Wave 3 live-only write. ` +
-        `MOCK mode does not implement it; set VITE_USE_MOCKS=false to ` +
-        `run against the Corporate API.`
-    );
+  let _mockEntryCounter = 1000;
+  const mockCreate = async (payload) => {
+    await new Promise((r) => setTimeout(r, 120));
+    const id = `MOCK-JE-${++_mockEntryCounter}`;
+    return {
+      id,
+      entryNumber: _mockEntryCounter,
+      date: payload?.date || new Date().toISOString(),
+      description: payload?.description || '',
+      reference: payload?.reference || null,
+      status: (payload?.status || 'DRAFT').toUpperCase(),
+      currency: payload?.currency || 'KWD',
+      source: payload?.source || 'MANUAL',
+      lines: payload?.lines || [],
+      createdAt: new Date().toISOString(),
+      _mock: true,
+    };
+  };
+  const mockUpdate = async (id, payload) => {
+    await new Promise((r) => setTimeout(r, 80));
+    return { id, ...payload, _mock: true };
+  };
+  const mockPost = async (id) => {
+    await new Promise((r) => setTimeout(r, 80));
+    return { id, entryNumber: id, status: 'POSTED', _mock: true };
+  };
+  const mockReverse = async (id, reason) => {
+    await new Promise((r) => setTimeout(r, 80));
+    return { id: `REV-${id}`, reversalOf: id, reason, _mock: true };
+  };
+  const mockVoid = async (id, reason) => {
+    await new Promise((r) => setTimeout(r, 80));
+    return { id, status: 'VOID', reason, _mock: true };
   };
   return {
     runAminahSession: stubRunAminahSession,
     getConversationMessages: async () => [],
-    createJournalEntry: notSupportedInMock('createJournalEntry'),
-    updateJournalEntryDraft: notSupportedInMock('updateJournalEntryDraft'),
-    postJournalEntry: notSupportedInMock('postJournalEntry'),
-    reverseJournalEntry: notSupportedInMock('reverseJournalEntry'),
-    voidJournalEntry: notSupportedInMock('voidJournalEntry'),
+    createJournalEntry: mockCreate,
+    updateJournalEntryDraft: mockUpdate,
+    postJournalEntry: mockPost,
+    reverseJournalEntry: mockReverse,
+    voidJournalEntry: mockVoid,
   };
 }
 

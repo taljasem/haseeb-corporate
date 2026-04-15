@@ -272,7 +272,7 @@ export default function JournalEntryCard({
                     fontVariantNumeric: "tabular-nums",
                   }}
                 >
-                  {line.debit != null ? line.debit.toFixed(3) : "—"}
+                  {line.debit != null ? Number(line.debit).toFixed(3) : "—"}
                 </div>
                 <div
                   style={{
@@ -283,7 +283,7 @@ export default function JournalEntryCard({
                     fontVariantNumeric: "tabular-nums",
                   }}
                 >
-                  {line.credit != null ? line.credit.toFixed(3) : "—"}
+                  {line.credit != null ? Number(line.credit).toFixed(3) : "—"}
                 </div>
               </div>
               {pickerLineIdx === i && (

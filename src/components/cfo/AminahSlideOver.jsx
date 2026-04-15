@@ -2,7 +2,12 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { X, Plus, Send, Square, Sparkles, ChevronDown, ChevronRight, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import ActionButton from "../ds/ActionButton";
-import { runAminahSession } from "../../engine/aminah/stubBackend";
+// Wave 3: runAminahSession comes from the engine router. MOCK mode
+// uses the scripted stubBackend generator; LIVE mode uses the
+// chat-adapter that wraps POST /api/ai/chat (agent='aminah', read-only)
+// into the same block-event protocol. The for-await loop below is
+// unchanged.
+import { runAminahSession } from "../../engine";
 import {
   createAminahSession,
   getAminahSession,
@@ -27,6 +32,9 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
   const [messages, setMessages] = useState([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [sessionId, setSessionId] = useState(null);
+  // Wave 3: server-side conversation id from POST /api/ai/chat.
+  // Captured from message.complete events, echoed back on sends.
+  const [conversationId, setConversationId] = useState(null);
   const [recentSessions, setRecentSessions] = useState([]);
   const [draft, setDraft] = useState("");
   const scrollRef = useRef(null);
@@ -61,6 +69,9 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
     setSessionId(sess.id);
     setMessages([]);
     setDraft("");
+    // Reset server-side conversation id so the next send starts a
+    // fresh thread.
+    setConversationId(null);
   };
 
   const switchSession = async (sid) => {
@@ -118,12 +129,23 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
         case "message.complete":
           msg.complete = true;
           break;
+        case "error":
+          // Wave 3: live-adapter error → inline error bubble.
+          msg.blocks.push({
+            type: "text",
+            text: event.message || t("error.generic"),
+            isError: true,
+          });
+          break;
         default:
           break;
       }
       return msgs;
     });
-  }, []);
+    if (event.type === "message.complete" && event.conversationId) {
+      setConversationId(event.conversationId);
+    }
+  }, [t]);
 
   const sendMessage = async (text) => {
     if (!text.trim() || isStreaming || !sessionId) return;
@@ -138,7 +160,13 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
     setMessages((prev) => [...prev, asstMsg]);
 
     try {
-      const gen = runAminahSession(sessionId, text.trim(), { role, screen: "general" });
+      const gen = runAminahSession(sessionId, text.trim(), {
+        role,
+        screen: "general",
+        agent: "aminah",
+        conversationId,
+        thinkingLabel: t("subtitle_thinking"),
+      });
       streamRef.current = gen;
       for await (const event of gen) {
         applyEvent(asstId, event);

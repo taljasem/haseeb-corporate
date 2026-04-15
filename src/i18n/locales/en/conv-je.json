@@ -4,6 +4,24 @@
     "sub": "For non-bank transactions only. Bank transactions go through Bank Review."
   },
   "input_placeholder": "Describe a non-bank transaction…",
+  "empty": {
+    "title": "Start recording by describing what happened",
+    "subtitle": "Haseeb will draft a journal entry, show you the lines, and wait for your confirmation before posting.",
+    "example_1": "I bought office supplies for 50 KWD with cash",
+    "example_2": "I received 1000 KWD from client ABC for the consulting contract",
+    "example_3": "I paid 500 KWD rent with cheque"
+  },
+  "live": {
+    "thinking": "Haseeb is thinking...",
+    "review_and_confirm": "Review the draft and confirm to post, or ask me to change something.",
+    "posted_as": "Posted as {{id}}. Hash chain extended.",
+    "posted_generic": "Posted successfully.",
+    "discarded": "Discarded. No entry was created.",
+    "error_generic": "Something went wrong. Try again?",
+    "error_network": "I couldn't reach the server. Check your connection and try again.",
+    "retry": "Retry",
+    "edit_in_composer": "Edit in Manual JE →"
+  },
   "labels": {
     "expense_account": "EXPENSE ACCOUNT",
     "cash_account": "CASH ACCOUNT",

@@ -1,55 +1,160 @@
 /**
  * Chat / Aminah API module.
  *
- * Wave 2 status: this module exists and is wired into the engine router,
- * but the default AminahChat UI in the dashboard still runs off the
- * streaming `runAminahSession` generator in `engine/aminah/stubBackend.js`,
- * which speaks a rich event protocol (tool.call_started, text_delta, etc.)
- * that POST /api/ai/chat does NOT emit. Adapting the streaming UI to a
- * single-shot HTTP response would be a deep refactor and is explicitly
- * out of scope for Wave 2 (see the smoke test "known limitations").
+ * Wave 3: this module is now the single authoritative wrapper around
+ * POST /api/ai/chat and POST /api/ai/confirm. The dashboard's rich chat
+ * UIs (AminahChat, AminahSlideOver, ConversationalJEScreen) no longer
+ * speak to the stub backend directly in LIVE mode — they consume an
+ * event-protocol generator from `chat-adapter.js` that in turn calls
+ * `sendChatMessage` here.
  *
- * Callers that want the non-streaming flow (e.g. ConversationalJEScreen
- * demo) can import `sendChatMessage` directly from here or from
- * `../engine` — the router will do the right thing for MOCK vs LIVE.
+ * Contract reference: memory-bank/wave-3-write-contract.md §1.
+ *
+ *   • Request body key is `message` (NOT `text`).
+ *   • `agent: 'aminah'` = advisor/read-only. Server strips any
+ *     `pendingJournalEntry` / `confirm_transaction` payload so the
+ *     advisor surfaces never see a write-confirmation prompt.
+ *   • `agent: 'haseeb'` = recording/write path. Confirmation prompts flow
+ *     through in the response.
+ *   • Response is a BARE envelope (not wrapped in `{ success, data }`).
+ *     Unique to /api/ai/chat and /api/ai/confirm; every other endpoint
+ *     still uses the standard envelope.
+ *   • Conversation persistence is server-side automatic via
+ *     conversationService.upsert — the client just echoes back the
+ *     `conversationId` from the previous response.
  */
 import client from './client';
 
 function unwrap(response) {
+  // /api/ai/chat returns a bare envelope (not { success, data, ... }).
+  // We still tolerate the wrapped form defensively so the same unwrap
+  // works for /api/conversations which uses the standard envelope.
   if (response && response.data && typeof response.data === 'object') {
-    if ('data' in response.data) return response.data.data;
+    if ('data' in response.data && 'success' in response.data) {
+      return response.data.data;
+    }
     return response.data;
   }
   return response?.data;
 }
 
 /**
- * Send a single chat message to Aminah. Returns `{ response, pendingAction?, conversationId }`.
+ * Send a single chat message. New Wave 3 signature:
+ *
+ *   sendChatMessage({ message, agent, conversationId, file })
+ *
+ * Returns the bare response envelope:
+ *   {
+ *     message,          // assistant text reply
+ *     language,         // 'en' | 'ar'
+ *     conversationId,   // always present
+ *     action?,          // { type, data, buttons? } — only for write path
+ *     pendingJournalEntry?, // mirror of action.data for confirm_transaction
+ *     confirmationId?,  // echo back to /api/ai/confirm
+ *     metadata?,        // report attachment, etc.
+ *     raw,              // the raw unwrapped body, for belt-and-braces access
+ *   }
+ *
+ * Backwards-compatible: a first positional string argument is treated
+ * as the message text. Existing call sites that used
+ * `sendChatMessage("hello", convId)` keep working; new call sites should
+ * use the named-options form.
  */
-export async function sendChatMessage(text, conversationId) {
-  const r = await client.post('/api/ai/chat', {
-    message: text,
-    ...(conversationId ? { conversationId } : {}),
-  });
+export async function sendChatMessage(messageOrOptions, legacyConversationId) {
+  let message;
+  let agent = 'haseeb';
+  let conversationId;
+  let file;
+
+  if (typeof messageOrOptions === 'string') {
+    message = messageOrOptions;
+    conversationId = legacyConversationId;
+  } else if (messageOrOptions && typeof messageOrOptions === 'object') {
+    message = messageOrOptions.message;
+    agent = messageOrOptions.agent || 'haseeb';
+    conversationId = messageOrOptions.conversationId;
+    file = messageOrOptions.file;
+  }
+
+  let r;
+  if (file) {
+    // Multipart path for receipt/statement attachments. Field name is
+    // `file` per ai.routes.ts:84 (multer single-file upload).
+    const form = new FormData();
+    if (message) form.append('message', message);
+    form.append('agent', agent);
+    if (conversationId) form.append('conversation_id', conversationId);
+    form.append('file', file);
+    r = await client.post('/api/ai/chat', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  } else {
+    r = await client.post('/api/ai/chat', {
+      message,
+      agent,
+      ...(conversationId ? { conversation_id: conversationId } : {}),
+    });
+  }
+
   const data = unwrap(r);
-  // Normalize the response into a UI-friendly shape.
+
   return {
-    response: data?.response || data?.message || '',
-    pendingAction: data?.pendingAction || null,
+    message: data?.message || '',
+    language: data?.language || 'en',
     conversationId: data?.conversationId || conversationId || null,
+    action: data?.action || null,
+    pendingJournalEntry: data?.pendingJournalEntry || null,
+    pendingInvoice: data?.pendingInvoice || null,
+    confirmationId: data?.confirmationId || null,
+    metadata: data?.metadata || null,
+    tool_uses: data?.tool_uses || data?.toolUses || null,
     raw: data,
   };
 }
 
 /**
- * Confirm a previously proposed action (usually a pending journal entry).
+ * Confirm / cancel / edit a pending action. Wave 3 signature:
+ *
+ *   confirmPendingAction({ conversationId, confirmationId, action, agent })
+ *
+ * action ∈ 'confirm' | 'cancel' | 'edit'
+ *
+ * Returns the bare envelope:
+ *   { message, language, success, journalEntry?, ruleSuggestion? }
+ *
+ * `journalEntry` is additive: present on the success path when a JE was
+ * posted (see backend prep commits f11e238). `ruleSuggestion` is
+ * optional and nullable.
+ *
+ * Backwards-compatible: positional `(conversationId, actionId)` still
+ * works and maps to `action: 'confirm'`.
  */
-export async function confirmPendingAction(conversationId, actionId) {
-  const r = await client.post('/api/ai/confirm', {
-    conversationId,
-    actionId,
-  });
-  return unwrap(r);
+export async function confirmPendingAction(optionsOrConversationId, legacyActionId) {
+  let payload;
+  if (typeof optionsOrConversationId === 'string') {
+    payload = {
+      action: 'confirm',
+      confirmationId: legacyActionId,
+    };
+  } else {
+    const {
+      confirmationId,
+      action = 'confirm',
+      agent = 'haseeb',
+    } = optionsOrConversationId || {};
+    payload = { action, confirmationId, agent };
+  }
+
+  const r = await client.post('/api/ai/confirm', payload);
+  const data = unwrap(r);
+  return {
+    message: data?.message || '',
+    language: data?.language || 'en',
+    success: data?.success !== false,
+    journalEntry: data?.journalEntry || null,
+    ruleSuggestion: data?.ruleSuggestion || null,
+    raw: data,
+  };
 }
 
 export async function listConversations() {
@@ -61,4 +166,20 @@ export async function listConversations() {
 export async function getConversation(id) {
   const r = await client.get(`/api/conversations/${encodeURIComponent(id)}`);
   return unwrap(r);
+}
+
+/**
+ * Hydrate the message history for a conversation.
+ * Used by ConversationalJEScreen when loading ?conversation=<id>.
+ * Returns the adapted message array or [] on 404.
+ */
+export async function getConversationMessages(id) {
+  try {
+    const r = await client.get(`/api/conversations/${encodeURIComponent(id)}/messages`);
+    const data = unwrap(r);
+    return Array.isArray(data) ? data : data?.messages || [];
+  } catch (err) {
+    if (err?.status === 404) return [];
+    throw err;
+  }
 }

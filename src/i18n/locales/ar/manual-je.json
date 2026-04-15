@@ -51,7 +51,10 @@
     "post_now": "ترحيل الآن",
     "cancel_schedule": "إلغاء الجدولة",
     "reversed_by": "عُكس بواسطة {{id}}",
-    "reversal_of": "عكس لـ {{id}}"
+    "reversal_of": "عكس لـ {{id}}",
+    "save_draft": "حفظ كمسودة",
+    "saving": "جارٍ الحفظ...",
+    "posting": "جارٍ الترحيل..."
   },
   "status": {
     "posted": "مُرحَّل",

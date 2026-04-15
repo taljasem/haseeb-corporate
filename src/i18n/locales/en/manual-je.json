@@ -51,7 +51,10 @@
     "post_now": "Post Now",
     "cancel_schedule": "Cancel Schedule",
     "reversed_by": "REVERSED BY {{id}}",
-    "reversal_of": "REVERSAL OF {{id}}"
+    "reversal_of": "REVERSAL OF {{id}}",
+    "save_draft": "Save Draft",
+    "saving": "Saving...",
+    "posting": "Posting..."
   },
   "status": {
     "posted": "POSTED",

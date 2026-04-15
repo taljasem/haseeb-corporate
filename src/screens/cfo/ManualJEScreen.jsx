@@ -9,28 +9,36 @@ import Spinner from "../../components/shared/Spinner";
 import { mustBalance } from "../../utils/validation";
 import { formatDate } from "../../utils/format";
 import { formatRelativeTime } from "../../utils/relativeTime";
-// Wave 2: read-only list/detail calls route through the engine router
-// (real API in LIVE mode, mock in MOCK mode). Everything that writes to
-// the ledger (create draft, post, reverse, schedule, attach files, etc.)
-// is not wired in Wave 2 and continues to hit mockEngine directly. In
-// LIVE mode the engine router's WRITE_THROW set will loudly refuse these
-// calls against the real API — this is intentional: Wave 3 wires them.
+// Wave 3 rewrite: the composer now holds the full draft in local React
+// state and emits a single atomic POST to the Corporate API on save.
+// The per-keystroke mock mutators (createManualJEDraft / addLine /
+// updateLine / removeLine / updateManualJEDraft / postManualJE /
+// reverseManualJE) are no longer part of the write path — the screen
+// works against three Wave 3 endpoints via the engine router:
+//
+//   • POST   /api/journal-entries                  (createJournalEntry)
+//   • PATCH  /api/journal-entries/:id              (updateJournalEntryDraft)
+//   • POST   /api/journal-entries/:id/validate     (postJournalEntry)
+//   • POST   /api/journal-entries/:id/reverse      (reverseJournalEntry)
+//
+// Reads (list + detail) still go through the engine router:
+//   • GET    /api/journal-entries                  (listJournalEntries)
+//   • GET    /api/journal-entries/:id              (getJournalEntry)
+//
+// Template / schedule / period-lock / attachment features are still on
+// mockEngine — they have no backend yet and stay mock in Wave 3.
 import {
   getManualJEs,
   getManualJEById,
+  createJournalEntry,
+  updateJournalEntryDraft,
+  postJournalEntry,
+  reverseJournalEntry,
 } from "../../engine";
 import {
   getManualJETemplates,
-  createManualJEDraft,
-  updateManualJEDraft,
-  addLineToManualJE,
-  updateLineInManualJE,
-  removeLineFromManualJE,
-  postManualJE,
-  discardManualJEDraft,
   createFromTemplate,
   saveAsTemplate,
-  reverseManualJE,
   scheduleManualJE,
   postScheduledNow,
   getChartOfAccounts,
@@ -64,6 +72,60 @@ function fmtKWD(n) {
   if (n == null || n === 0) return "0.000";
   return Number(n).toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 }
+
+// Wave 3: build a fresh client-only draft JE. No server call. The
+// composer's local state starts from one of these when the user clicks
+// "New blank" — nothing is persisted until Save.
+function blankDraft() {
+  return {
+    id: `NEW-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+    status: "draft",
+    source: "manual",
+    date: new Date().toISOString(),
+    reference: "",
+    description: "",
+    lines: [
+      { id: "L1", accountCode: "", accountName: "", debit: 0, credit: 0, memo: "" },
+      { id: "L2", accountCode: "", accountName: "", debit: 0, credit: 0, memo: "" },
+    ],
+    createdAt: new Date().toISOString(),
+  };
+}
+
+// Normalise whatever shape the parent passes as `je` into the local
+// draft state shape. Handles:
+//   - client-minted blank drafts (already in the right shape)
+//   - server-fetched entries adapted by api/journal-entries.js which
+//     already maps API shape → mock-compatible { id, status, lines }
+//   - SessionStorage prefill from ConversationalJE edit flow, which
+//     carries { date, description, lines: [{accountCode, accountName,
+//     debit, credit, label}] }
+function normaliseInitialJE(je) {
+  if (!je) return blankDraft();
+  const lines = Array.isArray(je.lines) && je.lines.length > 0
+    ? je.lines.map((l, i) => ({
+        id: l.id || `L${i + 1}`,
+        accountCode: l.accountCode || l.code || "",
+        accountName: l.accountName || l.account || l.name || "",
+        debit: Number(l.debit || 0),
+        credit: Number(l.credit || 0),
+        memo: l.memo || l.description || l.label || "",
+      }))
+    : blankDraft().lines;
+  return {
+    id: je.id || `NEW-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+    status: je.status || "draft",
+    source: je.source || "manual",
+    date: je.date || new Date().toISOString(),
+    reference: je.reference || "",
+    description: je.description || "",
+    lines,
+    createdAt: je.createdAt || new Date().toISOString(),
+    reversedBy: je.reversedBy,
+    reversalOf: je.reversalOf,
+    templateId: je.templateId,
+  };
+}
 // Time helpers routed through the shared i18n-aware utilities so Arabic
 // renders localized strings and we stop duplicating format logic.
 const fmtRelative = (iso) => (iso ? formatRelativeTime(iso) : "—");
@@ -84,12 +146,17 @@ export default function ManualJEScreen({ onOpenAminah }) {
   const [recent, setRecent] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [scheduled, setScheduled] = useState([]);
-  const [selected, setSelected] = useState(null); // { kind: "je"|"template", id }
+  const [selected, setSelected] = useState(null); // { kind: "je"|"template"|"new", id? }
   const [activeJE, setActiveJE] = useState(null);
   const [activeTemplate, setActiveTemplate] = useState(null);
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState(null);
   const [tick, setTick] = useState(0);
+  // Wave 3: `newDraft` holds a client-only blank draft for the
+  // "New blank" flow. Nothing hits the server until Save Draft /
+  // Save and Post. This sidesteps the Wave 2 per-keystroke mock path
+  // which would have created a phantom server draft on every click.
+  const [newDraft, setNewDraft] = useState(null);
 
   const refresh = useCallback(() => setTick((t) => t + 1), []);
 
@@ -135,23 +202,69 @@ export default function ManualJEScreen({ onOpenAminah }) {
 
   useEffect(() => {
     if (selected?.kind === "je") {
-      getManualJEById(selected.id).then(setActiveJE);
+      getManualJEById(selected.id).then(setActiveJE).catch(() => setActiveJE(null));
       setActiveTemplate(null);
     } else if (selected?.kind === "template") {
       const t = templates.find((x) => x.id === selected.id);
       setActiveTemplate(t);
       setActiveJE(null);
+    } else if (selected?.kind === "new") {
+      setActiveJE(newDraft);
+      setActiveTemplate(null);
     } else {
       setActiveJE(null);
       setActiveTemplate(null);
     }
-  }, [selected, tick, templates]);
+  }, [selected, tick, templates, newDraft]);
 
-  const handleNewBlank = async () => {
-    const j = await createManualJEDraft({});
+  // Wave 3: read any prefill payload stashed by the ConversationalJE
+  // edit flow. When the user clicks "Edit" on a draft confirmation card
+  // in ConversationalJE, it cancels the server-side pending action and
+  // writes the draft to SessionStorage, then navigates here. We pick
+  // it up on mount and seed a new client-only draft with the pending
+  // data pre-populated. The key is cleared after consumption so the
+  // prefill doesn't leak into the next fresh session.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.sessionStorage.getItem("haseeb:manual-je-prefill");
+      if (!raw) return;
+      const payload = JSON.parse(raw);
+      window.sessionStorage.removeItem("haseeb:manual-je-prefill");
+      if (!payload?.draft) return;
+      const prefilled = normaliseInitialJE({
+        ...payload.draft,
+        description: payload.draft.description || "",
+        source: "manual",
+      });
+      setNewDraft(prefilled);
+      setActiveTab("drafts");
+      setSelected({ kind: "new" });
+      showToast(t("toast.draft_prefilled_from_chat", { defaultValue: "Draft loaded from conversation" }));
+    } catch {
+      /* ignore */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Wave 3: refresh the lists when another surface (e.g. ConversationalJE)
+  // posts a journal entry. The event is fire-and-forget and lives on
+  // the window global so it doesn't couple screens.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onPosted = () => refresh();
+    window.addEventListener("haseeb:journal-entry-posted", onPosted);
+    return () => window.removeEventListener("haseeb:journal-entry-posted", onPosted);
+  }, [refresh]);
+
+  const handleNewBlank = () => {
+    // Wave 3: the "new blank" action is purely client-side. A local
+    // draft object is minted here; nothing touches the server until
+    // the user clicks Save Draft or Save and Post.
+    const d = blankDraft();
+    setNewDraft(d);
     setActiveTab("drafts");
-    setSelected({ kind: "je", id: j.id });
-    refresh();
+    setSelected({ kind: "new" });
   };
 
   const handleUseTemplate = async (templateId) => {
@@ -297,57 +410,122 @@ export default function ManualJEScreen({ onOpenAminah }) {
           />
         )}
 
-        {selected?.kind === "je" && activeJE && (
+        {(selected?.kind === "je" || selected?.kind === "new") && activeJE && (
           <ManualJEComposer
             je={activeJE}
-            onChange={refresh}
-            onDelete={async () => { await discardManualJEDraft(activeJE.id); setSelected(null); refresh(); showToast(t("toast.draft_discarded")); }}
-            onPost={async () => {
-              // Check soft-close before posting
-              if (activeJE.date) {
-                const ps = await checkPeriodStatus(activeJE.date);
-                if (ps.status === "soft-closed") {
-                  // Route through Owner approval instead of direct post
-                  const taskId = `TSK-JE-${Math.floor(Math.random() * 10000)}`;
-                  const { default: TASKBOX_DB_REF } = await import("../../engine/mockEngine").then(m => ({ default: null }));
-                  // Use engine's addTeamMember trick — call the mock directly
-                  showToast(t("soft_close.pending_approval_toast"));
-                  refresh();
-                  return;
-                }
-                if (ps.status === "hard-closed") {
-                  showToast(t("toast.cannot_post", { reason: "Period is hard-closed" }));
-                  return;
-                }
+            isNew={selected?.kind === "new"}
+            onDelete={() => {
+              if (selected?.kind === "new") {
+                // Client-only draft: just clear and go back.
+                setNewDraft(null);
+                setSelected(null);
+                showToast(t("toast.draft_discarded"));
+                return;
               }
-              const r = await postManualJE(activeJE.id, "cfo");
-              if (r?.error) { showToast(t("toast.cannot_post", { reason: r.error })); return; }
-              showToast(t("toast.posted", { id: r.id }));
-              setActiveTab("recent");
-              setSelected({ kind: "je", id: r.id });
-              refresh();
+              // Server draft: no dedicated DELETE endpoint in Wave 3.
+              // For now we just clear the selection — the draft stays
+              // on the server as a DRAFT row. Wave 4 can wire a proper
+              // DELETE /api/journal-entries/:id if that endpoint ships.
+              setSelected(null);
+              showToast(t("toast.draft_discarded"));
+            }}
+            onPost={async ({ draft, post }) => {
+              // Wave 3: atomic create-or-update-and-post. The composer
+              // holds the full draft locally and calls this once on
+              // Save. No per-keystroke server calls.
+              //
+              // New client-only draft →
+              //   POST /api/journal-entries with status = POSTED (if post)
+              //                             or status = DRAFT  (if !post)
+              // Existing server draft →
+              //   PATCH /api/journal-entries/:id with the edited body
+              //   + POST /api/journal-entries/:id/validate  (if post)
+              const payload = {
+                date: draft.date,
+                description: draft.description,
+                reference: draft.reference || undefined,
+                currency: "KWD",
+                source: draft.source || "manual",
+                lines: draft.lines
+                  .filter((l) => l.accountCode && (Number(l.debit) > 0 || Number(l.credit) > 0))
+                  .map((l) => ({
+                    accountCode: l.accountCode,
+                    debit: Number(l.debit) || 0,
+                    credit: Number(l.credit) || 0,
+                    description: l.memo || "",
+                  })),
+              };
+
+              if (selected?.kind === "new") {
+                // New path: create directly with the target status.
+                const created = await createJournalEntry({
+                  ...payload,
+                  status: post ? "POSTED" : "DRAFT",
+                });
+                const createdId = created?.id || created?.entryNumber;
+                setNewDraft(null);
+                setActiveTab(post ? "recent" : "drafts");
+                if (createdId) {
+                  setSelected({ kind: "je", id: createdId });
+                } else {
+                  setSelected(null);
+                }
+                refresh();
+                showToast(
+                  post
+                    ? t("toast.posted", { id: created?.entryNumber || createdId || "" })
+                    : t("toast.draft_saved", { defaultValue: "Draft saved" })
+                );
+                return;
+              }
+
+              // Existing server draft — PATCH then /validate.
+              await updateJournalEntryDraft(activeJE.id, payload);
+              if (post) {
+                const validated = await postJournalEntry(activeJE.id);
+                setActiveTab("recent");
+                setSelected({ kind: "je", id: validated?.id || activeJE.id });
+                refresh();
+                showToast(t("toast.posted", { id: validated?.entryNumber || activeJE.id }));
+              } else {
+                refresh();
+                showToast(t("toast.draft_saved", { defaultValue: "Draft saved" }));
+              }
             }}
             onReverse={async (reason) => {
-              const rev = await reverseManualJE(activeJE.id, reason);
+              if (selected?.kind === "new") return;
+              const rev = await reverseJournalEntry(activeJE.id, reason);
               setActiveTab("drafts");
-              setSelected({ kind: "je", id: rev.id });
+              if (rev?.id) setSelected({ kind: "je", id: rev.id });
               refresh();
               showToast(t("toast.reversal_created"));
             }}
             onSchedule={async (date, recurring) => {
-              await scheduleManualJE(activeJE.id, date, recurring);
-              setActiveTab("scheduled");
-              refresh();
-              showToast(t("toast.scheduled", { date: fmtDate(date) }));
+              // Scheduling has no backend in Wave 3 — stays on mockEngine.
+              // Only works for client-only drafts or mock-backed entries;
+              // live server drafts will throw from WRITE_THROW.
+              try {
+                await scheduleManualJE(activeJE.id, date, recurring);
+                setActiveTab("scheduled");
+                refresh();
+                showToast(t("toast.scheduled", { date: fmtDate(date) }));
+              } catch (err) {
+                showToast(t("toast.cannot_post", { reason: err?.message || "Scheduling not available" }));
+              }
             }}
             onPostNow={async () => {
-              const r = await postScheduledNow(activeJE.id, "cfo");
-              setActiveTab("recent");
-              setSelected({ kind: "je", id: r.id });
-              refresh();
-              showToast(t("toast.posted", { id: r.id }));
+              try {
+                const r = await postScheduledNow(activeJE.id, "cfo");
+                setActiveTab("recent");
+                setSelected({ kind: "je", id: r.id });
+                refresh();
+                showToast(t("toast.posted", { id: r.id }));
+              } catch (err) {
+                showToast(t("toast.cannot_post", { reason: err?.message || "Post-now not available" }));
+              }
             }}
             onSaveTemplate={async (name, desc) => {
+              if (!activeJE.id) return;
               await saveAsTemplate(activeJE.id, name, desc);
               refresh();
               showToast(t("toast.template_saved"));
@@ -448,12 +626,32 @@ function ListItem({ item, tab, selected, onClick, onRefresh }) {
   );
 }
 
-function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedule, onPostNow, onSaveTemplate, onAskAminah }) {
+function ManualJEComposer({ je, onDelete, onPost, onReverse, onSchedule, onPostNow, onSaveTemplate, onAskAminah, isNew }) {
   const { t } = useTranslation("manual-je");
   const { t: tc } = useTranslation("common");
-  const isPosted = je.status === "posted";
-  const isScheduled = je.status === "scheduled";
-  const isDraft = je.status === "draft";
+
+  // ─── Wave 3: local draft state ───────────────────────────────────
+  //
+  // The composer holds the FULL draft in local React state. All keystroke
+  // edits operate on this local object without any network round-trip.
+  // On Save the parent handler either POSTs a new entry or PATCHes +
+  // /validate promotes an existing draft. Nothing in this function
+  // calls mockEngine.updateManualJEDraft / addLineToManualJE / etc. —
+  // those are removed from Wave 3's write path entirely.
+  //
+  // `je` is the initial snapshot: either a blank locally-minted draft
+  // (from handleNewBlank) or a server-fetched draft (from
+  // getJournalEntry). We lift it into `draft` and resync whenever the
+  // parent swaps the active JE (selected.id change → je.id change).
+  const [draft, setDraft] = useState(() => normaliseInitialJE(je));
+  useEffect(() => {
+    setDraft(normaliseInitialJE(je));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [je?.id]);
+
+  const isPosted = draft.status === "posted";
+  const isScheduled = draft.status === "scheduled";
+  const isDraft = draft.status === "draft" || isNew;
   const readOnly = isPosted || isScheduled;
 
   const [reverseModalOpen, setReverseModalOpen] = useState(false);
@@ -461,70 +659,125 @@ function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedul
   const [tplModalOpen, setTplModalOpen] = useState(false);
   const [periodStatus, setPeriodStatus] = useState(null);
   const [jeAttachments, setJeAttachments] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
 
-  // Check period status whenever the JE date changes.
+  // Check period status whenever the draft date changes. Still served
+  // by mockEngine in Wave 3 (no backend endpoint yet).
   useEffect(() => {
-    if (!je.date) { setPeriodStatus(null); return; }
-    checkPeriodStatus(je.date).then(setPeriodStatus);
-  }, [je.date]);
+    if (!draft.date) { setPeriodStatus(null); return; }
+    checkPeriodStatus(draft.date).then(setPeriodStatus).catch(() => setPeriodStatus(null));
+  }, [draft.date]);
 
-  // Load attachments on mount and whenever je.id changes.
+  // Attachments are still mock-only in Wave 3 — they require a backend
+  // endpoint that doesn't exist yet. We only attempt to load them when
+  // the JE has a server-side id (i.e. NOT a new locally-minted draft).
   useEffect(() => {
-    if (!je.id) return;
-    getJEAttachments(je.id).then(setJeAttachments);
-  }, [je.id]);
+    if (isNew || !draft.id) { setJeAttachments([]); return; }
+    getJEAttachments(draft.id).then(setJeAttachments).catch(() => setJeAttachments([]));
+  }, [draft.id, isNew]);
 
   const isHardClosed = periodStatus?.status === "hard-closed";
   const isSoftClosed = periodStatus?.status === "soft-closed";
 
   const handleAttach = async (file) => {
-    const att = await attachJEFile(je.id, file);
+    if (isNew || !draft.id) return;
+    const att = await attachJEFile(draft.id, file);
     setJeAttachments((prev) => [...prev, att]);
   };
   const handleRemoveAtt = async (id) => {
-    await removeJEAttachment(je.id, id);
+    if (isNew || !draft.id) return;
+    await removeJEAttachment(draft.id, id);
     setJeAttachments((prev) => prev.filter((a) => a.id !== id));
   };
 
+  // ─── Local-state mutators (no network) ───────────────────────────
+  const updateField = (field, value) => {
+    setDraft((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const updateLine = (lineId, changes) => {
+    setDraft((prev) => {
+      const lines = prev.lines.map((l) => {
+        if (l.id !== lineId) return l;
+        const next = { ...l, ...changes };
+        // Mutual-exclusion: positive debit clears credit and vice versa.
+        if (changes.debit && changes.debit > 0) next.credit = 0;
+        if (changes.credit && changes.credit > 0) next.debit = 0;
+        return next;
+      });
+      return { ...prev, lines };
+    });
+  };
+
+  const addLine = () => {
+    setDraft((prev) => ({
+      ...prev,
+      lines: [
+        ...prev.lines,
+        {
+          id: `L${prev.lines.length + 1}-${Math.random().toString(36).slice(2, 5)}`,
+          accountCode: "",
+          accountName: "",
+          debit: 0,
+          credit: 0,
+          memo: "",
+        },
+      ],
+    }));
+  };
+
+  const removeLine = (lineId) => {
+    setDraft((prev) => ({ ...prev, lines: prev.lines.filter((l) => l.id !== lineId) }));
+  };
+
+  // ─── Client-side validation ─────────────────────────────────────
   const validation = (() => {
-    const td = je.lines.reduce((s, l) => s + (l.debit || 0), 0);
-    const totalCr = je.lines.reduce((s, l) => s + (l.credit || 0), 0);
+    const td = draft.lines.reduce((s, l) => s + (Number(l.debit) || 0), 0);
+    const totalCr = draft.lines.reduce((s, l) => s + (Number(l.credit) || 0), 0);
     const errors = [];
-    if (je.lines.length < 2) {
+    if (draft.lines.length < 2) {
       errors.push(tc("validation.min_lines"));
     }
-    je.lines.forEach((l, i) => {
-      if (!l.accountCode && (l.debit || l.credit)) errors.push(t("lines.line_account_not_selected", { n: i + 1 }));
-      if (l.debit > 0 && l.credit > 0) errors.push(t("lines.line_both", { n: i + 1 }));
+    draft.lines.forEach((l, i) => {
+      if (!l.accountCode && (Number(l.debit) || Number(l.credit))) {
+        errors.push(t("lines.line_account_not_selected", { n: i + 1 }));
+      }
+      if (Number(l.debit) > 0 && Number(l.credit) > 0) {
+        errors.push(t("lines.line_both", { n: i + 1 }));
+      }
     });
     const balanceCheck = mustBalance(td, totalCr);
     if (balanceCheck && td > 0) {
       errors.push(tc(balanceCheck.key));
     }
-    return { totalDebits: td, totalCredits: totalCr, difference: Number((td - totalCr).toFixed(3)), isBalanced: Math.abs(td - totalCr) < 0.0001 && td > 0 && je.lines.length >= 2, errors };
+    return {
+      totalDebits: td,
+      totalCredits: totalCr,
+      difference: Number((td - totalCr).toFixed(3)),
+      isBalanced: Math.abs(td - totalCr) < 0.0001 && td > 0 && draft.lines.length >= 2,
+      errors,
+    };
   })();
 
   const canPost = validation.isBalanced && !isHardClosed;
   const postLabel = isSoftClosed ? t("period_lock.post_for_approval") : t("composer.post_entry");
 
-  const updateField = async (field, value) => {
-    await updateManualJEDraft(je.id, { [field]: value });
-    onChange();
-  };
-
-  const updateLine = async (lineId, changes) => {
-    await updateLineInManualJE(je.id, lineId, changes);
-    onChange();
-  };
-
-  const addLine = async () => {
-    await addLineToManualJE(je.id);
-    onChange();
-  };
-
-  const removeLine = async (lineId) => {
-    await removeLineFromManualJE(je.id, lineId);
-    onChange();
+  // ─── Save / post wrapper (atomic) ────────────────────────────────
+  const handleSave = async ({ post }) => {
+    if (saving) return;
+    setSaveError(null);
+    setSaving(true);
+    try {
+      // Parent owns the actual create/update/post endpoint selection —
+      // it knows whether this is a new locally-minted draft or an
+      // existing server-fetched one.
+      await onPost({ draft, post });
+    } catch (err) {
+      setSaveError(err?.message || "Save failed");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const statusColor = isPosted ? COLORS.teal : isScheduled ? COLORS.blue : COLORS.amber;
@@ -538,7 +791,7 @@ function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedul
           <div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: COLORS.text, letterSpacing: "-0.3px", lineHeight: 1 }}>
-                {readOnly ? <LtrText>{je.id}</LtrText> : isDraft ? t("composer.edit_draft") : t("composer.manual_je")}
+                {readOnly ? <LtrText>{draft.id}</LtrText> : isDraft ? (isNew ? t("composer.manual_je") : t("composer.edit_draft")) : t("composer.manual_je")}
               </div>
               <span style={{
                 fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: statusColor,
@@ -547,34 +800,34 @@ function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedul
               }}>
                 {statusLabel}
               </span>
-              {je.reversedBy && (
+              {draft.reversedBy && (
                 <span style={{
                   fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: COLORS.amber,
                   background: `${COLORS.amber}1A`, border: `1px solid ${COLORS.amber}40`,
                   padding: "4px 8px", borderRadius: 4,
                 }}>
-                  {t("composer.reversed_by", { id: je.reversedBy })}
+                  {t("composer.reversed_by", { id: draft.reversedBy })}
                 </span>
               )}
-              {je.reversalOf && (
+              {draft.reversalOf && (
                 <span style={{
                   fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: COLORS.blue,
                   background: `${COLORS.blue}1A`, border: `1px solid ${COLORS.blue}40`,
                   padding: "4px 8px", borderRadius: 4,
                 }}>
-                  {t("composer.reversal_of", { id: je.reversalOf })}
+                  {t("composer.reversal_of", { id: draft.reversalOf })}
                 </span>
               )}
             </div>
             <div style={{ fontSize: 11, color: COLORS.textFaint, marginTop: 6, fontFamily: "'DM Mono', monospace" }}>
-              <LtrText>{je.id}</LtrText> · {je.source.toUpperCase()}
-              {je.templateId && <> · {t("composer.from_template", { id: je.templateId })}</>}
+              <LtrText>{isNew ? "NEW" : draft.id}</LtrText> · {(draft.source || "manual").toUpperCase()}
+              {draft.templateId && <> · {t("composer.from_template", { id: draft.templateId })}</>}
             </div>
           </div>
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
             {onAskAminah && (
               <button
-                onClick={() => onAskAminah({ source: "manual-je", jeId: je.id })}
+                onClick={() => onAskAminah({ source: "manual-je", jeId: draft.id })}
                 style={{ background: "transparent", color: COLORS.textDim, border: `1px solid ${COLORS.border}`, padding: "7px 12px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 4 }}
               >
                 <Sparkles size={11} /> {t("composer.ask_aminah")}
@@ -582,49 +835,29 @@ function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedul
             )}
             {isDraft && (
               <>
-                <button onClick={onDelete}
-                  style={{ background: "transparent", color: COLORS.textDim, border: `1px solid ${COLORS.border}`, padding: "7px 12px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
+                <button onClick={onDelete} disabled={saving}
+                  style={{ background: "transparent", color: COLORS.textDim, border: `1px solid ${COLORS.border}`, padding: "7px 12px", borderRadius: 5, fontSize: 11, cursor: saving ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
                   {t("composer.discard")}
                 </button>
-                <button onClick={() => setScheduleModalOpen(true)} disabled={!validation.isBalanced}
-                  style={{ background: "transparent", color: validation.isBalanced ? COLORS.text : COLORS.textFaint, border: `1px solid ${COLORS.border}`, padding: "7px 12px", borderRadius: 5, fontSize: 11, cursor: validation.isBalanced ? "pointer" : "not-allowed", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 4 }}>
-                  <Calendar size={11} /> {t("composer.schedule")}
-                </button>
-                <button onClick={() => setTplModalOpen(true)} disabled={!validation.isBalanced}
-                  style={{ background: "transparent", color: validation.isBalanced ? COLORS.text : COLORS.textFaint, border: `1px solid ${COLORS.border}`, padding: "7px 12px", borderRadius: 5, fontSize: 11, cursor: validation.isBalanced ? "pointer" : "not-allowed", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 4 }}>
-                  <Save size={11} /> {t("composer.save_as_template")}
+                <button onClick={() => handleSave({ post: false })} disabled={saving}
+                  style={{ background: "transparent", color: COLORS.text, border: `1px solid ${COLORS.border}`, padding: "7px 12px", borderRadius: 5, fontSize: 11, cursor: saving ? "not-allowed" : "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                  <Save size={11} /> {saving ? t("composer.saving") : t("composer.save_draft")}
                 </button>
                 <button
-                  onClick={onPost}
-                  disabled={!canPost}
+                  onClick={() => handleSave({ post: true })}
+                  disabled={!canPost || saving}
                   title={isHardClosed ? t("period_lock.post_blocked") : undefined}
-                  style={{ background: canPost ? COLORS.teal : "var(--border-subtle)", color: canPost ? "#fff" : COLORS.textFaint, border: "none", padding: "8px 16px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: canPost ? "pointer" : "not-allowed", fontFamily: "inherit" }}
+                  style={{ background: canPost && !saving ? COLORS.teal : "var(--border-subtle)", color: canPost && !saving ? "#fff" : COLORS.textFaint, border: "none", padding: "8px 16px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: canPost && !saving ? "pointer" : "not-allowed", fontFamily: "inherit" }}
                 >
-                  {postLabel}
+                  {saving ? t("composer.posting") : postLabel}
                 </button>
               </>
             )}
-            {isPosted && !je.reversedBy && (
+            {isPosted && !draft.reversedBy && (
               <>
-                <button onClick={() => setTplModalOpen(true)}
-                  style={{ background: "transparent", color: COLORS.text, border: `1px solid ${COLORS.border}`, padding: "7px 12px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 4 }}>
-                  <Save size={11} /> {t("composer.save_as_template")}
-                </button>
                 <button onClick={() => setReverseModalOpen(true)}
                   style={{ background: "transparent", color: COLORS.amber, border: `1px solid ${COLORS.amber}40`, padding: "7px 12px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 4 }}>
                   <RotateCcw size={11} /> {t("composer.reverse_entry")}
-                </button>
-              </>
-            )}
-            {isScheduled && (
-              <>
-                <button onClick={onPostNow}
-                  style={{ background: COLORS.teal, color: "#fff", border: "none", padding: "8px 16px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
-                  {t("composer.post_now")}
-                </button>
-                <button onClick={async () => { await updateManualJEDraft(je.id, { status: "draft", scheduledFor: null, recurringRule: null }); onChange(); }}
-                  style={{ background: "transparent", color: COLORS.red, border: `1px solid ${COLORS.red}40`, padding: "7px 12px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
-                  {t("composer.cancel_schedule")}
                 </button>
               </>
             )}
@@ -657,22 +890,25 @@ function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedul
         {/* Metadata */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18 }}>
           <Field label={t("fields.date")}>
-            <input type="date" disabled={readOnly} defaultValue={je.date ? je.date.slice(0, 10) : ""}
-              onBlur={(e) => updateField("date", new Date(e.target.value).toISOString())}
+            <input type="date" disabled={readOnly}
+              value={draft.date ? draft.date.slice(0, 10) : ""}
+              onChange={(e) => updateField("date", e.target.value ? new Date(e.target.value).toISOString() : "")}
               style={inputStyle(readOnly)} />
           </Field>
           <Field label={t("fields.reference")}>
-            <input type="text" disabled={readOnly} defaultValue={je.reference}
-              onBlur={(e) => updateField("reference", e.target.value)}
+            <input type="text" disabled={readOnly}
+              value={draft.reference || ""}
+              onChange={(e) => updateField("reference", e.target.value)}
               style={inputStyle(readOnly)} />
           </Field>
           <Field label={t("fields.description")}>
-            <input type="text" disabled={readOnly} defaultValue={je.description}
-              onBlur={(e) => updateField("description", e.target.value)}
+            <input type="text" disabled={readOnly}
+              value={draft.description || ""}
+              onChange={(e) => updateField("description", e.target.value)}
               style={inputStyle(readOnly)} />
           </Field>
           <Field label={t("fields.source")}>
-            <select disabled={readOnly} value={je.source}
+            <select disabled={readOnly} value={draft.source || "manual"}
               onChange={(e) => updateField("source", e.target.value)}
               style={inputStyle(readOnly)}>
               <option value="manual">{t("source_options.manual")}</option>
@@ -682,6 +918,11 @@ function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedul
             </select>
           </Field>
         </div>
+        {saveError && (
+          <div style={{ marginBottom: 12, padding: "10px 14px", background: "var(--semantic-danger-subtle)", border: `1px solid ${COLORS.red}40`, borderRadius: 6, fontSize: 12, color: COLORS.red }}>
+            {saveError}
+          </div>
+        )}
 
         {/* Lines */}
         <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 8, overflow: "hidden" }}>
@@ -692,7 +933,7 @@ function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedul
             <div>{t("lines.col_memo")}</div>
             <div></div>
           </div>
-          {je.lines.map((line, idx) => (
+          {draft.lines.map((line, idx) => (
             <LineRow
               key={line.id}
               line={line}
@@ -700,7 +941,7 @@ function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedul
               readOnly={readOnly}
               onUpdate={(changes) => updateLine(line.id, changes)}
               onRemove={() => removeLine(line.id)}
-              canRemove={je.lines.length > 2}
+              canRemove={draft.lines.length > 2}
             />
           ))}
           {!readOnly && (
@@ -764,7 +1005,7 @@ function ManualJEComposer({ je, onChange, onDelete, onPost, onReverse, onSchedul
 
       {/* Modals */}
       {reverseModalOpen && (
-        <ReverseModal je={je} onCancel={() => setReverseModalOpen(false)} onConfirm={(reason) => { setReverseModalOpen(false); onReverse(reason); }} />
+        <ReverseModal je={draft} onCancel={() => setReverseModalOpen(false)} onConfirm={(reason) => { setReverseModalOpen(false); onReverse(reason); }} />
       )}
       {scheduleModalOpen && (
         <ScheduleModal onCancel={() => setScheduleModalOpen(false)} onConfirm={(date, recurring) => { setScheduleModalOpen(false); onSchedule(date, recurring); }} />

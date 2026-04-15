@@ -1,6 +1,7 @@
 import { useRef, useState, useCallback, useEffect, lazy, Suspense } from "react";
 import AmbientBackground from "./components/AmbientBackground";
 import Header from "./components/Header";
+import ModeIndicator from "./components/ModeIndicator";
 import { setCurrentRole } from "./engine/mockEngine";
 const OwnerView = lazy(() => import("./screens/owner/OwnerView"));
 const CFOView = lazy(() => import("./screens/cfo/CFOView"));
@@ -35,6 +36,7 @@ function AppInner() {
   return (
     <NavContext.Provider value={{ setActiveScreen, openTask }}>
       <AmbientBackground />
+      <ModeIndicator />
       <Header role={role} setRole={setRole} />
       <Suspense fallback={<ViewFallback />}>
         {role === "Owner" && <OwnerView key={viewKey} registerNav={registerNav} />}

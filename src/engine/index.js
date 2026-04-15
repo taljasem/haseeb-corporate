@@ -1,96 +1,277 @@
 /**
- * Engine router — thin abstraction between the mock engine and the real API.
+ * Engine router — per-function routing between the mock engine and the real API.
  *
- * Why this exists:
- *   The Haseeb Corporate dashboard has historically run entirely off
- *   `mockEngine.js`, a single in-repo module with ~100 async functions
- *   that simulate the backend. Wave 1 of the API integration foundation
- *   adds the ability to toggle the data source via an env var WITHOUT
- *   touching every caller in the codebase.
+ * Wave 2 rewrite:
+ *   Wave 1 routed exactly ONE function (`getHealth`) to the real API and
+ *   threw for everything else in LIVE mode. Wave 2 widens the surface and
+ *   adds a SAFE per-function declaration table:
  *
- * How it works:
- *   - If VITE_USE_MOCKS is unset or "true" (the default), this module
- *     re-exports the entire mockEngine surface verbatim. Existing
- *     callers that `import { getCashPosition } from '.../engine'` (or
- *     the equivalent via a direct mockEngine import) see identical
- *     behavior.
- *   - If VITE_USE_MOCKS is "false", this module:
- *       • Routes `getHealth()` to the real Corporate API via axios.
- *       • For every other mockEngine export, returns a stub that throws
- *         a clear "not yet implemented in LIVE mode" error so failures
- *         are obvious and actionable, never silent.
+ *     • 'wired'         — LIVE mode hits the real Corporate API; MOCK mode
+ *                         stays on mockEngine. Used for functions we have
+ *                         actually wired up in this wave.
+ *     • 'mock_fallback' — LIVE mode silently falls back to mockEngine with
+ *                         a one-shot debug warning. Used for reads that have
+ *                         no backend support yet but are called by landing
+ *                         screens and would otherwise crash the app.
+ *     • (unlisted)      — Anything not in the table falls back to mockEngine
+ *                         in LIVE mode with a one-shot warning. This matches
+ *                         'mock_fallback' and is the safe default. Write
+ *                         operations that should NEVER silently succeed must
+ *                         be added to the WRITE_THROW set below.
  *
- * Migration path:
- *   Callers currently import from `./engine/mockEngine` directly. We
- *   are intentionally NOT migrating those imports in Wave 1 (85 files
- *   touch mockEngine — out of scope). New code and Wave 2 migrations
- *   should import from `./engine` instead of `./engine/mockEngine`.
+ * Why the default is mock_fallback, not throw:
+ *   Wave 1 threw on every unwired function in LIVE mode. That was correct
+ *   for Wave 1 (loud failures, very small wired surface) but Wave 2 actually
+ *   runs the dashboard against a live API — if any reader on the landing
+ *   screen throws, the whole role view crashes. Fallback-to-mock-with-warn
+ *   is safer for reads. Writes that could mutate a real tenant DB still
+ *   throw via WRITE_THROW below.
  *
- * Scope limits (Wave 1):
- *   - No real endpoints other than /health are wired.
- *   - No login flow — a dev JWT in VITE_DEV_JWT is sufficient.
- *   - No react-query / swr / etc.
+ * How callers use this module:
+ *   Screens that have been migrated to Wave 2 import from `../../engine`
+ *   instead of `../../engine/mockEngine`. All other screens still import
+ *   from mockEngine directly and are unaffected by this file.
  */
 import * as mockEngine from './mockEngine';
 import { getHealth as realGetHealth } from '../api/health';
+import * as chatApi from '../api/chat';
+import * as journalEntriesApi from '../api/journal-entries';
+import * as accountsApi from '../api/accounts';
+import * as reportsApi from '../api/reports';
+import * as settingsApi from '../api/settings';
 
 const useMocks = import.meta.env.VITE_USE_MOCKS !== 'false';
-
 export const ENGINE_MODE = useMocks ? 'MOCK' : 'LIVE';
 
 /**
+ * Per-function routing declaration. Each entry is either:
+ *   'wired'         — real API in LIVE mode (needs an entry in REAL_IMPLS)
+ *   'mock_fallback' — mockEngine in LIVE mode, with one-shot warn
+ *
+ * Functions NOT listed here default to mock_fallback (safe default).
+ * See file-level comment above.
+ */
+const FUNCTION_ROUTING = {
+  // Health
+  getHealth: 'wired',
+
+  // Aminah chat (API module exists; UI is still on the streaming stubBackend,
+  // so the sendChatMessage/confirmPendingAction wiring is available to callers
+  // who want to use the non-streaming flow but the default chat UI stays on
+  // mock_fallback for Wave 2 — see Section "Expected failures" in the smoke
+  // test doc).
+  sendChatMessage: 'wired',
+  confirmPendingAction: 'wired',
+  listConversations: 'wired',
+  getConversation: 'wired',
+
+  // Journal entries
+  listJournalEntries: 'wired',
+  getJournalEntry: 'wired',
+  getManualJEs: 'wired',       // read list, shape-adapted
+  getManualJEById: 'wired',    // read detail, shape-adapted
+
+  // Chart of accounts
+  getAccountsTree: 'wired',
+  getAccountsFlat: 'wired',
+  getSetupChartOfAccounts: 'wired', // shape-adapted for the existing Setup UI
+
+  // Reports
+  getTrialBalance: 'wired',
+  getIncomeStatement: 'wired',
+  getBalanceSheet: 'wired',
+  getCashFlowStatement: 'wired',
+
+  // Auth / settings
+  getTenantInfo: 'wired',
+  getCurrentUser: 'wired',
+  getUserProfile: 'wired', // shape-adapted for the existing Settings UI
+  listMembers: 'wired',
+  changePassword: 'wired',
+};
+
+/**
+ * Writes that must NEVER silently succeed via mock in LIVE mode. Anything in
+ * this set throws a loud error if called in LIVE mode without explicit wiring.
+ * Reads can be faked; writes cannot.
+ */
+const WRITE_THROW = new Set([
+  // Ledger writes we do NOT wire in Wave 2 — leave in mockEngine and throw
+  // if someone tries to call them against LIVE. Wave 3 wires these.
+  'postManualJE',
+  'createManualJEDraft',
+  'updateManualJEDraft',
+  'addLineToManualJE',
+  'updateLineInManualJE',
+  'removeLineFromManualJE',
+  'reverseManualJE',
+  'voidManualJE',
+  'scheduleManualJE',
+  'postScheduledNow',
+  'createAccount',
+  'updateAccount',
+  'deactivateAccount',
+  'bulkCategorizeTransactions',
+  'bulkAssignTransactions',
+]);
+
+/**
+ * Real API implementations by mockEngine function name.
+ * Shape adapters live in the individual api/* modules.
+ */
+const REAL_IMPLS = {
+  getHealth: realGetHealth,
+
+  // Chat
+  sendChatMessage: chatApi.sendChatMessage,
+  confirmPendingAction: chatApi.confirmPendingAction,
+  listConversations: chatApi.listConversations,
+  getConversation: chatApi.getConversation,
+
+  // Journal entries
+  listJournalEntries: journalEntriesApi.listJournalEntries,
+  getJournalEntry: journalEntriesApi.getJournalEntry,
+  getManualJEs: journalEntriesApi.getManualJEs,
+  getManualJEById: journalEntriesApi.getManualJEById,
+
+  // Accounts
+  getAccountsTree: accountsApi.getAccountsTree,
+  getAccountsFlat: accountsApi.getAccountsFlat,
+  getSetupChartOfAccounts: accountsApi.getSetupChartOfAccounts,
+
+  // Reports
+  getTrialBalance: reportsApi.getTrialBalance,
+  getIncomeStatement: reportsApi.getIncomeStatement,
+  getBalanceSheet: reportsApi.getBalanceSheet,
+  getCashFlowStatement: reportsApi.getCashFlow,
+
+  // Settings
+  getTenantInfo: settingsApi.getTenantInfo,
+  getCurrentUser: settingsApi.getCurrentUser,
+  getUserProfile: settingsApi.getUserProfile,
+  listMembers: settingsApi.listMembers,
+  changePassword: settingsApi.changePassword,
+};
+
+// One-shot warning state so the console isn't spammed.
+const _warned = new Set();
+function _warnMockFallback(fnName) {
+  if (_warned.has(fnName)) return;
+  _warned.add(fnName);
+  // eslint-disable-next-line no-console
+  console.warn(
+    `[engine] mock fallback for ${fnName}(); no API support yet. ` +
+      `This call is returning mockEngine data even though VITE_USE_MOCKS=false.`
+  );
+}
+
+/**
  * Build a LIVE-mode surface that mirrors mockEngine's shape.
- * Every named export becomes a stub that throws a clear error,
- * except for the ones we explicitly wire to the real API.
  */
 function buildLiveSurface() {
   const surface = {};
-  const realImpls = {
-    getHealth: realGetHealth,
-  };
 
   for (const key of Object.keys(mockEngine)) {
-    if (realImpls[key]) {
-      surface[key] = realImpls[key];
+    const routing = FUNCTION_ROUTING[key] || 'mock_fallback';
+    const mockImpl = mockEngine[key];
+
+    if (routing === 'wired') {
+      const real = REAL_IMPLS[key];
+      if (typeof real === 'function') {
+        surface[key] = real;
+        continue;
+      }
+      // Wired but no real impl — this is a dev bug in the routing table.
+      // Fall back to mock with a loud warn so it doesn't crash the app.
+      surface[key] = function missingWiring(...args) {
+        // eslint-disable-next-line no-console
+        console.error(
+          `[engine] ${key}() is marked 'wired' but no REAL_IMPLS entry exists. ` +
+            `Falling back to mock.`
+        );
+        return typeof mockImpl === 'function'
+          ? mockImpl(...args)
+          : Promise.resolve(mockImpl);
+      };
       continue;
     }
-    const original = mockEngine[key];
-    if (typeof original === 'function') {
-      surface[key] = function notYetImplemented() {
+
+    // Non-function exports pass through in either mode.
+    if (typeof mockImpl !== 'function') {
+      surface[key] = mockImpl;
+      continue;
+    }
+
+    // Writes in LIVE mode without explicit wiring — throw loudly.
+    if (WRITE_THROW.has(key)) {
+      surface[key] = function writeBlocked() {
         throw new Error(
-          `API integration not yet implemented for ${key}(). ` +
-            `Wave 2 will wire this up. ` +
-            `Set VITE_USE_MOCKS=true to use mock data.`
+          `[engine] ${key}() is a write operation that has not been wired to ` +
+            `the real Corporate API. Refusing to call mockEngine in LIVE mode ` +
+            `because it would silently lie about a persisted change. ` +
+            `Set VITE_USE_MOCKS=true for mock mode, or wire ${key} in Wave 3.`
         );
       };
-    } else {
-      // Non-function exports (e.g., constants) fall through to mock values
-      // in LIVE mode too, since they carry no API semantics.
-      surface[key] = original;
+      continue;
     }
+
+    // Default: mock_fallback. Wrap to emit a one-shot warn.
+    surface[key] = function mockFallback(...args) {
+      _warnMockFallback(key);
+      return mockImpl(...args);
+    };
   }
 
-  // Ensure getHealth exists even if mockEngine never defined it.
-  if (!surface.getHealth) {
-    surface.getHealth = realGetHealth;
-  }
-
+  // Make sure getHealth is always available.
+  if (!surface.getHealth) surface.getHealth = realGetHealth;
   return surface;
 }
 
-const surface = useMocks ? { ...mockEngine, getHealth: mockEngine.getHealth || mockHealth } : buildLiveSurface();
-
 /**
  * Mock health fallback for when mockEngine itself does not export one.
- * Keeps the engine surface consistent across modes.
  */
 async function mockHealth() {
   return { ok: true, status: { status: 'ok', service: 'mock-engine', version: 'mock' } };
 }
 
-// Re-export everything on the surface as a module namespace-like object.
-// Consumers can `import { getHealth, ENGINE_MODE } from '.../engine'`.
+const surface = useMocks
+  ? { ...mockEngine, getHealth: mockEngine.getHealth || mockHealth }
+  : buildLiveSurface();
+
+// Default export: the full namespace-like object.
 export default surface;
 
-// Named exports for the two things we care about in Wave 1.
+// Named exports — every function on the surface, so screens can
+// `import { getIncomeStatement } from '../../engine'` and the router
+// picks the right impl for MOCK vs LIVE.
 export const getHealth = surface.getHealth;
+
+// Chat
+export const sendChatMessage = surface.sendChatMessage;
+export const confirmPendingAction = surface.confirmPendingAction;
+export const listConversations = surface.listConversations;
+export const getConversation = surface.getConversation;
+
+// Journal entries
+export const listJournalEntries = surface.listJournalEntries;
+export const getJournalEntry = surface.getJournalEntry;
+export const getManualJEs = surface.getManualJEs;
+export const getManualJEById = surface.getManualJEById;
+
+// Accounts
+export const getAccountsTree = surface.getAccountsTree;
+export const getAccountsFlat = surface.getAccountsFlat;
+export const getSetupChartOfAccounts = surface.getSetupChartOfAccounts;
+
+// Reports
+export const getTrialBalance = surface.getTrialBalance;
+export const getIncomeStatement = surface.getIncomeStatement;
+export const getBalanceSheet = surface.getBalanceSheet;
+export const getCashFlowStatement = surface.getCashFlowStatement;
+
+// Settings
+export const getTenantInfo = surface.getTenantInfo;
+export const getCurrentUser = surface.getCurrentUser;
+export const getUserProfile = surface.getUserProfile;
+export const listMembers = surface.listMembers;
+export const changePassword = surface.changePassword;

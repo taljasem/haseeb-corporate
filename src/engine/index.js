@@ -275,6 +275,14 @@ function buildLiveSurface() {
   //     LIVE-only and in MOCK mode they throw a clear error so that
   //     calling them against the mock engine is a visible bug.
   surface.runAminahSession = runLiveChatSession;
+  // Chat helpers — live API wrappers. These are not on mockEngine's
+  // namespace, so the Object.keys(mockEngine) loop above does not
+  // pick them up; they must be assigned explicitly the same way
+  // runAminahSession / getConversationMessages are.
+  surface.sendChatMessage = chatApi.sendChatMessage;
+  surface.confirmPendingAction = chatApi.confirmPendingAction;
+  surface.listConversations = chatApi.listConversations;
+  surface.getConversation = chatApi.getConversation;
   surface.getConversationMessages = chatApi.getConversationMessages;
   surface.createJournalEntry = journalEntriesWriteApi.createJournalEntry;
   surface.updateJournalEntryDraft = journalEntriesWriteApi.updateJournalEntryDraft;
@@ -335,8 +343,44 @@ function buildMockExtras() {
     await new Promise((r) => setTimeout(r, 80));
     return { id, status: 'VOID', reason, _mock: true };
   };
+  // Mock chat helpers — the ConversationalJE write path expects a
+  // promise-returning sendChatMessage with { message, pendingJournalEntry?,
+  // confirmationId?, conversationId } shape. In MOCK mode we return a
+  // plausible echo so the UI doesn't crash; no pendingJournalEntry is
+  // emitted because the old scripted compound-entry flow is gone and
+  // MOCK mode isn't on the active test path anyway (LIVE is Wave 3).
+  const mockSendChat = async ({ message, conversationId } = {}) => {
+    await new Promise((r) => setTimeout(r, 120));
+    return {
+      message: `(mock) received: ${message || ''}`,
+      language: 'en',
+      conversationId: conversationId || `mock-conv-${Date.now()}`,
+      action: null,
+      pendingJournalEntry: null,
+      pendingInvoice: null,
+      confirmationId: null,
+      metadata: null,
+      tool_uses: null,
+      raw: null,
+    };
+  };
+  const mockConfirm = async ({ confirmationId } = {}) => {
+    await new Promise((r) => setTimeout(r, 80));
+    return {
+      message: '(mock) confirmed',
+      language: 'en',
+      success: true,
+      journalEntry: null,
+      ruleSuggestion: null,
+      raw: { confirmationId },
+    };
+  };
   return {
     runAminahSession: stubRunAminahSession,
+    sendChatMessage: mockSendChat,
+    confirmPendingAction: mockConfirm,
+    listConversations: async () => [],
+    getConversation: async () => null,
     getConversationMessages: async () => [],
     createJournalEntry: mockCreate,
     updateJournalEntryDraft: mockUpdate,

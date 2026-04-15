@@ -182,6 +182,7 @@ function pendingToCardEntry(pending, fallbackId = "DRAFT") {
 // Main screen
 // ─────────────────────────────────────────
 
+// eslint-disable-next-line no-unused-vars
 export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
   const { t } = useTranslation("conv-je");
 

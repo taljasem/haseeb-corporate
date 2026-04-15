@@ -138,7 +138,6 @@ export async function confirmPendingAction(optionsOrConversationId, legacyAction
     };
   } else {
     const {
-      conversationId: _cid, // eslint-disable-line no-unused-vars
       confirmationId,
       action = 'confirm',
       agent = 'haseeb',

@@ -2,6 +2,7 @@ import { useRef, useState, useCallback, useEffect, lazy, Suspense } from "react"
 import AmbientBackground from "./components/AmbientBackground";
 import Header from "./components/Header";
 import ModeIndicator from "./components/ModeIndicator";
+import ProtectedRoute from "./components/ProtectedRoute";
 import { setCurrentRole } from "./engine/mockEngine";
 const OwnerView = lazy(() => import("./screens/owner/OwnerView"));
 const CFOView = lazy(() => import("./screens/cfo/CFOView"));
@@ -49,13 +50,21 @@ function AppInner() {
 
 export default function App() {
   return (
-    <TenantProvider>
-      <LanguageProvider>
-        <ThemeProvider>
-          <DesktopOnlyGate />
-          <AppInner />
-        </ThemeProvider>
-      </LanguageProvider>
-    </TenantProvider>
+    <LanguageProvider>
+      <ThemeProvider>
+        <DesktopOnlyGate />
+        {/* ProtectedRoute gates the entire authenticated shell.
+            When unauthenticated, it renders <LoginScreen /> in place
+            of the TenantProvider+AppInner tree. TenantProvider stays
+            INSIDE the gate so it boots only after a real tenant is in
+            scope — otherwise it would read DEFAULT_TENANT_ID from the
+            mock config on the login page, which is misleading. */}
+        <ProtectedRoute>
+          <TenantProvider>
+            <AppInner />
+          </TenantProvider>
+        </ProtectedRoute>
+      </ThemeProvider>
+    </LanguageProvider>
   );
 }

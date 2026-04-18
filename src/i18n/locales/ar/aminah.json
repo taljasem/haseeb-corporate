@@ -3,6 +3,10 @@
   "subtitle_online": "جاهزة للمساعدة",
   "subtitle_thinking": "جارٍ التفكير...",
   "subtitle_error": "حدث خطأ ما",
+  "header": {
+    "status_online": "أمينة متصلة",
+    "status_thinking": "أمينة تفكر..."
+  },
   "context_prefix": "السياق: {{context}}",
   "suggested_questions": "أسئلة مقترحة",
   "new_conversation": "محادثة جديدة",
@@ -10,6 +14,7 @@
   "close": "إغلاق",
   "input": {
     "placeholder": "اسأل أمينة عن أي شيء يتعلق بحساباتك...",
+    "placeholder_short": "اسأل أمينة...",
     "send_button": "إرسال",
     "stop_button": "إيقاف",
     "disclaimer": "قد تخطئ أمينة. تحقق دائمًا من الأرقام المهمة."
@@ -17,12 +22,14 @@
   "empty_state": {
     "title": "مرحبًا، أنا أمينة",
     "subtitle": "يمكنني مساعدتك في فهم حساباتك المالية، واكتشاف المشكلات، والإجابة على أسئلتك حول دفاترك.",
+    "simple_subtitle": "اسألني عن أي شيء يخص عملك.",
     "example_1": "ما وضع السيولة النقدية هذا الشهر؟",
     "example_2": "كيف أداؤنا مقارنة بالميزانية؟",
     "example_3": "هل هناك ما يجب أن أقلق بشأنه؟"
   },
   "status": {
     "checking_accounts": "جارٍ فحص حساباتك...",
+    "checking_books": "جارٍ مراجعة دفاترك...",
     "running_report": "جارٍ إعداد التقرير...",
     "comparing_periods": "جارٍ مقارنة الفترات...",
     "analyzing": "جارٍ التحليل...",

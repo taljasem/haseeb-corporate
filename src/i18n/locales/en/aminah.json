@@ -3,6 +3,10 @@
   "subtitle_online": "Ready to help",
   "subtitle_thinking": "Thinking...",
   "subtitle_error": "Something went wrong",
+  "header": {
+    "status_online": "AMINAH ONLINE",
+    "status_thinking": "AMINAH THINKING..."
+  },
   "context_prefix": "Context: {{context}}",
   "suggested_questions": "SUGGESTED QUESTIONS",
   "new_conversation": "New conversation",
@@ -10,6 +14,7 @@
   "close": "Close",
   "input": {
     "placeholder": "Ask Aminah anything about your books...",
+    "placeholder_short": "Ask Aminah...",
     "send_button": "Send",
     "stop_button": "Stop",
     "disclaimer": "Aminah can make mistakes. Always verify critical numbers."
@@ -17,12 +22,14 @@
   "empty_state": {
     "title": "Hi, I'm Aminah",
     "subtitle": "I can help you understand your financials, spot issues, and answer questions about your books.",
+    "simple_subtitle": "Ask me anything about your business.",
     "example_1": "What's my cash position this month?",
     "example_2": "How are we doing vs budget?",
     "example_3": "Is there anything I should worry about?"
   },
   "status": {
     "checking_accounts": "Checking your accounts...",
+    "checking_books": "Checking your books...",
     "running_report": "Running report...",
     "comparing_periods": "Comparing periods...",
     "analyzing": "Analyzing...",

@@ -230,7 +230,7 @@ export default function AminahChat({ role = "cfo" }) {
         role,
         agent: "aminah",
         conversationId,
-        thinkingLabel: "Checking your books...",
+        thinkingLabel: t("status.checking_books"),
       });
       streamRef.current = gen;
       for await (const event of gen) {
@@ -379,7 +379,7 @@ export default function AminahChat({ role = "cfo" }) {
       <div style={{ position: "relative", zIndex: 1, flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
           <span className="aminah-dot" />
-          <span className="aminah-label">{isStreaming ? "AMINAH THINKING..." : "AMINAH ONLINE"}</span>
+          <span className="aminah-label">{isStreaming ? t("header.status_thinking") : t("header.status_online")}</span>
         </div>
 
         {/* Proactive-surface cards — rendered above the empty-state prompts,
@@ -627,7 +627,7 @@ export default function AminahChat({ role = "cfo" }) {
 
         {messages.length === 0 && (
           <>
-            <p style={{ fontSize: 14, fontStyle: "italic", lineHeight: 1.6, color: "var(--text-tertiary)", marginBottom: 12 }}>Ask me anything about your business.</p>
+            <p style={{ fontSize: 14, fontStyle: "italic", lineHeight: 1.6, color: "var(--text-tertiary)", marginBottom: 12 }}>{t("empty_state.simple_subtitle")}</p>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
               {PROMPTS.map((p) => (
                 <button key={p} onClick={() => sendMessage(p)} className="starter" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 14, cursor: "pointer", fontSize: 12, color: "var(--text-tertiary)", fontFamily: "inherit" }}>
@@ -655,7 +655,7 @@ export default function AminahChat({ role = "cfo" }) {
                 })
               )}
               {msg.role === "assistant" && !msg.complete && msg.blocks?.length === 0 && (
-                <div style={{ fontSize: 11, color: "var(--text-tertiary)", display: "flex", alignItems: "center", gap: 4 }}><Loader2 size={10} style={{ animation: "spin 1s linear infinite" }} /> Thinking...</div>
+                <div style={{ fontSize: 11, color: "var(--text-tertiary)", display: "flex", alignItems: "center", gap: 4 }}><Loader2 size={10} style={{ animation: "spin 1s linear infinite" }} /> {t("subtitle_thinking")}</div>
               )}
             </div>
           </div>
@@ -665,7 +665,7 @@ export default function AminahChat({ role = "cfo" }) {
       {/* Input */}
       <div style={{ position: "relative", zIndex: 1, padding: "10px 0 14px", borderTop: "1px solid var(--border-subtle)" }}>
         <div style={{ display: "flex", gap: 6 }}>
-          <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") sendMessage(draft); }} placeholder="Ask Aminah..." disabled={isStreaming} style={{ flex: 1, background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "9px 12px", color: "var(--text-primary)", fontSize: 12, fontFamily: "inherit", outline: "none" }} />
+          <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") sendMessage(draft); }} placeholder={t("input.placeholder_short")} disabled={isStreaming} style={{ flex: 1, background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "9px 12px", color: "var(--text-primary)", fontSize: 12, fontFamily: "inherit", outline: "none" }} />
           <button onClick={() => sendMessage(draft)} disabled={!draft.trim() || isStreaming} style={{ background: draft.trim() ? "var(--accent-primary)" : "var(--border-subtle)", color: draft.trim() ? "#fff" : "var(--text-tertiary)", border: "none", borderRadius: 8, padding: "8px 10px", cursor: draft.trim() ? "pointer" : "not-allowed", display: "flex", alignItems: "center" }}><Send size={13} /></button>
         </div>
       </div>

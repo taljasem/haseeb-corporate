@@ -88,3 +88,98 @@ describe('AminahChat — i18n (HASEEB-118 sweep)', () => {
     expect(screen.queryByPlaceholderText('Ask Aminah...')).toBeNull();
   });
 });
+
+describe('AminahChat — i18n (HASEEB-125 mop-up)', () => {
+  beforeEach(() => {
+    _resetAdvisorPendingStub();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  // Pre-HASEEB-125, `AminahChat.jsx` had a hardcoded PROMPTS array and
+  // a hardcoded error-fallback string. Both are now routed through the
+  // aminah i18n bundle. The PROMPTS array is additionally upgraded to
+  // role-aware prompts via `{owner,cfo,junior}.q1..q4`.
+
+  it('CFO role: renders cfo.q1..q4 as starter prompt pills in EN', async () => {
+    await setLang('en');
+    render(<AminahChat role="CFO" />);
+
+    await waitFor(() => expect(screen.getByText('AMINAH ONLINE')).toBeInTheDocument());
+
+    expect(screen.getByText('What needs my attention right now?')).toBeInTheDocument();
+    expect(screen.getByText("Summarize today's bank transactions")).toBeInTheDocument();
+    expect(screen.getByText("What's blocking the close?")).toBeInTheDocument();
+    expect(screen.getByText('Any rules I should approve?')).toBeInTheDocument();
+  });
+
+  it('CFO role: renders cfo.q1..q4 translations in AR', async () => {
+    await setLang('ar');
+    render(<AminahChat role="CFO" />);
+
+    await waitFor(() => expect(screen.getByText('أمينة متصلة')).toBeInTheDocument());
+
+    expect(screen.getByText('ما الذي يحتاج اهتمامي الآن؟')).toBeInTheDocument();
+    expect(screen.getByText('لخّص العمليات البنكية لليوم')).toBeInTheDocument();
+    expect(screen.getByText('ما الذي يعيق الإقفال؟')).toBeInTheDocument();
+    expect(screen.getByText('هل هناك قواعد تحتاج اعتمادي؟')).toBeInTheDocument();
+  });
+
+  it('Owner role: renders owner.q1..q4 (not cfo) as starter prompts', async () => {
+    await setLang('en');
+    render(<AminahChat role="Owner" />);
+
+    await waitFor(() => expect(screen.getByText('AMINAH ONLINE')).toBeInTheDocument());
+
+    // Owner prompts present
+    expect(screen.getByText('How is cash this month?')).toBeInTheDocument();
+    expect(screen.getByText("What's my biggest expense risk?")).toBeInTheDocument();
+    // CFO-specific prompts must NOT leak into Owner view
+    expect(screen.queryByText('What needs my attention right now?')).toBeNull();
+    expect(screen.queryByText('Any rules I should approve?')).toBeNull();
+  });
+
+  it('Junior role: renders junior.q1..q4 as starter prompts', async () => {
+    await setLang('en');
+    render(<AminahChat role="Junior" />);
+
+    await waitFor(() => expect(screen.getByText('AMINAH ONLINE')).toBeInTheDocument());
+
+    expect(screen.getByText('What should I work on next?')).toBeInTheDocument();
+    expect(screen.getByText('Help me categorize this transaction')).toBeInTheDocument();
+    expect(screen.getByText('Draft a JE for me')).toBeInTheDocument();
+    expect(screen.getByText("What's my accuracy this week?")).toBeInTheDocument();
+  });
+
+  it('AR mode: no hardcoded-English PROMPTS leak', async () => {
+    // Regression guard for the specific class HASEEB-125 closes. Any of
+    // the pre-HASEEB-125 hardcoded English prompt strings showing up in
+    // AR mode would fail this test.
+    await setLang('ar');
+    render(<AminahChat role="CFO" />);
+
+    await waitFor(() => expect(screen.getByText('أمينة متصلة')).toBeInTheDocument());
+
+    expect(screen.queryByText('How am I doing?')).toBeNull();
+    expect(screen.queryByText('Cash position')).toBeNull();
+    expect(screen.queryByText('Budget status')).toBeNull();
+    expect(screen.queryByText('Anything to worry about?')).toBeNull();
+  });
+
+  it('error.generic bundle key is what the error-fallback path renders', async () => {
+    // The applyEvent() error branch uses `event.message || t("error.generic")`.
+    // Direct i18n assertion documents the fallback for both languages —
+    // a functional render of the error-fallback path requires a full
+    // streaming mock that's out of scope for an i18n regression spec.
+    await setLang('en');
+    expect(i18n.t('error.generic', { ns: 'aminah' })).toBe(
+      'Something went wrong. Please try again.',
+    );
+    await setLang('ar');
+    expect(i18n.t('error.generic', { ns: 'aminah' })).toBe(
+      'حدث خطأ ما. يرجى المحاولة مرة أخرى.',
+    );
+  });
+});

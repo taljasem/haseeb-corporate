@@ -1,0 +1,30 @@
+<!doctype html>
+<!--
+  Dev-only harness for screenshotting AminahChat in isolation. Wave 6B.3 Layer 3.
+  Not part of the production build surface. Visit at /dev/aminah-chat-harness.html
+  when `npm run dev` is running.
+
+  Query params:
+    ?role=Owner | CFO | Junior  — role prop passed to <AminahChat>
+    ?lang=en | ar               — initial language
+    ?empty=1                    — clear the pending stub before mount
+
+  The harness does NOT mount <AuthProvider> so AminahChat falls back to
+  role-prop gating for Dismiss visibility (same pattern as the unit tests).
+-->
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>AminahChat harness</title>
+    <link rel="icon" href="data:," />
+    <style>
+      html, body, #root { height: 100%; margin: 0; padding: 0; }
+      body { background: #05070A; color: #E6EDF3; font-family: 'DM Sans', sans-serif; }
+      #root { display: flex; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/dev/aminah-chat-harness.jsx"></script>
+  </body>
+</html>

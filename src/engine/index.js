@@ -56,7 +56,14 @@ import * as journalEntriesWriteApi from '../api/journal-entries-write';
 import * as accountsApi from '../api/accounts';
 import * as reportsApi from '../api/reports';
 import * as settingsApi from '../api/settings';
+import * as advisorPendingApi from '../api/advisor-pending';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
+import {
+  listAdvisorPendingMock,
+  deferAdvisorPendingMock,
+  dismissAdvisorPendingMock,
+  acknowledgeAdvisorPendingMock,
+} from './aminah/advisor-pending-stub';
 
 const useMocks = import.meta.env.VITE_USE_MOCKS !== 'false';
 export const ENGINE_MODE = useMocks ? 'MOCK' : 'LIVE';
@@ -111,6 +118,15 @@ const FUNCTION_ROUTING = {
   getUserProfile: 'wired', // shape-adapted for the existing Settings UI
   listMembers: 'wired',
   changePassword: 'wired',
+
+  // Aminah advisor-pending (Wave 6B.3 Layer 3). These are NOT on
+  // mockEngine's namespace, so the 'wired' entries here mostly exist
+  // as documentation — the surface assignments below (both in
+  // buildLiveSurface and buildMockExtras) are what route the calls.
+  listAdvisorPending: 'wired',
+  deferAdvisorPending: 'wired',
+  dismissAdvisorPending: 'wired',
+  acknowledgeAdvisorPending: 'wired',
 };
 
 /**
@@ -188,6 +204,12 @@ const REAL_IMPLS = {
   getUserProfile: settingsApi.getUserProfile,
   listMembers: settingsApi.listMembers,
   changePassword: settingsApi.changePassword,
+
+  // Aminah advisor-pending (Wave 6B.3 Layer 3)
+  listAdvisorPending: advisorPendingApi.listAdvisorPending,
+  deferAdvisorPending: advisorPendingApi.deferAdvisorPending,
+  dismissAdvisorPending: advisorPendingApi.dismissAdvisorPending,
+  acknowledgeAdvisorPending: advisorPendingApi.acknowledgeAdvisorPending,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -290,6 +312,13 @@ function buildLiveSurface() {
   surface.reverseJournalEntry = journalEntriesWriteApi.reverseJournalEntry;
   surface.voidJournalEntry = journalEntriesWriteApi.voidJournalEntry;
 
+  // Aminah advisor-pending — Wave 6B.3 Layer 3. Not on mockEngine's
+  // namespace, so assigned explicitly the same way the chat helpers are.
+  surface.listAdvisorPending = advisorPendingApi.listAdvisorPending;
+  surface.deferAdvisorPending = advisorPendingApi.deferAdvisorPending;
+  surface.dismissAdvisorPending = advisorPendingApi.dismissAdvisorPending;
+  surface.acknowledgeAdvisorPending = advisorPendingApi.acknowledgeAdvisorPending;
+
   return surface;
 }
 
@@ -387,6 +416,13 @@ function buildMockExtras() {
     postJournalEntry: mockPost,
     reverseJournalEntry: mockReverse,
     voidJournalEntry: mockVoid,
+    // Aminah advisor-pending — Wave 6B.3 Layer 3 MOCK stubs. Mutations
+    // update the in-memory list in advisor-pending-stub.js so the UI
+    // can round-trip on defer/dismiss/acknowledge without a backend.
+    listAdvisorPending: listAdvisorPendingMock,
+    deferAdvisorPending: deferAdvisorPendingMock,
+    dismissAdvisorPending: dismissAdvisorPendingMock,
+    acknowledgeAdvisorPending: acknowledgeAdvisorPendingMock,
   };
 }
 
@@ -450,3 +486,9 @@ export const getCurrentUser = surface.getCurrentUser;
 export const getUserProfile = surface.getUserProfile;
 export const listMembers = surface.listMembers;
 export const changePassword = surface.changePassword;
+
+// Aminah advisor-pending (Wave 6B.3 Layer 3)
+export const listAdvisorPending = surface.listAdvisorPending;
+export const deferAdvisorPending = surface.deferAdvisorPending;
+export const dismissAdvisorPending = surface.dismissAdvisorPending;
+export const acknowledgeAdvisorPending = surface.acknowledgeAdvisorPending;

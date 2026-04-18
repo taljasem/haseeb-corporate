@@ -30,12 +30,10 @@ import { createAminahSession, listRecentAminahSessions, getAminahSession, append
 import { useAuth } from "../contexts/AuthContext";
 import { formatDate } from "../utils/format";
 
-const PROMPTS = [
-  "How am I doing?",
-  "Cash position",
-  "Budget status",
-  "Anything to worry about?",
-];
+// HASEEB-125: PROMPTS removed. Empty-state starter pills now derive
+// from role-aware keys (`{role}.q1..q4`) already established in the
+// aminah i18n bundle by HASEEB-118. Generic PROMPTS were overwriting
+// the role-awareness the scaffold pre-staged.
 
 // Source → Lucide icon. Anything unknown falls through to `Bell`.
 function iconForSource(source) {
@@ -199,9 +197,11 @@ export default function AminahChat({ role = "cfo" }) {
       } else if (event.type === "error") {
         // Wave 3: live-adapter error events get rendered as an inline
         // error bubble so the user can see what went wrong and retry.
+        // HASEEB-125: fallback text now routes through i18n bundle so
+        // AR mode doesn't leak English.
         msg.blocks.push({
           type: "text",
-          text: event.message || "Something went wrong.",
+          text: event.message || t("error.generic"),
           isError: true,
         });
       }
@@ -212,7 +212,7 @@ export default function AminahChat({ role = "cfo" }) {
     if (event.type === "message.complete" && event.conversationId) {
       setConversationId(event.conversationId);
     }
-  }, []);
+  }, [t]);
 
   const sendMessage = async (text) => {
     if (!text.trim() || isStreaming || !sessionId) return;
@@ -629,11 +629,20 @@ export default function AminahChat({ role = "cfo" }) {
           <>
             <p style={{ fontSize: 14, fontStyle: "italic", lineHeight: 1.6, color: "var(--text-tertiary)", marginBottom: 12 }}>{t("empty_state.simple_subtitle")}</p>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
-              {PROMPTS.map((p) => (
-                <button key={p} onClick={() => sendMessage(p)} className="starter" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 14, cursor: "pointer", fontSize: 12, color: "var(--text-tertiary)", fontFamily: "inherit" }}>
-                  <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--role-owner)" }} />{p}
-                </button>
-              ))}
+              {/* HASEEB-125: role-aware starter prompts via existing
+                  `{owner,cfo,junior}.q1..q4` keys from the Aminah i18n
+                  bundle. Pre-HASEEB-125 rendered a hardcoded English
+                  PROMPTS array that ignored the role prop — pills show
+                  Arabic in AR mode and role-appropriate copy in both. */}
+              {["q1", "q2", "q3", "q4"].map((qKey) => {
+                const roleKey = normalizedRole.toLowerCase();
+                const label = t(`${roleKey}.${qKey}`);
+                return (
+                  <button key={qKey} onClick={() => sendMessage(label)} className="starter" style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 14, cursor: "pointer", fontSize: 12, color: "var(--text-tertiary)", fontFamily: "inherit" }}>
+                    <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--role-owner)" }} />{label}
+                  </button>
+                );
+              })}
             </div>
           </>
         )}

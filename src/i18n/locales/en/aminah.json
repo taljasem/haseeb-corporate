@@ -68,5 +68,35 @@
     "q2": "Help me categorize this transaction",
     "q3": "Draft a JE for me",
     "q4": "What's my accuracy this week?"
+  },
+  "pending": {
+    "due_prefix": "Due {{date}}",
+    "severity_info": "FYI",
+    "severity_warning": "Attention",
+    "severity_critical": "Urgent",
+    "confirm": "Confirm",
+    "defer": "Defer",
+    "dismiss": "Dismiss",
+    "defer_menu": {
+      "title": "Defer until",
+      "tomorrow": "Tomorrow",
+      "three_days": "3 days",
+      "one_week": "1 week",
+      "custom": "Custom"
+    },
+    "dismiss_modal": {
+      "title": "Dismiss this alert?",
+      "body": "This is critical — it won't resurface after dismissal. Are you sure?",
+      "reason_placeholder": "Reason (optional)",
+      "confirm": "Dismiss",
+      "cancel": "Cancel"
+    },
+    "errors": {
+      "owner_only": "Only the Owner can dismiss advisor alerts.",
+      "confirm_failed": "Could not confirm — the JE gateway rejected the entry. Nothing was posted.",
+      "defer_failed": "Could not defer this alert. Please try again.",
+      "dismiss_failed": "Could not dismiss this alert. Please try again.",
+      "acknowledge_failed": "Entry was posted but the alert could not be cleared. It will resurface."
+    }
   }
 }

@@ -111,5 +111,58 @@
     "copy_code": "نسخ رمز الحساب",
     "copied_toast": "تم نسخ رمز الحساب",
     "note_icon_tooltip": "عرض الملاحظة"
+  },
+  "versions": {
+    "publish_button": "نشر كإصدار",
+    "history_button": "سجل الإصدارات",
+    "history_aria": "فتح سجل الإصدارات",
+    "close": "إغلاق",
+    "publish_modal": {
+      "label": "نشر إصدار",
+      "title": "نشر إصدار من التقرير",
+      "body": "سيُنشئ هذا الإجراء لقطة غير قابلة للتعديل من العرض الحالي. بعد النشر لا يمكن تعديل اللقطة.",
+      "field_notes": "ملاحظات (اختياري)",
+      "notes_placeholder": "ما الذي تغيّر في هذا الإصدار، أو لماذا تنشره…",
+      "field_supersedes": "يحل محل",
+      "supersedes_none": "لا يحل محل أي إصدار سابق",
+      "supersedes_label_prefix": "يحل محل الإصدار ",
+      "supersedes_label_middle": " (نُشر في ",
+      "supersedes_label_suffix": ")",
+      "supersedes_help": "عند التفعيل، يُوسم الإصدار السابق بأنه مُستبدَل ولم يعد الإصدار الحالي.",
+      "cancel": "إلغاء",
+      "submit": "نشر",
+      "publishing": "جارٍ النشر…",
+      "published_toast_prefix": "تم نشر الإصدار ",
+      "published_toast_suffix": "",
+      "error_toast": "تعذّر نشر الإصدار: {{message}}"
+    },
+    "drawer": {
+      "label": "سجل الإصدارات",
+      "title": "سجل الإصدارات",
+      "subtitle": "{{report}}",
+      "empty_title": "لا توجد إصدارات بعد",
+      "empty_desc": "لم يُنشر أي شيء لهذا التقرير ولهذه الفترة حتى الآن.",
+      "loading": "جارٍ تحميل الإصدارات…",
+      "error": "تعذّر تحميل الإصدارات: {{message}}",
+      "retry": "إعادة المحاولة",
+      "current_badge": "الحالي",
+      "superseded_badge": "مُستبدَل",
+      "published_by": "بواسطة",
+      "view": "عرض",
+      "viewing": "يُعرض الآن"
+    },
+    "historical_banner": {
+      "title_prefix": "يُعرض الإصدار ",
+      "title_middle": " (نُشر في ",
+      "title_suffix": ")",
+      "body": "أنت تشاهد لقطة تاريخية منشورة. التعديل معطّل.",
+      "return": "العودة إلى المباشر"
+    },
+    "report_types": {
+      "PROFIT_AND_LOSS": "قائمة الدخل",
+      "BALANCE_SHEET": "قائمة المركز المالي",
+      "CASH_FLOW_STATEMENT": "قائمة التدفقات النقدية",
+      "TRIAL_BALANCE": "ميزان المراجعة"
+    }
   }
 }

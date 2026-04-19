@@ -55,6 +55,7 @@ import * as journalEntriesApi from '../api/journal-entries';
 import * as journalEntriesWriteApi from '../api/journal-entries-write';
 import * as accountsApi from '../api/accounts';
 import * as reportsApi from '../api/reports';
+import * as reportVersionsApi from '../api/report-versions';
 import * as settingsApi from '../api/settings';
 import * as advisorPendingApi from '../api/advisor-pending';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
@@ -111,6 +112,11 @@ const FUNCTION_ROUTING = {
   getIncomeStatement: 'wired',
   getBalanceSheet: 'wired',
   getCashFlowStatement: 'wired',
+
+  // Report versions (FN-244, Phase 4 Wave 1)
+  publishReportVersion: 'wired',
+  listReportVersions: 'wired',
+  getReportVersion: 'wired',
 
   // Auth / settings
   getTenantInfo: 'wired',
@@ -197,6 +203,11 @@ const REAL_IMPLS = {
   getIncomeStatement: reportsApi.getIncomeStatement,
   getBalanceSheet: reportsApi.getBalanceSheet,
   getCashFlowStatement: reportsApi.getCashFlow,
+
+  // Report versions (FN-244)
+  publishReportVersion: reportVersionsApi.publishReportVersion,
+  listReportVersions: reportVersionsApi.listReportVersions,
+  getReportVersion: reportVersionsApi.getReportVersion,
 
   // Settings
   getTenantInfo: settingsApi.getTenantInfo,
@@ -319,6 +330,13 @@ function buildLiveSurface() {
   surface.dismissAdvisorPending = advisorPendingApi.dismissAdvisorPending;
   surface.acknowledgeAdvisorPending = advisorPendingApi.acknowledgeAdvisorPending;
 
+  // Report versions (FN-244, Phase 4 Wave 1). Not on mockEngine's namespace;
+  // assigned explicitly here so both MOCK and LIVE surfaces expose the
+  // same function names and screens don't have to branch.
+  surface.publishReportVersion = reportVersionsApi.publishReportVersion;
+  surface.listReportVersions = reportVersionsApi.listReportVersions;
+  surface.getReportVersion = reportVersionsApi.getReportVersion;
+
   return surface;
 }
 
@@ -423,7 +441,69 @@ function buildMockExtras() {
     deferAdvisorPending: deferAdvisorPendingMock,
     dismissAdvisorPending: dismissAdvisorPendingMock,
     acknowledgeAdvisorPending: acknowledgeAdvisorPendingMock,
+    // Report versions (FN-244, Phase 4 Wave 1) — MOCK stubs. The real
+    // feature depends on a backend that persists an immutable version
+    // chain; MOCK mode just round-trips enough to keep the UI alive
+    // without pretending to persist. list returns an empty array so the
+    // drawer shows its empty state; publish fabricates a plausible DTO
+    // so the modal doesn't error out.
+    publishReportVersion: mockPublishReportVersion,
+    listReportVersions: mockListReportVersions,
+    getReportVersion: mockGetReportVersion,
   };
+}
+
+// ── Report versions MOCK stubs (module-scoped so state survives calls) ──
+let _mockReportVersionCounter = 0;
+const _mockReportVersions = [];
+async function mockPublishReportVersion(payload = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  _mockReportVersionCounter += 1;
+  const row = {
+    id: `mock-rv-${_mockReportVersionCounter}`,
+    tenantId: 'mock-tenant',
+    reportType: payload.reportType || 'CUSTOM',
+    reportKey: payload.reportKey || 'default',
+    version: _mockReportVersionCounter,
+    snapshotData: payload.snapshotData ?? null,
+    asOfDate: payload.asOfDate || null,
+    periodFrom: payload.periodFrom || null,
+    periodTo: payload.periodTo || null,
+    notes: payload.notes || null,
+    publishedAt: new Date().toISOString(),
+    publishedBy: 'mock-user',
+    publishedByName: 'Mock User',
+    supersedesId: payload.supersedesId || null,
+    supersededAt: null,
+    supersededBy: null,
+    createdAt: new Date().toISOString(),
+    _mock: true,
+  };
+  if (payload.supersedesId) {
+    const prior = _mockReportVersions.find((v) => v.id === payload.supersedesId);
+    if (prior) {
+      prior.supersededAt = row.publishedAt;
+      prior.supersededBy = row.id;
+    }
+  }
+  _mockReportVersions.unshift(row);
+  return row;
+}
+async function mockListReportVersions(filters = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  let list = _mockReportVersions.filter((v) => {
+    if (filters.reportType && v.reportType !== filters.reportType) return false;
+    if (filters.reportKey && v.reportKey !== filters.reportKey) return false;
+    if (filters.currentOnly && v.supersededAt) return false;
+    return true;
+  });
+  if (filters.limit) list = list.slice(0, filters.limit);
+  return list.map((v) => ({ ...v }));
+}
+async function mockGetReportVersion(id) {
+  await new Promise((r) => setTimeout(r, 40));
+  const row = _mockReportVersions.find((v) => v.id === id);
+  return row ? { ...row } : null;
 }
 
 /**
@@ -492,3 +572,8 @@ export const listAdvisorPending = surface.listAdvisorPending;
 export const deferAdvisorPending = surface.deferAdvisorPending;
 export const dismissAdvisorPending = surface.dismissAdvisorPending;
 export const acknowledgeAdvisorPending = surface.acknowledgeAdvisorPending;
+
+// Report versions (FN-244, Phase 4 Wave 1)
+export const publishReportVersion = surface.publishReportVersion;
+export const listReportVersions = surface.listReportVersions;
+export const getReportVersion = surface.getReportVersion;

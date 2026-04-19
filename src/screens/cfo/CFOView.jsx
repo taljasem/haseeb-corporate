@@ -27,6 +27,7 @@ import PettyCashScreen from "./PettyCashScreen";
 import BulkReclassScreen from "./BulkReclassScreen";
 import OcrReviewScreen from "./OcrReviewScreen";
 import InventoryCountScreen from "./InventoryCountScreen";
+import SpinoffScreen from "./SpinoffScreen";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
 
@@ -142,6 +143,8 @@ export default function CFOView({ registerNav }) {
         return <OcrReviewScreen role="CFO" />;
       case "inventory-count":
         return <InventoryCountScreen role="CFO" />;
+      case "spinoff":
+        return <SpinoffScreen role="CFO" />;
       default:
         return (
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-tertiary)", fontSize: 13 }}>

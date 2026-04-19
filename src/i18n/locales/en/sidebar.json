@@ -26,6 +26,7 @@
     "bulk_reclass": "Bulk Reclassify",
     "ocr_review": "OCR Review",
     "inventory_count": "Inventory Count",
+    "spinoff": "Entity Split",
     "budget": "Budget",
     "forecast": "Forecast",
     "financial_statements": "Financial Statements",

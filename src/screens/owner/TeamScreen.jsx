@@ -205,7 +205,7 @@ export default function TeamScreen() {
       )}
 
       {/* Toast */}
-      {toast && <div style={{ position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)", background: "var(--accent-primary-subtle)", border: "1px solid rgba(0,196,140,0.30)", color: "var(--accent-primary)", padding: "10px 18px", borderRadius: 8, fontSize: 12, fontWeight: 500, zIndex: 400 }}>{toast}</div>}
+      {toast && <div style={{ position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)", background: "var(--accent-primary-subtle)", border: "1px solid var(--accent-primary-border)", color: "var(--accent-primary)", padding: "10px 18px", borderRadius: 8, fontSize: 12, fontWeight: 500, zIndex: 400 }}>{toast}</div>}
     </div>
   );
 }

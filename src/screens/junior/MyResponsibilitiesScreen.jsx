@@ -136,7 +136,7 @@ export default function MyResponsibilitiesScreen({ onContactCFO }) {
           style={{
             background: "transparent",
             color: "var(--accent-primary)",
-            border: "1px solid rgba(0,196,140,0.30)",
+            border: "1px solid var(--accent-primary-border)",
             padding: "10px 16px",
             borderRadius: 6,
             cursor: "pointer",

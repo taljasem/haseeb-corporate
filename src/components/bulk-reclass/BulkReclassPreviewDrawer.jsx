@@ -492,7 +492,7 @@ export default function BulkReclassPreviewDrawer({
                   <div
                     style={{
                       padding: "10px 14px",
-                      borderBottom: "1px solid rgba(0,196,140,0.30)",
+                      borderBottom: "1px solid var(--accent-primary-border)",
                       display: "flex",
                       alignItems: "center",
                       gap: 8,
@@ -527,7 +527,7 @@ export default function BulkReclassPreviewDrawer({
                       style={{
                         padding: "10px 14px",
                         borderTop:
-                          i === 0 ? "none" : "1px solid rgba(0,196,140,0.30)",
+                          i === 0 ? "none" : "1px solid var(--accent-primary-border)",
                         display: "flex",
                         justifyContent: "space-between",
                         fontSize: 12,
@@ -606,7 +606,7 @@ export default function BulkReclassPreviewDrawer({
               style={{
                 ...btnSecondary,
                 color: "var(--semantic-danger)",
-                borderColor: "rgba(208,90,90,0.30)",
+                borderColor: "var(--semantic-danger-border)",
               }}
             >
               {acting === "cancel" ? (

@@ -116,7 +116,7 @@ export default function VarianceAnalysisScreen({ onOpenAminah }) {
       <div style={{ flex: 1, overflowY: "auto", padding: "22px 28px 32px" }}>
         <div style={{ maxWidth: 1240, margin: "0 auto" }}>
           {toast && (
-            <div style={{ marginBottom: 14, background: "var(--accent-primary-subtle)", border: "1px solid rgba(0,196,140,0.30)", color: "var(--accent-primary)", padding: "10px 14px", borderRadius: 8, fontSize: 12, fontWeight: 500 }}>
+            <div style={{ marginBottom: 14, background: "var(--accent-primary-subtle)", border: "1px solid var(--accent-primary-border)", color: "var(--accent-primary)", padding: "10px 14px", borderRadius: 8, fontSize: 12, fontWeight: 500 }}>
               {toast}
             </div>
           )}
@@ -127,7 +127,7 @@ export default function VarianceAnalysisScreen({ onOpenAminah }) {
               {PERIODS.map((p) => {
                 const on = period === p;
                 return (
-                  <button key={p} onClick={() => setPeriod(p)} style={{ fontSize: 11, fontWeight: 600, padding: "6px 12px", borderRadius: 14, background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)", border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)", color: on ? "var(--accent-primary)" : "var(--text-tertiary)", cursor: "pointer", fontFamily: "inherit" }}>
+                  <button key={p} onClick={() => setPeriod(p)} style={{ fontSize: 11, fontWeight: 600, padding: "6px 12px", borderRadius: 14, background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)", border: on ? "1px solid var(--accent-primary-border)" : "1px solid var(--border-default)", color: on ? "var(--accent-primary)" : "var(--text-tertiary)", cursor: "pointer", fontFamily: "inherit" }}>
                     {p.replace("_", " ")}
                   </button>
                 );

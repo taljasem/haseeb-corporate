@@ -221,7 +221,7 @@ function VersionRow({ version, isViewing, onView }) {
     : "var(--accent-primary-subtle)";
   const badgeBorder = superseded
     ? "1px solid var(--border-subtle)"
-    : "1px solid rgba(0,196,140,0.30)";
+    : "1px solid var(--accent-primary-border)";
   return (
     <div
       style={{

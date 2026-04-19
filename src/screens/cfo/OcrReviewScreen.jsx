@@ -989,7 +989,7 @@ function OcrExtractionDrawer({ extraction, onClose, onUpdated, setToast }) {
                   style={{
                     ...btnSecondary,
                     color: "var(--semantic-danger)",
-                    borderColor: "rgba(208,90,90,0.30)",
+                    borderColor: "var(--semantic-danger-border)",
                   }}
                   disabled={acting != null}
                 >

@@ -246,7 +246,7 @@ export default function AgingReportsScreen({ onOpenAminah }) {
               ))}
             </select>
             {bucketFilter && (
-              <button onClick={() => setBucketFilter(null)} style={{ background: "var(--accent-primary-subtle)", color: "var(--accent-primary)", border: "1px solid rgba(0,196,140,0.30)", padding: "7px 12px", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "inherit" }}>
+              <button onClick={() => setBucketFilter(null)} style={{ background: "var(--accent-primary-subtle)", color: "var(--accent-primary)", border: "1px solid var(--accent-primary-border)", padding: "7px 12px", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "inherit" }}>
                 × {t(`buckets.${bucketFilter}`)}
               </button>
             )}
@@ -254,7 +254,7 @@ export default function AgingReportsScreen({ onOpenAminah }) {
 
           {/* Bulk action bar */}
           {selected.size > 0 && (
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", marginBottom: 10, background: "var(--accent-primary-subtle)", border: "1px solid rgba(0,196,140,0.30)", borderRadius: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", marginBottom: 10, background: "var(--accent-primary-subtle)", border: "1px solid var(--accent-primary-border)", borderRadius: 8 }}>
               <div style={{ fontSize: 12, color: "var(--accent-primary)", fontWeight: 600 }}>{t("table.selected", { count: selected.size })}</div>
               <div style={{ flex: 1 }} />
               <button onClick={() => setSelected(new Set())} style={{ background: "transparent", color: "var(--text-secondary)", border: "none", padding: "6px 10px", cursor: "pointer", fontSize: 11, fontFamily: "inherit" }}>{t("table.bulk_clear")}</button>

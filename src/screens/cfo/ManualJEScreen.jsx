@@ -394,7 +394,7 @@ export default function ManualJEScreen({ onOpenAminah }) {
           <div
             style={{
               position: "absolute", top: 16, right: 16,
-              background: "var(--accent-primary-subtle)", border: "1px solid rgba(0,196,140,0.30)",
+              background: "var(--accent-primary-subtle)", border: "1px solid var(--accent-primary-border)",
               color: COLORS.teal, padding: "10px 14px", borderRadius: 8, fontSize: 12, fontWeight: 500, zIndex: 50,
             }}
           >
@@ -1122,7 +1122,7 @@ function CompactAccountPicker({ value, readOnly, onSelect, onClear }) {
     return (
       <div style={{
         display: "flex", alignItems: "center", gap: 6,
-        background: "var(--bg-selected)", border: `1px solid rgba(0,196,140,0.30)`,
+        background: "var(--bg-selected)", border: `1px solid var(--accent-primary-border)`,
         borderRadius: 5, padding: "7px 10px", fontSize: 12, color: COLORS.text,
       }}>
         <span style={{ fontFamily: "'DM Mono', monospace", color: COLORS.textDim }}>{value.code}</span>

@@ -135,7 +135,7 @@ function ChipField({ label, values, selected, onToggle, renderLabel, keyFn }) {
               style={{
                 padding: "5px 12px", borderRadius: 14,
                 background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)",
-                border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
+                border: on ? "1px solid var(--accent-primary-border)" : "1px solid var(--border-default)",
                 color: on ? "var(--accent-primary)" : "var(--text-secondary)",
                 fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
               }}

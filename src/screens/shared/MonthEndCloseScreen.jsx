@@ -355,7 +355,7 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
               style={{
                 marginBottom: 14,
                 background: "var(--accent-primary-subtle)",
-                border: "1px solid rgba(0,196,140,0.30)",
+                border: "1px solid var(--accent-primary-border)",
                 color: "var(--accent-primary)",
                 padding: "12px 16px", borderRadius: 8,
                 fontSize: 12, fontWeight: 500,
@@ -370,7 +370,7 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
               style={{
                 marginBottom: 14,
                 background: "var(--accent-primary-subtle)",
-                border: "1px solid rgba(0,196,140,0.30)",
+                border: "1px solid var(--accent-primary-border)",
                 color: "var(--accent-primary)",
                 padding: "10px 14px", borderRadius: 8,
                 fontSize: 12, fontWeight: 500,
@@ -684,7 +684,7 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
       )}
 
       {/* Toast */}
-      {toast && <div style={{ position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)", background: "var(--accent-primary-subtle)", border: "1px solid rgba(0,196,140,0.30)", color: "var(--accent-primary)", padding: "10px 18px", borderRadius: 8, fontSize: 12, fontWeight: 500, zIndex: 400 }}>{toast}</div>}
+      {toast && <div style={{ position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)", background: "var(--accent-primary-subtle)", border: "1px solid var(--accent-primary-border)", color: "var(--accent-primary)", padding: "10px 18px", borderRadius: 8, fontSize: 12, fontWeight: 500, zIndex: 400 }}>{toast}</div>}
     </div>
   );
 }
@@ -942,7 +942,7 @@ function ValidationRow({ v, onFix }) {
           onClick={() => onFix(v.fixAction)}
           style={{
             background: "transparent", color: "var(--accent-primary)",
-            border: "1px solid rgba(0,196,140,0.30)", padding: "6px 12px",
+            border: "1px solid var(--accent-primary-border)", padding: "6px 12px",
             borderRadius: 5, cursor: "pointer",
             fontSize: 11, fontWeight: 600, fontFamily: "inherit",
           }}

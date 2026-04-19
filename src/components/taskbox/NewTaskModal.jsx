@@ -352,7 +352,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
                       gap: 10,
                       padding: "8px 10px",
                       background: active ? "var(--accent-primary-subtle)" : "var(--bg-surface)",
-                      border: active ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
+                      border: active ? "1px solid var(--accent-primary-border)" : "1px solid var(--border-default)",
                       borderRadius: 8,
                       cursor: "pointer",
                       fontFamily: "inherit",

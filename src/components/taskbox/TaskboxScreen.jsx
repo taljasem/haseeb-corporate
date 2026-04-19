@@ -377,7 +377,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 4,
                     background: hasAdvancedFilters ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)",
-                    border: hasAdvancedFilters ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
+                    border: hasAdvancedFilters ? "1px solid var(--accent-primary-border)" : "1px solid var(--border-default)",
                     color: hasAdvancedFilters ? "var(--accent-primary)" : "var(--text-tertiary)",
                     padding: "8px 12px", borderRadius: 8, cursor: "pointer",
                     fontSize: 11, fontWeight: 600, fontFamily: "inherit",
@@ -409,7 +409,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
                         delete next[k];
                         setSearchFilters(next);
                       }}
-                      style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "var(--accent-primary-subtle)", color: "var(--accent-primary)", border: "1px solid rgba(0,196,140,0.30)", padding: "3px 10px", borderRadius: 12, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+                      style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "var(--accent-primary-subtle)", color: "var(--accent-primary)", border: "1px solid var(--accent-primary-border)", padding: "3px 10px", borderRadius: 12, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
                     >
                       {label} <XIcon size={10} />
                     </button>
@@ -423,7 +423,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
 
       {/* Bulk action bar */}
       {tab === "tasks" && bulkMode && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 28px", background: "var(--accent-primary-subtle)", borderBottom: "1px solid rgba(0,196,140,0.30)", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 28px", background: "var(--accent-primary-subtle)", borderBottom: "1px solid var(--accent-primary-border)", flexWrap: "wrap" }}>
           <div style={{ fontSize: 12, color: "var(--accent-primary)", fontWeight: 600 }}>
             {t("bulk.selected", { count: selectedIds.size })}
           </div>
@@ -445,7 +445,7 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
 
       {/* Toast */}
       {toast && (
-        <div style={{ margin: "12px 28px 0", background: "var(--accent-primary-subtle)", border: "1px solid rgba(0,196,140,0.30)", color: "var(--accent-primary)", padding: "10px 14px", borderRadius: 8, fontSize: 12, fontWeight: 500 }}>
+        <div style={{ margin: "12px 28px 0", background: "var(--accent-primary-subtle)", border: "1px solid var(--accent-primary-border)", color: "var(--accent-primary)", padding: "10px 14px", borderRadius: 8, fontSize: 12, fontWeight: 500 }}>
           {toast}
         </div>
       )}
@@ -560,7 +560,7 @@ function downloadCSV(filename, rows) {
 
 const bulkBtnStyle = {
   background: "transparent", color: "var(--accent-primary)",
-  border: "1px solid rgba(0,196,140,0.30)", padding: "6px 12px",
+  border: "1px solid var(--accent-primary-border)", padding: "6px 12px",
   borderRadius: 5, cursor: "pointer",
   fontSize: 11, fontWeight: 600, fontFamily: "inherit",
 };
@@ -736,7 +736,7 @@ function BulkAssignModal({ open, count, role, onClose, onConfirm }) {
               style={{
                 display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
                 background: picked === p.id ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)",
-                border: picked === p.id ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
+                border: picked === p.id ? "1px solid var(--accent-primary-border)" : "1px solid var(--border-default)",
                 borderRadius: 8, cursor: "pointer", fontFamily: "inherit", textAlign: "start",
               }}
             >

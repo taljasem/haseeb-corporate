@@ -241,7 +241,7 @@ export default function EditMemberModal({ open, member, onClose, onSaved }) {
                       padding: "9px 12px",
                       background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)",
                       border: on
-                        ? "1px solid rgba(0,196,140,0.30)"
+                        ? "1px solid var(--accent-primary-border)"
                         : "1px solid var(--border-default)",
                       borderRadius: 8,
                       color: on ? "var(--accent-primary)" : "var(--text-secondary)",
@@ -287,7 +287,7 @@ export default function EditMemberModal({ open, member, onClose, onSaved }) {
                       padding: "9px 12px",
                       background: on ? "var(--accent-primary-subtle)" : "transparent",
                       border: on
-                        ? "1px solid rgba(0,196,140,0.30)"
+                        ? "1px solid var(--accent-primary-border)"
                         : "1px solid var(--border-default)",
                       color: on ? "var(--accent-primary)" : "var(--text-secondary)",
                       borderRadius: 6,

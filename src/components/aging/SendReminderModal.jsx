@@ -80,7 +80,7 @@ export default function SendReminderModal({ open, invoice, onClose, onSent }) {
               {["friendly", "firm", "final"].map((k) => {
                 const on = template === k;
                 return (
-                  <button key={k} onClick={() => setTemplate(k)} style={{ flex: 1, padding: "9px 10px", background: on ? "var(--accent-primary-subtle)" : "transparent", border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)", color: on ? "var(--accent-primary)" : "var(--text-secondary)", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "inherit" }}>
+                  <button key={k} onClick={() => setTemplate(k)} style={{ flex: 1, padding: "9px 10px", background: on ? "var(--accent-primary-subtle)" : "transparent", border: on ? "1px solid var(--accent-primary-border)" : "1px solid var(--border-default)", color: on ? "var(--accent-primary)" : "var(--text-secondary)", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "inherit" }}>
                     {t(`reminder_modal.template_${k}`)}
                   </button>
                 );

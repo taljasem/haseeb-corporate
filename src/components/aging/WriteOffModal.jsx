@@ -96,7 +96,7 @@ export default function WriteOffModal({ open, invoice, onClose, onSubmitted }) {
               {CATEGORIES.map((c) => {
                 const on = category === c;
                 return (
-                  <button key={c} onClick={() => setCategory(c)} style={{ padding: "7px 14px", borderRadius: 14, background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)", border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)", color: on ? "var(--accent-primary)" : "var(--text-secondary)", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                  <button key={c} onClick={() => setCategory(c)} style={{ padding: "7px 14px", borderRadius: 14, background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)", border: on ? "1px solid var(--accent-primary-border)" : "1px solid var(--border-default)", color: on ? "var(--accent-primary)" : "var(--text-secondary)", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
                     {t(`writeoff_modal.cat_${c}`)}
                   </button>
                 );

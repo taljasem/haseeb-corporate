@@ -103,7 +103,7 @@ export default function AccountModal({ open, mode, account, onClose, onSaved }) 
               {TYPES.map((tp) => {
                 const on = type === tp;
                 return (
-                  <button key={tp} onClick={() => !isEdit && setType(tp)} disabled={isEdit} style={{ padding: "7px 14px", borderRadius: 14, background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)", border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)", color: on ? "var(--accent-primary)" : "var(--text-secondary)", fontSize: 11, fontWeight: 600, cursor: isEdit ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: isEdit && !on ? 0.5 : 1 }}>
+                  <button key={tp} onClick={() => !isEdit && setType(tp)} disabled={isEdit} style={{ padding: "7px 14px", borderRadius: 14, background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)", border: on ? "1px solid var(--accent-primary-border)" : "1px solid var(--border-default)", color: on ? "var(--accent-primary)" : "var(--text-secondary)", fontSize: 11, fontWeight: 600, cursor: isEdit ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: isEdit && !on ? 0.5 : 1 }}>
                     {t(`chart.types.${tp}`)}
                   </button>
                 );

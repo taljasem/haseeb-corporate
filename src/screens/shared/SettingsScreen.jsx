@@ -239,7 +239,7 @@ function Toast({ text, onClear }) {
       style={{
         marginBottom: 14,
         background: "var(--accent-primary-subtle)",
-        border: "1px solid rgba(0,196,140,0.30)",
+        border: "1px solid var(--accent-primary-border)",
         color: "var(--accent-primary)",
         padding: "10px 14px", borderRadius: 8,
         fontSize: 12, fontWeight: 500,
@@ -377,7 +377,7 @@ function ThemeSection() {
               style={{
                 flex: 1, padding: "14px 16px",
                 background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)",
-                border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
+                border: on ? "1px solid var(--accent-primary-border)" : "1px solid var(--border-default)",
                 color: on ? "var(--accent-primary)" : "var(--text-secondary)",
                 borderRadius: 8, cursor: "pointer",
                 fontSize: 12, fontWeight: 600, fontFamily: "inherit",
@@ -417,7 +417,7 @@ function LanguageSection() {
                 style={{
                   flex: 1, padding: "12px 14px",
                   background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)",
-                  border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
+                  border: on ? "1px solid var(--accent-primary-border)" : "1px solid var(--border-default)",
                   color: on ? "var(--accent-primary)" : "var(--text-secondary)",
                   borderRadius: 8, cursor: "pointer",
                   fontSize: 13, fontWeight: 600, fontFamily: "inherit",
@@ -707,7 +707,7 @@ function AuditLogSection() {
                 fontSize: 11, fontWeight: 600, padding: "5px 12px",
                 borderRadius: 14,
                 background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)",
-                border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
+                border: on ? "1px solid var(--accent-primary-border)" : "1px solid var(--border-default)",
                 color: on ? "var(--accent-primary)" : "var(--text-tertiary)",
                 cursor: "pointer", fontFamily: "inherit",
               }}

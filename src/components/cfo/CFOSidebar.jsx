@@ -150,8 +150,9 @@ export default function CFOSidebar({ active, setActive, pendingApprovals = 0, ta
       </SidebarGroup>
 
       <SidebarGroup label={t("groups.management")}>
-        <NavItem icon={UserIcon}  label={t("items.profile")}  active={isActive("profile")}  onClick={() => setActive("profile")} />
-        <NavItem icon={GearIcon}  label={t("items.settings")} active={isActive("settings")} onClick={() => setActive("settings")} />
+        <NavItem icon={UserIcon}   label={t("items.profile")}        active={isActive("profile")}  onClick={() => setActive("profile")} />
+        <NavItem icon={GearIcon}   label={t("items.settings")}       active={isActive("settings")} onClick={() => setActive("settings")} />
+        <NavItem icon={ShieldIcon} label={t("items.administration")} active={isActive("administration")} onClick={() => setActive("administration")} />
       </SidebarGroup>
     </aside>
   );

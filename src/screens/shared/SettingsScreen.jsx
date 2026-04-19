@@ -65,8 +65,7 @@ export default function SettingsScreen({ role: roleRaw = "CFO" }) {
       { id: "notifications", icon: Bell,           label: t("sections.notifications") },
       { id: "security",      icon: Shield,         label: t("sections.security") },
     ];
-    if (role !== "Junior") list.push({ id: "integrations", icon: Plug, label: t("sections.integrations") });
-    if (role === "Owner") list.push({ id: "audit_log", icon: ClipboardList, label: t("sections.audit_log") });
+    list.push({ id: "audit_log", icon: ClipboardList, label: t("sections.my_activity", { defaultValue: "My Activity" }) });
     return list;
   }, [role, t]);
 
@@ -139,8 +138,7 @@ export default function SettingsScreen({ role: roleRaw = "CFO" }) {
             {active === "language"      && <LanguageSection />}
             {active === "notifications" && <NotificationsSection role={role} />}
             {active === "security"      && <SecuritySection />}
-            {active === "integrations"  && role !== "Junior" && <IntegrationsSection />}
-            {active === "audit_log"     && role === "Owner" && <AuditLogSection />}
+            {active === "audit_log"     && <AuditLogSection />}
           </div>
         </div>
       </div>

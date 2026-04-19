@@ -82,6 +82,7 @@ import * as inventoryCountApi from '../api/inventory-count';
 import * as spinoffApi from '../api/spinoff';
 import * as islamicFinanceApi from '../api/islamic-finance';
 import * as purchaseOrdersApi from '../api/purchase-orders';
+import * as tenantFlagsApi from '../api/tenant-flags';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -488,6 +489,10 @@ const REAL_IMPLS = {
   createGoodsReceipt: purchaseOrdersApi.createGoodsReceipt,
   runThreeWayMatch: purchaseOrdersApi.runThreeWayMatch,
   predictiveBillMatch: purchaseOrdersApi.predictiveBillMatch,
+
+  // Tenant Flags (Phase 4 UX Dispatch) — localStorage fallback until backend ships.
+  getTenantFlags: tenantFlagsApi.getTenantFlags,
+  updateTenantFlags: tenantFlagsApi.updateTenantFlags,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -774,6 +779,9 @@ function buildLiveSurface() {
   surface.runThreeWayMatch = purchaseOrdersApi.runThreeWayMatch;
   surface.predictiveBillMatch = purchaseOrdersApi.predictiveBillMatch;
 
+  surface.getTenantFlags = tenantFlagsApi.getTenantFlags;
+  surface.updateTenantFlags = tenantFlagsApi.updateTenantFlags;
+
   return surface;
 }
 
@@ -1033,6 +1041,9 @@ function buildMockExtras() {
     createGoodsReceipt: mockCreateGoodsReceipt,
     runThreeWayMatch: mockRunThreeWayMatch,
     predictiveBillMatch: mockPredictiveBillMatch,
+    // Tenant Flags — in MOCK mode, go to localStorage fallback directly.
+    getTenantFlags: tenantFlagsApi.getTenantFlags,
+    updateTenantFlags: tenantFlagsApi.updateTenantFlags,
     // Board pack (FN-258) MOCK stub — empty pack in MOCK mode.
     getBoardPack: async (q = {}) => ({
       fiscalYear: q.fiscalYear || new Date().getFullYear() - 1,
@@ -3449,3 +3460,5 @@ export const transitionPurchaseOrderStatus = surface.transitionPurchaseOrderStat
 export const createGoodsReceipt = surface.createGoodsReceipt;
 export const runThreeWayMatch = surface.runThreeWayMatch;
 export const predictiveBillMatch = surface.predictiveBillMatch;
+export const getTenantFlags = surface.getTenantFlags;
+export const updateTenantFlags = surface.updateTenantFlags;

@@ -1,0 +1,62 @@
+{
+  "title": "Administration",
+  "subtitle": "Tenant-wide administration. CFO and Senior Accountants edit; Owner has read access plus billing control; Junior has no access.",
+  "view_label_owner": "OWNER VIEW",
+  "view_label_cfo": "CFO VIEW",
+  "view_label_senior": "SENIOR VIEW",
+  "sections": {
+    "team_access": "Team Access",
+    "integrations": "Integrations",
+    "tenant_flags": "Tenant Flags",
+    "security": "Security",
+    "audit_log": "Audit Log",
+    "billing": "Billing & Subscription"
+  },
+  "readonly_banner": "You have read access to Administration. Editing requires CFO or Senior Accountant role.",
+  "no_access_title": "Administration is restricted",
+  "no_access_description": "This surface is for CFO, Senior Accountant, and Owner roles. Speak to your CFO if you need to change team access or tenant configuration.",
+  "flags": {
+    "title": "Tenant Flags",
+    "description": "Turn major product surfaces on or off for this tenant. Flags are tenant-wide and affect every user's navigation until changed.",
+    "save": "Save Changes",
+    "saving": "Saving…",
+    "saved": "Tenant flags saved.",
+    "unsaved_changes": "You have unsaved changes.",
+    "owner_readonly_note": "Owner is read-only on tenant flags. Ask the CFO to change these.",
+    "backend_pending_note": "Backend endpoint is not yet live — changes are persisted locally until the API ships. Flag this commit for review.",
+    "has_foreign_activity": {
+      "label": "Foreign activity",
+      "description": "Enable when the company has cross-border income, expenses, or tax obligations. Adds Withholding Tax, CIT Assessments, Tax Lodgements, and Disallowance Rules to the Setup nav."
+    }
+  },
+  "team": {
+    "title": "Team Access",
+    "description": "Manage users, their roles, and per-screen access. Role enforcement is authoritative on the backend — UI only reflects it."
+  },
+  "integrations": {
+    "title": "Integrations",
+    "description": "Tenant-wide connections to banks, ERPs, and third-party tools."
+  },
+  "security": {
+    "title": "Tenant Security",
+    "description": "Organization-wide password policy, SSO, IP allowlist, and session duration.",
+    "coming_soon": "Tenant-level security controls will land with the SSO + policy backend."
+  },
+  "audit_log": {
+    "title": "Full Audit Log",
+    "description": "Every admin-relevant action across the tenant. For personal activity, see Settings → My Activity.",
+    "filter_all": "All",
+    "col_time": "When",
+    "col_actor": "Actor",
+    "col_action": "Action",
+    "col_target": "Target",
+    "col_ip": "IP",
+    "empty": "No admin events in this range."
+  },
+  "billing": {
+    "title": "Billing & Subscription",
+    "description": "Plan, seat count, invoices, and payment method. Owner-only.",
+    "owner_only_note": "Only the Owner can manage billing. CFO and Senior Accountants see a read-only summary.",
+    "coming_soon": "Billing surface ships with the subscription + payments backend."
+  }
+}

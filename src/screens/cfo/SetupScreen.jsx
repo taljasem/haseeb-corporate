@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import {
   BookOpen, Calendar, Calculator, Coins, Plug, Users, Cpu, Ban, Receipt,
   Plus, Search, Edit3, Trash2, RefreshCw, AlertTriangle, Check, X as XIcon,
-  Scale, Gavel, Clock, Percent, Split, Play,
+  Scale, Gavel, Clock, Percent, Split, Play, UserCheck,
 } from "lucide-react";
 import LtrText from "../../components/shared/LtrText";
 import EmptyState from "../../components/shared/EmptyState";
@@ -34,6 +34,11 @@ import {
   listCostAllocationRules,
   deactivateCostAllocationRule,
   computeCostAllocation,
+  listRelatedParties,
+  deactivateRelatedParty,
+  getRelatedPartyReport,
+  listVendorsForRelatedParty,
+  listCustomersForRelatedParty,
 } from "../../engine";
 import {
   getFiscalYearConfig,
@@ -60,6 +65,7 @@ import CitAssessmentCreateModal from "../../components/setup/CitAssessmentCreate
 import CitAssessmentTransitionModal from "../../components/setup/CitAssessmentTransitionModal";
 import WhtConfigModal from "../../components/setup/WhtConfigModal";
 import CostAllocationRuleModal from "../../components/setup/CostAllocationRuleModal";
+import RelatedPartyModal from "../../components/setup/RelatedPartyModal";
 
 function fmtKWD(n) {
   if (n == null) return "—";
@@ -75,6 +81,7 @@ const SECTIONS = [
   { id: "cit_assessment",  icon: Gavel },
   { id: "wht",             icon: Percent },
   { id: "cost_allocation", icon: Split },
+  { id: "related_party",   icon: UserCheck },
   { id: "currencies",      icon: Coins },
   { id: "integrations",    icon: Plug },
   { id: "team_access",     icon: Users },
@@ -130,7 +137,7 @@ export default function SetupScreen() {
                 onMouseLeave={(e) => { if (!on) e.currentTarget.style.background = "transparent"; }}
               >
                 <Icon size={14} strokeWidth={2} />
-                <span>{t(`sections.${s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id === "tax_lodgement" ? "tax_lodgement" : s.id === "cit_assessment" ? "cit_assessment" : s.id === "wht" ? "wht" : s.id === "cost_allocation" ? "cost_allocation" : s.id}`)}</span>
+                <span>{t(`sections.${s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id === "tax_lodgement" ? "tax_lodgement" : s.id === "cit_assessment" ? "cit_assessment" : s.id === "wht" ? "wht" : s.id === "cost_allocation" ? "cost_allocation" : s.id === "related_party" ? "related_party" : s.id}`)}</span>
               </button>
             );
           })}
@@ -146,6 +153,7 @@ export default function SetupScreen() {
             {active === "cit_assessment" && <CitAssessmentSection />}
             {active === "wht"           && <WhtSection />}
             {active === "cost_allocation" && <CostAllocationSection />}
+            {active === "related_party" && <RelatedPartySection />}
             {active === "currencies"    && <CurrenciesSection />}
             {active === "integrations"  && <IntegrationsSection />}
             {active === "team_access"   && <TeamAccessSection />}
@@ -3357,6 +3365,829 @@ function ComputeDrawer({ state, setState, runCompute }) {
         </div>
       </div>
     </>
+  );
+}
+
+// ── Related-party register + IAS 24 report (FN-254, 2026-04-19) ─
+// Register of related parties (vendors or customers) with IAS 24
+// nature-of-relationship classification. Includes a period
+// aggregation report over bills + invoices. Memo-only; no JE
+// posting. OWNER-only mutations; reads open to OWNER/ACCOUNTANT/
+// AUDITOR.
+const RP_NATURE_FILTERS = [
+  "ALL",
+  "PARENT",
+  "SUBSIDIARY",
+  "ASSOCIATE",
+  "JOINT_VENTURE",
+  "KEY_MANAGEMENT_PERSONNEL",
+  "CLOSE_FAMILY_MEMBER",
+  "OTHER_RELATED_ENTITY",
+  "OTHER",
+];
+
+function RelatedPartySection() {
+  const { t } = useTranslation("setup");
+  const [rows, setRows] = useState(null);
+  const [vendors, setVendors] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [activeOnly, setActiveOnly] = useState(false);
+  const [natureFilter, setNatureFilter] = useState("ALL");
+  const [modalState, setModalState] = useState({
+    open: false,
+    mode: "create",
+    entry: null,
+  });
+  const [reportState, setReportState] = useState({
+    open: false,
+    periodFrom: "",
+    periodTo: "",
+    result: null,
+    loading: false,
+    error: null,
+  });
+  const [toast, setToast] = useState(null);
+  const [loadError, setLoadError] = useState(null);
+
+  const reload = async () => {
+    setLoadError(null);
+    try {
+      const filters = {};
+      if (activeOnly) filters.activeOnly = true;
+      if (natureFilter !== "ALL")
+        filters.natureOfRelationship = natureFilter;
+      const list = await listRelatedParties(filters);
+      setRows(list || []);
+    } catch (err) {
+      setRows([]);
+      setLoadError(err?.message || t("related_party.error_load"));
+    }
+  };
+
+  useEffect(() => {
+    reload();
+    Promise.all([
+      listVendorsForRelatedParty().catch(() => []),
+      listCustomersForRelatedParty().catch(() => []),
+    ]).then(([v, c]) => {
+      setVendors(v || []);
+      setCustomers(c || []);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeOnly, natureFilter]);
+
+  const handleDeactivate = async (entry) => {
+    try {
+      await deactivateRelatedParty(entry.id);
+      setToast(t("related_party.deactivated_toast"));
+      reload();
+    } catch (err) {
+      setToast(err?.message || t("related_party.error_deactivate"));
+    }
+  };
+
+  const openReport = () => {
+    const today = new Date();
+    const firstOfYear = new Date(today.getFullYear(), 0, 1)
+      .toISOString()
+      .slice(0, 10);
+    const todayIso = today.toISOString().slice(0, 10);
+    setReportState({
+      open: true,
+      periodFrom: firstOfYear,
+      periodTo: todayIso,
+      result: null,
+      loading: false,
+      error: null,
+    });
+  };
+
+  const runReport = async () => {
+    setReportState((s) => ({ ...s, loading: true, error: null, result: null }));
+    try {
+      const result = await getRelatedPartyReport({
+        periodFrom: reportState.periodFrom,
+        periodTo: reportState.periodTo,
+      });
+      setReportState((s) => ({ ...s, loading: false, result }));
+    } catch (err) {
+      setReportState((s) => ({
+        ...s,
+        loading: false,
+        error: err?.message || t("related_party.error_report"),
+      }));
+    }
+  };
+
+  const counterpartyLabel = (entry) => {
+    if (entry.counterpartyType === "VENDOR") {
+      const v = vendors.find((x) => x.id === entry.counterpartyVendorId);
+      return v ? v.nameEn || v.name || v.nameAr || v.id : entry.counterpartyVendorId;
+    }
+    const c = customers.find((x) => x.id === entry.counterpartyCustomerId);
+    return c ? c.nameEn || c.name || c.nameAr || c.id : entry.counterpartyCustomerId;
+  };
+
+  return (
+    <Card
+      title={t("related_party.title")}
+      description={t("related_party.description")}
+      extra={
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={openReport} style={btnMini}>
+            <Play
+              size={11}
+              style={{ verticalAlign: "middle", marginInlineEnd: 4 }}
+            />
+            {t("related_party.action_run_report")}
+          </button>
+          <button
+            onClick={() =>
+              setModalState({ open: true, mode: "create", entry: null })
+            }
+            style={btnPrimary(false)}
+          >
+            <Plus
+              size={13}
+              style={{ verticalAlign: "middle", marginInlineEnd: 6 }}
+            />
+            {t("related_party.add_entry")}
+          </button>
+        </div>
+      }
+    >
+      <Toast text={toast} onClear={() => setToast(null)} />
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          marginBottom: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        <button
+          onClick={() => setActiveOnly(false)}
+          style={{
+            ...btnMini,
+            background: !activeOnly ? "var(--accent-primary-subtle)" : "transparent",
+            borderColor: !activeOnly ? "rgba(0,196,140,0.30)" : "var(--border-strong)",
+            color: !activeOnly ? "var(--accent-primary)" : "var(--text-secondary)",
+          }}
+        >
+          {t("related_party.filter_all")}
+        </button>
+        <button
+          onClick={() => setActiveOnly(true)}
+          style={{
+            ...btnMini,
+            background: activeOnly ? "var(--accent-primary-subtle)" : "transparent",
+            borderColor: activeOnly ? "rgba(0,196,140,0.30)" : "var(--border-strong)",
+            color: activeOnly ? "var(--accent-primary)" : "var(--text-secondary)",
+          }}
+        >
+          {t("related_party.filter_active_only")}
+        </button>
+        <select
+          value={natureFilter}
+          onChange={(e) => setNatureFilter(e.target.value)}
+          style={{
+            ...btnMini,
+            padding: "6px 10px",
+            marginInlineStart: 8,
+          }}
+        >
+          {RP_NATURE_FILTERS.map((n) => (
+            <option key={n} value={n}>
+              {t(`related_party.nature_filter_${n}`)}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {loadError && (
+        <div
+          role="alert"
+          style={{
+            display: "flex",
+            gap: 8,
+            padding: "10px 12px",
+            background: "var(--semantic-danger-subtle)",
+            border: "1px solid var(--semantic-danger)",
+            borderRadius: 8,
+            color: "var(--semantic-danger)",
+            fontSize: 12,
+            marginBottom: 12,
+          }}
+        >
+          <AlertTriangle size={14} /> {loadError}
+        </div>
+      )}
+
+      {rows === null && (
+        <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>…</div>
+      )}
+
+      {rows && rows.length === 0 && !loadError && (
+        <EmptyState
+          icon={UserCheck}
+          title={t("related_party.empty_title")}
+          description={t("related_party.empty_description")}
+        />
+      )}
+
+      {rows && rows.length > 0 && (
+        <div
+          style={{
+            border: "1px solid var(--border-default)",
+            borderRadius: 8,
+            overflow: "hidden",
+          }}
+        >
+          {rows.map((entry, idx) => {
+            const today = new Date().toISOString().slice(0, 10);
+            const isActive =
+              entry.activeFrom <= today &&
+              (!entry.activeUntil || entry.activeUntil >= today);
+            return (
+              <div
+                key={entry.id}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  gap: 14,
+                  padding: "14px 18px",
+                  borderBottom:
+                    idx === rows.length - 1
+                      ? "none"
+                      : "1px solid var(--border-subtle)",
+                  background: isActive ? "transparent" : "var(--bg-surface-sunken)",
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      {counterpartyLabel(entry)}
+                    </div>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: "0.1em",
+                        padding: "2px 8px",
+                        borderRadius: 10,
+                        background: "var(--bg-surface)",
+                        color: "var(--text-tertiary)",
+                        border: "1px solid var(--border-default)",
+                      }}
+                    >
+                      {t(`related_party.type_${entry.counterpartyType}`)}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: "0.1em",
+                        padding: "2px 8px",
+                        borderRadius: 10,
+                        background: isActive
+                          ? "var(--accent-primary-subtle)"
+                          : "var(--bg-surface)",
+                        color: isActive
+                          ? "var(--accent-primary)"
+                          : "var(--text-tertiary)",
+                        border: isActive
+                          ? "1px solid rgba(0,196,140,0.30)"
+                          : "1px solid var(--border-default)",
+                      }}
+                    >
+                      {isActive
+                        ? t("related_party.status_active")
+                        : t("related_party.status_inactive")}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: "0.1em",
+                        padding: "2px 8px",
+                        borderRadius: 10,
+                        background: "var(--bg-surface)",
+                        color: "var(--text-secondary)",
+                        border: "1px solid var(--border-default)",
+                      }}
+                    >
+                      {t(`related_party.nature_${entry.natureOfRelationship}`)}
+                    </span>
+                  </div>
+                  {entry.disclosureNote && (
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: "var(--text-secondary)",
+                        marginTop: 4,
+                        fontStyle: "italic",
+                      }}
+                    >
+                      {entry.disclosureNote}
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 14,
+                      marginTop: 6,
+                      fontSize: 11,
+                      color: "var(--text-tertiary)",
+                    }}
+                  >
+                    <div>
+                      {t("related_party.label_active_from")}:{" "}
+                      <LtrText>
+                        <span
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontFamily: "'DM Mono', monospace",
+                          }}
+                        >
+                          {entry.activeFrom}
+                        </span>
+                      </LtrText>
+                    </div>
+                    {entry.activeUntil && (
+                      <div>
+                        {t("related_party.label_active_until")}:{" "}
+                        <LtrText>
+                          <span
+                            style={{
+                              color: "var(--text-secondary)",
+                              fontFamily: "'DM Mono', monospace",
+                            }}
+                          >
+                            {entry.activeUntil}
+                          </span>
+                        </LtrText>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                >
+                  <button
+                    onClick={() =>
+                      setModalState({ open: true, mode: "edit", entry })
+                    }
+                    style={btnMini}
+                  >
+                    <Edit3
+                      size={11}
+                      style={{ verticalAlign: "middle", marginInlineEnd: 4 }}
+                    />
+                    {t("related_party.action_edit")}
+                  </button>
+                  {isActive && (
+                    <button
+                      onClick={() => handleDeactivate(entry)}
+                      style={{
+                        ...btnMini,
+                        color: "var(--semantic-danger)",
+                        borderColor: "rgba(208,90,90,0.30)",
+                      }}
+                    >
+                      {t("related_party.action_deactivate")}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Report drawer */}
+      {reportState.open && (
+        <RelatedPartyReportDrawer
+          state={reportState}
+          setState={setReportState}
+          runReport={runReport}
+          counterpartyLabel={counterpartyLabel}
+        />
+      )}
+
+      <RelatedPartyModal
+        open={modalState.open}
+        mode={modalState.mode}
+        entry={modalState.entry}
+        vendors={vendors}
+        customers={customers}
+        onClose={() =>
+          setModalState({ open: false, mode: "create", entry: null })
+        }
+        onSaved={() => {
+          reload();
+          setToast(
+            modalState.mode === "edit"
+              ? t("related_party.saved_edit_toast")
+              : t("related_party.saved_create_toast"),
+          );
+        }}
+      />
+    </Card>
+  );
+}
+
+function RelatedPartyReportDrawer({ state, setState, runReport, counterpartyLabel }) {
+  const { t } = useTranslation("setup");
+  const { periodFrom, periodTo, result, loading, error } = state;
+  const close = () =>
+    setState({
+      open: false,
+      periodFrom: "",
+      periodTo: "",
+      result: null,
+      loading: false,
+      error: null,
+    });
+  useEscapeKey(close, state.open);
+
+  return (
+    <>
+      <div
+        onClick={close}
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.55)",
+          backdropFilter: "blur(4px)",
+          zIndex: 300,
+        }}
+      />
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          insetInlineEnd: 0,
+          height: "100vh",
+          width: 580,
+          background: "var(--panel-bg)",
+          borderInlineStart: "1px solid var(--border-default)",
+          zIndex: 301,
+          display: "flex",
+          flexDirection: "column",
+          boxShadow: "-24px 0 60px rgba(0,0,0,0.5)",
+        }}
+      >
+        <div
+          style={{
+            padding: "18px 22px",
+            borderBottom: "1px solid var(--border-subtle)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: "0.15em",
+                color: "var(--text-tertiary)",
+              }}
+            >
+              {t("related_party.report_label")}
+            </div>
+            <div
+              style={{
+                fontFamily: "'Bebas Neue', sans-serif",
+                fontSize: 22,
+                color: "var(--text-primary)",
+                marginTop: 2,
+              }}
+            >
+              {t("related_party.report_title")}
+            </div>
+          </div>
+          <button
+            onClick={close}
+            aria-label={t("related_party.close")}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "var(--text-tertiary)",
+              cursor: "pointer",
+              padding: 4,
+            }}
+          >
+            <XIcon size={18} />
+          </button>
+        </div>
+
+        <div
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: "18px 22px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 14,
+          }}
+        >
+          <div style={{ display: "flex", gap: 10 }}>
+            <div style={{ flex: 1 }}>
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: "0.15em",
+                  color: "var(--text-tertiary)",
+                  marginBottom: 6,
+                }}
+              >
+                {t("related_party.field_period_from")}
+              </div>
+              <input
+                type="date"
+                value={periodFrom}
+                onChange={(e) =>
+                  setState((s) => ({ ...s, periodFrom: e.target.value }))
+                }
+                style={inputStyle}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: "0.15em",
+                  color: "var(--text-tertiary)",
+                  marginBottom: 6,
+                }}
+              >
+                {t("related_party.field_period_to")}
+              </div>
+              <input
+                type="date"
+                value={periodTo}
+                onChange={(e) =>
+                  setState((s) => ({ ...s, periodTo: e.target.value }))
+                }
+                style={inputStyle}
+              />
+            </div>
+          </div>
+
+          <button
+            onClick={runReport}
+            disabled={loading || !periodFrom || !periodTo}
+            style={btnPrimary(loading)}
+          >
+            {loading ? (
+              <>
+                <Spinner size={13} />
+                &nbsp;{t("related_party.running")}
+              </>
+            ) : (
+              t("related_party.run_report")
+            )}
+          </button>
+
+          {error && (
+            <div
+              role="alert"
+              style={{
+                display: "flex",
+                gap: 8,
+                padding: "10px 12px",
+                background: "var(--semantic-danger-subtle)",
+                border: "1px solid var(--semantic-danger)",
+                borderRadius: 8,
+                color: "var(--semantic-danger)",
+                fontSize: 12,
+              }}
+            >
+              <AlertTriangle size={14} /> {error}
+            </div>
+          )}
+
+          {result && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div
+                style={{
+                  padding: "12px 14px",
+                  background: "var(--bg-surface-sunken)",
+                  border: "1px solid var(--border-default)",
+                  borderRadius: 8,
+                  fontSize: 12,
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
+                  gap: 10,
+                }}
+              >
+                <TotalCell
+                  label={t("related_party.total_purchases")}
+                  value={`${result.totals.purchasesKwd} KWD`}
+                />
+                <TotalCell
+                  label={t("related_party.total_purchase_payments")}
+                  value={`${result.totals.purchasePaymentsKwd} KWD`}
+                />
+                <TotalCell
+                  label={t("related_party.total_sales")}
+                  value={`${result.totals.salesKwd} KWD`}
+                />
+                <TotalCell
+                  label={t("related_party.total_sales_receipts")}
+                  value={`${result.totals.salesReceiptsKwd} KWD`}
+                />
+                <TotalCell
+                  label={t("related_party.total_txn_count")}
+                  value={String(result.totals.transactionCount)}
+                />
+              </div>
+
+              {result.rows.length === 0 && (
+                <div
+                  style={{
+                    padding: "20px",
+                    textAlign: "center",
+                    color: "var(--text-tertiary)",
+                    fontSize: 12,
+                  }}
+                >
+                  {t("related_party.report_empty")}
+                </div>
+              )}
+
+              {result.rows.length > 0 && (
+                <div
+                  style={{
+                    border: "1px solid var(--border-default)",
+                    borderRadius: 8,
+                    overflow: "hidden",
+                  }}
+                >
+                  {result.rows.map((row, idx) => (
+                    <div
+                      key={row.relatedPartyId}
+                      style={{
+                        padding: "12px 14px",
+                        borderBottom:
+                          idx === result.rows.length - 1
+                            ? "none"
+                            : "1px solid var(--border-subtle)",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 600,
+                            color: "var(--text-primary)",
+                          }}
+                        >
+                          {counterpartyLabel({
+                            counterpartyType: row.counterpartyType,
+                            counterpartyVendorId:
+                              row.counterpartyType === "VENDOR"
+                                ? row.counterpartyId
+                                : null,
+                            counterpartyCustomerId:
+                              row.counterpartyType === "CUSTOMER"
+                                ? row.counterpartyId
+                                : null,
+                          })}
+                        </div>
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            letterSpacing: "0.1em",
+                            padding: "2px 8px",
+                            borderRadius: 10,
+                            background: "var(--bg-surface)",
+                            color: "var(--text-secondary)",
+                            border: "1px solid var(--border-default)",
+                          }}
+                        >
+                          {t(
+                            `related_party.nature_${row.natureOfRelationship}`,
+                          )}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 14,
+                          marginTop: 6,
+                          fontSize: 11,
+                          color: "var(--text-tertiary)",
+                        }}
+                      >
+                        <div>
+                          {t("related_party.label_purchases")}:{" "}
+                          <LtrText>
+                            <span
+                              style={{
+                                color: "var(--text-secondary)",
+                                fontFamily: "'DM Mono', monospace",
+                              }}
+                            >
+                              {row.purchasesKwd} KWD
+                            </span>
+                          </LtrText>
+                        </div>
+                        <div>
+                          {t("related_party.label_sales")}:{" "}
+                          <LtrText>
+                            <span
+                              style={{
+                                color: "var(--text-secondary)",
+                                fontFamily: "'DM Mono', monospace",
+                              }}
+                            >
+                              {row.salesKwd} KWD
+                            </span>
+                          </LtrText>
+                        </div>
+                        <div>
+                          {t("related_party.label_txns")}:{" "}
+                          <LtrText>
+                            <span
+                              style={{
+                                color: "var(--text-secondary)",
+                                fontFamily: "'DM Mono', monospace",
+                              }}
+                            >
+                              {row.transactionCount}
+                            </span>
+                          </LtrText>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function TotalCell({ label, value }) {
+  return (
+    <div>
+      <div
+        style={{
+          fontSize: 9,
+          fontWeight: 700,
+          letterSpacing: "0.15em",
+          color: "var(--text-tertiary)",
+          textTransform: "uppercase",
+          marginBottom: 3,
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontFamily: "'DM Mono', monospace",
+          fontSize: 13,
+          fontWeight: 700,
+          color: "var(--text-primary)",
+        }}
+      >
+        <LtrText>{value}</LtrText>
+      </div>
+    </div>
   );
 }
 

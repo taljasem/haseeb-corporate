@@ -278,7 +278,7 @@ export default function PettyCashScreen({ role = "CFO" }) {
                         ? "transparent"
                         : "var(--bg-surface-sunken)",
                       borderColor: on
-                        ? "rgba(0,196,140,0.30)"
+                        ? "var(--accent-primary-border)"
                         : "var(--border-strong)",
                       color: on
                         ? "var(--accent-primary)"
@@ -433,7 +433,7 @@ export default function PettyCashScreen({ role = "CFO" }) {
                           style={{
                             ...btnMini,
                             color: "var(--semantic-danger)",
-                            borderColor: "rgba(208,90,90,0.30)",
+                            borderColor: "var(--semantic-danger-border)",
                           }}
                         >
                           {t("action_deactivate")}
@@ -488,7 +488,7 @@ export default function PettyCashScreen({ role = "CFO" }) {
                         borderRadius: 8,
                         border: "1px solid",
                         borderColor: reconBalanced
-                          ? "rgba(0,196,140,0.30)"
+                          ? "var(--accent-primary-border)"
                           : reconOverage
                           ? "rgba(212,168,75,0.30)"
                           : "var(--semantic-danger)",

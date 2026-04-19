@@ -64,7 +64,7 @@ export default function AddVarianceNoteModal({ open, varianceId, onClose, onSave
               {["cfo_only", "cfo_owner"].map((v) => {
                 const on = visibility === v;
                 return (
-                  <button key={v} onClick={() => setVisibility(v)} style={{ flex: 1, padding: "9px 12px", background: on ? "var(--accent-primary-subtle)" : "transparent", border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)", color: on ? "var(--accent-primary)" : "var(--text-secondary)", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "inherit" }}>
+                  <button key={v} onClick={() => setVisibility(v)} style={{ flex: 1, padding: "9px 12px", background: on ? "var(--accent-primary-subtle)" : "transparent", border: on ? "1px solid var(--accent-primary-border)" : "1px solid var(--border-default)", color: on ? "var(--accent-primary)" : "var(--text-secondary)", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "inherit" }}>
                     {t(`add_note_modal.visibility_${v}`)}
                   </button>
                 );

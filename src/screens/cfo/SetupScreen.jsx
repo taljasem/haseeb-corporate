@@ -207,7 +207,7 @@ function Card({ title, description, extra, children }) {
 function Toast({ text, onClear }) {
   useEffect(() => { if (!text) return; const id = setTimeout(() => onClear && onClear(), 2500); return () => clearTimeout(id); }, [text, onClear]);
   if (!text) return null;
-  return <div style={{ marginBottom: 14, background: "var(--accent-primary-subtle)", border: "1px solid rgba(0,196,140,0.30)", color: "var(--accent-primary)", padding: "10px 14px", borderRadius: 8, fontSize: 12, fontWeight: 500 }}>{text}</div>;
+  return <div style={{ marginBottom: 14, background: "var(--accent-primary-subtle)", border: "1px solid var(--accent-primary-border)", color: "var(--accent-primary)", padding: "10px 14px", borderRadius: 8, fontSize: 12, fontWeight: 500 }}>{text}</div>;
 }
 
 // ── Chart of Accounts ─────────────────────────────────────────────
@@ -810,7 +810,7 @@ function DisallowanceSection() {
           style={{
             ...btnMini,
             background: !activeOnly ? "var(--accent-primary-subtle)" : "transparent",
-            borderColor: !activeOnly ? "rgba(0,196,140,0.30)" : "var(--border-strong)",
+            borderColor: !activeOnly ? "var(--accent-primary-border)" : "var(--border-strong)",
             color: !activeOnly ? "var(--accent-primary)" : "var(--text-secondary)",
           }}
         >
@@ -821,7 +821,7 @@ function DisallowanceSection() {
           style={{
             ...btnMini,
             background: activeOnly ? "var(--accent-primary-subtle)" : "transparent",
-            borderColor: activeOnly ? "rgba(0,196,140,0.30)" : "var(--border-strong)",
+            borderColor: activeOnly ? "var(--accent-primary-border)" : "var(--border-strong)",
             color: activeOnly ? "var(--accent-primary)" : "var(--text-secondary)",
           }}
         >
@@ -921,7 +921,7 @@ function DisallowanceSection() {
                           ? "var(--accent-primary)"
                           : "var(--text-tertiary)",
                         border: isActive
-                          ? "1px solid rgba(0,196,140,0.30)"
+                          ? "1px solid var(--accent-primary-border)"
                           : "1px solid var(--border-default)",
                       }}
                     >
@@ -1036,7 +1036,7 @@ function DisallowanceSection() {
                       style={{
                         ...btnMini,
                         color: "var(--semantic-danger)",
-                        borderColor: "rgba(208,90,90,0.30)",
+                        borderColor: "var(--semantic-danger-border)",
                       }}
                     >
                       {t("disallowance.action_deactivate")}
@@ -1177,7 +1177,7 @@ function TaxLodgementSection() {
                 ...btnMini,
                 background: on ? "var(--accent-primary-subtle)" : "transparent",
                 borderColor: on
-                  ? "rgba(0,196,140,0.30)"
+                  ? "var(--accent-primary-border)"
                   : "var(--border-strong)",
                 color: on ? "var(--accent-primary)" : "var(--text-secondary)",
               }}
@@ -1399,7 +1399,7 @@ function TaxLodgementSection() {
                       style={{
                         ...btnMini,
                         color: "var(--semantic-danger)",
-                        borderColor: "rgba(208,90,90,0.30)",
+                        borderColor: "var(--semantic-danger-border)",
                       }}
                     >
                       {t("tax_lodgement.action_void")}
@@ -1851,7 +1851,7 @@ function CitAssessmentSection() {
                 ...btnMini,
                 background: on ? "var(--accent-primary-subtle)" : "transparent",
                 borderColor: on
-                  ? "rgba(0,196,140,0.30)"
+                  ? "var(--accent-primary-border)"
                   : "var(--border-strong)",
                 color: on ? "var(--accent-primary)" : "var(--text-secondary)",
               }}
@@ -2137,7 +2137,7 @@ function CitAssessmentSection() {
                         style={{
                           ...btnMini,
                           color: "var(--semantic-danger)",
-                          borderColor: "rgba(208,90,90,0.30)",
+                          borderColor: "var(--semantic-danger-border)",
                         }}
                       >
                         {t("cit_assessment.action_mark_statute_expired")}
@@ -2278,7 +2278,7 @@ function WhtSection() {
             style={{
               ...btnMini,
               background: !activeOnly ? "var(--accent-primary-subtle)" : "transparent",
-              borderColor: !activeOnly ? "rgba(0,196,140,0.30)" : "var(--border-strong)",
+              borderColor: !activeOnly ? "var(--accent-primary-border)" : "var(--border-strong)",
               color: !activeOnly ? "var(--accent-primary)" : "var(--text-secondary)",
             }}
           >
@@ -2289,7 +2289,7 @@ function WhtSection() {
             style={{
               ...btnMini,
               background: activeOnly ? "var(--accent-primary-subtle)" : "transparent",
-              borderColor: activeOnly ? "rgba(0,196,140,0.30)" : "var(--border-strong)",
+              borderColor: activeOnly ? "var(--accent-primary-border)" : "var(--border-strong)",
               color: activeOnly ? "var(--accent-primary)" : "var(--text-secondary)",
             }}
           >
@@ -2380,7 +2380,7 @@ function WhtSection() {
                             ? "var(--accent-primary)"
                             : "var(--text-tertiary)",
                           border: isActive
-                            ? "1px solid rgba(0,196,140,0.30)"
+                            ? "1px solid var(--accent-primary-border)"
                             : "1px solid var(--border-default)",
                         }}
                       >
@@ -2476,7 +2476,7 @@ function WhtSection() {
                         style={{
                           ...btnMini,
                           color: "var(--semantic-danger)",
-                          borderColor: "rgba(208,90,90,0.30)",
+                          borderColor: "var(--semantic-danger-border)",
                         }}
                       >
                         {t("wht.action_deactivate")}
@@ -2530,7 +2530,7 @@ function WhtSection() {
                   ...btnMini,
                   background: on ? "var(--accent-primary-subtle)" : "transparent",
                   borderColor: on
-                    ? "rgba(0,196,140,0.30)"
+                    ? "var(--accent-primary-border)"
                     : "var(--border-strong)",
                   color: on ? "var(--accent-primary)" : "var(--text-secondary)",
                 }}
@@ -2833,7 +2833,7 @@ function CostAllocationSection() {
               ? "var(--accent-primary-subtle)"
               : "transparent",
             borderColor: !activeOnly
-              ? "rgba(0,196,140,0.30)"
+              ? "var(--accent-primary-border)"
               : "var(--border-strong)",
             color: !activeOnly
               ? "var(--accent-primary)"
@@ -2850,7 +2850,7 @@ function CostAllocationSection() {
               ? "var(--accent-primary-subtle)"
               : "transparent",
             borderColor: activeOnly
-              ? "rgba(0,196,140,0.30)"
+              ? "var(--accent-primary-border)"
               : "var(--border-strong)",
             color: activeOnly
               ? "var(--accent-primary)"
@@ -2957,7 +2957,7 @@ function CostAllocationSection() {
                           ? "var(--accent-primary)"
                           : "var(--text-tertiary)",
                         border: isActive
-                          ? "1px solid rgba(0,196,140,0.30)"
+                          ? "1px solid var(--accent-primary-border)"
                           : "1px solid var(--border-default)",
                       }}
                     >
@@ -3064,7 +3064,7 @@ function CostAllocationSection() {
                       style={{
                         ...btnMini,
                         color: "var(--semantic-danger)",
-                        borderColor: "rgba(208,90,90,0.30)",
+                        borderColor: "var(--semantic-danger-border)",
                       }}
                     >
                       {t("cost_allocation.action_deactivate")}
@@ -3555,7 +3555,7 @@ function RelatedPartySection() {
           style={{
             ...btnMini,
             background: !activeOnly ? "var(--accent-primary-subtle)" : "transparent",
-            borderColor: !activeOnly ? "rgba(0,196,140,0.30)" : "var(--border-strong)",
+            borderColor: !activeOnly ? "var(--accent-primary-border)" : "var(--border-strong)",
             color: !activeOnly ? "var(--accent-primary)" : "var(--text-secondary)",
           }}
         >
@@ -3566,7 +3566,7 @@ function RelatedPartySection() {
           style={{
             ...btnMini,
             background: activeOnly ? "var(--accent-primary-subtle)" : "transparent",
-            borderColor: activeOnly ? "rgba(0,196,140,0.30)" : "var(--border-strong)",
+            borderColor: activeOnly ? "var(--accent-primary-border)" : "var(--border-strong)",
             color: activeOnly ? "var(--accent-primary)" : "var(--text-secondary)",
           }}
         >
@@ -3695,7 +3695,7 @@ function RelatedPartySection() {
                           ? "var(--accent-primary)"
                           : "var(--text-tertiary)",
                         border: isActive
-                          ? "1px solid rgba(0,196,140,0.30)"
+                          ? "1px solid var(--accent-primary-border)"
                           : "1px solid var(--border-default)",
                       }}
                     >
@@ -3791,7 +3791,7 @@ function RelatedPartySection() {
                       style={{
                         ...btnMini,
                         color: "var(--semantic-danger)",
-                        borderColor: "rgba(208,90,90,0.30)",
+                        borderColor: "var(--semantic-danger-border)",
                       }}
                     >
                       {t("related_party.action_deactivate")}
@@ -4521,7 +4521,7 @@ function WarrantySection() {
                       style={{
                         ...btnMini,
                         color: "var(--semantic-danger)",
-                        borderColor: "rgba(208,90,90,0.30)",
+                        borderColor: "var(--semantic-danger-border)",
                       }}
                     >
                       {t("warranty.action_deactivate")}
@@ -4858,7 +4858,7 @@ function BankFormatsSection() {
                       style={{
                         ...btnMini,
                         color: "var(--semantic-danger)",
-                        borderColor: "rgba(208,90,90,0.30)",
+                        borderColor: "var(--semantic-danger-border)",
                       }}
                     >
                       {t("bank_formats.action_deactivate")}
@@ -5651,7 +5651,7 @@ function CbkRatesSection() {
                     style={{
                       ...btnMini,
                       color: "var(--semantic-danger)",
-                      borderColor: "rgba(208,90,90,0.30)",
+                      borderColor: "var(--semantic-danger-border)",
                     }}
                     aria-label={t("cbk_rates.action_delete")}
                   >

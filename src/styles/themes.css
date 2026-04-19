@@ -72,6 +72,7 @@ html[data-theme="dark"] {
   --semantic-warning-subtle:  rgba(212, 168, 75, 0.10);
   --semantic-danger:          #FF5A5F;
   --semantic-danger-subtle:   rgba(255, 90, 95, 0.10);
+  --semantic-danger-border:   rgba(208, 90, 90, 0.30);
   --semantic-info:            #3B82F6;
   --semantic-info-subtle:     rgba(59, 130, 246, 0.10);
 
@@ -136,6 +137,7 @@ html[data-theme="light"] {
   --semantic-warning-subtle:  rgba(183, 121, 31, 0.10);
   --semantic-danger:          #DC2626;
   --semantic-danger-subtle:   rgba(220, 38, 38, 0.10);
+  --semantic-danger-border:   rgba(208, 90, 90, 0.30);
   --semantic-info:            #2563EB;
   --semantic-info-subtle:     rgba(37, 99, 235, 0.10);
 

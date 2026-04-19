@@ -217,7 +217,7 @@ export default function BulkReclassScreen({ role = "CFO" }) {
                     ? "var(--accent-primary-subtle)"
                     : "transparent",
                   borderColor: on
-                    ? "rgba(0,196,140,0.30)"
+                    ? "var(--accent-primary-border)"
                     : "var(--border-strong)",
                   color: on
                     ? "var(--accent-primary)"

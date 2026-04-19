@@ -346,7 +346,7 @@ function SupersedeOption({ checked, onSelect, label }) {
         textAlign: "start",
         background: checked ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)",
         border: checked
-          ? "1px solid rgba(0,196,140,0.30)"
+          ? "1px solid var(--accent-primary-border)"
           : "1px solid var(--border-default)",
         color: checked ? "var(--accent-primary)" : "var(--text-secondary)",
         borderRadius: 8,

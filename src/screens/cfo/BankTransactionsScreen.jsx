@@ -223,7 +223,7 @@ export default function BankTransactionsScreen({ onOpenAminah, onOpenBankAccount
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
             {FILTERS.map((f) => {
               const on = f.id === filter;
-              return <button key={f.id} onClick={() => setFilter(f.id)} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", padding: "5px 12px", borderRadius: 14, background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)", border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)", color: on ? "var(--accent-primary)" : "var(--text-tertiary)", cursor: "pointer", fontFamily: "inherit" }}>{t(`filters.${f.key}`)}</button>;
+              return <button key={f.id} onClick={() => setFilter(f.id)} style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", padding: "5px 12px", borderRadius: 14, background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)", border: on ? "1px solid var(--accent-primary-border)" : "1px solid var(--border-default)", color: on ? "var(--accent-primary)" : "var(--text-tertiary)", cursor: "pointer", fontFamily: "inherit" }}>{t(`filters.${f.key}`)}</button>;
             })}
             <span style={{ width: 1, height: 16, background: "var(--border-default)", margin: "0 4px" }} />
             {/* Category filter — DS FilterDropdown with chevron */}

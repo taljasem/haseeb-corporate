@@ -134,7 +134,7 @@ export default function EscalateTaskModal({ open, task, bulkTaskIds, onClose, on
                   {targets.map((p) => {
                     const on = toUserId === p.id;
                     return (
-                      <button key={p.id} onClick={() => { setToUserId(p.id); if (errors.toUserId) setErrors({ ...errors, toUserId: null }); }} style={{ padding: "8px 14px", borderRadius: 8, background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)", border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)", color: on ? "var(--accent-primary)" : "var(--text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                      <button key={p.id} onClick={() => { setToUserId(p.id); if (errors.toUserId) setErrors({ ...errors, toUserId: null }); }} style={{ padding: "8px 14px", borderRadius: 8, background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface-sunken)", border: on ? "1px solid var(--accent-primary-border)" : "1px solid var(--border-default)", color: on ? "var(--accent-primary)" : "var(--text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
                         {p.name} <span style={{ fontSize: 10, color: "var(--text-tertiary)", marginInlineStart: 4 }}>({p.role})</span>
                       </button>
                     );
@@ -157,7 +157,7 @@ export default function EscalateTaskModal({ open, task, bulkTaskIds, onClose, on
                   {["current", "high", "urgent"].map((p) => {
                     const on = priority === p;
                     return (
-                      <button key={p} onClick={() => setPriority(p)} style={{ flex: 1, padding: "8px 12px", borderRadius: 6, background: on ? "var(--accent-primary-subtle)" : "transparent", border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)", color: on ? "var(--accent-primary)" : "var(--text-secondary)", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                      <button key={p} onClick={() => setPriority(p)} style={{ flex: 1, padding: "8px 12px", borderRadius: 6, background: on ? "var(--accent-primary-subtle)" : "transparent", border: on ? "1px solid var(--accent-primary-border)" : "1px solid var(--border-default)", color: on ? "var(--accent-primary)" : "var(--text-secondary)", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
                         {t(`escalate.priority_${p}`)}
                       </button>
                     );

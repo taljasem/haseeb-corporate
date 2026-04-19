@@ -280,7 +280,7 @@ export default function DisallowanceRuleModal({ open, mode, rule, accounts, onCl
                         ? "var(--accent-primary-subtle)"
                         : "var(--bg-surface-sunken)",
                       border: on
-                        ? "1px solid rgba(0,196,140,0.30)"
+                        ? "1px solid var(--accent-primary-border)"
                         : "1px solid var(--border-default)",
                       color: on
                         ? "var(--accent-primary)"
@@ -339,7 +339,7 @@ export default function DisallowanceRuleModal({ open, mode, rule, accounts, onCl
                           ? "var(--accent-primary-subtle)"
                           : "var(--bg-surface-sunken)",
                         border: on
-                          ? "1px solid rgba(0,196,140,0.30)"
+                          ? "1px solid var(--accent-primary-border)"
                           : "1px solid var(--border-default)",
                         color: on
                           ? "var(--accent-primary)"

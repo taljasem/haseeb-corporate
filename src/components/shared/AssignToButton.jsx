@@ -129,7 +129,7 @@ export default function AssignToButton({
               ? "transparent"
               : "transparent",
           border: confirmation
-            ? "1px solid rgba(0,196,140,0.30)"
+            ? "1px solid var(--accent-primary-border)"
             : "1px solid var(--border-default)",
           color: confirmation ? "var(--accent-primary)" : "var(--text-tertiary)",
           cursor: "pointer",

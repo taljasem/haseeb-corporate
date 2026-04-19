@@ -84,5 +84,67 @@
     "banner_title": "عرض كمدقق",
     "banner_body": "هذا ما يراه المدقق — وضع القراءة فقط",
     "exit": "الخروج من المعاينة"
+  },
+  "inalterability": {
+    "section_title": "عدم قابلية تغيير البيانات",
+    "section_desc": "إثبات مجمّع عبر سلسلة التدقيق وإصدارات التقارير وسجل الترحيلات.",
+    "refresh": "تحديث",
+    "loading": "جارٍ تحميل الإثبات...",
+    "generated_prefix": "تم الإنشاء ",
+    "generated_suffix": "",
+    "status_inalterable": "غير قابل للتغيير",
+    "status_broken": "مكسور",
+    "ask_aminah": "اسأل أمينة عن هذا الإثبات",
+    "role_denied_title": "الوصول مقيّد",
+    "role_denied_desc": "فقط دور المالك والمدقق يمكنه عرض إثباتات عدم قابلية تغيير البيانات.",
+    "error_title": "تعذّر تحميل الإثبات",
+    "copy_hash": "نسخ التجزئة",
+    "copied": "تم النسخ",
+    "audit_chain": {
+      "card_title": "سلسلة التدقيق",
+      "verified_prefix": "السلسلة الكاملة موثقة (",
+      "verified_middle": " قيد، والسلسلة المالية ",
+      "verified_suffix": ")",
+      "financial_ok": "سليمة",
+      "financial_broken": "مكسورة",
+      "broken_prefix": "مكسورة عند التسلسل رقم ",
+      "broken_suffix": "",
+      "last_full_hash": "آخر تجزئة كاملة",
+      "last_financial_hash": "آخر تجزئة مالية",
+      "no_entries": "لا توجد قيود مرحّلة بعد."
+    },
+    "report_versions": {
+      "card_title": "إصدارات التقارير",
+      "total_label": "الإجمالي",
+      "current_label": "الحالية",
+      "last_published_prefix": "آخر نشر ",
+      "last_published_suffix": "",
+      "no_versions": "لم يُنشر أي إصدار بعد.",
+      "by_type_title": "حسب نوع التقرير"
+    },
+    "migration_chain": {
+      "card_title": "سلسلة الترحيلات",
+      "links_prefix": "",
+      "links_middle": " روابط · ",
+      "links_suffix": " فجوات",
+      "no_gaps_badge": "بدون فجوات",
+      "gaps_badge": "توجد فجوات",
+      "last_applied_prefix": "آخر تطبيق ",
+      "last_applied_suffix": "",
+      "first_gap_prefix": "أول فجوة عند ",
+      "first_gap_suffix": "",
+      "no_migrations": "لم تُسجَّل أي ترحيلات بعد.",
+      "schema_hash_label": "آخر تجزئة للمخطط"
+    },
+    "report_type_names": {
+      "PROFIT_AND_LOSS": "قائمة الدخل",
+      "BALANCE_SHEET": "قائمة المركز المالي",
+      "CASH_FLOW_STATEMENT": "قائمة التدفقات النقدية",
+      "TRIAL_BALANCE": "ميزان المراجعة",
+      "AGING_AR": "أعمار المدينين",
+      "AGING_AP": "أعمار الدائنين",
+      "BUDGET_VARIANCE": "انحراف الموازنة",
+      "CUSTOM": "مخصص"
+    }
   }
 }

@@ -56,6 +56,7 @@ import * as journalEntriesWriteApi from '../api/journal-entries-write';
 import * as accountsApi from '../api/accounts';
 import * as reportsApi from '../api/reports';
 import * as reportVersionsApi from '../api/report-versions';
+import * as dataInalterabilityApi from '../api/data-inalterability';
 import * as settingsApi from '../api/settings';
 import * as advisorPendingApi from '../api/advisor-pending';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
@@ -117,6 +118,9 @@ const FUNCTION_ROUTING = {
   publishReportVersion: 'wired',
   listReportVersions: 'wired',
   getReportVersion: 'wired',
+
+  // Data inalterability composite (FN-226, Phase 4 Wave 1 Item 2)
+  getDataInalterabilityReport: 'wired',
 
   // Auth / settings
   getTenantInfo: 'wired',
@@ -208,6 +212,9 @@ const REAL_IMPLS = {
   publishReportVersion: reportVersionsApi.publishReportVersion,
   listReportVersions: reportVersionsApi.listReportVersions,
   getReportVersion: reportVersionsApi.getReportVersion,
+
+  // Data inalterability composite (FN-226)
+  getDataInalterabilityReport: dataInalterabilityApi.getDataInalterabilityReport,
 
   // Settings
   getTenantInfo: settingsApi.getTenantInfo,
@@ -337,6 +344,12 @@ function buildLiveSurface() {
   surface.listReportVersions = reportVersionsApi.listReportVersions;
   surface.getReportVersion = reportVersionsApi.getReportVersion;
 
+  // Data inalterability composite (FN-226, Phase 4 Wave 1 Item 2).
+  // getDataInalterabilityReport IS on mockEngine's namespace, so the
+  // Object.keys(mockEngine) loop in buildLiveSurface already picks it
+  // up via FUNCTION_ROUTING['getDataInalterabilityReport'] = 'wired'
+  // + REAL_IMPLS. No explicit override needed here.
+
   return surface;
 }
 
@@ -450,6 +463,9 @@ function buildMockExtras() {
     publishReportVersion: mockPublishReportVersion,
     listReportVersions: mockListReportVersions,
     getReportVersion: mockGetReportVersion,
+    // NOTE: the FN-226 mock (getDataInalterabilityReport) lives in
+    // mockEngine.js itself, so it is already picked up via the
+    // `...mockEngine` spread above and does not need an override here.
   };
 }
 
@@ -577,3 +593,6 @@ export const acknowledgeAdvisorPending = surface.acknowledgeAdvisorPending;
 export const publishReportVersion = surface.publishReportVersion;
 export const listReportVersions = surface.listReportVersions;
 export const getReportVersion = surface.getReportVersion;
+
+// Data inalterability composite (FN-226, Phase 4 Wave 1 Item 2)
+export const getDataInalterabilityReport = surface.getDataInalterabilityReport;

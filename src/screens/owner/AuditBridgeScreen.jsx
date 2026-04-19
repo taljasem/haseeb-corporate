@@ -5,6 +5,7 @@ import LtrText from "../../components/shared/LtrText";
 import EmptyState from "../../components/shared/EmptyState";
 import ActionButton from "../../components/ds/ActionButton";
 import PersistentBanner from "../../components/ds/PersistentBanner";
+import InalterabilityPanel from "../../components/audit-bridge/InalterabilityPanel";
 import {
   listAuditEngagements, getAuditEngagement, createAuditEngagement, createSnapshot,
   runAuditCheck, runAllAuditChecks, generateAuditPackage,
@@ -142,6 +143,12 @@ export default function AuditBridgeScreen({ onOpenAminah }) {
         </div>
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "20px 28px" }}>
+        {/* FN-226 — Data Inalterability composite (read-only). Sits above the
+            engagements list so the proof is always visible to OWNER/AUDITOR
+            on the Audit Bridge landing. Role-gating on the endpoint itself
+            is backend-enforced; the panel handles 403 gracefully. */}
+        <InalterabilityPanel onOpenAminah={onOpenAminah} />
+
         {!engagements ? (
           <div style={{ color: "var(--text-tertiary)", fontSize: 13 }}>Loading...</div>
         ) : engagements.length === 0 ? (

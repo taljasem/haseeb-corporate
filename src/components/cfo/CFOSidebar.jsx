@@ -31,6 +31,7 @@ const FileSearchIcon = I(<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 
 const BoxesIcon = I(<><path d="M21 8V21a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8" /><path d="M1 3h22v5H1z" /><path d="M10 12h4" /></>);
 const GitBranchIcon = I(<><line x1="6" y1="3" x2="6" y2="15" /><circle cx="18" cy="6" r="3" /><circle cx="6" cy="18" r="3" /><path d="M18 9a9 9 0 0 1-9 9" /></>);
 const LandmarkIcon = I(<><line x1="3" y1="22" x2="21" y2="22" /><line x1="6" y1="18" x2="6" y2="11" /><line x1="10" y1="18" x2="10" y2="11" /><line x1="14" y1="18" x2="14" y2="11" /><line x1="18" y1="18" x2="18" y2="11" /><polygon points="12 2 20 7 4 7" /></>);
+const ClipboardListIcon = I(<><rect x="8" y="2" width="8" height="4" rx="1" ry="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><line x1="8" y1="11" x2="16" y2="11" /><line x1="8" y1="15" x2="14" y2="15" /></>);
 
 function NavItem({ icon: Icon, label, active, onClick, badge }) {
   return (
@@ -128,6 +129,7 @@ export default function CFOSidebar({ active, setActive, pendingApprovals = 0, ta
         <NavItem icon={BoxesIcon}   label={t("items.inventory_count")}   active={isActive("inventory-count")}     onClick={() => setActive("inventory-count")} />
         <NavItem icon={GitBranchIcon} label={t("items.spinoff")}         active={isActive("spinoff")}             onClick={() => setActive("spinoff")} />
         <NavItem icon={LandmarkIcon} label={t("items.islamic_finance")}  active={isActive("islamic-finance")}     onClick={() => setActive("islamic-finance")} />
+        <NavItem icon={ClipboardListIcon} label={t("items.purchase_orders")} active={isActive("purchase-orders")}   onClick={() => setActive("purchase-orders")} />
       </SidebarGroup>
 
       <SidebarGroup label={t("groups.planning")}>

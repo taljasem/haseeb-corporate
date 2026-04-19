@@ -8001,3 +8001,327 @@ export async function getDataInalterabilityReport() {
     },
   };
 }
+
+// ──────────────────────────────────────────────────────────────────────
+// FN-227 (Phase 4 Wave 1 Item 3) — Monthly Close Checklist MOCK.
+//
+// Module-scoped in-memory stores so create/update/list/mark/sign-off/
+// reopen all round-trip end-to-end in MOCK mode without a backend. The
+// UI flows (ChecklistTemplateEditor, ChecklistInstancePanel, SignOffModal)
+// exercise every mutation on the same store so demo flows behave
+// identically to LIVE mode shape-wise.
+//
+// Role enforcement is NOT simulated in MOCK (no session user); the real
+// backend 403 branches are only reachable against the live API. The UI
+// additionally disables controls client-side based on the `role` prop
+// that drives MonthEndCloseScreen, which is enough for mock-mode demo.
+// ──────────────────────────────────────────────────────────────────────
+
+let _mccTemplateCounter = 0;
+let _mccInstanceCounter = 0;
+let _mccItemCounter = 0;
+
+const _mccTemplates = [
+  {
+    id: "mcc-tpl-seed-1",
+    tenantId: "mock-tenant",
+    label: "Reconcile all bank accounts",
+    description: "Ensure every bank account is reconciled through month end.",
+    sortOrder: 10,
+    completeRoleGate: "ACCOUNTANT",
+    isActive: true,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString(),
+    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString(),
+  },
+  {
+    id: "mcc-tpl-seed-2",
+    tenantId: "mock-tenant",
+    label: "Review outstanding receivables",
+    description: "Review AR aging and chase overdue balances.",
+    sortOrder: 20,
+    completeRoleGate: "OWNER_OR_ACCOUNTANT",
+    isActive: true,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString(),
+    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString(),
+  },
+  {
+    id: "mcc-tpl-seed-3",
+    tenantId: "mock-tenant",
+    label: "Post depreciation entries",
+    description: null,
+    sortOrder: 30,
+    completeRoleGate: "ACCOUNTANT",
+    isActive: true,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString(),
+    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString(),
+  },
+  {
+    id: "mcc-tpl-seed-4",
+    tenantId: "mock-tenant",
+    label: "Review and approve close package",
+    description: "Owner sign-off for the monthly close.",
+    sortOrder: 40,
+    completeRoleGate: "OWNER",
+    isActive: true,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString(),
+    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString(),
+  },
+];
+
+const _mccInstances = [];
+
+// MOCK "current user". Real mode reads from the JWT; MOCK uses a fixed
+// label so the SoD check can still be simulated client-side.
+const MCC_MOCK_USER_ID = "mock-owner";
+const MCC_MOCK_USER_NAME = "Mock Owner";
+const MCC_MOCK_ACCOUNTANT_ID = "mock-accountant";
+const MCC_MOCK_ACCOUNTANT_NAME = "Mock Accountant";
+
+function _mccNextTemplateId() {
+  _mccTemplateCounter += 1;
+  return `mcc-tpl-${Date.now()}-${_mccTemplateCounter}`;
+}
+function _mccNextInstanceId() {
+  _mccInstanceCounter += 1;
+  return `mcc-inst-${Date.now()}-${_mccInstanceCounter}`;
+}
+function _mccNextItemId() {
+  _mccItemCounter += 1;
+  return `mcc-item-${Date.now()}-${_mccItemCounter}`;
+}
+
+function _mccSortedTemplates(activeOnly) {
+  let list = [..._mccTemplates];
+  if (activeOnly) list = list.filter((t) => t.isActive);
+  list.sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label));
+  return list;
+}
+
+function _mccHydrateInstance(instance) {
+  return {
+    ...instance,
+    items: (instance.items || []).map((i) => ({ ...i })),
+  };
+}
+
+function _mccRecomputeInstanceStatus(instance) {
+  // Do not auto-advance past terminal states (SIGNED_OFF / REOPENED) —
+  // the lifecycle transitions for those are driven by explicit endpoints.
+  if (instance.status === "SIGNED_OFF" || instance.status === "REOPENED") {
+    return;
+  }
+  const items = instance.items || [];
+  if (items.length === 0) {
+    instance.status = "OPEN";
+    return;
+  }
+  const allCompleted = items.every((i) => i.status === "COMPLETED");
+  const anyTouched = items.some(
+    (i) => i.status !== "PENDING"
+  );
+  if (allCompleted) {
+    instance.status = "COMPLETED";
+  } else if (anyTouched) {
+    instance.status = "IN_PROGRESS";
+  } else {
+    instance.status = "OPEN";
+  }
+}
+
+export async function createTemplateItem(body = {}) {
+  await delay();
+  const now = new Date().toISOString();
+  const row = {
+    id: _mccNextTemplateId(),
+    tenantId: "mock-tenant",
+    label: body.label || "Untitled",
+    description: body.description || null,
+    sortOrder: typeof body.sortOrder === "number" ? body.sortOrder : 100,
+    completeRoleGate: body.completeRoleGate || "OWNER_OR_ACCOUNTANT",
+    isActive: true,
+    createdAt: now,
+    updatedAt: now,
+  };
+  _mccTemplates.push(row);
+  return _brandObj({ ...row });
+}
+
+export async function updateTemplateItem(id, body = {}) {
+  await delay();
+  const row = _mccTemplates.find((t) => t.id === id);
+  if (!row) return null;
+  if (body.label != null) row.label = body.label;
+  if (body.description !== undefined) row.description = body.description || null;
+  if (body.sortOrder != null) row.sortOrder = body.sortOrder;
+  if (body.completeRoleGate) row.completeRoleGate = body.completeRoleGate;
+  if (body.isActive != null) row.isActive = !!body.isActive;
+  row.updatedAt = new Date().toISOString();
+  return _brandObj({ ...row });
+}
+
+export async function listTemplateItems(activeOnly) {
+  await delay();
+  return _brandObj(_mccSortedTemplates(!!activeOnly).map((t) => ({ ...t })));
+}
+
+export async function openInstance(body = {}) {
+  await delay();
+  const fiscalYear = body.fiscalYear;
+  const fiscalMonth = body.fiscalMonth;
+  if (!fiscalYear || !fiscalMonth) {
+    throw new Error("fiscalYear and fiscalMonth are required");
+  }
+  // Idempotent: return existing open-ish instance if any.
+  const existing = _mccInstances.find(
+    (i) => i.fiscalYear === fiscalYear && i.fiscalMonth === fiscalMonth
+  );
+  if (existing) return _brandObj(_mccHydrateInstance(existing));
+  const now = new Date().toISOString();
+  const templates = _mccSortedTemplates(true);
+  const items = templates.map((tpl) => ({
+    id: _mccNextItemId(),
+    instanceId: "",
+    templateItemId: tpl.id,
+    label: tpl.label,
+    description: tpl.description,
+    sortOrder: tpl.sortOrder,
+    completeRoleGate: tpl.completeRoleGate,
+    status: "PENDING",
+    blockedReason: null,
+    notes: null,
+    completedAt: null,
+    completedBy: null,
+    completedByName: null,
+  }));
+  const inst = {
+    id: _mccNextInstanceId(),
+    tenantId: "mock-tenant",
+    fiscalYear,
+    fiscalMonth,
+    status: "OPEN",
+    signedOffAt: null,
+    signedOffBy: null,
+    signedOffByName: null,
+    createdAt: now,
+    updatedAt: now,
+    items,
+  };
+  // Back-fill instanceId on items.
+  inst.items.forEach((i) => { i.instanceId = inst.id; });
+  _mccInstances.push(inst);
+  return _brandObj(_mccHydrateInstance(inst));
+}
+
+export async function listInstances(filter = {}) {
+  await delay();
+  let list = _mccInstances.slice();
+  if (filter.status) list = list.filter((i) => i.status === filter.status);
+  if (filter.fiscalYear != null) list = list.filter((i) => i.fiscalYear === filter.fiscalYear);
+  list.sort((a, b) => {
+    if (a.fiscalYear !== b.fiscalYear) return b.fiscalYear - a.fiscalYear;
+    return b.fiscalMonth - a.fiscalMonth;
+  });
+  // List response strips items (shape parity with backend GET list).
+  return _brandObj(
+    list.map((i) => {
+      const { items: _items, ...rest } = i;
+      return { ...rest };
+    })
+  );
+}
+
+export async function getInstance(id) {
+  await delay();
+  const inst = _mccInstances.find((i) => i.id === id);
+  if (!inst) return null;
+  return _brandObj(_mccHydrateInstance(inst));
+}
+
+export async function markItemStatus(itemId, body = {}) {
+  await delay();
+  const inst = _mccInstances.find((i) => (i.items || []).some((it) => it.id === itemId));
+  if (!inst) return null;
+  const item = inst.items.find((it) => it.id === itemId);
+  if (!item) return null;
+  const nextStatus = body.status || "PENDING";
+  const allowed = new Set(["PENDING", "IN_PROGRESS", "COMPLETED", "BLOCKED"]);
+  if (!allowed.has(nextStatus)) {
+    throw new Error(`Invalid status: ${nextStatus}`);
+  }
+  if (nextStatus === "BLOCKED" && !body.blockedReason) {
+    throw new Error("blockedReason is required when status=BLOCKED");
+  }
+  item.status = nextStatus;
+  if (body.notes !== undefined) item.notes = body.notes || null;
+  if (nextStatus === "BLOCKED") {
+    item.blockedReason = body.blockedReason;
+  } else {
+    item.blockedReason = null;
+  }
+  if (nextStatus === "COMPLETED") {
+    item.completedAt = new Date().toISOString();
+    // In MOCK, we mark the completer as the accountant by default for
+    // items gated to ACCOUNTANT, else the owner. This keeps the client
+    // SoD check meaningful.
+    if (item.completeRoleGate === "ACCOUNTANT") {
+      item.completedBy = MCC_MOCK_ACCOUNTANT_ID;
+      item.completedByName = MCC_MOCK_ACCOUNTANT_NAME;
+    } else {
+      item.completedBy = MCC_MOCK_USER_ID;
+      item.completedByName = MCC_MOCK_USER_NAME;
+    }
+  } else {
+    item.completedAt = null;
+    item.completedBy = null;
+    item.completedByName = null;
+  }
+  inst.updatedAt = new Date().toISOString();
+  _mccRecomputeInstanceStatus(inst);
+  return _brandObj({
+    item: { ...item },
+    instance: { ..._mccHydrateInstance(inst) },
+  });
+}
+
+export async function signOffInstance(id) {
+  await delay();
+  const inst = _mccInstances.find((i) => i.id === id);
+  if (!inst) throw new Error("Instance not found");
+  if (inst.status !== "COMPLETED") {
+    throw new Error("Instance must be COMPLETED before sign-off");
+  }
+  // SoD: signer must not be any completer.
+  const signerId = MCC_MOCK_USER_ID;
+  const completers = new Set(
+    (inst.items || []).map((i) => i.completedBy).filter(Boolean)
+  );
+  if (completers.has(signerId)) {
+    // Backend returns 4xx with this message; UI surfaces it verbatim.
+    throw new Error(
+      "Segregation of duties violation: the signer cannot also be a completer of any checklist item."
+    );
+  }
+  inst.status = "SIGNED_OFF";
+  inst.signedOffAt = new Date().toISOString();
+  inst.signedOffBy = signerId;
+  inst.signedOffByName = MCC_MOCK_USER_NAME;
+  inst.updatedAt = new Date().toISOString();
+  return _brandObj(_mccHydrateInstance(inst));
+}
+
+export async function reopenInstance(id) {
+  await delay();
+  const inst = _mccInstances.find((i) => i.id === id);
+  if (!inst) throw new Error("Instance not found");
+  if (inst.status !== "SIGNED_OFF" && inst.status !== "COMPLETED") {
+    throw new Error(
+      "Instance must be SIGNED_OFF or COMPLETED before re-open"
+    );
+  }
+  inst.status = "REOPENED";
+  inst.signedOffAt = null;
+  inst.signedOffBy = null;
+  inst.signedOffByName = null;
+  inst.updatedAt = new Date().toISOString();
+  return _brandObj(_mccHydrateInstance(inst));
+}

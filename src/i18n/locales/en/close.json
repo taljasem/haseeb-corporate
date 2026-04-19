@@ -111,5 +111,139 @@
     "notes_header": "Notes",
     "attachments_header": "Attachments",
     "override_history_header": "Override history"
+  },
+  "checklist": {
+    "section_title": "STRUCTURED CHECKLIST",
+    "section_desc": "Template-driven monthly close with role gating and Owner sign-off. Complements the Aminah-driven flow above.",
+    "loading": "Loading checklist…",
+    "ask_aminah": "Ask Aminah",
+    "reopened_banner": "This instance has been re-opened. Items remain editable until the next sign-off.",
+    "signed_off_banner": {
+      "prefix": "Signed off by ",
+      "middle": " · ",
+      "suffix": "."
+    },
+    "empty": {
+      "owner_title": "No checklist template configured",
+      "owner_desc": "Configure the template items the team will follow each monthly close.",
+      "non_owner_title": "Checklist template not yet configured",
+      "non_owner_desc": "The Owner has not set up a structured close checklist for this tenant yet.",
+      "configure_button": "Configure template"
+    },
+    "no_instance": {
+      "title": "No structured checklist opened for {{period}}",
+      "desc_can_open": "Open a checklist to snapshot the active template items and start tracking sign-off for this period.",
+      "desc_read_only": "No one has opened a checklist for this period yet. Ask an Owner or Accountant to open it.",
+      "open_button": "Open checklist for {{period}}",
+      "opening": "Opening…"
+    },
+    "instance_status": {
+      "open": "OPEN",
+      "in_progress": "IN PROGRESS",
+      "completed": "COMPLETED",
+      "signed_off": "SIGNED OFF",
+      "reopened": "REOPENED"
+    },
+    "item_status": {
+      "pending": "PENDING",
+      "in_progress": "IN PROGRESS",
+      "completed": "COMPLETED",
+      "blocked": "BLOCKED"
+    },
+    "role_gate": {
+      "OWNER": "Owner only",
+      "ACCOUNTANT": "Accountant only",
+      "OWNER_OR_ACCOUNTANT": "Owner or Accountant"
+    },
+    "item": {
+      "role_gate_prefix": "Completable by: ",
+      "completed_by_prefix": "Completed by ",
+      "completed_by_middle": " · ",
+      "completed_by_suffix": "",
+      "blocked_reason_prefix": "Blocked: ",
+      "blocked_reason_label": "Why is this blocked?",
+      "blocked_reason_placeholder": "Describe what's blocking this item…",
+      "blocked_confirm": "Mark blocked",
+      "mark_in_progress": "Mark in progress",
+      "mark_complete": "Mark complete",
+      "mark_blocked": "Mark blocked",
+      "reset": "Reset to pending",
+      "cancel": "Cancel",
+      "role_denied_hint": "Only the configured role can mark this item complete."
+    },
+    "sign_off": {
+      "button": "Sign off close",
+      "modal_label": "MONTHLY CLOSE",
+      "modal_title": "Sign off monthly close",
+      "body": "Signing off locks this month's checklist. Segregation of duties: the signer cannot also be a completer of any item.",
+      "completers_label": "ITEMS COMPLETED BY",
+      "no_completers": "No items have been completed yet.",
+      "you_badge": "YOU",
+      "sod_blocked_title": "Segregation-of-duties violation",
+      "sod_blocked_desc": "You completed at least one item on this checklist. Ask a different Owner to sign off.",
+      "sod_blocked_hint": "You cannot sign off a checklist you helped complete.",
+      "cancel": "Cancel",
+      "confirm": "Confirm sign-off",
+      "submitting": "Signing off…",
+      "close": "Close",
+      "error_generic": "Sign-off failed."
+    },
+    "reopen": {
+      "button": "Re-open checklist",
+      "modal_title": "Re-open checklist",
+      "modal_body": "Re-opening the checklist for {{period}} will clear the sign-off and let items be edited again. Continue?",
+      "cancel": "Cancel",
+      "confirm": "Re-open checklist",
+      "confirming": "Re-opening…"
+    },
+    "template": {
+      "manage_button": "Template",
+      "modal_label": "STRUCTURED CHECKLIST",
+      "modal_title": "Manage checklist template",
+      "modal_subtitle": "Add, edit, or deactivate items in the monthly close template. New instances will snapshot only active items.",
+      "close": "Close",
+      "done": "Done",
+      "add_row": "Add item",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "deactivate": "Deactivate",
+      "reactivate": "Reactivate",
+      "create": "Create",
+      "none_yet": "No template items yet. Click 'Add item' to configure the first one.",
+      "description_label": "Description",
+      "description_placeholder": "Optional description…",
+      "new_row_label_placeholder": "Item label (e.g. 'Reconcile bank accounts')…",
+      "active_yes": "ACTIVE",
+      "active_no": "INACTIVE",
+      "header": {
+        "order": "ORDER",
+        "label": "LABEL",
+        "gate": "ROLE GATE",
+        "active": "ACTIVE",
+        "actions": "ACTIONS"
+      },
+      "error": {
+        "label_required": "Label is required.",
+        "save_failed": "Could not save template item."
+      }
+    },
+    "toast": {
+      "opened": "Checklist opened for this period.",
+      "item_completed": "Item marked complete.",
+      "item_blocked": "Item marked blocked.",
+      "item_in_progress": "Item marked in progress.",
+      "item_reset": "Item reset to pending.",
+      "signed_off": "Monthly close signed off.",
+      "reopened": "Checklist re-opened."
+    },
+    "error": {
+      "templates_title": "Could not load checklist template",
+      "instance_title": "Could not load checklist for this period",
+      "open_failed": "Could not open checklist.",
+      "mark_failed": "Could not update item status.",
+      "reopen_failed": "Could not re-open checklist."
+    }
   }
 }

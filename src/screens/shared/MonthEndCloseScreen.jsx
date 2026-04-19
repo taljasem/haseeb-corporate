@@ -12,6 +12,7 @@ import PersistentBanner from "../../components/ds/PersistentBanner";
 import DropZone from "../../components/ds/DropZone";
 import SubmitCloseConfirmationModal from "../../components/month-end/SubmitCloseConfirmationModal";
 import RejectCloseModal from "../../components/month-end/RejectCloseModal";
+import ChecklistInstancePanel from "../../components/month-end/ChecklistInstancePanel";
 import {
   getMonthEndCloseTasks,
   getCloseStatusDetail,
@@ -28,6 +29,7 @@ import {
   attachCloseCheckFile,
   getCloseCheckAttachments,
 } from "../../engine/mockEngine";
+import { useAuth } from "../../contexts/AuthContext";
 import { emitTaskboxChange } from "../../utils/taskboxBus";
 import { formatRelativeTime } from "../../utils/relativeTime";
 
@@ -52,11 +54,15 @@ const CLOSE_STATUS_PILL = {
   approved:         { key: "status_approved",         color: "var(--accent-primary)" },
 };
 
-export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigate }) {
+export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigate, onOpenAminah }) {
   const role = normalizeRole(roleRaw);
   const { t } = useTranslation("close");
   const { t: tc } = useTranslation("common");
   const { tenant } = useTenant();
+  // Auth context gives us the current user id for the FN-227 SoD pre-check.
+  // In MOCK mode the user may be null; the panel handles that gracefully.
+  const { user: authUser } = useAuth();
+  const currentUserId = authUser?.id || authUser?.userId || null;
   const [data, setData] = useState(null);
   const [closeStatus, setCloseStatus] = useState(null);
   const [expandedItemId, setExpandedItemId] = useState(null);
@@ -557,6 +563,7 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
                 border: "1px solid var(--border-default)",
                 borderRadius: 10,
                 overflow: "hidden",
+                marginBottom: 20,
               }}
             >
               <div style={{ padding: "12px 14px", fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)", borderBottom: "1px solid var(--border-subtle)" }}>
@@ -567,6 +574,17 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
               ))}
             </div>
           )}
+
+          {/* FN-227 (Phase 4 Wave 1 Item 3): structured close checklist.
+              Complements — does NOT replace — the Aminah AI-advisor-driven
+              close flow above. OWNER owns template + sign-off; OWNER +
+              ACCOUNTANT can mark items per item-level role gate. */}
+          <ChecklistInstancePanel
+            role={role}
+            period={period}
+            onOpenAminah={onOpenAminah}
+            currentUserId={currentUserId}
+          />
         </div>
       </div>
 

@@ -174,5 +174,31 @@
     "label_hash_before": "البصمة قبل",
     "label_hash_after": "البصمة بعد",
     "label_error": "خطأ"
+  },
+  "board_pack": {
+    "title": "حزمة مجلس الإدارة",
+    "subtitle": "تجميع سنوي · مقارنة سنوية + إفصاحات",
+    "fiscal_year_label": "السنة المالية",
+    "prior_fy_label": "السابقة",
+    "generated_at_label": "تاريخ التوليد",
+    "loading": "جارٍ توليد الحزمة…",
+    "warnings_heading": "تنبيهات",
+    "count_current_reports": "تقارير السنة الحالية",
+    "count_prior_reports": "تقارير السنة السابقة",
+    "count_yoy": "مقاييس المقارنة",
+    "count_disclosure_runs": "جولات الإفصاح",
+    "yoy_heading": "مقارنات السنة مقابل السنة",
+    "current_reports_heading": "السنة الحالية · FY{{year}}",
+    "prior_reports_heading": "السنة السابقة · FY{{year}}",
+    "disclosure_heading": "جولات الإفصاح",
+    "material_notes": "{{count}} إيضاح جوهري",
+    "metric_header": "المقياس",
+    "prior_header": "السابقة",
+    "current_header": "الحالية",
+    "delta_header": "الفرق",
+    "delta_pct_header": "نسبة",
+    "no_versions": "لم يُنشر أي إصدار",
+    "empty_pack": "لا يوجد ما تم نشره لهذه السنة المالية بعد. انشر إصدارات التقارير من شاشة القوائم المالية لملء حزمة المجلس.",
+    "pdf_deferred_note": "تصدير PDF مؤجَّل إلى المرحلة الخامسة. هذه اللوحة بيانات فقط."
   }
 }

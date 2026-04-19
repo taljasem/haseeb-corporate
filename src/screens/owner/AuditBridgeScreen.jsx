@@ -7,6 +7,7 @@ import ActionButton from "../../components/ds/ActionButton";
 import PersistentBanner from "../../components/ds/PersistentBanner";
 import InalterabilityPanel from "../../components/audit-bridge/InalterabilityPanel";
 import MigrationAuditPanel from "../../components/audit-bridge/MigrationAuditPanel";
+import BoardPackPanel from "../../components/audit-bridge/BoardPackPanel";
 import {
   listAuditEngagements, getAuditEngagement, createAuditEngagement, createSnapshot,
   runAuditCheck, runAllAuditChecks, generateAuditPackage,
@@ -155,6 +156,11 @@ export default function AuditBridgeScreen({ onOpenAminah }) {
             OWNER/AUDITOR backend-gated; non-authorized roles see a
             403-surfaced error inline. */}
         <MigrationAuditPanel />
+        {/* FN-258 — Board Pack composite. Annual aggregator of published
+            report versions + YoY comparisons + disclosure summaries.
+            Data-only in this partial (PDF render deferred to Phase 5
+            per Q9). OWNER/AUDITOR backend-gated. */}
+        <BoardPackPanel />
 
         {!engagements ? (
           <div style={{ color: "var(--text-tertiary)", fontSize: 13 }}>Loading...</div>

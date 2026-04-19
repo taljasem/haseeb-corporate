@@ -76,6 +76,7 @@ import * as warrantyPolicyApi from '../api/warranty-provision-policy';
 import * as bankFormatsApi from '../api/bank-formats';
 import * as leaveProvisionApi from '../api/leave-provision';
 import * as cbkRatesApi from '../api/cbk-rates';
+import * as boardPackApi from '../api/board-pack';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -432,6 +433,9 @@ const REAL_IMPLS = {
   getCbkRateStaleness: cbkRatesApi.getCbkRateStaleness,
   upsertCbkRate: cbkRatesApi.upsertCbkRate,
   deleteCbkRate: cbkRatesApi.deleteCbkRate,
+
+  // Board pack (FN-258, Phase 4 Track A Tier 5 — 2026-04-19).
+  getBoardPack: boardPackApi.getBoardPack,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -668,6 +672,9 @@ function buildLiveSurface() {
   surface.upsertCbkRate = cbkRatesApi.upsertCbkRate;
   surface.deleteCbkRate = cbkRatesApi.deleteCbkRate;
 
+  // Board pack (FN-258). Extras pattern.
+  surface.getBoardPack = boardPackApi.getBoardPack;
+
   return surface;
 }
 
@@ -885,6 +892,17 @@ function buildMockExtras() {
     getCbkRateStaleness: mockGetCbkRateStaleness,
     upsertCbkRate: mockUpsertCbkRate,
     deleteCbkRate: mockDeleteCbkRate,
+    // Board pack (FN-258) MOCK stub — empty pack in MOCK mode.
+    getBoardPack: async (q = {}) => ({
+      fiscalYear: q.fiscalYear || new Date().getFullYear() - 1,
+      priorFiscalYear: (q.fiscalYear || new Date().getFullYear() - 1) - 1,
+      generatedAt: new Date().toISOString(),
+      currentReportVersions: [],
+      priorReportVersions: [],
+      yoyComparisons: [],
+      disclosureSummaries: [],
+      warnings: ['mock: no published report versions in MOCK mode'],
+    }),
   };
 }
 
@@ -2417,3 +2435,8 @@ export const lookupLatestCbkRate = surface.lookupLatestCbkRate;
 export const getCbkRateStaleness = surface.getCbkRateStaleness;
 export const upsertCbkRate = surface.upsertCbkRate;
 export const deleteCbkRate = surface.deleteCbkRate;
+
+// Board pack (FN-258, Phase 4 Track A Tier 5 — 2026-04-19).
+// Annual composite: current+prior report versions + YoY comparisons +
+// disclosure-note summaries + warnings. OWNER+AUDITOR only.
+export const getBoardPack = surface.getBoardPack;

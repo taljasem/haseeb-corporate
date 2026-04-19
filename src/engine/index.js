@@ -65,6 +65,7 @@ import * as invoicesApi from '../api/invoices';
 import * as billsApi from '../api/bills';
 import * as disallowanceRulesApi from '../api/disallowance-rules';
 import * as taxLodgementsApi from '../api/tax-lodgements';
+import * as citAssessmentApi from '../api/cit-assessment';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -319,6 +320,19 @@ const REAL_IMPLS = {
   recordTaxLodgement: taxLodgementsApi.recordTaxLodgement,
   updateTaxLodgementStatus: taxLodgementsApi.updateTaxLodgementStatus,
   getTaxLodgementTieOut: taxLodgementsApi.getTaxLodgementTieOut,
+
+  // CIT Assessment (FN-249, Phase 4 Track A Wave 2 — 2026-04-19).
+  // Backend 10/10 live; extras pattern (no mockEngine impl).
+  listCitAssessments: citAssessmentApi.listCitAssessments,
+  getCitAssessment: citAssessmentApi.getCitAssessment,
+  listApproachingStatute: citAssessmentApi.listApproachingStatute,
+  createCitAssessment: citAssessmentApi.createCitAssessment,
+  openCitAssessmentReview: citAssessmentApi.openCitAssessmentReview,
+  recordCitAssessment: citAssessmentApi.recordCitAssessment,
+  recordCitAssessmentObjection: citAssessmentApi.recordCitAssessmentObjection,
+  finalizeCitAssessment: citAssessmentApi.finalizeCitAssessment,
+  closeCitAssessment: citAssessmentApi.closeCitAssessment,
+  markCitAssessmentStatuteExpired: citAssessmentApi.markCitAssessmentStatuteExpired,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -457,6 +471,18 @@ function buildLiveSurface() {
   surface.updateTaxLodgementStatus = taxLodgementsApi.updateTaxLodgementStatus;
   surface.getTaxLodgementTieOut = taxLodgementsApi.getTaxLodgementTieOut;
 
+  // CIT Assessment (FN-249, Phase 4 Track A Wave 2). Extras pattern.
+  surface.listCitAssessments = citAssessmentApi.listCitAssessments;
+  surface.getCitAssessment = citAssessmentApi.getCitAssessment;
+  surface.listApproachingStatute = citAssessmentApi.listApproachingStatute;
+  surface.createCitAssessment = citAssessmentApi.createCitAssessment;
+  surface.openCitAssessmentReview = citAssessmentApi.openCitAssessmentReview;
+  surface.recordCitAssessment = citAssessmentApi.recordCitAssessment;
+  surface.recordCitAssessmentObjection = citAssessmentApi.recordCitAssessmentObjection;
+  surface.finalizeCitAssessment = citAssessmentApi.finalizeCitAssessment;
+  surface.closeCitAssessment = citAssessmentApi.closeCitAssessment;
+  surface.markCitAssessmentStatuteExpired = citAssessmentApi.markCitAssessmentStatuteExpired;
+
   return surface;
 }
 
@@ -586,7 +612,136 @@ function buildMockExtras() {
     recordTaxLodgement: mockRecordTaxLodgement,
     updateTaxLodgementStatus: mockUpdateTaxLodgementStatus,
     getTaxLodgementTieOut: mockGetTaxLodgementTieOut,
+    // CIT Assessment (FN-249) MOCK stubs.
+    listCitAssessments: mockListCitAssessments,
+    getCitAssessment: mockGetCitAssessment,
+    listApproachingStatute: mockListApproachingStatute,
+    createCitAssessment: mockCreateCitAssessment,
+    openCitAssessmentReview: mockOpenCitAssessmentReview,
+    recordCitAssessment: mockRecordCitAssessment,
+    recordCitAssessmentObjection: mockRecordCitAssessmentObjection,
+    finalizeCitAssessment: mockFinalizeCitAssessment,
+    closeCitAssessment: mockCloseCitAssessment,
+    markCitAssessmentStatuteExpired: mockMarkCitAssessmentStatuteExpired,
   };
+}
+
+// ── CIT Assessment MOCK stubs (FN-249) ──
+let _mockCitCounter = 0;
+const _mockCitAssessments = [];
+function _defaultStatute(fiscalYear) {
+  const y = Number(fiscalYear) + 5;
+  return `${y}-12-31`;
+}
+async function mockListCitAssessments(filters = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  return _mockCitAssessments
+    .filter((c) => {
+      if (filters.status && c.status !== filters.status) return false;
+      if (filters.fiscalYearFrom != null && c.fiscalYear < filters.fiscalYearFrom) return false;
+      if (filters.fiscalYearTo != null && c.fiscalYear > filters.fiscalYearTo) return false;
+      if (filters.openOnly && (c.status === 'CLOSED' || c.status === 'STATUTE_EXPIRED')) return false;
+      return true;
+    })
+    .map((c) => ({ ...c }));
+}
+async function mockGetCitAssessment(id) {
+  await new Promise((r) => setTimeout(r, 20));
+  const row = _mockCitAssessments.find((c) => c.id === id);
+  return row ? { ...row } : null;
+}
+async function mockListApproachingStatute(query = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  const asOf = query.asOf ? new Date(query.asOf) : new Date();
+  const withinDays = query.withinDays ?? 180;
+  const cutoff = new Date(asOf);
+  cutoff.setDate(cutoff.getDate() + withinDays);
+  return _mockCitAssessments
+    .filter((c) => {
+      if (c.status === 'CLOSED' || c.status === 'STATUTE_EXPIRED') return false;
+      const exp = new Date(c.statuteExpiresOn);
+      return exp <= cutoff;
+    })
+    .map((c) => ({ ...c }));
+}
+async function mockCreateCitAssessment(payload = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  _mockCitCounter += 1;
+  const row = {
+    id: `mock-cit-${_mockCitCounter}`,
+    fiscalYear: Number(payload.fiscalYear) || new Date().getFullYear() - 1,
+    filedAmountKwd: payload.filedAmountKwd || '0.000',
+    filedOnDate: payload.filedOnDate || new Date().toISOString().slice(0, 10),
+    authorityCaseNumber: payload.authorityCaseNumber ?? null,
+    status: 'FILED',
+    computationId: payload.computationId ?? null,
+    assessedAmountKwd: null,
+    assessedOnDate: null,
+    varianceKwd: null,
+    objectionFiledOn: null,
+    finalAmountKwd: null,
+    finalizedOnDate: null,
+    statuteExpiresOn: payload.statuteExpiresOn || _defaultStatute(payload.fiscalYear),
+    notes: payload.notes ?? null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    _mock: true,
+  };
+  _mockCitAssessments.unshift(row);
+  return row;
+}
+async function _mockPatch(id, patch) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockCitAssessments.findIndex((c) => c.id === id);
+  if (idx < 0) return null;
+  _mockCitAssessments[idx] = {
+    ..._mockCitAssessments[idx],
+    ...patch,
+    updatedAt: new Date().toISOString(),
+  };
+  return { ..._mockCitAssessments[idx] };
+}
+async function mockOpenCitAssessmentReview(id, patch = {}) {
+  return _mockPatch(id, {
+    status: 'UNDER_REVIEW',
+    authorityCaseNumber: patch.authorityCaseNumber ?? null,
+  });
+}
+async function mockRecordCitAssessment(id, patch = {}) {
+  const existing = _mockCitAssessments.find((c) => c.id === id);
+  const filed = existing ? Number(existing.filedAmountKwd) : 0;
+  const assessed = Number(patch.assessedAmountKwd);
+  const variance = (assessed - filed).toFixed(3);
+  return _mockPatch(id, {
+    status: 'ASSESSED',
+    assessedAmountKwd: patch.assessedAmountKwd,
+    assessedOnDate: patch.assessedOnDate,
+    varianceKwd: variance,
+    authorityCaseNumber:
+      patch.authorityCaseNumber ?? existing?.authorityCaseNumber ?? null,
+    notes: patch.notes ?? existing?.notes ?? null,
+  });
+}
+async function mockRecordCitAssessmentObjection(id, patch = {}) {
+  return _mockPatch(id, {
+    status: 'OBJECTED',
+    objectionFiledOn: patch.objectionFiledOn,
+    notes: patch.notes ?? null,
+  });
+}
+async function mockFinalizeCitAssessment(id, patch = {}) {
+  return _mockPatch(id, {
+    status: 'FINAL',
+    finalAmountKwd: patch.finalAmountKwd,
+    finalizedOnDate: patch.finalizedOnDate,
+    notes: patch.notes ?? null,
+  });
+}
+async function mockCloseCitAssessment(id) {
+  return _mockPatch(id, { status: 'CLOSED' });
+}
+async function mockMarkCitAssessmentStatuteExpired(id) {
+  return _mockPatch(id, { status: 'STATUTE_EXPIRED' });
 }
 
 // ── Tax lodgements MOCK stubs (FN-268) ──
@@ -928,3 +1083,19 @@ export const getTaxLodgement = surface.getTaxLodgement;
 export const recordTaxLodgement = surface.recordTaxLodgement;
 export const updateTaxLodgementStatus = surface.updateTaxLodgementStatus;
 export const getTaxLodgementTieOut = surface.getTaxLodgementTieOut;
+
+// CIT Assessment (FN-249, Phase 4 Track A Wave 2 — 2026-04-19).
+// Per-fiscal-year Kuwait corporate income-tax case tracker with state
+// machine FILED → UNDER_REVIEW → ASSESSED → (OBJECTED →) FINAL →
+// CLOSED; STATUTE_EXPIRED terminal from any non-terminal state.
+// Memo-only — no JE posting in this partial.
+export const listCitAssessments = surface.listCitAssessments;
+export const getCitAssessment = surface.getCitAssessment;
+export const listApproachingStatute = surface.listApproachingStatute;
+export const createCitAssessment = surface.createCitAssessment;
+export const openCitAssessmentReview = surface.openCitAssessmentReview;
+export const recordCitAssessment = surface.recordCitAssessment;
+export const recordCitAssessmentObjection = surface.recordCitAssessmentObjection;
+export const finalizeCitAssessment = surface.finalizeCitAssessment;
+export const closeCitAssessment = surface.closeCitAssessment;
+export const markCitAssessmentStatuteExpired = surface.markCitAssessmentStatuteExpired;

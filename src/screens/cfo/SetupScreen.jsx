@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import {
   BookOpen, Calendar, Calculator, Coins, Plug, Users, Cpu, Ban, Receipt,
   Plus, Search, Edit3, Trash2, RefreshCw, AlertTriangle, Check, X as XIcon,
-  Scale,
+  Scale, Gavel, Clock,
 } from "lucide-react";
 import LtrText from "../../components/shared/LtrText";
 import EmptyState from "../../components/shared/EmptyState";
@@ -24,6 +24,10 @@ import {
   listTaxLodgements,
   updateTaxLodgementStatus,
   getTaxLodgementTieOut,
+  listCitAssessments,
+  listApproachingStatute,
+  closeCitAssessment,
+  markCitAssessmentStatuteExpired,
 } from "../../engine";
 import {
   getFiscalYearConfig,
@@ -46,6 +50,8 @@ import ApplyRoleTemplateModal from "../../components/setup/ApplyRoleTemplateModa
 import ChangeEngineRuleModal from "../../components/setup/ChangeEngineRuleModal";
 import DisallowanceRuleModal from "../../components/setup/DisallowanceRuleModal";
 import TaxLodgementModal from "../../components/setup/TaxLodgementModal";
+import CitAssessmentCreateModal from "../../components/setup/CitAssessmentCreateModal";
+import CitAssessmentTransitionModal from "../../components/setup/CitAssessmentTransitionModal";
 
 function fmtKWD(n) {
   if (n == null) return "—";
@@ -53,15 +59,16 @@ function fmtKWD(n) {
 }
 
 const SECTIONS = [
-  { id: "chart",          icon: BookOpen },
-  { id: "fiscal",         icon: Calendar },
-  { id: "tax",            icon: Calculator },
-  { id: "disallowance",   icon: Ban },
-  { id: "tax_lodgement",  icon: Receipt },
-  { id: "currencies",     icon: Coins },
-  { id: "integrations",   icon: Plug },
-  { id: "team_access",    icon: Users },
-  { id: "engine_rules",   icon: Cpu },
+  { id: "chart",           icon: BookOpen },
+  { id: "fiscal",          icon: Calendar },
+  { id: "tax",             icon: Calculator },
+  { id: "disallowance",    icon: Ban },
+  { id: "tax_lodgement",   icon: Receipt },
+  { id: "cit_assessment",  icon: Gavel },
+  { id: "currencies",      icon: Coins },
+  { id: "integrations",    icon: Plug },
+  { id: "team_access",     icon: Users },
+  { id: "engine_rules",    icon: Cpu },
 ];
 
 export default function SetupScreen() {
@@ -113,7 +120,7 @@ export default function SetupScreen() {
                 onMouseLeave={(e) => { if (!on) e.currentTarget.style.background = "transparent"; }}
               >
                 <Icon size={14} strokeWidth={2} />
-                <span>{t(`sections.${s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id === "tax_lodgement" ? "tax_lodgement" : s.id}`)}</span>
+                <span>{t(`sections.${s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id === "tax_lodgement" ? "tax_lodgement" : s.id === "cit_assessment" ? "cit_assessment" : s.id}`)}</span>
               </button>
             );
           })}
@@ -126,6 +133,7 @@ export default function SetupScreen() {
             {active === "tax"           && <TaxSection />}
             {active === "disallowance"  && <DisallowanceSection />}
             {active === "tax_lodgement" && <TaxLodgementSection />}
+            {active === "cit_assessment" && <CitAssessmentSection />}
             {active === "currencies"    && <CurrenciesSection />}
             {active === "integrations"  && <IntegrationsSection />}
             {active === "team_access"   && <TeamAccessSection />}
@@ -1606,6 +1614,524 @@ function DrawerField({ label, value }) {
       </div>
       <div style={{ fontSize: 13, color: "var(--text-primary)" }}>{value}</div>
     </div>
+  );
+}
+
+// ── CIT Assessment (FN-249, 2026-04-19) ─────────────────────────
+// Per-fiscal-year Kuwait CIT case tracker. State machine FILED →
+// UNDER_REVIEW → ASSESSED → (OBJECTED →) FINAL → CLOSED, with
+// STATUTE_EXPIRED terminal from any non-terminal state. OWNER-only
+// mutations. Approaching-statute sweep surfaces cases within 180 days
+// of their statuteExpiresOn so the operator can act before the
+// authority's window closes.
+const CIT_STATUS_FILTERS = [
+  "ALL",
+  "OPEN",
+  "FILED",
+  "UNDER_REVIEW",
+  "ASSESSED",
+  "OBJECTED",
+  "FINAL",
+  "CLOSED",
+  "STATUTE_EXPIRED",
+];
+
+const CIT_STATUS_COLORS = {
+  FILED: { color: "var(--text-secondary)", bg: "var(--bg-surface)" },
+  UNDER_REVIEW: { color: "var(--semantic-warning)", bg: "var(--semantic-warning-subtle)" },
+  ASSESSED: { color: "var(--accent-primary)", bg: "var(--accent-primary-subtle)" },
+  OBJECTED: { color: "var(--semantic-warning)", bg: "var(--semantic-warning-subtle)" },
+  FINAL: { color: "var(--accent-primary)", bg: "var(--accent-primary-subtle)" },
+  CLOSED: { color: "var(--text-tertiary)", bg: "var(--bg-surface)" },
+  STATUTE_EXPIRED: { color: "var(--semantic-danger)", bg: "var(--semantic-danger-subtle)" },
+};
+
+function daysUntil(isoDate) {
+  if (!isoDate) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(isoDate);
+  const diff = Math.round((target - today) / 86400000);
+  return diff;
+}
+
+function CitAssessmentSection() {
+  const { t } = useTranslation("setup");
+  const [rows, setRows] = useState(null);
+  const [approaching, setApproaching] = useState([]);
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [transitionState, setTransitionState] = useState({
+    open: false,
+    transition: null,
+    assessment: null,
+  });
+  const [toast, setToast] = useState(null);
+  const [loadError, setLoadError] = useState(null);
+
+  const reload = async () => {
+    setLoadError(null);
+    try {
+      const filters =
+        statusFilter === "ALL"
+          ? {}
+          : statusFilter === "OPEN"
+          ? { openOnly: true }
+          : { status: statusFilter };
+      const [list, sweep] = await Promise.all([
+        listCitAssessments(filters),
+        listApproachingStatute({ withinDays: 180 }).catch(() => []),
+      ]);
+      setRows(list || []);
+      setApproaching(sweep || []);
+    } catch (err) {
+      setRows([]);
+      setLoadError(err?.message || t("cit_assessment.error_load"));
+    }
+  };
+
+  useEffect(() => {
+    reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter]);
+
+  const openTransition = (transition, assessment) => {
+    setTransitionState({ open: true, transition, assessment });
+  };
+
+  const handleClose = async (rule) => {
+    try {
+      await closeCitAssessment(rule.id);
+      setToast(t("cit_assessment.closed_toast"));
+      reload();
+    } catch (err) {
+      setToast(err?.message || t("cit_assessment.error_close"));
+    }
+  };
+
+  const handleMarkStatuteExpired = async (rule) => {
+    try {
+      await markCitAssessmentStatuteExpired(rule.id);
+      setToast(t("cit_assessment.statute_expired_toast"));
+      reload();
+    } catch (err) {
+      setToast(err?.message || t("cit_assessment.error_statute_expired"));
+    }
+  };
+
+  return (
+    <Card
+      title={t("cit_assessment.title")}
+      description={t("cit_assessment.description")}
+      extra={
+        <button
+          onClick={() => setCreateOpen(true)}
+          style={btnPrimary(false)}
+        >
+          <Plus
+            size={13}
+            style={{ verticalAlign: "middle", marginInlineEnd: 6 }}
+          />
+          {t("cit_assessment.create_case")}
+        </button>
+      }
+    >
+      <Toast text={toast} onClear={() => setToast(null)} />
+
+      {approaching.length > 0 && (
+        <div
+          role="status"
+          style={{
+            display: "flex",
+            gap: 10,
+            padding: "12px 14px",
+            background: "var(--semantic-warning-subtle)",
+            border: "1px solid var(--semantic-warning)",
+            borderRadius: 8,
+            color: "var(--semantic-warning)",
+            fontSize: 12,
+            marginBottom: 12,
+            alignItems: "flex-start",
+          }}
+        >
+          <Clock size={14} style={{ marginTop: 2 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, marginBottom: 4 }}>
+              {t("cit_assessment.approaching_banner_title", {
+                count: approaching.length,
+              })}
+            </div>
+            <div
+              style={{
+                fontSize: 11,
+                color: "var(--text-secondary)",
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 10,
+              }}
+            >
+              {approaching.slice(0, 5).map((a) => (
+                <LtrText key={a.id}>
+                  <span style={{ fontFamily: "'DM Mono', monospace" }}>
+                    FY{a.fiscalYear} · {a.statuteExpiresOn}
+                  </span>
+                </LtrText>
+              ))}
+              {approaching.length > 5 && (
+                <span>
+                  {t("cit_assessment.approaching_more", {
+                    count: approaching.length - 5,
+                  })}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          marginBottom: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        {CIT_STATUS_FILTERS.map((s) => {
+          const on = statusFilter === s;
+          return (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              style={{
+                ...btnMini,
+                background: on ? "var(--accent-primary-subtle)" : "transparent",
+                borderColor: on
+                  ? "rgba(0,196,140,0.30)"
+                  : "var(--border-strong)",
+                color: on ? "var(--accent-primary)" : "var(--text-secondary)",
+              }}
+            >
+              {t(`cit_assessment.filter_${s}`)}
+            </button>
+          );
+        })}
+      </div>
+
+      {loadError && (
+        <div
+          role="alert"
+          style={{
+            display: "flex",
+            gap: 8,
+            padding: "10px 12px",
+            background: "var(--semantic-danger-subtle)",
+            border: "1px solid var(--semantic-danger)",
+            borderRadius: 8,
+            color: "var(--semantic-danger)",
+            fontSize: 12,
+            marginBottom: 12,
+          }}
+        >
+          <AlertTriangle size={14} /> {loadError}
+        </div>
+      )}
+
+      {rows === null && (
+        <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>…</div>
+      )}
+
+      {rows && rows.length === 0 && !loadError && (
+        <EmptyState
+          icon={Gavel}
+          title={t("cit_assessment.empty_title")}
+          description={t("cit_assessment.empty_description")}
+        />
+      )}
+
+      {rows && rows.length > 0 && (
+        <div
+          style={{
+            border: "1px solid var(--border-default)",
+            borderRadius: 8,
+            overflow: "hidden",
+          }}
+        >
+          {rows.map((rule, idx) => {
+            const colors = CIT_STATUS_COLORS[rule.status] || {
+              color: "var(--text-secondary)",
+              bg: "var(--bg-surface)",
+            };
+            const statuteDays = daysUntil(rule.statuteExpiresOn);
+            const statuteWarning =
+              rule.status !== "CLOSED" &&
+              rule.status !== "STATUTE_EXPIRED" &&
+              statuteDays != null &&
+              statuteDays <= 180;
+            const varianceNum = rule.varianceKwd
+              ? Number(rule.varianceKwd)
+              : null;
+            const varianceColor =
+              varianceNum == null
+                ? "var(--text-tertiary)"
+                : varianceNum > 0
+                ? "var(--semantic-danger)"
+                : varianceNum < 0
+                ? "var(--accent-primary)"
+                : "var(--text-secondary)";
+
+            return (
+              <div
+                key={rule.id}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  gap: 14,
+                  padding: "14px 18px",
+                  borderBottom:
+                    idx === rows.length - 1
+                      ? "none"
+                      : "1px solid var(--border-subtle)",
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: "var(--text-primary)",
+                        fontFamily: "'DM Mono', monospace",
+                      }}
+                    >
+                      <LtrText>FY{rule.fiscalYear}</LtrText>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: "0.1em",
+                        padding: "2px 8px",
+                        borderRadius: 10,
+                        background: colors.bg,
+                        color: colors.color,
+                        border: "1px solid",
+                      }}
+                    >
+                      {t(`cit_assessment.status_${rule.status}`)}
+                    </span>
+                    {rule.authorityCaseNumber && (
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: "var(--text-tertiary)",
+                          fontFamily: "'DM Mono', monospace",
+                        }}
+                      >
+                        <LtrText>{rule.authorityCaseNumber}</LtrText>
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 14,
+                      marginTop: 6,
+                      fontSize: 11,
+                      color: "var(--text-tertiary)",
+                    }}
+                  >
+                    <div>
+                      {t("cit_assessment.label_filed")}:{" "}
+                      <LtrText>
+                        <span
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontFamily: "'DM Mono', monospace",
+                          }}
+                        >
+                          {rule.filedAmountKwd} KWD · {rule.filedOnDate}
+                        </span>
+                      </LtrText>
+                    </div>
+                    {rule.assessedAmountKwd && (
+                      <div>
+                        {t("cit_assessment.label_assessed")}:{" "}
+                        <LtrText>
+                          <span
+                            style={{
+                              color: "var(--text-secondary)",
+                              fontFamily: "'DM Mono', monospace",
+                            }}
+                          >
+                            {rule.assessedAmountKwd} KWD · {rule.assessedOnDate}
+                          </span>
+                        </LtrText>
+                      </div>
+                    )}
+                    {rule.varianceKwd && (
+                      <div>
+                        {t("cit_assessment.label_variance")}:{" "}
+                        <LtrText>
+                          <span
+                            style={{
+                              color: varianceColor,
+                              fontFamily: "'DM Mono', monospace",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {rule.varianceKwd} KWD
+                          </span>
+                        </LtrText>
+                      </div>
+                    )}
+                    {rule.finalAmountKwd && (
+                      <div>
+                        {t("cit_assessment.label_final")}:{" "}
+                        <LtrText>
+                          <span
+                            style={{
+                              color: "var(--text-secondary)",
+                              fontFamily: "'DM Mono', monospace",
+                            }}
+                          >
+                            {rule.finalAmountKwd} KWD · {rule.finalizedOnDate}
+                          </span>
+                        </LtrText>
+                      </div>
+                    )}
+                    <div
+                      style={{
+                        color: statuteWarning
+                          ? "var(--semantic-warning)"
+                          : "var(--text-tertiary)",
+                      }}
+                    >
+                      {t("cit_assessment.label_statute")}:{" "}
+                      <LtrText>
+                        <span
+                          style={{
+                            fontFamily: "'DM Mono', monospace",
+                            color: statuteWarning
+                              ? "var(--semantic-warning)"
+                              : "var(--text-secondary)",
+                            fontWeight: statuteWarning ? 600 : 400,
+                          }}
+                        >
+                          {rule.statuteExpiresOn}
+                        </span>
+                      </LtrText>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 6,
+                    minWidth: 150,
+                  }}
+                >
+                  {rule.status === "FILED" && (
+                    <button
+                      onClick={() => openTransition("open_review", rule)}
+                      style={btnMini}
+                    >
+                      {t("cit_assessment.action_open_review")}
+                    </button>
+                  )}
+                  {(rule.status === "FILED" ||
+                    rule.status === "UNDER_REVIEW") && (
+                    <button
+                      onClick={() =>
+                        openTransition("record_assessment", rule)
+                      }
+                      style={btnMini}
+                    >
+                      {t("cit_assessment.action_record_assessment")}
+                    </button>
+                  )}
+                  {rule.status === "ASSESSED" && (
+                    <button
+                      onClick={() =>
+                        openTransition("record_objection", rule)
+                      }
+                      style={btnMini}
+                    >
+                      {t("cit_assessment.action_record_objection")}
+                    </button>
+                  )}
+                  {(rule.status === "ASSESSED" ||
+                    rule.status === "OBJECTED") && (
+                    <button
+                      onClick={() => openTransition("finalize", rule)}
+                      style={btnMini}
+                    >
+                      {t("cit_assessment.action_finalize")}
+                    </button>
+                  )}
+                  {rule.status === "FINAL" && (
+                    <button onClick={() => handleClose(rule)} style={btnMini}>
+                      {t("cit_assessment.action_close")}
+                    </button>
+                  )}
+                  {rule.status !== "CLOSED" &&
+                    rule.status !== "STATUTE_EXPIRED" &&
+                    statuteDays != null &&
+                    statuteDays <= 0 && (
+                      <button
+                        onClick={() => handleMarkStatuteExpired(rule)}
+                        style={{
+                          ...btnMini,
+                          color: "var(--semantic-danger)",
+                          borderColor: "rgba(208,90,90,0.30)",
+                        }}
+                      >
+                        {t("cit_assessment.action_mark_statute_expired")}
+                      </button>
+                    )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <CitAssessmentCreateModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onSaved={() => {
+          reload();
+          setToast(t("cit_assessment.created_toast"));
+        }}
+      />
+      <CitAssessmentTransitionModal
+        open={transitionState.open}
+        transition={transitionState.transition}
+        assessment={transitionState.assessment}
+        onClose={() =>
+          setTransitionState({
+            open: false,
+            transition: null,
+            assessment: null,
+          })
+        }
+        onSaved={() => {
+          reload();
+          setToast(t("cit_assessment.transitioned_toast"));
+        }}
+      />
+    </Card>
   );
 }
 

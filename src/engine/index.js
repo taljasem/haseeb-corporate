@@ -78,6 +78,7 @@ import * as leaveProvisionApi from '../api/leave-provision';
 import * as cbkRatesApi from '../api/cbk-rates';
 import * as boardPackApi from '../api/board-pack';
 import * as ocrGatingApi from '../api/ocr-gating';
+import * as inventoryCountApi from '../api/inventory-count';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -445,6 +446,16 @@ const REAL_IMPLS = {
   correctOcrField: ocrGatingApi.correctOcrField,
   approveOcrExtraction: ocrGatingApi.approveOcrExtraction,
   rejectOcrExtraction: ocrGatingApi.rejectOcrExtraction,
+
+  // Inventory count (FN-263, Phase 4 Track A Tier 4 — 2026-04-19).
+  listInventoryCounts: inventoryCountApi.listInventoryCounts,
+  getInventoryCount: inventoryCountApi.getInventoryCount,
+  createInventoryCount: inventoryCountApi.createInventoryCount,
+  snapshotInventoryCount: inventoryCountApi.snapshotInventoryCount,
+  recordInventoryCountLine: inventoryCountApi.recordInventoryCountLine,
+  reconcileInventoryCount: inventoryCountApi.reconcileInventoryCount,
+  cancelInventoryCount: inventoryCountApi.cancelInventoryCount,
+  getInventoryCountVarianceJeShape: inventoryCountApi.getInventoryCountVarianceJeShape,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -692,6 +703,16 @@ function buildLiveSurface() {
   surface.approveOcrExtraction = ocrGatingApi.approveOcrExtraction;
   surface.rejectOcrExtraction = ocrGatingApi.rejectOcrExtraction;
 
+  // Inventory count (FN-263). Extras pattern.
+  surface.listInventoryCounts = inventoryCountApi.listInventoryCounts;
+  surface.getInventoryCount = inventoryCountApi.getInventoryCount;
+  surface.createInventoryCount = inventoryCountApi.createInventoryCount;
+  surface.snapshotInventoryCount = inventoryCountApi.snapshotInventoryCount;
+  surface.recordInventoryCountLine = inventoryCountApi.recordInventoryCountLine;
+  surface.reconcileInventoryCount = inventoryCountApi.reconcileInventoryCount;
+  surface.cancelInventoryCount = inventoryCountApi.cancelInventoryCount;
+  surface.getInventoryCountVarianceJeShape = inventoryCountApi.getInventoryCountVarianceJeShape;
+
   return surface;
 }
 
@@ -916,6 +937,15 @@ function buildMockExtras() {
     correctOcrField: async () => null,
     approveOcrExtraction: async () => null,
     rejectOcrExtraction: async () => null,
+    // Inventory count (FN-263) MOCK stubs.
+    listInventoryCounts: mockListInventoryCounts,
+    getInventoryCount: mockGetInventoryCount,
+    createInventoryCount: mockCreateInventoryCount,
+    snapshotInventoryCount: mockSnapshotInventoryCount,
+    recordInventoryCountLine: mockRecordInventoryCountLine,
+    reconcileInventoryCount: mockReconcileInventoryCount,
+    cancelInventoryCount: mockCancelInventoryCount,
+    getInventoryCountVarianceJeShape: mockInventoryCountVarianceShape,
     // Board pack (FN-258) MOCK stub — empty pack in MOCK mode.
     getBoardPack: async (q = {}) => ({
       fiscalYear: q.fiscalYear || new Date().getFullYear() - 1,
@@ -2144,6 +2174,192 @@ async function mockDeactivateDisallowanceRule(id) {
   return { ..._mockDisallowanceRules[idx] };
 }
 
+// ── Inventory count MOCK stubs (FN-263) ──
+let _mockCountCounter = 0;
+let _mockCountLineCounter = 0;
+const _mockCounts = [];
+// Minimal fake item catalog for MOCK mode snapshots.
+const _mockInventoryItems = [
+  { id: 'mock-item-1', itemCode: 'WIDGET-01', itemName: 'Widget A', qty: '100.00', unitCost: '2.500' },
+  { id: 'mock-item-2', itemCode: 'WIDGET-02', itemName: 'Widget B', qty: '50.00', unitCost: '5.000' },
+  { id: 'mock-item-3', itemCode: 'GADGET-01', itemName: 'Gadget X', qty: '25.00', unitCost: '12.750' },
+];
+async function mockListInventoryCounts(filters = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  return _mockCounts
+    .filter((c) => {
+      if (filters.status && c.status !== filters.status) return false;
+      if (filters.countDateFrom && c.countDate < filters.countDateFrom) return false;
+      if (filters.countDateTo && c.countDate > filters.countDateTo) return false;
+      return true;
+    })
+    .map((c) => ({ ...c, lines: undefined }));
+}
+async function mockGetInventoryCount(id) {
+  await new Promise((r) => setTimeout(r, 20));
+  const row = _mockCounts.find((c) => c.id === id);
+  return row
+    ? { ...row, lines: (row.lines || []).map((l) => ({ ...l })) }
+    : null;
+}
+async function mockCreateInventoryCount(payload = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  _mockCountCounter += 1;
+  const row = {
+    id: `mock-count-${_mockCountCounter}`,
+    countDate: payload.countDate || new Date().toISOString().slice(0, 10),
+    locationLabel: payload.locationLabel ?? null,
+    status: 'DRAFT',
+    notes: payload.notes ?? null,
+    snapshottedAt: null,
+    reconciledAt: null,
+    reconciledBy: null,
+    createdBy: 'mock-user',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    lines: [],
+    _mock: true,
+  };
+  _mockCounts.unshift(row);
+  return { ...row, lines: [] };
+}
+async function mockSnapshotInventoryCount(id) {
+  await new Promise((r) => setTimeout(r, 80));
+  const idx = _mockCounts.findIndex((c) => c.id === id);
+  if (idx < 0) return null;
+  if (_mockCounts[idx].status !== 'DRAFT') return null;
+  const lines = _mockInventoryItems.map((item) => {
+    _mockCountLineCounter += 1;
+    return {
+      id: `mock-count-line-${_mockCountLineCounter}`,
+      countId: id,
+      itemId: item.id,
+      itemName: item.itemName,
+      itemCode: item.itemCode,
+      systemQuantity: item.qty,
+      snapshotUnitCost: item.unitCost,
+      countedQuantity: null,
+      varianceQuantity: null,
+      varianceValueKwd: null,
+      notes: null,
+    };
+  });
+  _mockCounts[idx] = {
+    ..._mockCounts[idx],
+    status: 'COUNTING',
+    snapshottedAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    lines,
+  };
+  return {
+    ..._mockCounts[idx],
+    lines: _mockCounts[idx].lines.map((l) => ({ ...l })),
+  };
+}
+async function mockRecordInventoryCountLine(lineId, payload = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  for (const count of _mockCounts) {
+    const lineIdx = (count.lines || []).findIndex((l) => l.id === lineId);
+    if (lineIdx >= 0) {
+      count.lines[lineIdx] = {
+        ...count.lines[lineIdx],
+        countedQuantity: payload.countedQuantity,
+        notes: payload.notes ?? count.lines[lineIdx].notes,
+      };
+      count.updatedAt = new Date().toISOString();
+      return { ...count.lines[lineIdx] };
+    }
+  }
+  return null;
+}
+async function mockReconcileInventoryCount(id) {
+  await new Promise((r) => setTimeout(r, 80));
+  const idx = _mockCounts.findIndex((c) => c.id === id);
+  if (idx < 0) return null;
+  if (_mockCounts[idx].status !== 'COUNTING') return null;
+  const reconciledLines = (_mockCounts[idx].lines || []).map((line) => {
+    const counted = Number(line.countedQuantity || 0);
+    const system = Number(line.systemQuantity || 0);
+    const unitCost = Number(line.snapshotUnitCost || 0);
+    const varianceQty = counted - system;
+    const varianceValue = varianceQty * unitCost;
+    return {
+      ...line,
+      countedQuantity: line.countedQuantity || '0.00',
+      varianceQuantity: varianceQty.toFixed(2),
+      varianceValueKwd: varianceValue.toFixed(3),
+    };
+  });
+  _mockCounts[idx] = {
+    ..._mockCounts[idx],
+    status: 'RECONCILED',
+    reconciledAt: new Date().toISOString(),
+    reconciledBy: 'mock-user',
+    updatedAt: new Date().toISOString(),
+    lines: reconciledLines,
+  };
+  return {
+    ..._mockCounts[idx],
+    lines: _mockCounts[idx].lines.map((l) => ({ ...l })),
+  };
+}
+async function mockCancelInventoryCount(id) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockCounts.findIndex((c) => c.id === id);
+  if (idx < 0) return null;
+  if (_mockCounts[idx].status !== 'DRAFT' && _mockCounts[idx].status !== 'COUNTING') return null;
+  _mockCounts[idx] = {
+    ..._mockCounts[idx],
+    status: 'CANCELLED',
+    updatedAt: new Date().toISOString(),
+  };
+  return {
+    ..._mockCounts[idx],
+    lines: (_mockCounts[idx].lines || []).map((l) => ({ ...l })),
+  };
+}
+async function mockInventoryCountVarianceShape(id) {
+  await new Promise((r) => setTimeout(r, 40));
+  const count = _mockCounts.find((c) => c.id === id);
+  if (!count) return null;
+  if (count.status !== 'RECONCILED' && count.status !== 'POSTED') return null;
+  const lines = count.lines || [];
+  let totalAbs = 0;
+  let net = 0;
+  const legs = [];
+  for (const l of lines) {
+    const vv = Number(l.varianceValueKwd || 0);
+    if (Math.abs(vv) < 0.001) continue;
+    totalAbs += Math.abs(vv);
+    net += vv;
+    const gain = vv > 0;
+    // Gain: DR Inventory / CR Variance (asset up, P&L credit)
+    // Loss: DR Variance / CR Inventory (P&L debit, asset down)
+    legs.push({
+      accountRole: 'INVENTORY',
+      side: gain ? 'DEBIT' : 'CREDIT',
+      amountKwd: Math.abs(vv).toFixed(3),
+      description: `${l.itemCode || l.itemId}: ${gain ? 'gain' : 'loss'}`,
+    });
+    legs.push({
+      accountRole: 'INVENTORY_VARIANCE',
+      side: gain ? 'CREDIT' : 'DEBIT',
+      amountKwd: Math.abs(vv).toFixed(3),
+      description: `${l.itemCode || l.itemId}: offset`,
+    });
+  }
+  return {
+    countId: id,
+    totalAbsoluteVarianceKwd: totalAbs.toFixed(3),
+    netVarianceKwd: net.toFixed(3),
+    legs,
+    note:
+      totalAbs < 0.001
+        ? 'no variance — no JE needed'
+        : `${legs.length / 2} line(s) with variance`,
+  };
+}
+
 // ── Report versions MOCK stubs (module-scoped so state survives calls) ──
 let _mockReportVersionCounter = 0;
 const _mockReportVersions = [];
@@ -2479,3 +2695,15 @@ export const recordOcrExtraction = surface.recordOcrExtraction;
 export const correctOcrField = surface.correctOcrField;
 export const approveOcrExtraction = surface.approveOcrExtraction;
 export const rejectOcrExtraction = surface.rejectOcrExtraction;
+
+// Inventory count (FN-263, Phase 4 Track A Tier 4 — 2026-04-19).
+// Physical count session lifecycle + variance JE-shape preview.
+// Memo-only; POSTED state deferred pending backend JE splice.
+export const listInventoryCounts = surface.listInventoryCounts;
+export const getInventoryCount = surface.getInventoryCount;
+export const createInventoryCount = surface.createInventoryCount;
+export const snapshotInventoryCount = surface.snapshotInventoryCount;
+export const recordInventoryCountLine = surface.recordInventoryCountLine;
+export const reconcileInventoryCount = surface.reconcileInventoryCount;
+export const cancelInventoryCount = surface.cancelInventoryCount;
+export const getInventoryCountVarianceJeShape = surface.getInventoryCountVarianceJeShape;

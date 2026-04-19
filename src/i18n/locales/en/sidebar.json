@@ -25,6 +25,7 @@
     "petty_cash": "Petty Cash",
     "bulk_reclass": "Bulk Reclassify",
     "ocr_review": "OCR Review",
+    "inventory_count": "Inventory Count",
     "budget": "Budget",
     "forecast": "Forecast",
     "financial_statements": "Financial Statements",

@@ -5,6 +5,7 @@ import {
   BookOpen, Calendar, Calculator, Coins, Plug, Users, Cpu, Ban, Receipt,
   Plus, Search, Edit3, Trash2, RefreshCw, AlertTriangle, Check, X as XIcon,
   Scale, Gavel, Clock, Percent, Split, Play, UserCheck, ShieldAlert, FileCode,
+  UserMinus,
 } from "lucide-react";
 import LtrText from "../../components/shared/LtrText";
 import EmptyState from "../../components/shared/EmptyState";
@@ -43,6 +44,9 @@ import {
   deactivateWarrantyPolicy,
   listBankFormats,
   deactivateBankFormat,
+  listLeavePolicies,
+  getActiveLeavePolicy,
+  getLeaveProvisionSummary,
 } from "../../engine";
 import {
   getFiscalYearConfig,
@@ -72,6 +76,7 @@ import CostAllocationRuleModal from "../../components/setup/CostAllocationRuleMo
 import RelatedPartyModal from "../../components/setup/RelatedPartyModal";
 import WarrantyPolicyModal from "../../components/setup/WarrantyPolicyModal";
 import BankFormatModal from "../../components/setup/BankFormatModal";
+import LeavePolicyModal from "../../components/setup/LeavePolicyModal";
 
 function fmtKWD(n) {
   if (n == null) return "—";
@@ -90,6 +95,7 @@ const SECTIONS = [
   { id: "related_party",   icon: UserCheck },
   { id: "warranty",        icon: ShieldAlert },
   { id: "bank_formats",    icon: FileCode },
+  { id: "leave",           icon: UserMinus },
   { id: "currencies",      icon: Coins },
   { id: "integrations",    icon: Plug },
   { id: "team_access",     icon: Users },
@@ -145,7 +151,7 @@ export default function SetupScreen() {
                 onMouseLeave={(e) => { if (!on) e.currentTarget.style.background = "transparent"; }}
               >
                 <Icon size={14} strokeWidth={2} />
-                <span>{t(`sections.${s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id === "tax_lodgement" ? "tax_lodgement" : s.id === "cit_assessment" ? "cit_assessment" : s.id === "wht" ? "wht" : s.id === "cost_allocation" ? "cost_allocation" : s.id === "related_party" ? "related_party" : s.id === "warranty" ? "warranty" : s.id === "bank_formats" ? "bank_formats" : s.id}`)}</span>
+                <span>{t(`sections.${s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id === "tax_lodgement" ? "tax_lodgement" : s.id === "cit_assessment" ? "cit_assessment" : s.id === "wht" ? "wht" : s.id === "cost_allocation" ? "cost_allocation" : s.id === "related_party" ? "related_party" : s.id === "warranty" ? "warranty" : s.id === "bank_formats" ? "bank_formats" : s.id === "leave" ? "leave" : s.id}`)}</span>
               </button>
             );
           })}
@@ -164,6 +170,7 @@ export default function SetupScreen() {
             {active === "related_party" && <RelatedPartySection />}
             {active === "warranty"      && <WarrantySection />}
             {active === "bank_formats"  && <BankFormatsSection />}
+            {active === "leave"         && <LeaveSection />}
             {active === "currencies"    && <CurrenciesSection />}
             {active === "integrations"  && <IntegrationsSection />}
             {active === "team_access"   && <TeamAccessSection />}
@@ -4875,6 +4882,426 @@ function BankFormatsSection() {
         }}
       />
     </Card>
+  );
+}
+
+// ── Leave Provision (FN-255, 2026-04-19) ───────────────────────────
+// Per-tenant effective-dated leave accrual policy + read-only
+// provision summary widget. Per-employee balance upsert + compute
+// are service-layer-exposed but deferred from this ship pending an
+// employee-picker primitive (tracked in Future-additions).
+function LeaveSection() {
+  const { t } = useTranslation("setup");
+  const [rows, setRows] = useState(null);
+  const [summary, setSummary] = useState(null);
+  const [summaryError, setSummaryError] = useState(null);
+  const [modalState, setModalState] = useState({
+    open: false,
+    mode: "create",
+    policy: null,
+  });
+  const [toast, setToast] = useState(null);
+  const [loadError, setLoadError] = useState(null);
+
+  const reload = async () => {
+    setLoadError(null);
+    setSummaryError(null);
+    try {
+      const [list, sum] = await Promise.all([
+        listLeavePolicies(),
+        getLeaveProvisionSummary().catch((err) => {
+          setSummaryError(err?.message || t("leave.error_summary"));
+          return null;
+        }),
+      ]);
+      setRows(list || []);
+      setSummary(sum);
+    } catch (err) {
+      setRows([]);
+      setLoadError(err?.message || t("leave.error_load"));
+    }
+  };
+
+  useEffect(() => {
+    reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div>
+      {/* Summary card */}
+      <Card
+        title={t("leave.summary_title")}
+        description={t("leave.summary_description")}
+      >
+        {summaryError && (
+          <div
+            role="alert"
+            style={{
+              display: "flex",
+              gap: 8,
+              padding: "10px 12px",
+              background: "var(--semantic-danger-subtle)",
+              border: "1px solid var(--semantic-danger)",
+              borderRadius: 8,
+              color: "var(--semantic-danger)",
+              fontSize: 12,
+            }}
+          >
+            <AlertTriangle size={14} /> {summaryError}
+          </div>
+        )}
+        {summary && (
+          <>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+                gap: 12,
+              }}
+            >
+              <SummaryPill
+                label={t("leave.summary_employee_count")}
+                value={String(summary.employeeCount)}
+              />
+              <SummaryPill
+                label={t("leave.summary_accrued")}
+                value={`${summary.totalAccruedDays} ${t("leave.days")}`}
+              />
+              <SummaryPill
+                label={t("leave.summary_taken")}
+                value={`${summary.totalTakenDays} ${t("leave.days")}`}
+              />
+              <SummaryPill
+                label={t("leave.summary_outstanding")}
+                value={`${summary.netOutstandingDays} ${t("leave.days")}`}
+                tone={Number(summary.netOutstandingDays) > 0 ? "accent" : "default"}
+              />
+              <SummaryPill
+                label={t("leave.summary_liability")}
+                value={`${summary.estimatedLiabilityKwd} KWD`}
+                tone="accent"
+              />
+            </div>
+            {summary.note && (
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "var(--text-tertiary)",
+                  fontStyle: "italic",
+                  marginTop: 10,
+                }}
+              >
+                {summary.note}
+              </div>
+            )}
+          </>
+        )}
+      </Card>
+
+      {/* Policy list card */}
+      <Card
+        title={t("leave.policy_title")}
+        description={t("leave.policy_description")}
+        extra={
+          <button
+            onClick={() =>
+              setModalState({ open: true, mode: "create", policy: null })
+            }
+            style={btnPrimary(false)}
+          >
+            <Plus
+              size={13}
+              style={{ verticalAlign: "middle", marginInlineEnd: 6 }}
+            />
+            {t("leave.add_policy")}
+          </button>
+        }
+      >
+        <Toast text={toast} onClear={() => setToast(null)} />
+
+        {loadError && (
+          <div
+            role="alert"
+            style={{
+              display: "flex",
+              gap: 8,
+              padding: "10px 12px",
+              background: "var(--semantic-danger-subtle)",
+              border: "1px solid var(--semantic-danger)",
+              borderRadius: 8,
+              color: "var(--semantic-danger)",
+              fontSize: 12,
+              marginBottom: 12,
+            }}
+          >
+            <AlertTriangle size={14} /> {loadError}
+          </div>
+        )}
+
+        {rows === null && (
+          <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>…</div>
+        )}
+
+        {rows && rows.length === 0 && !loadError && (
+          <EmptyState
+            icon={UserMinus}
+            title={t("leave.empty_title")}
+            description={t("leave.empty_description")}
+          />
+        )}
+
+        {rows && rows.length > 0 && (
+          <div
+            style={{
+              border: "1px solid var(--border-default)",
+              borderRadius: 8,
+              overflow: "hidden",
+            }}
+          >
+            {rows.map((policy, idx) => {
+              const today = new Date().toISOString().slice(0, 10);
+              const isActive =
+                policy.activeFrom <= today &&
+                (!policy.activeUntil || policy.activeUntil >= today);
+              return (
+                <div
+                  key={policy.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                    gap: 14,
+                    padding: "14px 18px",
+                    borderBottom:
+                      idx === rows.length - 1
+                        ? "none"
+                        : "1px solid var(--border-subtle)",
+                    background: isActive
+                      ? "transparent"
+                      : "var(--bg-surface-sunken)",
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          letterSpacing: "0.1em",
+                          padding: "2px 8px",
+                          borderRadius: 10,
+                          background: isActive
+                            ? "var(--accent-primary-subtle)"
+                            : "var(--bg-surface)",
+                          color: isActive
+                            ? "var(--accent-primary)"
+                            : "var(--text-tertiary)",
+                          border: isActive
+                            ? "1px solid var(--accent-primary-border)"
+                            : "1px solid var(--border-default)",
+                        }}
+                      >
+                        {isActive
+                          ? t("leave.status_active")
+                          : t("leave.status_inactive")}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: "var(--text-primary)",
+                        fontFamily: "'DM Mono', monospace",
+                        marginTop: 6,
+                      }}
+                    >
+                      <LtrText>
+                        {policy.accrualDaysPerMonth} {t("leave.days_per_month")}
+                      </LtrText>
+                    </div>
+                    {policy.notes && (
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "var(--text-secondary)",
+                          marginTop: 4,
+                          fontStyle: "italic",
+                        }}
+                      >
+                        {policy.notes}
+                      </div>
+                    )}
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 14,
+                        marginTop: 6,
+                        fontSize: 11,
+                        color: "var(--text-tertiary)",
+                      }}
+                    >
+                      {policy.qualifyingMonthsBeforeAccrual != null && (
+                        <div>
+                          {t("leave.label_qualifying")}:{" "}
+                          <LtrText>
+                            <span
+                              style={{
+                                color: "var(--text-secondary)",
+                                fontFamily: "'DM Mono', monospace",
+                              }}
+                            >
+                              {policy.qualifyingMonthsBeforeAccrual}
+                            </span>
+                          </LtrText>
+                        </div>
+                      )}
+                      {policy.maxCarryForwardDays != null && (
+                        <div>
+                          {t("leave.label_max_carry")}:{" "}
+                          <LtrText>
+                            <span
+                              style={{
+                                color: "var(--text-secondary)",
+                                fontFamily: "'DM Mono', monospace",
+                              }}
+                            >
+                              {policy.maxCarryForwardDays}
+                            </span>
+                          </LtrText>
+                        </div>
+                      )}
+                      {policy.plRoleCode && (
+                        <div>
+                          {t("leave.label_pl_role")}:{" "}
+                          <LtrText>
+                            <span
+                              style={{
+                                color: "var(--text-secondary)",
+                                fontFamily: "'DM Mono', monospace",
+                              }}
+                            >
+                              {policy.plRoleCode}
+                            </span>
+                          </LtrText>
+                        </div>
+                      )}
+                      {policy.liabilityRoleCode && (
+                        <div>
+                          {t("leave.label_liability_role")}:{" "}
+                          <LtrText>
+                            <span
+                              style={{
+                                color: "var(--text-secondary)",
+                                fontFamily: "'DM Mono', monospace",
+                              }}
+                            >
+                              {policy.liabilityRoleCode}
+                            </span>
+                          </LtrText>
+                        </div>
+                      )}
+                      <div>
+                        {t("leave.label_active_from")}:{" "}
+                        <LtrText>
+                          <span
+                            style={{
+                              color: "var(--text-secondary)",
+                              fontFamily: "'DM Mono', monospace",
+                            }}
+                          >
+                            {policy.activeFrom}
+                          </span>
+                        </LtrText>
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                    }}
+                  >
+                    <button
+                      onClick={() =>
+                        setModalState({ open: true, mode: "edit", policy })
+                      }
+                      style={btnMini}
+                    >
+                      <Edit3
+                        size={11}
+                        style={{
+                          verticalAlign: "middle",
+                          marginInlineEnd: 4,
+                        }}
+                      />
+                      {t("leave.action_edit")}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <LeavePolicyModal
+          open={modalState.open}
+          mode={modalState.mode}
+          policy={modalState.policy}
+          onClose={() =>
+            setModalState({ open: false, mode: "create", policy: null })
+          }
+          onSaved={() => {
+            reload();
+            setToast(
+              modalState.mode === "edit"
+                ? t("leave.saved_edit_toast")
+                : t("leave.saved_create_toast"),
+            );
+          }}
+        />
+      </Card>
+    </div>
+  );
+}
+
+function SummaryPill({ label, value, tone }) {
+  const color =
+    tone === "accent" ? "var(--accent-primary)" : "var(--text-primary)";
+  return (
+    <div>
+      <div
+        style={{
+          fontSize: 9,
+          fontWeight: 700,
+          letterSpacing: "0.15em",
+          color: "var(--text-tertiary)",
+          textTransform: "uppercase",
+          marginBottom: 3,
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontFamily: "'DM Mono', monospace",
+          fontSize: 14,
+          fontWeight: 700,
+          color,
+        }}
+      >
+        <LtrText>{value}</LtrText>
+      </div>
+    </div>
   );
 }
 

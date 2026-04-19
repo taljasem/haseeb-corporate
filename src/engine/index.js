@@ -74,6 +74,7 @@ import * as bulkReclassApi from '../api/bulk-reclassifications';
 import * as migrationAuditApi from '../api/migration-audit';
 import * as warrantyPolicyApi from '../api/warranty-provision-policy';
 import * as bankFormatsApi from '../api/bank-formats';
+import * as leaveProvisionApi from '../api/leave-provision';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -410,6 +411,17 @@ const REAL_IMPLS = {
   createBankFormat: bankFormatsApi.createBankFormat,
   updateBankFormat: bankFormatsApi.updateBankFormat,
   deactivateBankFormat: bankFormatsApi.deactivateBankFormat,
+
+  // Leave provision (FN-255, Phase 4 Track A Tier 5 — 2026-04-19).
+  listLeavePolicies: leaveProvisionApi.listLeavePolicies,
+  getActiveLeavePolicy: leaveProvisionApi.getActiveLeavePolicy,
+  createLeavePolicy: leaveProvisionApi.createLeavePolicy,
+  updateLeavePolicy: leaveProvisionApi.updateLeavePolicy,
+  listLeaveBalances: leaveProvisionApi.listLeaveBalances,
+  getLeaveBalance: leaveProvisionApi.getLeaveBalance,
+  upsertLeaveBalance: leaveProvisionApi.upsertLeaveBalance,
+  getLeaveProvisionSummary: leaveProvisionApi.getLeaveProvisionSummary,
+  getLeaveProvisionForEmployee: leaveProvisionApi.getLeaveProvisionForEmployee,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -626,6 +638,17 @@ function buildLiveSurface() {
   surface.updateBankFormat = bankFormatsApi.updateBankFormat;
   surface.deactivateBankFormat = bankFormatsApi.deactivateBankFormat;
 
+  // Leave provision (FN-255). Extras pattern.
+  surface.listLeavePolicies = leaveProvisionApi.listLeavePolicies;
+  surface.getActiveLeavePolicy = leaveProvisionApi.getActiveLeavePolicy;
+  surface.createLeavePolicy = leaveProvisionApi.createLeavePolicy;
+  surface.updateLeavePolicy = leaveProvisionApi.updateLeavePolicy;
+  surface.listLeaveBalances = leaveProvisionApi.listLeaveBalances;
+  surface.getLeaveBalance = leaveProvisionApi.getLeaveBalance;
+  surface.upsertLeaveBalance = leaveProvisionApi.upsertLeaveBalance;
+  surface.getLeaveProvisionSummary = leaveProvisionApi.getLeaveProvisionSummary;
+  surface.getLeaveProvisionForEmployee = leaveProvisionApi.getLeaveProvisionForEmployee;
+
   return surface;
 }
 
@@ -825,6 +848,82 @@ function buildMockExtras() {
     createBankFormat: mockCreateBankFormat,
     updateBankFormat: mockUpdateBankFormat,
     deactivateBankFormat: mockDeactivateBankFormat,
+    // Leave provision (FN-255) MOCK stubs.
+    listLeavePolicies: mockListLeavePolicies,
+    getActiveLeavePolicy: mockGetActiveLeavePolicy,
+    createLeavePolicy: mockCreateLeavePolicy,
+    updateLeavePolicy: mockUpdateLeavePolicy,
+    listLeaveBalances: async () => [],
+    getLeaveBalance: async () => null,
+    upsertLeaveBalance: async (p) => ({ ...p }),
+    getLeaveProvisionSummary: mockLeaveSummary,
+    getLeaveProvisionForEmployee: async () => null,
+  };
+}
+
+// ── Leave provision MOCK stubs (FN-255) ──
+let _mockLeaveCounter = 0;
+const _mockLeavePolicies = [];
+async function mockListLeavePolicies() {
+  await new Promise((r) => setTimeout(r, 40));
+  return _mockLeavePolicies.map((r) => ({ ...r }));
+}
+async function mockGetActiveLeavePolicy() {
+  await new Promise((r) => setTimeout(r, 20));
+  const today = new Date().toISOString().slice(0, 10);
+  const row = _mockLeavePolicies.find(
+    (r) =>
+      r.activeFrom <= today &&
+      (!r.activeUntil || r.activeUntil >= today),
+  );
+  return row ? { ...row } : null;
+}
+async function mockCreateLeavePolicy(payload = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  _mockLeaveCounter += 1;
+  const row = {
+    id: `mock-leave-${_mockLeaveCounter}`,
+    accrualDaysPerMonth: payload.accrualDaysPerMonth || '2.5',
+    qualifyingMonthsBeforeAccrual: payload.qualifyingMonthsBeforeAccrual ?? 3,
+    maxCarryForwardDays: payload.maxCarryForwardDays ?? 30,
+    plRoleCode: payload.plRoleCode || 'LEAVE_EXPENSE',
+    liabilityRoleCode: payload.liabilityRoleCode || 'LEAVE_LIABILITY',
+    notes: payload.notes ?? null,
+    activeFrom: payload.activeFrom || new Date().toISOString().slice(0, 10),
+    activeUntil: payload.activeUntil ?? null,
+    createdBy: 'mock-user',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    _mock: true,
+  };
+  _mockLeavePolicies.unshift(row);
+  return row;
+}
+async function mockUpdateLeavePolicy(id, patch = {}) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockLeavePolicies.findIndex((r) => r.id === id);
+  if (idx < 0) return null;
+  _mockLeavePolicies[idx] = {
+    ..._mockLeavePolicies[idx],
+    notes: patch.notes ?? _mockLeavePolicies[idx].notes,
+    activeUntil:
+      patch.activeUntil !== undefined
+        ? patch.activeUntil
+        : _mockLeavePolicies[idx].activeUntil,
+    updatedAt: new Date().toISOString(),
+  };
+  return { ..._mockLeavePolicies[idx] };
+}
+async function mockLeaveSummary(query = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  return {
+    asOf: query.asOf || new Date().toISOString().slice(0, 10),
+    employeeCount: 0,
+    totalAccruedDays: '0.0000',
+    totalTakenDays: '0.0000',
+    netOutstandingDays: '0.0000',
+    estimatedLiabilityKwd: '0.000',
+    note: 'mock: no employee balances in MOCK mode',
   };
 }
 
@@ -2157,3 +2256,17 @@ export const getBankFormat = surface.getBankFormat;
 export const createBankFormat = surface.createBankFormat;
 export const updateBankFormat = surface.updateBankFormat;
 export const deactivateBankFormat = surface.deactivateBankFormat;
+
+// Leave provision (FN-255, Phase 4 Track A Tier 5 — 2026-04-19).
+// Per-tenant effective-dated leave accrual policy + per-employee
+// balance register + provision compute. Drives month-end accrual JEs
+// via a future runner (jeScope='leave_accrual').
+export const listLeavePolicies = surface.listLeavePolicies;
+export const getActiveLeavePolicy = surface.getActiveLeavePolicy;
+export const createLeavePolicy = surface.createLeavePolicy;
+export const updateLeavePolicy = surface.updateLeavePolicy;
+export const listLeaveBalances = surface.listLeaveBalances;
+export const getLeaveBalance = surface.getLeaveBalance;
+export const upsertLeaveBalance = surface.upsertLeaveBalance;
+export const getLeaveProvisionSummary = surface.getLeaveProvisionSummary;
+export const getLeaveProvisionForEmployee = surface.getLeaveProvisionForEmployee;

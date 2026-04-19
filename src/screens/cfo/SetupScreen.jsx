@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import useEscapeKey from "../../hooks/useEscapeKey";
 import { useTranslation } from "react-i18next";
 import {
-  BookOpen, Calendar, Calculator, Coins, Plug, Users, Cpu, Ban,
+  BookOpen, Calendar, Calculator, Coins, Plug, Users, Cpu, Ban, Receipt,
   Plus, Search, Edit3, Trash2, RefreshCw, AlertTriangle, Check, X as XIcon,
+  Scale,
 } from "lucide-react";
 import LtrText from "../../components/shared/LtrText";
 import EmptyState from "../../components/shared/EmptyState";
@@ -19,6 +21,9 @@ import {
   getAccountsFlat,
   listDisallowanceRules,
   deactivateDisallowanceRule,
+  listTaxLodgements,
+  updateTaxLodgementStatus,
+  getTaxLodgementTieOut,
 } from "../../engine";
 import {
   getFiscalYearConfig,
@@ -40,6 +45,7 @@ import PeriodActionModal from "../../components/setup/PeriodActionModal";
 import ApplyRoleTemplateModal from "../../components/setup/ApplyRoleTemplateModal";
 import ChangeEngineRuleModal from "../../components/setup/ChangeEngineRuleModal";
 import DisallowanceRuleModal from "../../components/setup/DisallowanceRuleModal";
+import TaxLodgementModal from "../../components/setup/TaxLodgementModal";
 
 function fmtKWD(n) {
   if (n == null) return "—";
@@ -47,14 +53,15 @@ function fmtKWD(n) {
 }
 
 const SECTIONS = [
-  { id: "chart",         icon: BookOpen },
-  { id: "fiscal",        icon: Calendar },
-  { id: "tax",           icon: Calculator },
-  { id: "disallowance",  icon: Ban },
-  { id: "currencies",    icon: Coins },
-  { id: "integrations",  icon: Plug },
-  { id: "team_access",   icon: Users },
-  { id: "engine_rules",  icon: Cpu },
+  { id: "chart",          icon: BookOpen },
+  { id: "fiscal",         icon: Calendar },
+  { id: "tax",            icon: Calculator },
+  { id: "disallowance",   icon: Ban },
+  { id: "tax_lodgement",  icon: Receipt },
+  { id: "currencies",     icon: Coins },
+  { id: "integrations",   icon: Plug },
+  { id: "team_access",    icon: Users },
+  { id: "engine_rules",   icon: Cpu },
 ];
 
 export default function SetupScreen() {
@@ -106,7 +113,7 @@ export default function SetupScreen() {
                 onMouseLeave={(e) => { if (!on) e.currentTarget.style.background = "transparent"; }}
               >
                 <Icon size={14} strokeWidth={2} />
-                <span>{t(`sections.${s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id}`)}</span>
+                <span>{t(`sections.${s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id === "tax_lodgement" ? "tax_lodgement" : s.id}`)}</span>
               </button>
             );
           })}
@@ -118,6 +125,7 @@ export default function SetupScreen() {
             {active === "fiscal"        && <FiscalSection />}
             {active === "tax"           && <TaxSection />}
             {active === "disallowance"  && <DisallowanceSection />}
+            {active === "tax_lodgement" && <TaxLodgementSection />}
             {active === "currencies"    && <CurrenciesSection />}
             {active === "integrations"  && <IntegrationsSection />}
             {active === "team_access"   && <TeamAccessSection />}
@@ -1006,6 +1014,598 @@ function DisallowanceSection() {
         }}
       />
     </Card>
+  );
+}
+
+// ── Tax Lodgements (FN-268, 2026-04-19) ─────────────────────────
+// Generic tax-lodgement register (CIT/WHT/VAT/KFAS/NLST/ZAKAT/OTHER)
+// with GL tie-out drawer. OWNER writes; reads open to OWNER/ACCOUNTANT/
+// VIEWER/AUDITOR; tie-out is OWNER/ACCOUNTANT/AUDITOR only.
+const LODGEMENT_STATUSES = ["SUBMITTED", "ACKNOWLEDGED", "AMENDED", "VOIDED"];
+const LODGEMENT_TYPES_FILTER = [
+  "ALL",
+  "CIT",
+  "WHT",
+  "VAT",
+  "KFAS",
+  "NLST",
+  "ZAKAT",
+  "OTHER",
+];
+
+function TaxLodgementSection() {
+  const { t } = useTranslation("setup");
+  const [rows, setRows] = useState(null);
+  const [typeFilter, setTypeFilter] = useState("ALL");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [tieOutFor, setTieOutFor] = useState(null);
+  const [tieOutData, setTieOutData] = useState(null);
+  const [tieOutLoading, setTieOutLoading] = useState(false);
+  const [tieOutError, setTieOutError] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [loadError, setLoadError] = useState(null);
+
+  const reload = async () => {
+    setLoadError(null);
+    try {
+      const filters =
+        typeFilter === "ALL" ? {} : { lodgementType: typeFilter };
+      const list = await listTaxLodgements(filters);
+      setRows(list || []);
+    } catch (err) {
+      setRows([]);
+      setLoadError(err?.message || t("tax_lodgement.error_load"));
+    }
+  };
+
+  useEffect(() => {
+    reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [typeFilter]);
+
+  const handleOpenTieOut = async (rule) => {
+    setTieOutFor(rule);
+    setTieOutData(null);
+    setTieOutError(null);
+    setTieOutLoading(true);
+    try {
+      const data = await getTaxLodgementTieOut(rule.id);
+      setTieOutData(data);
+    } catch (err) {
+      setTieOutError(err?.message || t("tax_lodgement.error_tie_out"));
+    } finally {
+      setTieOutLoading(false);
+    }
+  };
+
+  const handleTransition = async (rule, nextStatus) => {
+    try {
+      await updateTaxLodgementStatus(rule.id, { status: nextStatus });
+      setToast(t("tax_lodgement.status_updated_toast"));
+      reload();
+    } catch (err) {
+      setToast(err?.message || t("tax_lodgement.error_transition"));
+    }
+  };
+
+  return (
+    <Card
+      title={t("tax_lodgement.title")}
+      description={t("tax_lodgement.description")}
+      extra={
+        <button
+          onClick={() => setModalOpen(true)}
+          style={btnPrimary(false)}
+        >
+          <Plus
+            size={13}
+            style={{ verticalAlign: "middle", marginInlineEnd: 6 }}
+          />
+          {t("tax_lodgement.record_lodgement")}
+        </button>
+      }
+    >
+      <Toast text={toast} onClear={() => setToast(null)} />
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          marginBottom: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        {LODGEMENT_TYPES_FILTER.map((tp) => {
+          const on = typeFilter === tp;
+          return (
+            <button
+              key={tp}
+              onClick={() => setTypeFilter(tp)}
+              style={{
+                ...btnMini,
+                background: on ? "var(--accent-primary-subtle)" : "transparent",
+                borderColor: on
+                  ? "rgba(0,196,140,0.30)"
+                  : "var(--border-strong)",
+                color: on ? "var(--accent-primary)" : "var(--text-secondary)",
+              }}
+            >
+              {t(`tax_lodgement.filter_${tp}`)}
+            </button>
+          );
+        })}
+      </div>
+
+      {loadError && (
+        <div
+          role="alert"
+          style={{
+            display: "flex",
+            gap: 8,
+            padding: "10px 12px",
+            background: "var(--semantic-danger-subtle)",
+            border: "1px solid var(--semantic-danger)",
+            borderRadius: 8,
+            color: "var(--semantic-danger)",
+            fontSize: 12,
+            marginBottom: 12,
+          }}
+        >
+          <AlertTriangle size={14} /> {loadError}
+        </div>
+      )}
+
+      {rows === null && (
+        <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>…</div>
+      )}
+
+      {rows && rows.length === 0 && !loadError && (
+        <EmptyState
+          icon={Receipt}
+          title={t("tax_lodgement.empty_title")}
+          description={t("tax_lodgement.empty_description")}
+        />
+      )}
+
+      {rows && rows.length > 0 && (
+        <div
+          style={{
+            border: "1px solid var(--border-default)",
+            borderRadius: 8,
+            overflow: "hidden",
+          }}
+        >
+          {rows.map((rule, idx) => {
+            const statusColor =
+              rule.status === "ACKNOWLEDGED"
+                ? "var(--accent-primary)"
+                : rule.status === "VOIDED"
+                ? "var(--semantic-danger)"
+                : rule.status === "AMENDED"
+                ? "var(--semantic-warning)"
+                : "var(--text-secondary)";
+            const statusBg =
+              rule.status === "ACKNOWLEDGED"
+                ? "var(--accent-primary-subtle)"
+                : rule.status === "VOIDED"
+                ? "var(--semantic-danger-subtle)"
+                : rule.status === "AMENDED"
+                ? "var(--semantic-warning-subtle)"
+                : "var(--bg-surface)";
+            return (
+              <div
+                key={rule.id}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  gap: 14,
+                  padding: "14px 18px",
+                  borderBottom:
+                    idx === rows.length - 1
+                      ? "none"
+                      : "1px solid var(--border-subtle)",
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      <LtrText>{rule.filingReference}</LtrText>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: "0.1em",
+                        padding: "2px 8px",
+                        borderRadius: 10,
+                        background: "var(--bg-surface)",
+                        color: "var(--text-tertiary)",
+                        border: "1px solid var(--border-default)",
+                      }}
+                    >
+                      {t(`tax_lodgement.type_${rule.lodgementType}`)}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: "0.1em",
+                        padding: "2px 8px",
+                        borderRadius: 10,
+                        background: statusBg,
+                        color: statusColor,
+                        border: "1px solid",
+                      }}
+                    >
+                      {t(`tax_lodgement.status_${rule.status}`)}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 14,
+                      marginTop: 6,
+                      fontSize: 11,
+                      color: "var(--text-tertiary)",
+                    }}
+                  >
+                    <div>
+                      {t("tax_lodgement.label_period")}:{" "}
+                      <LtrText>
+                        <span
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontFamily: "'DM Mono', monospace",
+                          }}
+                        >
+                          {rule.periodFrom} → {rule.periodTo}
+                        </span>
+                      </LtrText>
+                    </div>
+                    <div>
+                      {t("tax_lodgement.label_filed_on")}:{" "}
+                      <LtrText>
+                        <span
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontFamily: "'DM Mono', monospace",
+                          }}
+                        >
+                          {rule.filedOnDate}
+                        </span>
+                      </LtrText>
+                    </div>
+                    <div>
+                      {t("tax_lodgement.label_amount")}:{" "}
+                      <LtrText>
+                        <span
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontFamily: "'DM Mono', monospace",
+                          }}
+                        >
+                          {rule.filedAmountKwd} KWD
+                        </span>
+                      </LtrText>
+                    </div>
+                    {rule.glAccountRole && (
+                      <div>
+                        {t("tax_lodgement.label_gl_role")}:{" "}
+                        <LtrText>
+                          <span
+                            style={{
+                              color: "var(--text-secondary)",
+                              fontFamily: "'DM Mono', monospace",
+                            }}
+                          >
+                            {rule.glAccountRole}
+                          </span>
+                        </LtrText>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                >
+                  <button
+                    onClick={() => handleOpenTieOut(rule)}
+                    style={btnMini}
+                  >
+                    <Scale
+                      size={11}
+                      style={{ verticalAlign: "middle", marginInlineEnd: 4 }}
+                    />
+                    {t("tax_lodgement.action_tie_out")}
+                  </button>
+                  {rule.status === "SUBMITTED" && (
+                    <button
+                      onClick={() => handleTransition(rule, "ACKNOWLEDGED")}
+                      style={btnMini}
+                    >
+                      {t("tax_lodgement.action_acknowledge")}
+                    </button>
+                  )}
+                  {rule.status !== "VOIDED" && rule.status !== "AMENDED" && (
+                    <button
+                      onClick={() => handleTransition(rule, "VOIDED")}
+                      style={{
+                        ...btnMini,
+                        color: "var(--semantic-danger)",
+                        borderColor: "rgba(208,90,90,0.30)",
+                      }}
+                    >
+                      {t("tax_lodgement.action_void")}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Tie-out drawer */}
+      {tieOutFor && (
+        <TieOutDrawer
+          lodgement={tieOutFor}
+          data={tieOutData}
+          loading={tieOutLoading}
+          error={tieOutError}
+          onClose={() => {
+            setTieOutFor(null);
+            setTieOutData(null);
+            setTieOutError(null);
+          }}
+        />
+      )}
+
+      <TaxLodgementModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSaved={() => {
+          reload();
+          setToast(t("tax_lodgement.recorded_toast"));
+        }}
+      />
+    </Card>
+  );
+}
+
+function TieOutDrawer({ lodgement, data, loading, error, onClose }) {
+  const { t } = useTranslation("setup");
+  useEscapeKey(onClose, !!lodgement);
+
+  const statusColor =
+    data?.status === "TIE_OK"
+      ? "var(--accent-primary)"
+      : data?.status === "VARIANCE"
+      ? "var(--semantic-danger)"
+      : "var(--text-secondary)";
+
+  const statusBg =
+    data?.status === "TIE_OK"
+      ? "var(--accent-primary-subtle)"
+      : data?.status === "VARIANCE"
+      ? "var(--semantic-danger-subtle)"
+      : "var(--bg-surface)";
+
+  return (
+    <>
+      <div
+        onClick={onClose}
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.55)",
+          backdropFilter: "blur(4px)",
+          zIndex: 300,
+        }}
+      />
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          insetInlineEnd: 0,
+          height: "100vh",
+          width: 480,
+          background: "var(--panel-bg)",
+          borderInlineStart: "1px solid var(--border-default)",
+          zIndex: 301,
+          display: "flex",
+          flexDirection: "column",
+          boxShadow: "-24px 0 60px rgba(0,0,0,0.5)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "18px 22px",
+            borderBottom: "1px solid var(--border-subtle)",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: "0.15em",
+                color: "var(--text-tertiary)",
+              }}
+            >
+              {t("tax_lodgement.tie_out_label")}
+            </div>
+            <div
+              style={{
+                fontFamily: "'Bebas Neue', sans-serif",
+                fontSize: 22,
+                color: "var(--text-primary)",
+                marginTop: 2,
+              }}
+            >
+              <LtrText>{lodgement.filingReference}</LtrText>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label={t("tax_lodgement.close")}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "var(--text-tertiary)",
+              cursor: "pointer",
+              padding: 4,
+            }}
+          >
+            <XIcon size={18} />
+          </button>
+        </div>
+        <div
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: "18px 22px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 14,
+          }}
+        >
+          {loading && (
+            <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>
+              {t("tax_lodgement.tie_out_loading")}
+            </div>
+          )}
+          {error && (
+            <div
+              role="alert"
+              style={{
+                display: "flex",
+                gap: 8,
+                padding: "10px 12px",
+                background: "var(--semantic-danger-subtle)",
+                border: "1px solid var(--semantic-danger)",
+                borderRadius: 8,
+                color: "var(--semantic-danger)",
+                fontSize: 12,
+              }}
+            >
+              <AlertTriangle size={14} /> {error}
+            </div>
+          )}
+          {data && (
+            <>
+              <div
+                style={{
+                  padding: "10px 14px",
+                  background: statusBg,
+                  color: statusColor,
+                  borderRadius: 8,
+                  border: "1px solid",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  letterSpacing: "0.1em",
+                }}
+              >
+                {t(`tax_lodgement.tie_out_status_${data.status}`)}
+              </div>
+              <DrawerField
+                label={t("tax_lodgement.label_period")}
+                value={
+                  <LtrText>
+                    <span style={{ fontFamily: "'DM Mono', monospace" }}>
+                      {data.periodFrom} → {data.periodTo}
+                    </span>
+                  </LtrText>
+                }
+              />
+              <DrawerField
+                label={t("tax_lodgement.tie_out_filed_amount")}
+                value={
+                  <LtrText>
+                    <span style={{ fontFamily: "'DM Mono', monospace" }}>
+                      {data.filedAmountKwd} KWD
+                    </span>
+                  </LtrText>
+                }
+              />
+              <DrawerField
+                label={t("tax_lodgement.tie_out_gl_balance")}
+                value={
+                  <LtrText>
+                    <span style={{ fontFamily: "'DM Mono', monospace" }}>
+                      {data.glBalanceKwd} KWD
+                    </span>
+                  </LtrText>
+                }
+              />
+              <DrawerField
+                label={t("tax_lodgement.tie_out_variance")}
+                value={
+                  <LtrText>
+                    <span
+                      style={{
+                        fontFamily: "'DM Mono', monospace",
+                        color:
+                          data.status === "VARIANCE"
+                            ? "var(--semantic-danger)"
+                            : "var(--text-secondary)",
+                      }}
+                    >
+                      {data.varianceKwd} KWD
+                    </span>
+                  </LtrText>
+                }
+              />
+              <DrawerField
+                label={t("tax_lodgement.tie_out_note")}
+                value={
+                  <span style={{ color: "var(--text-secondary)" }}>
+                    {data.note}
+                  </span>
+                }
+              />
+            </>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function DrawerField({ label, value }) {
+  return (
+    <div>
+      <div
+        style={{
+          fontSize: 10,
+          fontWeight: 600,
+          letterSpacing: "0.15em",
+          color: "var(--text-tertiary)",
+          marginBottom: 4,
+        }}
+      >
+        {label}
+      </div>
+      <div style={{ fontSize: 13, color: "var(--text-primary)" }}>{value}</div>
+    </div>
   );
 }
 

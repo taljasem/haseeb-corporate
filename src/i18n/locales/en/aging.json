@@ -92,6 +92,8 @@
     "field_amount": "Amount (KWD)",
     "field_date": "Payment date",
     "field_method": "Method",
+    "field_bank_account": "Bank account",
+    "bank_account_empty": "No bank accounts available",
     "field_reference": "Reference",
     "field_notes": "Notes",
     "method_bank": "Bank transfer",

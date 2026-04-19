@@ -4,7 +4,12 @@ import { X, AlertTriangle } from "lucide-react";
 import useEscapeKey from "../../hooks/useEscapeKey";
 import Spinner from "../shared/Spinner";
 import { runValidators, required, minLength } from "../../utils/validation";
-import { createWriteOffJE, getChartOfAccounts } from "../../engine/mockEngine";
+// PHASE-4-BLOCKED-ON-BACKEND: createWriteOffJE
+// Falls through to mockEngine via engine's mock_fallback wrapper.
+// Unblocker: GL-flexible write-off endpoint + Owner-approval task
+// emission. See HASEEB-068/069 + ship-sequence Future-additions log.
+// getChartOfAccounts is LIVE-wired (aliased to getAccountsFlat).
+import { createWriteOffJE, getChartOfAccounts } from "../../engine";
 import { emitTaskboxChange } from "../../utils/taskboxBus";
 
 const inputStyle = {
@@ -27,6 +32,8 @@ export default function WriteOffModal({ open, invoice, onClose, onSubmitted }) {
   const [accounts, setAccounts] = useState([]);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  // Phase 4 Wave 1 B-03 fix: surface backend errors. See HASEEB-070.
+  const [submitError, setSubmitError] = useState(null);
 
   useEffect(() => {
     if (!open || !invoice) return;
@@ -45,11 +52,21 @@ export default function WriteOffModal({ open, invoice, onClose, onSubmitted }) {
     setErrors(e);
     if (Object.keys(e).length) return;
     setSubmitting(true);
-    await createWriteOffJE(invoice.id, Number(amount), `${category}: ${description}`, glAccount);
-    emitTaskboxChange();
-    setSubmitting(false);
-    if (onSubmitted) onSubmitted();
-    if (onClose) onClose();
+    setSubmitError(null);
+    try {
+      await createWriteOffJE(invoice.id, Number(amount), `${category}: ${description}`, glAccount);
+      emitTaskboxChange();
+      if (onSubmitted) onSubmitted();
+      if (onClose) onClose();
+    } catch (err) {
+      // HASEEB-070 fix: surface backend error + unstick submitting state.
+      // Previously this path had no catch, leaving submitting=true frozen
+      // and the modal open+unresponsive on any backend rejection.
+      const msg = err?.message || err?.error?.message || String(err) || "Failed to submit write-off";
+      setSubmitError(msg);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -98,6 +115,23 @@ export default function WriteOffModal({ open, invoice, onClose, onSubmitted }) {
             </select>
           </Field>
         </div>
+        {submitError && (
+          <div
+            role="alert"
+            style={{
+              margin: "0 22px 12px",
+              padding: "10px 12px",
+              background: "var(--semantic-danger-subtle)",
+              border: "1px solid var(--semantic-danger)",
+              borderRadius: 6,
+              color: "var(--semantic-danger)",
+              fontSize: 12,
+              lineHeight: 1.4,
+            }}
+          >
+            {submitError}
+          </div>
+        )}
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
           <button onClick={onClose} style={btnSecondary}>{t("writeoff_modal.cancel")}</button>
           <button onClick={handleSubmit} disabled={submitting} style={{ background: "var(--semantic-danger)", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 6, cursor: submitting ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>

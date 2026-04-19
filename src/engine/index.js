@@ -60,6 +60,9 @@ import * as dataInalterabilityApi from '../api/data-inalterability';
 import * as monthlyCloseChecklistApi from '../api/monthly-close-checklist';
 import * as settingsApi from '../api/settings';
 import * as advisorPendingApi from '../api/advisor-pending';
+import * as agingApi from '../api/aging';
+import * as invoicesApi from '../api/invoices';
+import * as billsApi from '../api/bills';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -149,6 +152,31 @@ const FUNCTION_ROUTING = {
   deferAdvisorPending: 'wired',
   dismissAdvisorPending: 'wired',
   acknowledgeAdvisorPending: 'wired',
+
+  // Aging reports (Phase 4 Wave 1 Track B first wire — 2026-04-19).
+  // Five of the eight AgingReportsScreen mocks are wirable against
+  // shipped backends; the other three are blocked-on-backend and have
+  // PHASE-4-BLOCKED-ON-BACKEND annotations in mockEngine.js. See
+  // memory-bank/2026-04-19-phase4-breakdown.md §B-Tier 2 for coverage.
+  getAgingReport: 'wired',
+  getInvoiceDetail: 'wired',
+  logPayment: 'wired',
+  // createWriteOffJE: PHASE-4-BLOCKED-ON-BACKEND — demoted from 'wired'
+  // per architect review 2026-04-19 (QA-reviewer surfaced the semantic
+  // regression). The mock contract allows debiting ANY user-picked GL
+  // account (Bad Debt Expense 8300, Goodwill, Legal Settlement, etc.);
+  // the credit-note backend path is Revenue-only by design and silently
+  // dropped the glAccount argument. No existing endpoint supports a
+  // GL-flexible AR write-off. See HASEEB-068/069 for the backend
+  // unblocker (GL-flexible write-off endpoint + Owner-approval task
+  // emission). Stays on the engine as 'mock_fallback' until that ships.
+  // getChartOfAccounts — route to the existing getAccountsFlat wiring
+  // so the WriteOffModal's GL dropdown picks up real Expenses accounts
+  // in LIVE mode. MOCK mode falls back to mockEngine.getChartOfAccounts
+  // (which returns a different shape — category-vs-type — and the
+  // modal's `a.type === 'Expenses'` filter is broken in MOCK — see
+  // HASEEB-071 for the separate mock-shape fix).
+  getChartOfAccounts: 'wired',
 };
 
 /**
@@ -251,6 +279,27 @@ const REAL_IMPLS = {
   deferAdvisorPending: advisorPendingApi.deferAdvisorPending,
   dismissAdvisorPending: advisorPendingApi.dismissAdvisorPending,
   acknowledgeAdvisorPending: advisorPendingApi.acknowledgeAdvisorPending,
+
+  // Aging reports (Phase 4 Wave 1 Track B first wire — 2026-04-19).
+  getAgingReport: agingApi.getAgingReport,
+  getInvoiceDetail: invoicesApi.getInvoice,
+  getChartOfAccounts: accountsApi.getAccountsFlat,
+  // logPayment: dispatch to AR (/api/invoices/:id/payment) or AP
+  // (/api/bills/:id/payment) based on the invoice type carried alongside
+  // the call. The mockEngine signature is
+  //   logPayment(invoiceId, amount, date, method, reference, notes)
+  // and LogPaymentModal passes `invoice.type` (AR|AP) via the extended
+  // signature (Phase 4 wire — see LogPaymentModal.jsx).
+  logPayment: async (invoiceId, amount, date, _method, reference, _notes, type, bankAccountId) => {
+    const body = { amount, date, reference, bankAccountId };
+    if (type === 'AP') {
+      return billsApi.recordBillPayment(invoiceId, body);
+    }
+    return invoicesApi.recordInvoicePayment(invoiceId, body);
+  },
+  // createWriteOffJE: PHASE-4-BLOCKED-ON-BACKEND. See FUNCTION_ROUTING
+  // comment block above. Falls through to mockEngine.createWriteOffJE
+  // via the default mock_fallback wrapper until HASEEB-068/069 ship.
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -634,3 +683,23 @@ export const getInstance = surface.getInstance;
 export const markItemStatus = surface.markItemStatus;
 export const signOffInstance = surface.signOffInstance;
 export const reopenInstance = surface.reopenInstance;
+
+// Aging reports (Phase 4 Wave 1 Track B first wire — 2026-04-19).
+// See memory-bank/2026-04-19-phase4-breakdown.md §B-Tier 2.
+export const getAgingReport = surface.getAgingReport;
+export const getInvoiceDetail = surface.getInvoiceDetail;
+export const getChartOfAccounts = surface.getChartOfAccounts;
+export const logPayment = surface.logPayment;
+
+// Aging reports — still-mock surface (PHASE-4-BLOCKED-ON-BACKEND).
+// Re-exported from the engine namespace so the modals can uniformly
+// import from '../../engine' instead of mixing engine and mockEngine
+// imports. In LIVE mode these fall through to the mock-fallback
+// wrapper; in MOCK mode they behave identically to before.
+export const sendAgingReminder = surface.sendAgingReminder;
+export const markInvoiceDisputed = surface.markInvoiceDisputed;
+export const scheduleVendorPayment = surface.scheduleVendorPayment;
+// createWriteOffJE — demoted from wired in favour of mock_fallback;
+// semantic mismatch with credit-note path (see FUNCTION_ROUTING block
+// above + HASEEB-068/069).
+export const createWriteOffJE = surface.createWriteOffJE;

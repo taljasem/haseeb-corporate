@@ -3,7 +3,13 @@ import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import useEscapeKey from "../../hooks/useEscapeKey";
 import Spinner from "../shared/Spinner";
-import { logPayment } from "../../engine/mockEngine";
+// Phase 4 Wave 1 Track B wire (2026-04-19): logPayment routes through the
+// engine router. In LIVE mode it dispatches to POST /api/invoices/:id/payment
+// for AR and POST /api/bills/:id/payment for AP, both of which require a
+// bankAccountId (uuid) per their Zod schemas. The GL-account dropdown
+// below populates from the engine's getChartOfAccounts wiring which, in
+// LIVE mode, hits getAccountsFlat under the hood.
+import { logPayment, getChartOfAccounts } from "../../engine";
 
 const inputStyle = {
   width: "100%", background: "var(--bg-surface-sunken)",
@@ -21,6 +27,17 @@ export default function LogPaymentModal({ open, invoice, onClose, onSaved }) {
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  // Phase 4 Wave 1 B-03 fix: surface backend errors instead of swallowing
+  // them silently. Pre-wire the mock never rejected; post-wire the live
+  // endpoint can reject on 400 validation, 403 role-deny, 409 conflict,
+  // 500, or network error. See HASEEB-070.
+  const [submitError, setSubmitError] = useState(null);
+  // Bank-account picker state. The Corporate API's recordPaymentSchema
+  // requires bankAccountId (uuid). We populate candidates from the Chart
+  // of Accounts filtered to Assets / Cash-like accounts (1xxx series)
+  // that look postable.
+  const [bankAccounts, setBankAccounts] = useState([]);
+  const [bankAccountId, setBankAccountId] = useState("");
 
   useEffect(() => {
     if (!open || !invoice) return;
@@ -29,16 +46,67 @@ export default function LogPaymentModal({ open, invoice, onClose, onSaved }) {
     setMethod("bank");
     setReference("");
     setNotes("");
+    setBankAccountId("");
+    getChartOfAccounts()
+      .then((accounts) => {
+        // Cash-like asset accounts. The engine returns {code, name, type,
+        // subtype, ...} where type is derived from code-prefix; cash-like
+        // subtypes we look for include "Current Assets" and any code in
+        // the 11xx range (petty cash / bank operating accounts).
+        const cashLike = (accounts || []).filter(
+          (a) =>
+            a.type === "Assets" &&
+            (String(a.code || "").startsWith("11") ||
+              (a.subtype || "").toLowerCase().includes("cash")),
+        );
+        setBankAccounts(cashLike);
+        // Default to the first candidate so the required-field gate
+        // doesn't trip in MOCK mode (where the mockEngine.logPayment
+        // signature ignores bankAccountId anyway).
+        if (cashLike.length > 0) {
+          // Prefer the raw UUID (LIVE mode) or fall back to the code
+          // (MOCK mode; the mockEngine doesn't use it).
+          const first = cashLike[0];
+          setBankAccountId(first.raw?.id || first.code || "");
+        }
+      })
+      .catch(() => {
+        // Silently fail; the modal still submits in MOCK mode where
+        // bankAccountId is ignored.
+        setBankAccounts([]);
+      });
   }, [open, invoice]);
 
   if (!open || !invoice) return null;
 
   const handleSave = async () => {
     setSaving(true);
-    await logPayment(invoice.id, Number(amount), date, method, reference, notes);
-    setSaving(false);
-    if (onSaved) onSaved();
-    if (onClose) onClose();
+    setSubmitError(null);
+    try {
+      // Extended signature (Phase 4 Wave 1): pass invoice.type and
+      // bankAccountId so the LIVE adapter can dispatch to AR vs AP and
+      // satisfy the required bankAccountId uuid. The mockEngine variant
+      // ignores the trailing args (legacy `...args` tolerance).
+      await logPayment(
+        invoice.id,
+        Number(amount),
+        date,
+        method,
+        reference,
+        notes,
+        invoice.type,
+        bankAccountId,
+      );
+      if (onSaved) onSaved();
+      if (onClose) onClose();
+    } catch (err) {
+      // HASEEB-070 fix: surface backend error to the user instead of
+      // silently leaving the modal open with no feedback.
+      const msg = err?.message || err?.error?.message || String(err) || "Failed to log payment";
+      setSubmitError(msg);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -65,9 +133,46 @@ export default function LogPaymentModal({ open, invoice, onClose, onSaved }) {
               ))}
             </select>
           </Field>
+          <Field label={t("log_payment_modal.field_bank_account")}>
+            <select
+              value={bankAccountId}
+              onChange={(e) => setBankAccountId(e.target.value)}
+              style={{ ...inputStyle, appearance: "none" }}
+            >
+              {bankAccounts.length === 0 ? (
+                <option value="">{t("log_payment_modal.bank_account_empty")}</option>
+              ) : (
+                bankAccounts.map((a) => {
+                  const id = a.raw?.id || a.code || "";
+                  return (
+                    <option key={id} value={id}>
+                      {a.code} — {a.name}
+                    </option>
+                  );
+                })
+              )}
+            </select>
+          </Field>
           <Field label={t("log_payment_modal.field_reference")}><input value={reference} onChange={(e) => setReference(e.target.value)} style={inputStyle} /></Field>
           <Field label={t("log_payment_modal.field_notes")}><textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} style={{ ...inputStyle, resize: "vertical" }} /></Field>
         </div>
+        {submitError && (
+          <div
+            role="alert"
+            style={{
+              margin: "0 22px 12px",
+              padding: "10px 12px",
+              background: "var(--semantic-danger-subtle)",
+              border: "1px solid var(--semantic-danger)",
+              borderRadius: 6,
+              color: "var(--semantic-danger)",
+              fontSize: 12,
+              lineHeight: 1.4,
+            }}
+          >
+            {submitError}
+          </div>
+        )}
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
           <button onClick={onClose} style={btnSecondary}>{t("log_payment_modal.cancel")}</button>
           <button onClick={handleSave} disabled={saving} style={btnPrimary(saving)}>

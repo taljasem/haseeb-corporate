@@ -92,6 +92,8 @@
     "field_amount": "المبلغ (د.ك)",
     "field_date": "تاريخ الدفع",
     "field_method": "طريقة الدفع",
+    "field_bank_account": "الحساب البنكي",
+    "bank_account_empty": "لا توجد حسابات بنكية متاحة",
     "field_reference": "المرجع",
     "field_notes": "ملاحظات",
     "method_bank": "حوالة بنكية",

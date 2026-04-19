@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import {
   BookOpen, Calendar, Calculator, Coins, Plug, Users, Cpu, Ban, Receipt,
   Plus, Search, Edit3, Trash2, RefreshCw, AlertTriangle, Check, X as XIcon,
-  Scale, Gavel, Clock, Percent, Split, Play, UserCheck,
+  Scale, Gavel, Clock, Percent, Split, Play, UserCheck, ShieldAlert,
 } from "lucide-react";
 import LtrText from "../../components/shared/LtrText";
 import EmptyState from "../../components/shared/EmptyState";
@@ -39,6 +39,8 @@ import {
   getRelatedPartyReport,
   listVendorsForRelatedParty,
   listCustomersForRelatedParty,
+  listWarrantyPolicies,
+  deactivateWarrantyPolicy,
 } from "../../engine";
 import {
   getFiscalYearConfig,
@@ -66,6 +68,7 @@ import CitAssessmentTransitionModal from "../../components/setup/CitAssessmentTr
 import WhtConfigModal from "../../components/setup/WhtConfigModal";
 import CostAllocationRuleModal from "../../components/setup/CostAllocationRuleModal";
 import RelatedPartyModal from "../../components/setup/RelatedPartyModal";
+import WarrantyPolicyModal from "../../components/setup/WarrantyPolicyModal";
 
 function fmtKWD(n) {
   if (n == null) return "—";
@@ -82,6 +85,7 @@ const SECTIONS = [
   { id: "wht",             icon: Percent },
   { id: "cost_allocation", icon: Split },
   { id: "related_party",   icon: UserCheck },
+  { id: "warranty",        icon: ShieldAlert },
   { id: "currencies",      icon: Coins },
   { id: "integrations",    icon: Plug },
   { id: "team_access",     icon: Users },
@@ -137,7 +141,7 @@ export default function SetupScreen() {
                 onMouseLeave={(e) => { if (!on) e.currentTarget.style.background = "transparent"; }}
               >
                 <Icon size={14} strokeWidth={2} />
-                <span>{t(`sections.${s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id === "tax_lodgement" ? "tax_lodgement" : s.id === "cit_assessment" ? "cit_assessment" : s.id === "wht" ? "wht" : s.id === "cost_allocation" ? "cost_allocation" : s.id === "related_party" ? "related_party" : s.id}`)}</span>
+                <span>{t(`sections.${s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id === "tax_lodgement" ? "tax_lodgement" : s.id === "cit_assessment" ? "cit_assessment" : s.id === "wht" ? "wht" : s.id === "cost_allocation" ? "cost_allocation" : s.id === "related_party" ? "related_party" : s.id === "warranty" ? "warranty" : s.id}`)}</span>
               </button>
             );
           })}
@@ -154,6 +158,7 @@ export default function SetupScreen() {
             {active === "wht"           && <WhtSection />}
             {active === "cost_allocation" && <CostAllocationSection />}
             {active === "related_party" && <RelatedPartySection />}
+            {active === "warranty"      && <WarrantySection />}
             {active === "currencies"    && <CurrenciesSection />}
             {active === "integrations"  && <IntegrationsSection />}
             {active === "team_access"   && <TeamAccessSection />}
@@ -4159,6 +4164,375 @@ function RelatedPartyReportDrawer({ state, setState, runReport, counterpartyLabe
         </div>
       </div>
     </>
+  );
+}
+
+// ── Warranty Provision Policy (FN-256, 2026-04-19) ────────────────
+// Per-tenant effective-dated warranty provision policy. Basis:
+// REVENUE_PERCENT (bps of revenue) or PER_UNIT (KWD/unit). Consumed
+// by a future period-end accrual runner. OWNER writes; OWNER/
+// ACCOUNTANT/AUDITOR reads.
+function WarrantySection() {
+  const { t } = useTranslation("setup");
+  const [rows, setRows] = useState(null);
+  const [activeOnly, setActiveOnly] = useState(false);
+  const [modalState, setModalState] = useState({
+    open: false,
+    mode: "create",
+    policy: null,
+  });
+  const [toast, setToast] = useState(null);
+  const [loadError, setLoadError] = useState(null);
+
+  const reload = async () => {
+    setLoadError(null);
+    try {
+      const filters = activeOnly ? { activeOnly: true } : {};
+      const list = await listWarrantyPolicies(filters);
+      setRows(list || []);
+    } catch (err) {
+      setRows([]);
+      setLoadError(err?.message || t("warranty.error_load"));
+    }
+  };
+
+  useEffect(() => {
+    reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeOnly]);
+
+  const handleDeactivate = async (policy) => {
+    try {
+      await deactivateWarrantyPolicy(policy.id);
+      setToast(t("warranty.deactivated_toast"));
+      reload();
+    } catch (err) {
+      setToast(err?.message || t("warranty.error_deactivate"));
+    }
+  };
+
+  const formatRateDisplay = (policy) => {
+    if (policy.basis === "REVENUE_PERCENT") {
+      const bps = policy.ratePercent;
+      if (bps == null) return "—";
+      return `${(bps / 100).toFixed(2)}% ${t("warranty.of_revenue")}`;
+    }
+    return `${policy.perUnitAmountKwd || "0.000"} KWD / ${t("warranty.per_unit_label")}`;
+  };
+
+  return (
+    <Card
+      title={t("warranty.title")}
+      description={t("warranty.description")}
+      extra={
+        <button
+          onClick={() =>
+            setModalState({ open: true, mode: "create", policy: null })
+          }
+          style={btnPrimary(false)}
+        >
+          <Plus
+            size={13}
+            style={{ verticalAlign: "middle", marginInlineEnd: 6 }}
+          />
+          {t("warranty.add_policy")}
+        </button>
+      }
+    >
+      <Toast text={toast} onClear={() => setToast(null)} />
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          marginBottom: 12,
+        }}
+      >
+        <button
+          onClick={() => setActiveOnly(false)}
+          style={{
+            ...btnMini,
+            background: !activeOnly
+              ? "var(--accent-primary-subtle)"
+              : "transparent",
+            borderColor: !activeOnly
+              ? "var(--accent-primary-border)"
+              : "var(--border-strong)",
+            color: !activeOnly
+              ? "var(--accent-primary)"
+              : "var(--text-secondary)",
+          }}
+        >
+          {t("warranty.filter_all")}
+        </button>
+        <button
+          onClick={() => setActiveOnly(true)}
+          style={{
+            ...btnMini,
+            background: activeOnly
+              ? "var(--accent-primary-subtle)"
+              : "transparent",
+            borderColor: activeOnly
+              ? "var(--accent-primary-border)"
+              : "var(--border-strong)",
+            color: activeOnly
+              ? "var(--accent-primary)"
+              : "var(--text-secondary)",
+          }}
+        >
+          {t("warranty.filter_active_only")}
+        </button>
+      </div>
+
+      {loadError && (
+        <div
+          role="alert"
+          style={{
+            display: "flex",
+            gap: 8,
+            padding: "10px 12px",
+            background: "var(--semantic-danger-subtle)",
+            border: "1px solid var(--semantic-danger)",
+            borderRadius: 8,
+            color: "var(--semantic-danger)",
+            fontSize: 12,
+            marginBottom: 12,
+          }}
+        >
+          <AlertTriangle size={14} /> {loadError}
+        </div>
+      )}
+
+      {rows === null && (
+        <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>…</div>
+      )}
+
+      {rows && rows.length === 0 && !loadError && (
+        <EmptyState
+          icon={ShieldAlert}
+          title={t("warranty.empty_title")}
+          description={t("warranty.empty_description")}
+        />
+      )}
+
+      {rows && rows.length > 0 && (
+        <div
+          style={{
+            border: "1px solid var(--border-default)",
+            borderRadius: 8,
+            overflow: "hidden",
+          }}
+        >
+          {rows.map((policy, idx) => {
+            const today = new Date().toISOString().slice(0, 10);
+            const isActive =
+              policy.activeFrom <= today &&
+              (!policy.activeUntil || policy.activeUntil >= today);
+            return (
+              <div
+                key={policy.id}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  gap: 14,
+                  padding: "14px 18px",
+                  borderBottom:
+                    idx === rows.length - 1
+                      ? "none"
+                      : "1px solid var(--border-subtle)",
+                  background: isActive
+                    ? "transparent"
+                    : "var(--bg-surface-sunken)",
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: "0.1em",
+                        padding: "2px 8px",
+                        borderRadius: 10,
+                        background: isActive
+                          ? "var(--accent-primary-subtle)"
+                          : "var(--bg-surface)",
+                        color: isActive
+                          ? "var(--accent-primary)"
+                          : "var(--text-tertiary)",
+                        border: isActive
+                          ? "1px solid var(--accent-primary-border)"
+                          : "1px solid var(--border-default)",
+                      }}
+                    >
+                      {isActive
+                        ? t("warranty.status_active")
+                        : t("warranty.status_inactive")}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: "0.1em",
+                        padding: "2px 8px",
+                        borderRadius: 10,
+                        background: "var(--bg-surface)",
+                        color: "var(--text-tertiary)",
+                        border: "1px solid var(--border-default)",
+                      }}
+                    >
+                      {t(`warranty.basis_${policy.basis}`)}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: "var(--text-primary)",
+                      fontFamily: "'DM Mono', monospace",
+                      marginTop: 6,
+                    }}
+                  >
+                    <LtrText>{formatRateDisplay(policy)}</LtrText>
+                  </div>
+                  {policy.notes && (
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: "var(--text-secondary)",
+                        marginTop: 4,
+                        fontStyle: "italic",
+                      }}
+                    >
+                      {policy.notes}
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 14,
+                      marginTop: 6,
+                      fontSize: 11,
+                      color: "var(--text-tertiary)",
+                    }}
+                  >
+                    <div>
+                      {t("warranty.label_pl_role")}:{" "}
+                      <LtrText>
+                        <span
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontFamily: "'DM Mono', monospace",
+                          }}
+                        >
+                          {policy.plRoleCode || "—"}
+                        </span>
+                      </LtrText>
+                    </div>
+                    <div>
+                      {t("warranty.label_liability_role")}:{" "}
+                      <LtrText>
+                        <span
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontFamily: "'DM Mono', monospace",
+                          }}
+                        >
+                          {policy.liabilityRoleCode || "—"}
+                        </span>
+                      </LtrText>
+                    </div>
+                    <div>
+                      {t("warranty.label_active_from")}:{" "}
+                      <LtrText>
+                        <span
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontFamily: "'DM Mono', monospace",
+                          }}
+                        >
+                          {policy.activeFrom}
+                        </span>
+                      </LtrText>
+                    </div>
+                    {policy.activeUntil && (
+                      <div>
+                        {t("warranty.label_active_until")}:{" "}
+                        <LtrText>
+                          <span
+                            style={{
+                              color: "var(--text-secondary)",
+                              fontFamily: "'DM Mono', monospace",
+                            }}
+                          >
+                            {policy.activeUntil}
+                          </span>
+                        </LtrText>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                >
+                  <button
+                    onClick={() =>
+                      setModalState({ open: true, mode: "edit", policy })
+                    }
+                    style={btnMini}
+                  >
+                    <Edit3
+                      size={11}
+                      style={{ verticalAlign: "middle", marginInlineEnd: 4 }}
+                    />
+                    {t("warranty.action_edit")}
+                  </button>
+                  {isActive && (
+                    <button
+                      onClick={() => handleDeactivate(policy)}
+                      style={{
+                        ...btnMini,
+                        color: "var(--semantic-danger)",
+                        borderColor: "rgba(208,90,90,0.30)",
+                      }}
+                    >
+                      {t("warranty.action_deactivate")}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <WarrantyPolicyModal
+        open={modalState.open}
+        mode={modalState.mode}
+        policy={modalState.policy}
+        onClose={() =>
+          setModalState({ open: false, mode: "create", policy: null })
+        }
+        onSaved={() => {
+          reload();
+          setToast(
+            modalState.mode === "edit"
+              ? t("warranty.saved_edit_toast")
+              : t("warranty.saved_create_toast"),
+          );
+        }}
+      />
+    </Card>
   );
 }
 

@@ -72,6 +72,7 @@ import * as costAllocationApi from '../api/cost-allocation';
 import * as relatedPartyApi from '../api/related-party';
 import * as bulkReclassApi from '../api/bulk-reclassifications';
 import * as migrationAuditApi from '../api/migration-audit';
+import * as warrantyPolicyApi from '../api/warranty-provision-policy';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -392,6 +393,14 @@ const REAL_IMPLS = {
   listMigrationAudits: migrationAuditApi.listMigrationAudits,
   getMigrationSchemaChain: migrationAuditApi.getMigrationSchemaChain,
   getMigrationAudit: migrationAuditApi.getMigrationAudit,
+
+  // Warranty provision policy (FN-256, Phase 4 Track A Tier 5 — 2026-04-19).
+  listWarrantyPolicies: warrantyPolicyApi.listWarrantyPolicies,
+  getActiveWarrantyPolicy: warrantyPolicyApi.getActiveWarrantyPolicy,
+  getWarrantyPolicy: warrantyPolicyApi.getWarrantyPolicy,
+  createWarrantyPolicy: warrantyPolicyApi.createWarrantyPolicy,
+  updateWarrantyPolicy: warrantyPolicyApi.updateWarrantyPolicy,
+  deactivateWarrantyPolicy: warrantyPolicyApi.deactivateWarrantyPolicy,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -592,6 +601,14 @@ function buildLiveSurface() {
   surface.getMigrationSchemaChain = migrationAuditApi.getMigrationSchemaChain;
   surface.getMigrationAudit = migrationAuditApi.getMigrationAudit;
 
+  // Warranty provision policy (FN-256). Extras pattern.
+  surface.listWarrantyPolicies = warrantyPolicyApi.listWarrantyPolicies;
+  surface.getActiveWarrantyPolicy = warrantyPolicyApi.getActiveWarrantyPolicy;
+  surface.getWarrantyPolicy = warrantyPolicyApi.getWarrantyPolicy;
+  surface.createWarrantyPolicy = warrantyPolicyApi.createWarrantyPolicy;
+  surface.updateWarrantyPolicy = warrantyPolicyApi.updateWarrantyPolicy;
+  surface.deactivateWarrantyPolicy = warrantyPolicyApi.deactivateWarrantyPolicy;
+
   return surface;
 }
 
@@ -777,7 +794,95 @@ function buildMockExtras() {
     listMigrationAudits: async () => [],
     getMigrationSchemaChain: async () => [],
     getMigrationAudit: async () => null,
+    // Warranty provision policy (FN-256) MOCK stubs.
+    listWarrantyPolicies: mockListWarrantyPolicies,
+    getActiveWarrantyPolicy: mockGetActiveWarrantyPolicy,
+    getWarrantyPolicy: mockGetWarrantyPolicy,
+    createWarrantyPolicy: mockCreateWarrantyPolicy,
+    updateWarrantyPolicy: mockUpdateWarrantyPolicy,
+    deactivateWarrantyPolicy: mockDeactivateWarrantyPolicy,
   };
+}
+
+// ── Warranty provision policy MOCK stubs (FN-256) ──
+let _mockWarrantyCounter = 0;
+const _mockWarrantyPolicies = [];
+function _isWarrantyActive(r, asOfIso) {
+  const asOf = new Date(asOfIso || new Date().toISOString().slice(0, 10));
+  const from = new Date(r.activeFrom);
+  if (asOf < from) return false;
+  if (r.activeUntil) {
+    const until = new Date(r.activeUntil);
+    if (asOf > until) return false;
+  }
+  return true;
+}
+async function mockListWarrantyPolicies(filters = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  return _mockWarrantyPolicies
+    .filter((r) => (filters.activeOnly ? _isWarrantyActive(r, filters.asOf) : true))
+    .map((r) => ({ ...r }));
+}
+async function mockGetActiveWarrantyPolicy() {
+  await new Promise((r) => setTimeout(r, 20));
+  const row = _mockWarrantyPolicies.find((r) => _isWarrantyActive(r));
+  return row ? { ...row } : null;
+}
+async function mockGetWarrantyPolicy(id) {
+  await new Promise((r) => setTimeout(r, 20));
+  const row = _mockWarrantyPolicies.find((r) => r.id === id);
+  return row ? { ...row } : null;
+}
+async function mockCreateWarrantyPolicy(payload = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  _mockWarrantyCounter += 1;
+  const row = {
+    id: `mock-warranty-${_mockWarrantyCounter}`,
+    basis: payload.basis || 'REVENUE_PERCENT',
+    ratePercent: payload.ratePercent ?? null,
+    perUnitAmountKwd: payload.perUnitAmountKwd ?? null,
+    plRoleCode: payload.plRoleCode || 'WARRANTY_EXPENSE',
+    liabilityRoleCode: payload.liabilityRoleCode || 'WARRANTY_LIABILITY',
+    notes: payload.notes ?? null,
+    activeFrom: payload.activeFrom || new Date().toISOString().slice(0, 10),
+    activeUntil: payload.activeUntil ?? null,
+    createdBy: 'mock-user',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    _mock: true,
+  };
+  _mockWarrantyPolicies.unshift(row);
+  return row;
+}
+async function mockUpdateWarrantyPolicy(id, patch = {}) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockWarrantyPolicies.findIndex((r) => r.id === id);
+  if (idx < 0) return null;
+  _mockWarrantyPolicies[idx] = {
+    ..._mockWarrantyPolicies[idx],
+    notes: patch.notes ?? _mockWarrantyPolicies[idx].notes,
+    activeUntil:
+      patch.activeUntil !== undefined
+        ? patch.activeUntil
+        : _mockWarrantyPolicies[idx].activeUntil,
+    plRoleCode: patch.plRoleCode ?? _mockWarrantyPolicies[idx].plRoleCode,
+    liabilityRoleCode:
+      patch.liabilityRoleCode ?? _mockWarrantyPolicies[idx].liabilityRoleCode,
+    updatedAt: new Date().toISOString(),
+  };
+  return { ..._mockWarrantyPolicies[idx] };
+}
+async function mockDeactivateWarrantyPolicy(id) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockWarrantyPolicies.findIndex((r) => r.id === id);
+  if (idx < 0) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  _mockWarrantyPolicies[idx] = {
+    ..._mockWarrantyPolicies[idx],
+    activeUntil: today,
+    updatedAt: new Date().toISOString(),
+  };
+  return { ..._mockWarrantyPolicies[idx] };
 }
 
 // ── Bulk reclassifications MOCK stubs (FN-239) ──
@@ -1927,3 +2032,14 @@ export const getBulkReclassificationJeShape = surface.getBulkReclassificationJeS
 export const listMigrationAudits = surface.listMigrationAudits;
 export const getMigrationSchemaChain = surface.getMigrationSchemaChain;
 export const getMigrationAudit = surface.getMigrationAudit;
+
+// Warranty provision policy (FN-256, Phase 4 Track A Tier 5 — 2026-04-19).
+// Per-tenant effective-dated warranty-accrual policy. Two basis modes:
+// REVENUE_PERCENT (bps of revenue) + PER_UNIT (KWD/unit). Consumed by
+// a future period-end accrual runner (ships separately).
+export const listWarrantyPolicies = surface.listWarrantyPolicies;
+export const getActiveWarrantyPolicy = surface.getActiveWarrantyPolicy;
+export const getWarrantyPolicy = surface.getWarrantyPolicy;
+export const createWarrantyPolicy = surface.createWarrantyPolicy;
+export const updateWarrantyPolicy = surface.updateWarrantyPolicy;
+export const deactivateWarrantyPolicy = surface.deactivateWarrantyPolicy;

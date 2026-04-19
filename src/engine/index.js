@@ -73,6 +73,7 @@ import * as relatedPartyApi from '../api/related-party';
 import * as bulkReclassApi from '../api/bulk-reclassifications';
 import * as migrationAuditApi from '../api/migration-audit';
 import * as warrantyPolicyApi from '../api/warranty-provision-policy';
+import * as bankFormatsApi from '../api/bank-formats';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -401,6 +402,14 @@ const REAL_IMPLS = {
   createWarrantyPolicy: warrantyPolicyApi.createWarrantyPolicy,
   updateWarrantyPolicy: warrantyPolicyApi.updateWarrantyPolicy,
   deactivateWarrantyPolicy: warrantyPolicyApi.deactivateWarrantyPolicy,
+
+  // Bank formats (FN-246, Phase 4 Track A Tier 5 — 2026-04-19).
+  listBankFormats: bankFormatsApi.listBankFormats,
+  getActiveBankFormat: bankFormatsApi.getActiveBankFormat,
+  getBankFormat: bankFormatsApi.getBankFormat,
+  createBankFormat: bankFormatsApi.createBankFormat,
+  updateBankFormat: bankFormatsApi.updateBankFormat,
+  deactivateBankFormat: bankFormatsApi.deactivateBankFormat,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -609,6 +618,14 @@ function buildLiveSurface() {
   surface.updateWarrantyPolicy = warrantyPolicyApi.updateWarrantyPolicy;
   surface.deactivateWarrantyPolicy = warrantyPolicyApi.deactivateWarrantyPolicy;
 
+  // Bank formats (FN-246). Extras pattern.
+  surface.listBankFormats = bankFormatsApi.listBankFormats;
+  surface.getActiveBankFormat = bankFormatsApi.getActiveBankFormat;
+  surface.getBankFormat = bankFormatsApi.getBankFormat;
+  surface.createBankFormat = bankFormatsApi.createBankFormat;
+  surface.updateBankFormat = bankFormatsApi.updateBankFormat;
+  surface.deactivateBankFormat = bankFormatsApi.deactivateBankFormat;
+
   return surface;
 }
 
@@ -801,7 +818,94 @@ function buildMockExtras() {
     createWarrantyPolicy: mockCreateWarrantyPolicy,
     updateWarrantyPolicy: mockUpdateWarrantyPolicy,
     deactivateWarrantyPolicy: mockDeactivateWarrantyPolicy,
+    // Bank formats (FN-246) MOCK stubs.
+    listBankFormats: mockListBankFormats,
+    getActiveBankFormat: mockGetActiveBankFormat,
+    getBankFormat: mockGetBankFormat,
+    createBankFormat: mockCreateBankFormat,
+    updateBankFormat: mockUpdateBankFormat,
+    deactivateBankFormat: mockDeactivateBankFormat,
   };
+}
+
+// ── Bank formats MOCK stubs (FN-246) ──
+let _mockBankFormatCounter = 0;
+const _mockBankFormats = [];
+function _isBankFormatActive(r, asOfIso) {
+  const asOf = new Date(asOfIso || new Date().toISOString().slice(0, 10));
+  const from = new Date(r.effectiveFrom);
+  if (asOf < from) return false;
+  if (r.effectiveUntil) {
+    const until = new Date(r.effectiveUntil);
+    if (asOf > until) return false;
+  }
+  return true;
+}
+async function mockListBankFormats(filters = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  return _mockBankFormats
+    .filter((r) => !filters.bankCode || r.bankCode === filters.bankCode)
+    .map((r) => ({ ...r, spec: { ...r.spec } }));
+}
+async function mockGetActiveBankFormat(query = {}) {
+  await new Promise((r) => setTimeout(r, 20));
+  const row = _mockBankFormats.find(
+    (r) =>
+      r.bankCode === query.bankCode && _isBankFormatActive(r, query.asOf),
+  );
+  return row ? { ...row, spec: { ...row.spec } } : null;
+}
+async function mockGetBankFormat(id) {
+  await new Promise((r) => setTimeout(r, 20));
+  const row = _mockBankFormats.find((r) => r.id === id);
+  return row ? { ...row, spec: { ...row.spec } } : null;
+}
+async function mockCreateBankFormat(payload = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  _mockBankFormatCounter += 1;
+  const row = {
+    id: `mock-bankfmt-${_mockBankFormatCounter}`,
+    bankCode: payload.bankCode || 'UNKNOWN',
+    formatVersion: payload.formatVersion || 'v1',
+    formatType: payload.formatType || 'CSV',
+    spec: payload.spec ? { ...payload.spec } : {},
+    effectiveFrom: payload.effectiveFrom || new Date().toISOString().slice(0, 10),
+    effectiveUntil: payload.effectiveUntil ?? null,
+    notes: payload.notes ?? null,
+    createdBy: 'mock-user',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    _mock: true,
+  };
+  _mockBankFormats.unshift(row);
+  return { ...row, spec: { ...row.spec } };
+}
+async function mockUpdateBankFormat(id, patch = {}) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockBankFormats.findIndex((r) => r.id === id);
+  if (idx < 0) return null;
+  _mockBankFormats[idx] = {
+    ..._mockBankFormats[idx],
+    effectiveUntil:
+      patch.effectiveUntil !== undefined
+        ? patch.effectiveUntil
+        : _mockBankFormats[idx].effectiveUntil,
+    notes: patch.notes ?? _mockBankFormats[idx].notes,
+    updatedAt: new Date().toISOString(),
+  };
+  return { ..._mockBankFormats[idx], spec: { ..._mockBankFormats[idx].spec } };
+}
+async function mockDeactivateBankFormat(id) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockBankFormats.findIndex((r) => r.id === id);
+  if (idx < 0) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  _mockBankFormats[idx] = {
+    ..._mockBankFormats[idx],
+    effectiveUntil: today,
+    updatedAt: new Date().toISOString(),
+  };
+  return { ..._mockBankFormats[idx], spec: { ..._mockBankFormats[idx].spec } };
 }
 
 // ── Warranty provision policy MOCK stubs (FN-256) ──
@@ -2043,3 +2147,13 @@ export const getWarrantyPolicy = surface.getWarrantyPolicy;
 export const createWarrantyPolicy = surface.createWarrantyPolicy;
 export const updateWarrantyPolicy = surface.updateWarrantyPolicy;
 export const deactivateWarrantyPolicy = surface.deactivateWarrantyPolicy;
+
+// Bank formats (FN-246, Phase 4 Track A Tier 5 — 2026-04-19).
+// Per-bank statement-parsing format registry. Effective-dated specs.
+// Consumed by the statement-upload parser pipeline.
+export const listBankFormats = surface.listBankFormats;
+export const getActiveBankFormat = surface.getActiveBankFormat;
+export const getBankFormat = surface.getBankFormat;
+export const createBankFormat = surface.createBankFormat;
+export const updateBankFormat = surface.updateBankFormat;
+export const deactivateBankFormat = surface.deactivateBankFormat;

@@ -1,0 +1,81 @@
+{
+  "view_label": "CFO VIEW",
+  "title": "Inventory NRV",
+  "subtitle": "IAS 2 slow-moving and obsolete inventory assessment. Define age-based writedown bands and compute current net realizable value. Posting is deferred pending the backend runner.",
+  "new_policy": "New Policy",
+  "error_load": "Failed to load NRV policy.",
+  "error_assessment": "Failed to compute NRV assessment.",
+  "error_deactivate": "Failed to deactivate policy.",
+  "posting_deferred_note": "Note: NRV is memo-only in this partial. Write-down journal entries and reversal workflow ship with the follow-up backend runner.",
+  "toast": {
+    "created": "NRV policy created.",
+    "deactivated": "Policy deactivated."
+  },
+  "active": {
+    "heading": "Active Policy",
+    "from": "From",
+    "until": "Until",
+    "bands_count": "{{count}} band(s)",
+    "deactivate": "Deactivate",
+    "no_policy_title": "No active NRV policy",
+    "no_policy_description": "Define an age-based writedown policy to compute NRV for slow-moving and obsolete inventory."
+  },
+  "assessment": {
+    "heading": "Current Assessment",
+    "subheading": "Per-item writedown based on age since last stock movement.",
+    "as_of": "AS OF",
+    "refresh": "Refresh",
+    "loading": "Computing assessment…",
+    "no_policy_note": "Create an active NRV policy to compute an assessment.",
+    "empty": "No inventory items to assess.",
+    "total_gross": "Gross Value",
+    "total_writedown": "Writedown",
+    "total_nrv": "NRV (net)"
+  },
+  "table": {
+    "sku": "SKU",
+    "age_days": "Age (d)",
+    "qty": "Qty",
+    "gross": "Gross",
+    "writedown": "Writedown",
+    "nrv": "NRV",
+    "band": "Matched Band",
+    "label": "Band",
+    "min_age": "Min Age (d)",
+    "max_age": "Max Age (d)",
+    "writedown_pct": "Writedown %"
+  },
+  "history": {
+    "heading": "Policy History ({{count}})",
+    "deactivate": "Deactivate",
+    "current": "current"
+  },
+  "modal": {
+    "label": "NEW POLICY",
+    "title": "Create NRV Policy",
+    "close": "Close",
+    "cancel": "Cancel",
+    "save": "Create Policy",
+    "saving": "Creating…",
+    "hint": "Bands use (min, max] semantics: minAgeDays exclusive, maxAgeDays inclusive (leave maxAgeDays blank for an open-ended catch-all band). Writedown percent applies to gross value at asOf.",
+    "field_active_from": "Active From",
+    "field_active_until": "Active Until (optional)",
+    "bands_heading": "Writedown Bands ({{count}})",
+    "add_band": "Add band",
+    "remove_band": "Remove band",
+    "bands_hint": "At least one band; up to 20. Sort ascending by minAgeDays. Overlapping bands are rejected by the backend.",
+    "band_label_placeholder": "Band label (e.g. 30-90 days)",
+    "max_age_open": "open",
+    "field_pl_role": "P&L Role Code (optional)",
+    "field_liability_role": "Liability Role Code (optional)",
+    "field_notes": "Notes",
+    "error_active_from_required": "Active-from date is required.",
+    "error_until_after_from": "Active-until must be strictly after active-from.",
+    "error_bands_required": "At least one band is required.",
+    "error_band_label": "Band {{n}}: label is required.",
+    "error_band_min_age": "Band {{n}}: min age must be integer 0..10000.",
+    "error_band_max_age": "Band {{n}}: max age must be integer >= min age, or blank.",
+    "error_band_percent": "Band {{n}}: writedown percent must be 0..100 with up to 2 decimals.",
+    "error_generic": "Failed to create policy. Please try again."
+  }
+}

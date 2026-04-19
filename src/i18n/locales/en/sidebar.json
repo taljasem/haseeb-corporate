@@ -26,6 +26,7 @@
     "bulk_reclass": "Bulk Reclassify",
     "ocr_review": "OCR Review",
     "inventory_count": "Inventory Count",
+    "inventory_nrv": "Inventory NRV",
     "spinoff": "Entity Split",
     "islamic_finance": "Islamic Finance",
     "purchase_orders": "Purchase Orders",

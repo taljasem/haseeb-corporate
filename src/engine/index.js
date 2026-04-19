@@ -83,6 +83,7 @@ import * as spinoffApi from '../api/spinoff';
 import * as islamicFinanceApi from '../api/islamic-finance';
 import * as purchaseOrdersApi from '../api/purchase-orders';
 import * as tenantFlagsApi from '../api/tenant-flags';
+import * as inventoryNrvApi from '../api/inventory-nrv';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -493,6 +494,13 @@ const REAL_IMPLS = {
   // Tenant Flags (Phase 4 UX Dispatch) — localStorage fallback until backend ships.
   getTenantFlags: tenantFlagsApi.getTenantFlags,
   updateTenantFlags: tenantFlagsApi.updateTenantFlags,
+
+  // Inventory NRV (FN-264, Phase 4 Track A Tier 4).
+  createNrvPolicy: inventoryNrvApi.createNrvPolicy,
+  deactivateNrvPolicy: inventoryNrvApi.deactivateNrvPolicy,
+  getActiveNrvPolicy: inventoryNrvApi.getActiveNrvPolicy,
+  listNrvPolicies: inventoryNrvApi.listNrvPolicies,
+  getNrvAssessment: inventoryNrvApi.getNrvAssessment,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -782,6 +790,12 @@ function buildLiveSurface() {
   surface.getTenantFlags = tenantFlagsApi.getTenantFlags;
   surface.updateTenantFlags = tenantFlagsApi.updateTenantFlags;
 
+  surface.createNrvPolicy = inventoryNrvApi.createNrvPolicy;
+  surface.deactivateNrvPolicy = inventoryNrvApi.deactivateNrvPolicy;
+  surface.getActiveNrvPolicy = inventoryNrvApi.getActiveNrvPolicy;
+  surface.listNrvPolicies = inventoryNrvApi.listNrvPolicies;
+  surface.getNrvAssessment = inventoryNrvApi.getNrvAssessment;
+
   return surface;
 }
 
@@ -1044,6 +1058,12 @@ function buildMockExtras() {
     // Tenant Flags — in MOCK mode, go to localStorage fallback directly.
     getTenantFlags: tenantFlagsApi.getTenantFlags,
     updateTenantFlags: tenantFlagsApi.updateTenantFlags,
+    // Inventory NRV (FN-264) MOCK stubs.
+    createNrvPolicy: mockCreateNrvPolicy,
+    deactivateNrvPolicy: mockDeactivateNrvPolicy,
+    getActiveNrvPolicy: mockGetActiveNrvPolicy,
+    listNrvPolicies: mockListNrvPolicies,
+    getNrvAssessment: mockGetNrvAssessment,
     // Board pack (FN-258) MOCK stub — empty pack in MOCK mode.
     getBoardPack: async (q = {}) => ({
       fiscalYear: q.fiscalYear || new Date().getFullYear() - 1,
@@ -3086,6 +3106,168 @@ async function mockPredictiveBillMatch(input) {
   return candidates;
 }
 
+// ── Inventory NRV (FN-264) MOCK stubs. writedownPercent stored as
+//    basis-points ×100 integer (500 = 5.00%) matching wire format. ──
+let _mockNrvPolicyCounter = 0;
+let _mockNrvBandCounter = 0;
+const _mockNrvPolicies = [];
+
+async function mockCreateNrvPolicy(payload) {
+  await new Promise((r) => setTimeout(r, 60));
+  _mockNrvPolicyCounter += 1;
+  const id = `mock-nrvp-${_mockNrvPolicyCounter}`;
+  const bands = (payload.bands || []).map((b) => {
+    _mockNrvBandCounter += 1;
+    return {
+      id: `mock-nrvb-${_mockNrvBandCounter}`,
+      policyId: id,
+      minAgeDays: b.minAgeDays,
+      maxAgeDays: b.maxAgeDays ?? null,
+      writedownPercent: b.writedownPercent,
+      label: b.label,
+    };
+  });
+  const row = {
+    id,
+    plRoleCode: payload.plRoleCode || 'INVENTORY_OBSOLESCENCE_EXPENSE',
+    liabilityRoleCode: payload.liabilityRoleCode || 'INVENTORY_OBSOLESCENCE_PROVISION',
+    notes: payload.notes || null,
+    activeFrom: payload.activeFrom,
+    activeUntil: payload.activeUntil || null,
+    createdBy: 'mock-user',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    bands,
+  };
+  _mockNrvPolicies.unshift(row);
+  return row;
+}
+async function mockDeactivateNrvPolicy(id) {
+  await new Promise((r) => setTimeout(r, 40));
+  const p = _mockNrvPolicies.find((x) => x.id === id);
+  if (!p) throw new Error('policy not found');
+  const now = new Date().toISOString().slice(0, 10);
+  if (now <= p.activeFrom) throw new Error('activeUntil must be strictly after activeFrom.');
+  p.activeUntil = now;
+  p.updatedAt = new Date().toISOString();
+  return p;
+}
+async function mockGetActiveNrvPolicy(asOf = null) {
+  await new Promise((r) => setTimeout(r, 30));
+  const asOfStr = asOf || new Date().toISOString().slice(0, 10);
+  const active = _mockNrvPolicies.find(
+    (p) => p.activeFrom <= asOfStr && (!p.activeUntil || p.activeUntil > asOfStr),
+  );
+  return active || null;
+}
+async function mockListNrvPolicies() {
+  await new Promise((r) => setTimeout(r, 30));
+  return _mockNrvPolicies.slice();
+}
+function _mockPickNrvBand(bands, ageDays) {
+  const eligible = bands.filter(
+    (b) => ageDays > b.minAgeDays && (b.maxAgeDays === null || ageDays <= b.maxAgeDays),
+  );
+  if (eligible.length === 0) return null;
+  return eligible.sort((a, b) => b.writedownPercent - a.writedownPercent)[0];
+}
+async function mockGetNrvAssessment(asOf = null) {
+  await new Promise((r) => setTimeout(r, 60));
+  const asOfStr = asOf || new Date().toISOString().slice(0, 10);
+  const policy = await mockGetActiveNrvPolicy(asOfStr);
+  if (!policy) {
+    return {
+      asOf: new Date(asOfStr).toISOString(),
+      policyId: null,
+      totalGrossKwd: '0.000',
+      totalWritedownKwd: '0.000',
+      totalNrvKwd: '0.000',
+      rows: [],
+      warnings: ['no active InventoryNrvPolicy at asOf'],
+    };
+  }
+  // Mock items with synthetic ages.
+  const items = [
+    { id: 'mock-inv-1', sku: 'SKU-001', qty: 100, cost: 1.5, ageDays: 20 },
+    { id: 'mock-inv-2', sku: 'SKU-002', qty: 50, cost: 2.25, ageDays: 95 },
+    { id: 'mock-inv-3', sku: 'SKU-003', qty: 30, cost: 10.0, ageDays: 220 },
+    { id: 'mock-inv-4', sku: 'SKU-004', qty: 10, cost: 50.0, ageDays: 400 },
+    { id: 'mock-inv-5', sku: 'SKU-005', qty: 0, cost: 5.0, ageDays: null },
+    { id: 'mock-inv-6', sku: 'SKU-006', qty: 8, cost: 12.5, ageDays: null },
+  ];
+  let totalGross = 0;
+  let totalWritedown = 0;
+  let totalNrv = 0;
+  const warnings = [];
+  const rows = items.map((it) => {
+    const gross = it.qty * it.cost;
+    if (it.qty <= 0) {
+      totalGross += gross;
+      totalNrv += gross;
+      return {
+        itemId: it.id,
+        sku: it.sku,
+        ageDays: null,
+        matchedBandLabel: null,
+        matchedBandPercent: 0,
+        currentQuantity: it.qty.toFixed(2),
+        currentAvgCost: it.cost.toFixed(3),
+        grossValueKwd: gross.toFixed(3),
+        writedownKwd: '0.000',
+        nrvKwd: gross.toFixed(3),
+        note: 'no on-hand quantity',
+      };
+    }
+    if (it.ageDays == null) {
+      warnings.push(`item ${it.sku}: no stock movements — age unknown, no writedown applied`);
+      totalGross += gross;
+      totalNrv += gross;
+      return {
+        itemId: it.id,
+        sku: it.sku,
+        ageDays: null,
+        matchedBandLabel: null,
+        matchedBandPercent: 0,
+        currentQuantity: it.qty.toFixed(2),
+        currentAvgCost: it.cost.toFixed(3),
+        grossValueKwd: gross.toFixed(3),
+        writedownKwd: '0.000',
+        nrvKwd: gross.toFixed(3),
+        note: 'no movements',
+      };
+    }
+    const band = _mockPickNrvBand(policy.bands, it.ageDays);
+    const bandPct = band ? band.writedownPercent : 0;
+    const writedown = (gross * bandPct) / 10000;
+    const nrv = gross - writedown;
+    totalGross += gross;
+    totalWritedown += writedown;
+    totalNrv += nrv;
+    return {
+      itemId: it.id,
+      sku: it.sku,
+      ageDays: it.ageDays,
+      matchedBandLabel: band ? band.label : null,
+      matchedBandPercent: bandPct,
+      currentQuantity: it.qty.toFixed(2),
+      currentAvgCost: it.cost.toFixed(3),
+      grossValueKwd: gross.toFixed(3),
+      writedownKwd: writedown.toFixed(3),
+      nrvKwd: nrv.toFixed(3),
+      note: band ? `matched band "${band.label}"` : 'no matching band — no writedown',
+    };
+  });
+  return {
+    asOf: new Date(asOfStr).toISOString(),
+    policyId: policy.id,
+    totalGrossKwd: totalGross.toFixed(3),
+    totalWritedownKwd: totalWritedown.toFixed(3),
+    totalNrvKwd: totalNrv.toFixed(3),
+    rows,
+    warnings,
+  };
+}
+
 // ── Report versions MOCK stubs (module-scoped so state survives calls) ──
 let _mockReportVersionCounter = 0;
 const _mockReportVersions = [];
@@ -3462,3 +3644,8 @@ export const runThreeWayMatch = surface.runThreeWayMatch;
 export const predictiveBillMatch = surface.predictiveBillMatch;
 export const getTenantFlags = surface.getTenantFlags;
 export const updateTenantFlags = surface.updateTenantFlags;
+export const createNrvPolicy = surface.createNrvPolicy;
+export const deactivateNrvPolicy = surface.deactivateNrvPolicy;
+export const getActiveNrvPolicy = surface.getActiveNrvPolicy;
+export const listNrvPolicies = surface.listNrvPolicies;
+export const getNrvAssessment = surface.getNrvAssessment;

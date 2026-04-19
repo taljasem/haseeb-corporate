@@ -2207,7 +2207,11 @@ async function mockHealth() {
 const surface = useMocks
   ? {
       ...mockEngine,
-      getHealth: mockEngine.getHealth || mockHealth,
+      // mockEngine does not export getHealth (only getHealthScore, which
+      // is a different shape). Force the shim in MOCK mode so the named
+      // export below is always defined and the bundler does not flag
+      // an undefined import. See HASEEB-142.
+      getHealth: mockHealth,
       ...buildMockExtras(),
     }
   : buildLiveSurface();

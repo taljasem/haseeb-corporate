@@ -123,7 +123,7 @@ export default function AuditBridgeScreen({ onOpenAminah }) {
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 28px" }}>
           {activeTab === "overview" && <OverviewTab eng={selectedEng} onCreateSnapshot={handleCreateSnapshot} />}
           {activeTab === "checks" && <ChecksTab eng={selectedEng} onRunCheck={handleRunCheck} onRunAll={handleRunAllChecks} previewMode={previewMode} onOpenAminah={onOpenAminah} />}
-          {activeTab === "clarifications" && <ClarificationsTab engagementId={selectedEng.id} clarifications={clarifications} onRefresh={async () => { const c = await listClarifications(selectedEng.id); setClarifications(c); }} />}
+          {activeTab === "clarifications" && <ClarificationsTab clarifications={clarifications} onRefresh={async () => { const c = await listClarifications(selectedEng.id); setClarifications(c); }} />}
           {activeTab === "export" && <ExportTab eng={selectedEng} onExport={handleExport} />}
           {activeTab === "audit_trail" && <AuditTrailTab trail={selectedEng.auditTrail || []} />}
         </div>
@@ -282,7 +282,7 @@ function ChecksTab({ eng, onRunCheck, onRunAll, previewMode, onOpenAminah }) {
   );
 }
 
-function ClarificationsTab({ engagementId, clarifications, onRefresh }) {
+function ClarificationsTab({ clarifications, onRefresh }) {
   const [selectedId, setSelectedId] = useState(null);
   const [replyDraft, setReplyDraft] = useState("");
   const selected = clarifications.find(c => c.id === selectedId);

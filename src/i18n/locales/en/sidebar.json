@@ -23,6 +23,7 @@
     "rules": "Rules",
     "reconciliation": "Reconciliation",
     "petty_cash": "Petty Cash",
+    "bulk_reclass": "Bulk Reclassify",
     "budget": "Budget",
     "forecast": "Forecast",
     "financial_statements": "Financial Statements",

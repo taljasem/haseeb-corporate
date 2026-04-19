@@ -7949,3 +7949,55 @@ export async function rejectSoftClosePost(jeId, rejectedBy = "owner", reason = "
   j.rejectedAt = new Date().toISOString();
   return _brandObj({ ...j });
 }
+
+// ──────────────────────────────────────────────────────────────────────
+// FN-226 (Phase 4 Wave 1 Item 2) — Data Inalterability composite MOCK.
+//
+// Returns a canned INALTERABLE response. All three component shapes
+// (auditChain / reportVersions / migrationChain) are populated so the
+// AuditBridgeScreen's InalterabilityPanel renders end-to-end in MOCK
+// mode without a backend. No state, no persistence — pure read.
+//
+// Roles: real endpoint is OWNER + AUDITOR only (backend-enforced).
+// The MOCK mode does not simulate role denial; the UI's 403 branch is
+// reachable only against the real API.
+// ──────────────────────────────────────────────────────────────────────
+export async function getDataInalterabilityReport() {
+  await delay();
+  return {
+    generatedAt: new Date().toISOString(),
+    overall: "INALTERABLE",
+    rationale:
+      "Audit chain verified (1,284 entries). 42 report versions on record, 12 current. Migration chain intact across 87 links.",
+    auditChain: {
+      fullValid: true,
+      financialValid: true,
+      entriesCount: 1284,
+      brokenAtSequence: null,
+      lastFullHash:
+        "a7f3c9b2e4d8f1a6c5b9e2f7d3a8c1b4e6f9d2a5c8b1e4f7d9a3c6b5e8f2d1a4",
+      lastFinancialHash:
+        "c9e2f5a8d1b4c7e0f3a6d9c2e5b8f1a4d7c0e3b6f9d2a5c8e1b4f7d0a3c6e9b2",
+    },
+    reportVersions: {
+      totalCount: 42,
+      currentCount: 12,
+      lastPublishedAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
+      byType: {
+        PROFIT_AND_LOSS: 14,
+        BALANCE_SHEET: 14,
+        CASH_FLOW_STATEMENT: 8,
+        TRIAL_BALANCE: 6,
+      },
+    },
+    migrationChain: {
+      linkCount: 87,
+      gapCount: 0,
+      firstGapMigrationName: null,
+      lastMigrationName: "20260418_add_data_inalterability_index",
+      lastAppliedAt: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString(),
+      lastSchemaHashAfter:
+        "d4f7a1c8b3e6f9d2a5c8b1e4f7d0a3c6e9b2f5d8a1c4b7e0f3d6a9c2b5e8f1d4",
+    },
+  };
+}

@@ -84,5 +84,67 @@
     "banner_title": "Viewing as auditor",
     "banner_body": "This is what the auditor sees — read-only mode",
     "exit": "Exit preview"
+  },
+  "inalterability": {
+    "section_title": "DATA INALTERABILITY",
+    "section_desc": "Composite proof across audit chain, report versions, and migration history.",
+    "refresh": "Refresh",
+    "loading": "Loading inalterability proof...",
+    "generated_prefix": "Generated ",
+    "generated_suffix": "",
+    "status_inalterable": "INALTERABLE",
+    "status_broken": "BROKEN",
+    "ask_aminah": "Ask Aminah about this proof",
+    "role_denied_title": "Access restricted",
+    "role_denied_desc": "Only OWNER and AUDITOR roles can view data-inalterability proofs.",
+    "error_title": "Could not load proof",
+    "copy_hash": "Copy hash",
+    "copied": "Copied",
+    "audit_chain": {
+      "card_title": "AUDIT CHAIN",
+      "verified_prefix": "Full chain verified (",
+      "verified_middle": " entries, financial chain ",
+      "verified_suffix": ")",
+      "financial_ok": "ok",
+      "financial_broken": "broken",
+      "broken_prefix": "BROKEN at sequence #",
+      "broken_suffix": "",
+      "last_full_hash": "Last full hash",
+      "last_financial_hash": "Last financial hash",
+      "no_entries": "No entries posted yet."
+    },
+    "report_versions": {
+      "card_title": "REPORT VERSIONS",
+      "total_label": "TOTAL",
+      "current_label": "CURRENT",
+      "last_published_prefix": "Last published ",
+      "last_published_suffix": "",
+      "no_versions": "No versions published yet.",
+      "by_type_title": "By report type"
+    },
+    "migration_chain": {
+      "card_title": "MIGRATION CHAIN",
+      "links_prefix": "",
+      "links_middle": " links · ",
+      "links_suffix": " gaps",
+      "no_gaps_badge": "NO GAPS",
+      "gaps_badge": "HAS GAPS",
+      "last_applied_prefix": "Last applied ",
+      "last_applied_suffix": "",
+      "first_gap_prefix": "First gap at ",
+      "first_gap_suffix": "",
+      "no_migrations": "No migrations recorded yet.",
+      "schema_hash_label": "Last schema hash"
+    },
+    "report_type_names": {
+      "PROFIT_AND_LOSS": "Profit & Loss",
+      "BALANCE_SHEET": "Balance Sheet",
+      "CASH_FLOW_STATEMENT": "Cash Flow Statement",
+      "TRIAL_BALANCE": "Trial Balance",
+      "AGING_AR": "AR Aging",
+      "AGING_AP": "AP Aging",
+      "BUDGET_VARIANCE": "Budget Variance",
+      "CUSTOM": "Custom"
+    }
   }
 }

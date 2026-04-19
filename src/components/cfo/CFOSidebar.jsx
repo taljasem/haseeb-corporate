@@ -29,6 +29,7 @@ const WalletIcon = I(<><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" /><path d="M3 5v1
 const ShuffleIcon = I(<><polyline points="16 3 21 3 21 8" /><line x1="4" y1="20" x2="21" y2="3" /><polyline points="21 16 21 21 16 21" /><line x1="15" y1="15" x2="21" y2="21" /><line x1="4" y1="4" x2="9" y2="9" /></>);
 const FileSearchIcon = I(<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><circle cx="11.5" cy="14.5" r="2.5" /><line x1="13.25" y1="16.25" x2="15" y2="18" /></>);
 const BoxesIcon = I(<><path d="M21 8V21a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8" /><path d="M1 3h22v5H1z" /><path d="M10 12h4" /></>);
+const GitBranchIcon = I(<><line x1="6" y1="3" x2="6" y2="15" /><circle cx="18" cy="6" r="3" /><circle cx="6" cy="18" r="3" /><path d="M18 9a9 9 0 0 1-9 9" /></>);
 
 function NavItem({ icon: Icon, label, active, onClick, badge }) {
   return (
@@ -124,6 +125,7 @@ export default function CFOSidebar({ active, setActive, pendingApprovals = 0, ta
         <NavItem icon={ShuffleIcon} label={t("items.bulk_reclass")}      active={isActive("bulk-reclass")}        onClick={() => setActive("bulk-reclass")} />
         <NavItem icon={FileSearchIcon} label={t("items.ocr_review")}     active={isActive("ocr-review")}          onClick={() => setActive("ocr-review")} />
         <NavItem icon={BoxesIcon}   label={t("items.inventory_count")}   active={isActive("inventory-count")}     onClick={() => setActive("inventory-count")} />
+        <NavItem icon={GitBranchIcon} label={t("items.spinoff")}         active={isActive("spinoff")}             onClick={() => setActive("spinoff")} />
       </SidebarGroup>
 
       <SidebarGroup label={t("groups.planning")}>

@@ -79,6 +79,7 @@ import * as cbkRatesApi from '../api/cbk-rates';
 import * as boardPackApi from '../api/board-pack';
 import * as ocrGatingApi from '../api/ocr-gating';
 import * as inventoryCountApi from '../api/inventory-count';
+import * as spinoffApi from '../api/spinoff';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -456,6 +457,17 @@ const REAL_IMPLS = {
   reconcileInventoryCount: inventoryCountApi.reconcileInventoryCount,
   cancelInventoryCount: inventoryCountApi.cancelInventoryCount,
   getInventoryCountVarianceJeShape: inventoryCountApi.getInventoryCountVarianceJeShape,
+
+  // Spinoff (FN-242, Phase 4 Track A Tier 4 — 2026-04-19).
+  listSpinoffEvents: spinoffApi.listSpinoffEvents,
+  getSpinoffEvent: spinoffApi.getSpinoffEvent,
+  createSpinoffEvent: spinoffApi.createSpinoffEvent,
+  addSpinoffTransfer: spinoffApi.addSpinoffTransfer,
+  removeSpinoffTransfer: spinoffApi.removeSpinoffTransfer,
+  validateSpinoffEvent: spinoffApi.validateSpinoffEvent,
+  approveSpinoffEvent: spinoffApi.approveSpinoffEvent,
+  cancelSpinoffEvent: spinoffApi.cancelSpinoffEvent,
+  getSpinoffBalanceCheck: spinoffApi.getSpinoffBalanceCheck,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -713,6 +725,17 @@ function buildLiveSurface() {
   surface.cancelInventoryCount = inventoryCountApi.cancelInventoryCount;
   surface.getInventoryCountVarianceJeShape = inventoryCountApi.getInventoryCountVarianceJeShape;
 
+  // Spinoff (FN-242). Extras pattern.
+  surface.listSpinoffEvents = spinoffApi.listSpinoffEvents;
+  surface.getSpinoffEvent = spinoffApi.getSpinoffEvent;
+  surface.createSpinoffEvent = spinoffApi.createSpinoffEvent;
+  surface.addSpinoffTransfer = spinoffApi.addSpinoffTransfer;
+  surface.removeSpinoffTransfer = spinoffApi.removeSpinoffTransfer;
+  surface.validateSpinoffEvent = spinoffApi.validateSpinoffEvent;
+  surface.approveSpinoffEvent = spinoffApi.approveSpinoffEvent;
+  surface.cancelSpinoffEvent = spinoffApi.cancelSpinoffEvent;
+  surface.getSpinoffBalanceCheck = spinoffApi.getSpinoffBalanceCheck;
+
   return surface;
 }
 
@@ -946,6 +969,16 @@ function buildMockExtras() {
     reconcileInventoryCount: mockReconcileInventoryCount,
     cancelInventoryCount: mockCancelInventoryCount,
     getInventoryCountVarianceJeShape: mockInventoryCountVarianceShape,
+    // Spinoff (FN-242) MOCK stubs.
+    listSpinoffEvents: mockListSpinoffEvents,
+    getSpinoffEvent: mockGetSpinoffEvent,
+    createSpinoffEvent: mockCreateSpinoffEvent,
+    addSpinoffTransfer: mockAddSpinoffTransfer,
+    removeSpinoffTransfer: mockRemoveSpinoffTransfer,
+    validateSpinoffEvent: mockValidateSpinoffEvent,
+    approveSpinoffEvent: mockApproveSpinoffEvent,
+    cancelSpinoffEvent: mockCancelSpinoffEvent,
+    getSpinoffBalanceCheck: mockSpinoffBalanceCheck,
     // Board pack (FN-258) MOCK stub — empty pack in MOCK mode.
     getBoardPack: async (q = {}) => ({
       fiscalYear: q.fiscalYear || new Date().getFullYear() - 1,
@@ -2360,6 +2393,186 @@ async function mockInventoryCountVarianceShape(id) {
   };
 }
 
+// ── Spinoff MOCK stubs (FN-242) ──
+let _mockSpinoffCounter = 0;
+let _mockTransferCounter = 0;
+const _mockSpinoffEvents = [];
+async function mockListSpinoffEvents(filters = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  return _mockSpinoffEvents
+    .filter((e) => !filters.status || e.status === filters.status)
+    .map((e) => ({ ...e, transfers: undefined }));
+}
+async function mockGetSpinoffEvent(id) {
+  await new Promise((r) => setTimeout(r, 20));
+  const row = _mockSpinoffEvents.find((e) => e.id === id);
+  return row
+    ? { ...row, transfers: (row.transfers || []).map((t) => ({ ...t })) }
+    : null;
+}
+async function mockCreateSpinoffEvent(payload = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  _mockSpinoffCounter += 1;
+  const row = {
+    id: `mock-spinoff-${_mockSpinoffCounter}`,
+    targetEntityLabel: payload.targetEntityLabel || '',
+    effectiveDate: payload.effectiveDate || new Date().toISOString().slice(0, 10),
+    description: payload.description || '',
+    status: 'DRAFT',
+    notes: payload.notes ?? null,
+    validatedAt: null,
+    approvedAt: null,
+    approvedBy: null,
+    createdBy: 'mock-user',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    transfers: [],
+    _mock: true,
+  };
+  _mockSpinoffEvents.unshift(row);
+  return { ...row, transfers: [] };
+}
+async function mockAddSpinoffTransfer(eventId, payload = {}) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockSpinoffEvents.findIndex((e) => e.id === eventId);
+  if (idx < 0) return null;
+  if (
+    _mockSpinoffEvents[idx].status !== 'DRAFT' &&
+    _mockSpinoffEvents[idx].status !== 'VALIDATED'
+  ) {
+    return null;
+  }
+  _mockTransferCounter += 1;
+  const transfer = {
+    id: `mock-spinoff-tr-${_mockTransferCounter}`,
+    eventId,
+    sourceAccountId: payload.sourceAccountId || '',
+    amountKwd: payload.amountKwd || '0.000',
+    classification: payload.classification || 'ASSET',
+    notes: payload.notes ?? null,
+    createdAt: new Date().toISOString(),
+  };
+  _mockSpinoffEvents[idx] = {
+    ..._mockSpinoffEvents[idx],
+    transfers: [...(_mockSpinoffEvents[idx].transfers || []), transfer],
+    // Re-validation required after transfer change.
+    status:
+      _mockSpinoffEvents[idx].status === 'VALIDATED'
+        ? 'DRAFT'
+        : _mockSpinoffEvents[idx].status,
+    validatedAt:
+      _mockSpinoffEvents[idx].status === 'VALIDATED'
+        ? null
+        : _mockSpinoffEvents[idx].validatedAt,
+    updatedAt: new Date().toISOString(),
+  };
+  return { ...transfer };
+}
+async function mockRemoveSpinoffTransfer(transferId) {
+  await new Promise((r) => setTimeout(r, 40));
+  for (const event of _mockSpinoffEvents) {
+    const tIdx = (event.transfers || []).findIndex((t) => t.id === transferId);
+    if (tIdx >= 0) {
+      if (event.status !== 'DRAFT' && event.status !== 'VALIDATED') return null;
+      event.transfers.splice(tIdx, 1);
+      event.status = 'DRAFT';
+      event.validatedAt = null;
+      event.updatedAt = new Date().toISOString();
+      return { ok: true };
+    }
+  }
+  return null;
+}
+async function mockValidateSpinoffEvent(id) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockSpinoffEvents.findIndex((e) => e.id === id);
+  if (idx < 0) return null;
+  const event = _mockSpinoffEvents[idx];
+  if (event.status !== 'DRAFT' && event.status !== 'VALIDATED') return null;
+  const check = await mockSpinoffBalanceCheck(id);
+  if (check && check.isBalanced) {
+    _mockSpinoffEvents[idx] = {
+      ...event,
+      status: 'VALIDATED',
+      validatedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+  }
+  return {
+    event: {
+      ..._mockSpinoffEvents[idx],
+      transfers: (_mockSpinoffEvents[idx].transfers || []).map((t) => ({ ...t })),
+    },
+    check,
+  };
+}
+async function mockApproveSpinoffEvent(id) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockSpinoffEvents.findIndex((e) => e.id === id);
+  if (idx < 0) return null;
+  if (_mockSpinoffEvents[idx].status !== 'VALIDATED') return null;
+  _mockSpinoffEvents[idx] = {
+    ..._mockSpinoffEvents[idx],
+    status: 'APPROVED',
+    approvedAt: new Date().toISOString(),
+    approvedBy: 'mock-user',
+    updatedAt: new Date().toISOString(),
+  };
+  return {
+    ..._mockSpinoffEvents[idx],
+    transfers: (_mockSpinoffEvents[idx].transfers || []).map((t) => ({ ...t })),
+  };
+}
+async function mockCancelSpinoffEvent(id) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockSpinoffEvents.findIndex((e) => e.id === id);
+  if (idx < 0) return null;
+  if (
+    _mockSpinoffEvents[idx].status !== 'DRAFT' &&
+    _mockSpinoffEvents[idx].status !== 'VALIDATED'
+  ) {
+    return null;
+  }
+  _mockSpinoffEvents[idx] = {
+    ..._mockSpinoffEvents[idx],
+    status: 'CANCELLED',
+    updatedAt: new Date().toISOString(),
+  };
+  return {
+    ..._mockSpinoffEvents[idx],
+    transfers: (_mockSpinoffEvents[idx].transfers || []).map((t) => ({ ...t })),
+  };
+}
+async function mockSpinoffBalanceCheck(id) {
+  await new Promise((r) => setTimeout(r, 30));
+  const event = _mockSpinoffEvents.find((e) => e.id === id);
+  if (!event) return null;
+  let assets = 0;
+  let liabs = 0;
+  let equity = 0;
+  for (const t of event.transfers || []) {
+    const amt = Number(t.amountKwd || 0);
+    if (t.classification === 'ASSET') assets += amt;
+    else if (t.classification === 'LIABILITY') liabs += amt;
+    else equity += amt;
+  }
+  const right = liabs + equity;
+  const diff = assets - right;
+  const isBalanced = Math.abs(diff) <= 0.001;
+  return {
+    assetsKwd: assets.toFixed(3),
+    liabilitiesKwd: liabs.toFixed(3),
+    equityKwd: equity.toFixed(3),
+    leftSideKwd: assets.toFixed(3),
+    rightSideKwd: right.toFixed(3),
+    differenceKwd: diff.toFixed(3),
+    isBalanced,
+    note: isBalanced
+      ? 'balanced: assets = liabilities + equity within 0.001 KWD tolerance'
+      : `unbalanced: ${Math.abs(diff).toFixed(3)} KWD gap (assets ${assets.toFixed(3)} vs L+E ${right.toFixed(3)})`,
+  };
+}
+
 // ── Report versions MOCK stubs (module-scoped so state survives calls) ──
 let _mockReportVersionCounter = 0;
 const _mockReportVersions = [];
@@ -2707,3 +2920,16 @@ export const recordInventoryCountLine = surface.recordInventoryCountLine;
 export const reconcileInventoryCount = surface.reconcileInventoryCount;
 export const cancelInventoryCount = surface.cancelInventoryCount;
 export const getInventoryCountVarianceJeShape = surface.getInventoryCountVarianceJeShape;
+
+// Spinoff (FN-242, Phase 4 Track A Tier 4 — 2026-04-19).
+// Entity split lifecycle with A=L+E balance check. Memo-only until
+// backend JE splice ships.
+export const listSpinoffEvents = surface.listSpinoffEvents;
+export const getSpinoffEvent = surface.getSpinoffEvent;
+export const createSpinoffEvent = surface.createSpinoffEvent;
+export const addSpinoffTransfer = surface.addSpinoffTransfer;
+export const removeSpinoffTransfer = surface.removeSpinoffTransfer;
+export const validateSpinoffEvent = surface.validateSpinoffEvent;
+export const approveSpinoffEvent = surface.approveSpinoffEvent;
+export const cancelSpinoffEvent = surface.cancelSpinoffEvent;
+export const getSpinoffBalanceCheck = surface.getSpinoffBalanceCheck;

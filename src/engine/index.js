@@ -57,6 +57,7 @@ import * as accountsApi from '../api/accounts';
 import * as reportsApi from '../api/reports';
 import * as reportVersionsApi from '../api/report-versions';
 import * as dataInalterabilityApi from '../api/data-inalterability';
+import * as monthlyCloseChecklistApi from '../api/monthly-close-checklist';
 import * as settingsApi from '../api/settings';
 import * as advisorPendingApi from '../api/advisor-pending';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
@@ -121,6 +122,17 @@ const FUNCTION_ROUTING = {
 
   // Data inalterability composite (FN-226, Phase 4 Wave 1 Item 2)
   getDataInalterabilityReport: 'wired',
+
+  // Monthly close checklist (FN-227, Phase 4 Wave 1 Item 3)
+  createTemplateItem: 'wired',
+  updateTemplateItem: 'wired',
+  listTemplateItems: 'wired',
+  openInstance: 'wired',
+  listInstances: 'wired',
+  getInstance: 'wired',
+  markItemStatus: 'wired',
+  signOffInstance: 'wired',
+  reopenInstance: 'wired',
 
   // Auth / settings
   getTenantInfo: 'wired',
@@ -215,6 +227,17 @@ const REAL_IMPLS = {
 
   // Data inalterability composite (FN-226)
   getDataInalterabilityReport: dataInalterabilityApi.getDataInalterabilityReport,
+
+  // Monthly close checklist (FN-227)
+  createTemplateItem: monthlyCloseChecklistApi.createTemplateItem,
+  updateTemplateItem: monthlyCloseChecklistApi.updateTemplateItem,
+  listTemplateItems: monthlyCloseChecklistApi.listTemplateItems,
+  openInstance: monthlyCloseChecklistApi.openInstance,
+  listInstances: monthlyCloseChecklistApi.listInstances,
+  getInstance: monthlyCloseChecklistApi.getInstance,
+  markItemStatus: monthlyCloseChecklistApi.markItemStatus,
+  signOffInstance: monthlyCloseChecklistApi.signOffInstance,
+  reopenInstance: monthlyCloseChecklistApi.reopenInstance,
 
   // Settings
   getTenantInfo: settingsApi.getTenantInfo,
@@ -596,3 +619,18 @@ export const getReportVersion = surface.getReportVersion;
 
 // Data inalterability composite (FN-226, Phase 4 Wave 1 Item 2)
 export const getDataInalterabilityReport = surface.getDataInalterabilityReport;
+
+// Monthly close checklist (FN-227, Phase 4 Wave 1 Item 3). All 9 functions
+// are on mockEngine's namespace (see FN-227 block near the bottom of
+// mockEngine.js) and wired to the real API via FUNCTION_ROUTING +
+// REAL_IMPLS above, so the `...mockEngine` / buildLiveSurface pipelines
+// route to the right impl in either mode.
+export const createTemplateItem = surface.createTemplateItem;
+export const updateTemplateItem = surface.updateTemplateItem;
+export const listTemplateItems = surface.listTemplateItems;
+export const openInstance = surface.openInstance;
+export const listInstances = surface.listInstances;
+export const getInstance = surface.getInstance;
+export const markItemStatus = surface.markItemStatus;
+export const signOffInstance = surface.signOffInstance;
+export const reopenInstance = surface.reopenInstance;

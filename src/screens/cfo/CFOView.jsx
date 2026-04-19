@@ -119,7 +119,7 @@ export default function CFOView({ registerNav }) {
       case "financial-statements":
         return <FinancialStatementsScreen role="CFO" onOpenAminah={openAminah} />;
       case "month-end-close":
-        return <MonthEndCloseScreen role="CFO" onNavigate={setActive} />;
+        return <MonthEndCloseScreen role="CFO" onNavigate={setActive} onOpenAminah={openAminah} />;
       case "forecast":
         return <ForecastScreen onOpenAminah={openAminah} highlightCode={forecastHighlight} onHighlightConsumed={() => setForecastHighlight(null)} />;
       case "variance-analysis":

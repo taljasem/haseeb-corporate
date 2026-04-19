@@ -111,5 +111,139 @@
     "notes_header": "الملاحظات",
     "attachments_header": "المرفقات",
     "override_history_header": "سجل التجاوزات"
+  },
+  "checklist": {
+    "section_title": "قائمة الإقفال المنظّمة",
+    "section_desc": "إقفال شهري مبني على قالب مع ضبط الأدوار واعتماد المالك. مكمِّل للتدفق الذي تديره أمينة أعلاه.",
+    "loading": "جارٍ تحميل القائمة…",
+    "ask_aminah": "اسأل أمينة",
+    "reopened_banner": "أُعيد فتح هذه القائمة. بقي العناصر قابلة للتعديل حتى الاعتماد التالي.",
+    "signed_off_banner": {
+      "prefix": "اعتمدها ",
+      "middle": " · ",
+      "suffix": "."
+    },
+    "empty": {
+      "owner_title": "لم يتم إعداد قالب للقائمة بعد",
+      "owner_desc": "جهّز عناصر القالب التي سيتبعها الفريق في إقفال كل شهر.",
+      "non_owner_title": "لم يتم إعداد قالب للقائمة بعد",
+      "non_owner_desc": "لم يضبط المالك قائمة إقفال منظّمة لهذا المستأجر بعد.",
+      "configure_button": "إعداد القالب"
+    },
+    "no_instance": {
+      "title": "لا توجد قائمة منظّمة مفتوحة لـ {{period}}",
+      "desc_can_open": "افتح قائمة لالتقاط عناصر القالب النشطة والبدء في تتبع الاعتماد لهذه الفترة.",
+      "desc_read_only": "لم يفتح أحد قائمة لهذه الفترة بعد. اطلب من المالك أو المحاسب فتحها.",
+      "open_button": "فتح قائمة لـ {{period}}",
+      "opening": "جارٍ الفتح…"
+    },
+    "instance_status": {
+      "open": "مفتوحة",
+      "in_progress": "قيد التنفيذ",
+      "completed": "مكتملة",
+      "signed_off": "معتمدة",
+      "reopened": "أُعيد فتحها"
+    },
+    "item_status": {
+      "pending": "بانتظار",
+      "in_progress": "قيد التنفيذ",
+      "completed": "مكتمل",
+      "blocked": "متوقف"
+    },
+    "role_gate": {
+      "OWNER": "المالك فقط",
+      "ACCOUNTANT": "المحاسب فقط",
+      "OWNER_OR_ACCOUNTANT": "المالك أو المحاسب"
+    },
+    "item": {
+      "role_gate_prefix": "قابل للإكمال بواسطة: ",
+      "completed_by_prefix": "أكمله ",
+      "completed_by_middle": " · ",
+      "completed_by_suffix": "",
+      "blocked_reason_prefix": "متوقف: ",
+      "blocked_reason_label": "ما سبب التوقف؟",
+      "blocked_reason_placeholder": "اشرح ما يعيق هذا العنصر…",
+      "blocked_confirm": "وسم كمتوقف",
+      "mark_in_progress": "وسم كقيد التنفيذ",
+      "mark_complete": "وسم كمكتمل",
+      "mark_blocked": "وسم كمتوقف",
+      "reset": "إعادة للانتظار",
+      "cancel": "إلغاء",
+      "role_denied_hint": "هذه الخطوة قابلة للإكمال فقط من الدور المُعد في القالب."
+    },
+    "sign_off": {
+      "button": "اعتماد الإقفال",
+      "modal_label": "الإقفال الشهري",
+      "modal_title": "اعتماد الإقفال الشهري",
+      "body": "اعتماد الإقفال يقفل قائمة هذا الشهر. الفصل بين الواجبات: لا يجوز أن يكون المعتمد نفسه من أكمل أحد العناصر.",
+      "completers_label": "العناصر التي أكملها",
+      "no_completers": "لم يُكمل أي عنصر بعد.",
+      "you_badge": "أنت",
+      "sod_blocked_title": "مخالفة فصل الواجبات",
+      "sod_blocked_desc": "لقد أكملت عنصرًا واحدًا على الأقل في هذه القائمة. اطلب من مالك آخر اعتماد الإقفال.",
+      "sod_blocked_hint": "لا يمكنك اعتماد قائمة ساهمت في إكمالها.",
+      "cancel": "إلغاء",
+      "confirm": "تأكيد الاعتماد",
+      "submitting": "جارٍ الاعتماد…",
+      "close": "إغلاق",
+      "error_generic": "تعذّر الاعتماد."
+    },
+    "reopen": {
+      "button": "إعادة فتح القائمة",
+      "modal_title": "إعادة فتح القائمة",
+      "modal_body": "إعادة فتح القائمة لـ {{period}} سيُلغي الاعتماد ويسمح بتعديل العناصر مجددًا. هل تريد المتابعة؟",
+      "cancel": "إلغاء",
+      "confirm": "إعادة فتح القائمة",
+      "confirming": "جارٍ إعادة الفتح…"
+    },
+    "template": {
+      "manage_button": "القالب",
+      "modal_label": "القائمة المنظّمة",
+      "modal_title": "إدارة قالب القائمة",
+      "modal_subtitle": "أضف أو عدّل أو عطّل عناصر قالب الإقفال الشهري. ستلتقط الفترات الجديدة العناصر النشطة فقط.",
+      "close": "إغلاق",
+      "done": "تم",
+      "add_row": "إضافة عنصر",
+      "save": "حفظ",
+      "saving": "جارٍ الحفظ…",
+      "cancel": "إلغاء",
+      "edit": "تعديل",
+      "deactivate": "تعطيل",
+      "reactivate": "إعادة تفعيل",
+      "create": "إنشاء",
+      "none_yet": "لا عناصر في القالب بعد. اضغط 'إضافة عنصر' لإعداد أول عنصر.",
+      "description_label": "الوصف",
+      "description_placeholder": "وصف اختياري…",
+      "new_row_label_placeholder": "اسم العنصر (مثال: 'تسوية الحسابات المصرفية')…",
+      "active_yes": "نشط",
+      "active_no": "غير نشط",
+      "header": {
+        "order": "الترتيب",
+        "label": "الاسم",
+        "gate": "ضبط الدور",
+        "active": "نشط",
+        "actions": "الإجراءات"
+      },
+      "error": {
+        "label_required": "الاسم مطلوب.",
+        "save_failed": "تعذّر حفظ عنصر القالب."
+      }
+    },
+    "toast": {
+      "opened": "فُتحت القائمة لهذه الفترة.",
+      "item_completed": "تم وسم العنصر كمكتمل.",
+      "item_blocked": "تم وسم العنصر كمتوقف.",
+      "item_in_progress": "تم وسم العنصر كقيد التنفيذ.",
+      "item_reset": "أُعيد العنصر للانتظار.",
+      "signed_off": "تم اعتماد الإقفال الشهري.",
+      "reopened": "أُعيد فتح القائمة."
+    },
+    "error": {
+      "templates_title": "تعذّر تحميل قالب القائمة",
+      "instance_title": "تعذّر تحميل القائمة لهذه الفترة",
+      "open_failed": "تعذّر فتح القائمة.",
+      "mark_failed": "تعذّر تحديث حالة العنصر.",
+      "reopen_failed": "تعذّر إعادة فتح القائمة."
+    }
   }
 }

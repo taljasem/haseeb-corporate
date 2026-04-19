@@ -145,7 +145,7 @@ export default function OwnerView({ registerNav }) {
       case "financial-statements":
         return <FinancialStatementsScreen role="Owner" onOpenAminah={openAminah} />;
       case "month-end-close":
-        return <MonthEndCloseScreen role="Owner" onNavigate={setActive} />;
+        return <MonthEndCloseScreen role="Owner" onNavigate={setActive} onOpenAminah={openAminah} />;
       case "audit-bridge":
         return <AuditBridgeScreen />;
       case "team":

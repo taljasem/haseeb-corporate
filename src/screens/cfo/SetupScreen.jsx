@@ -5,7 +5,7 @@ import {
   BookOpen, Calendar, Calculator, Coins, Plug, Users, Cpu, Ban, Receipt,
   Plus, Search, Edit3, Trash2, RefreshCw, AlertTriangle, Check, X as XIcon,
   Scale, Gavel, Clock, Percent, Split, Play, UserCheck, ShieldAlert, FileCode,
-  UserMinus,
+  UserMinus, Banknote,
 } from "lucide-react";
 import LtrText from "../../components/shared/LtrText";
 import EmptyState from "../../components/shared/EmptyState";
@@ -47,6 +47,9 @@ import {
   listLeavePolicies,
   getActiveLeavePolicy,
   getLeaveProvisionSummary,
+  listCbkRates,
+  deleteCbkRate,
+  getCbkRateStaleness,
 } from "../../engine";
 import {
   getFiscalYearConfig,
@@ -77,6 +80,7 @@ import RelatedPartyModal from "../../components/setup/RelatedPartyModal";
 import WarrantyPolicyModal from "../../components/setup/WarrantyPolicyModal";
 import BankFormatModal from "../../components/setup/BankFormatModal";
 import LeavePolicyModal from "../../components/setup/LeavePolicyModal";
+import CbkRateModal from "../../components/setup/CbkRateModal";
 
 function fmtKWD(n) {
   if (n == null) return "—";
@@ -96,6 +100,7 @@ const SECTIONS = [
   { id: "warranty",        icon: ShieldAlert },
   { id: "bank_formats",    icon: FileCode },
   { id: "leave",           icon: UserMinus },
+  { id: "cbk_rates",       icon: Banknote },
   { id: "currencies",      icon: Coins },
   { id: "integrations",    icon: Plug },
   { id: "team_access",     icon: Users },
@@ -151,7 +156,7 @@ export default function SetupScreen() {
                 onMouseLeave={(e) => { if (!on) e.currentTarget.style.background = "transparent"; }}
               >
                 <Icon size={14} strokeWidth={2} />
-                <span>{t(`sections.${s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id === "tax_lodgement" ? "tax_lodgement" : s.id === "cit_assessment" ? "cit_assessment" : s.id === "wht" ? "wht" : s.id === "cost_allocation" ? "cost_allocation" : s.id === "related_party" ? "related_party" : s.id === "warranty" ? "warranty" : s.id === "bank_formats" ? "bank_formats" : s.id === "leave" ? "leave" : s.id}`)}</span>
+                <span>{t(`sections.${s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id === "tax_lodgement" ? "tax_lodgement" : s.id === "cit_assessment" ? "cit_assessment" : s.id === "wht" ? "wht" : s.id === "cost_allocation" ? "cost_allocation" : s.id === "related_party" ? "related_party" : s.id === "warranty" ? "warranty" : s.id === "bank_formats" ? "bank_formats" : s.id === "leave" ? "leave" : s.id === "cbk_rates" ? "cbk_rates" : s.id}`)}</span>
               </button>
             );
           })}
@@ -171,6 +176,7 @@ export default function SetupScreen() {
             {active === "warranty"      && <WarrantySection />}
             {active === "bank_formats"  && <BankFormatsSection />}
             {active === "leave"         && <LeaveSection />}
+            {active === "cbk_rates"     && <CbkRatesSection />}
             {active === "currencies"    && <CurrenciesSection />}
             {active === "integrations"  && <IntegrationsSection />}
             {active === "team_access"   && <TeamAccessSection />}
@@ -5267,6 +5273,403 @@ function LeaveSection() {
                 ? t("leave.saved_edit_toast")
                 : t("leave.saved_create_toast"),
             );
+          }}
+        />
+      </Card>
+    </div>
+  );
+}
+
+// ── CBK Rates (FN-238, 2026-04-19) ────────────────────────────────
+// Central Bank of Kuwait exchange-rate register. Manual entry only
+// in this partial — the CbkRateSource enum reserves CBK_SCHEDULED
+// and BANK_EMBEDDED for future wiring. Staleness indicator is
+// purely passive: shows "last updated Nd ago" colored by a 7-day
+// threshold, NO auto-refresh button (honest about manual-only nature
+// per Q5 resolution). Consumers: FX revaluation + bilingual reports.
+const CBK_COMMON_CURRENCIES = ["USD", "EUR", "GBP", "AED", "SAR"];
+
+function CbkRatesSection() {
+  const { t } = useTranslation("setup");
+  const [rows, setRows] = useState(null);
+  const [staleness, setStaleness] = useState({});
+  const [currencyFilter, setCurrencyFilter] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalPrefill, setModalPrefill] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [loadError, setLoadError] = useState(null);
+
+  const reload = async () => {
+    setLoadError(null);
+    try {
+      const filters = currencyFilter
+        ? { currency: currencyFilter.toUpperCase(), limit: 200 }
+        : { limit: 200 };
+      const list = await listCbkRates(filters);
+      setRows(list || []);
+
+      // Fetch staleness for a small set of "common" currencies so the
+      // summary strip shows them even when no rows are present.
+      const currencies = new Set([
+        ...CBK_COMMON_CURRENCIES,
+        ...(list || []).map((r) => r.currency),
+      ]);
+      const next = {};
+      for (const cur of currencies) {
+        try {
+          const s = await getCbkRateStaleness({
+            currency: cur,
+            staleThresholdDays: 7,
+          });
+          next[cur] = s;
+        } catch {
+          next[cur] = null;
+        }
+      }
+      setStaleness(next);
+    } catch (err) {
+      setRows([]);
+      setLoadError(err?.message || t("cbk_rates.error_load"));
+    }
+  };
+
+  useEffect(() => {
+    reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currencyFilter]);
+
+  const handleDelete = async (row) => {
+    try {
+      await deleteCbkRate(row.id);
+      setToast(t("cbk_rates.deleted_toast"));
+      reload();
+    } catch (err) {
+      setToast(err?.message || t("cbk_rates.error_delete"));
+    }
+  };
+
+  const handleReplaceRate = (row) => {
+    setModalPrefill({
+      currency: row.currency,
+      rateDate: row.rateDate,
+      rateKwd: row.rateKwd,
+      notes: row.notes,
+    });
+    setModalOpen(true);
+  };
+
+  const stalenessSummary = Object.values(staleness).filter(
+    (s) => s && s.latestRate,
+  );
+  const staleCount = stalenessSummary.filter((s) => s.isStale).length;
+
+  return (
+    <div>
+      {/* Staleness strip */}
+      <Card
+        title={t("cbk_rates.staleness_title")}
+        description={t("cbk_rates.staleness_description")}
+      >
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+            gap: 12,
+          }}
+        >
+          {CBK_COMMON_CURRENCIES.map((cur) => {
+            const s = staleness[cur];
+            const color =
+              !s || !s.latestRate
+                ? "var(--text-tertiary)"
+                : s.isStale
+                ? "var(--semantic-warning)"
+                : "var(--accent-primary)";
+            const valueText = s?.latestRate
+              ? s.latestRate.rateKwd
+              : t("cbk_rates.no_rate");
+            const ageText =
+              s?.latestRate && s.ageInDays != null
+                ? t("cbk_rates.age_days", { count: s.ageInDays })
+                : "—";
+            return (
+              <div key={cur}>
+                <div
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: "0.15em",
+                    color: "var(--text-tertiary)",
+                    textTransform: "uppercase",
+                    marginBottom: 3,
+                  }}
+                >
+                  <LtrText>{cur}</LtrText>
+                </div>
+                <div
+                  style={{
+                    fontFamily: "'DM Mono', monospace",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color,
+                  }}
+                >
+                  <LtrText>{valueText}</LtrText>
+                </div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: color,
+                    marginTop: 2,
+                  }}
+                >
+                  <LtrText>{ageText}</LtrText>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        {staleCount > 0 && (
+          <div
+            role="status"
+            style={{
+              marginTop: 14,
+              padding: "10px 14px",
+              borderRadius: 8,
+              border: "1px solid var(--semantic-warning)",
+              background: "var(--semantic-warning-subtle)",
+              color: "var(--semantic-warning)",
+              fontSize: 12,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <Clock size={14} />
+            <span>
+              {t("cbk_rates.stale_banner", { count: staleCount })}
+            </span>
+          </div>
+        )}
+      </Card>
+
+      {/* Register card */}
+      <Card
+        title={t("cbk_rates.title")}
+        description={t("cbk_rates.description")}
+        extra={
+          <button
+            onClick={() => {
+              setModalPrefill(null);
+              setModalOpen(true);
+            }}
+            style={btnPrimary(false)}
+          >
+            <Plus
+              size={13}
+              style={{ verticalAlign: "middle", marginInlineEnd: 6 }}
+            />
+            {t("cbk_rates.add_rate")}
+          </button>
+        }
+      >
+        <Toast text={toast} onClear={() => setToast(null)} />
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            marginBottom: 12,
+          }}
+        >
+          <div style={{ position: "relative", width: 220 }}>
+            <Search
+              size={13}
+              color="var(--text-tertiary)"
+              style={{
+                position: "absolute",
+                insetInlineStart: 10,
+                top: "50%",
+                transform: "translateY(-50%)",
+              }}
+            />
+            <input
+              value={currencyFilter}
+              onChange={(e) =>
+                setCurrencyFilter(e.target.value.toUpperCase())
+              }
+              placeholder={t("cbk_rates.filter_placeholder")}
+              maxLength={3}
+              style={{
+                ...inputStyle,
+                paddingInlineStart: 30,
+                fontFamily: "'DM Mono', monospace",
+                textTransform: "uppercase",
+              }}
+            />
+          </div>
+        </div>
+
+        {loadError && (
+          <div
+            role="alert"
+            style={{
+              display: "flex",
+              gap: 8,
+              padding: "10px 12px",
+              background: "var(--semantic-danger-subtle)",
+              border: "1px solid var(--semantic-danger)",
+              borderRadius: 8,
+              color: "var(--semantic-danger)",
+              fontSize: 12,
+              marginBottom: 12,
+            }}
+          >
+            <AlertTriangle size={14} /> {loadError}
+          </div>
+        )}
+
+        {rows === null && (
+          <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>…</div>
+        )}
+
+        {rows && rows.length === 0 && !loadError && (
+          <EmptyState
+            icon={Banknote}
+            title={t("cbk_rates.empty_title")}
+            description={t("cbk_rates.empty_description")}
+          />
+        )}
+
+        {rows && rows.length > 0 && (
+          <div
+            style={{
+              border: "1px solid var(--border-default)",
+              borderRadius: 8,
+              overflow: "hidden",
+            }}
+          >
+            {rows.map((row, idx) => (
+              <div
+                key={row.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 14,
+                  padding: "12px 18px",
+                  borderBottom:
+                    idx === rows.length - 1
+                      ? "none"
+                      : "1px solid var(--border-subtle)",
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        fontFamily: "'DM Mono', monospace",
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      <LtrText>{row.currency}</LtrText>
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        color: "var(--text-tertiary)",
+                        fontFamily: "'DM Mono', monospace",
+                      }}
+                    >
+                      <LtrText>{row.rateDate}</LtrText>
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: "0.1em",
+                        padding: "2px 8px",
+                        borderRadius: 10,
+                        background: "var(--bg-surface)",
+                        color: "var(--text-tertiary)",
+                        border: "1px solid var(--border-default)",
+                      }}
+                    >
+                      {t(`cbk_rates.source_${row.source}`)}
+                    </span>
+                  </div>
+                  {row.notes && (
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: "var(--text-secondary)",
+                        marginTop: 4,
+                        fontStyle: "italic",
+                      }}
+                    >
+                      {row.notes}
+                    </div>
+                  )}
+                </div>
+                <div
+                  style={{
+                    fontFamily: "'DM Mono', monospace",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: "var(--accent-primary)",
+                    marginInlineEnd: 10,
+                  }}
+                >
+                  <LtrText>{row.rateKwd}</LtrText>
+                </div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button
+                    onClick={() => handleReplaceRate(row)}
+                    style={btnMini}
+                  >
+                    <Edit3
+                      size={11}
+                      style={{
+                        verticalAlign: "middle",
+                        marginInlineEnd: 4,
+                      }}
+                    />
+                    {t("cbk_rates.action_replace")}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(row)}
+                    style={{
+                      ...btnMini,
+                      color: "var(--semantic-danger)",
+                      borderColor: "rgba(208,90,90,0.30)",
+                    }}
+                    aria-label={t("cbk_rates.action_delete")}
+                  >
+                    <Trash2 size={11} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <CbkRateModal
+          open={modalOpen}
+          prefill={modalPrefill}
+          onClose={() => setModalOpen(false)}
+          onSaved={() => {
+            reload();
+            setToast(t("cbk_rates.saved_toast"));
           }}
         />
       </Card>

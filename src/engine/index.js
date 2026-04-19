@@ -75,6 +75,7 @@ import * as migrationAuditApi from '../api/migration-audit';
 import * as warrantyPolicyApi from '../api/warranty-provision-policy';
 import * as bankFormatsApi from '../api/bank-formats';
 import * as leaveProvisionApi from '../api/leave-provision';
+import * as cbkRatesApi from '../api/cbk-rates';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -422,6 +423,15 @@ const REAL_IMPLS = {
   upsertLeaveBalance: leaveProvisionApi.upsertLeaveBalance,
   getLeaveProvisionSummary: leaveProvisionApi.getLeaveProvisionSummary,
   getLeaveProvisionForEmployee: leaveProvisionApi.getLeaveProvisionForEmployee,
+
+  // CBK rates (FN-238, Phase 4 Track A Tier 5 — 2026-04-19).
+  listCbkRates: cbkRatesApi.listCbkRates,
+  getCbkRate: cbkRatesApi.getCbkRate,
+  lookupCbkRateForDate: cbkRatesApi.lookupCbkRateForDate,
+  lookupLatestCbkRate: cbkRatesApi.lookupLatestCbkRate,
+  getCbkRateStaleness: cbkRatesApi.getCbkRateStaleness,
+  upsertCbkRate: cbkRatesApi.upsertCbkRate,
+  deleteCbkRate: cbkRatesApi.deleteCbkRate,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -649,6 +659,15 @@ function buildLiveSurface() {
   surface.getLeaveProvisionSummary = leaveProvisionApi.getLeaveProvisionSummary;
   surface.getLeaveProvisionForEmployee = leaveProvisionApi.getLeaveProvisionForEmployee;
 
+  // CBK rates (FN-238). Extras pattern.
+  surface.listCbkRates = cbkRatesApi.listCbkRates;
+  surface.getCbkRate = cbkRatesApi.getCbkRate;
+  surface.lookupCbkRateForDate = cbkRatesApi.lookupCbkRateForDate;
+  surface.lookupLatestCbkRate = cbkRatesApi.lookupLatestCbkRate;
+  surface.getCbkRateStaleness = cbkRatesApi.getCbkRateStaleness;
+  surface.upsertCbkRate = cbkRatesApi.upsertCbkRate;
+  surface.deleteCbkRate = cbkRatesApi.deleteCbkRate;
+
   return surface;
 }
 
@@ -858,7 +877,123 @@ function buildMockExtras() {
     upsertLeaveBalance: async (p) => ({ ...p }),
     getLeaveProvisionSummary: mockLeaveSummary,
     getLeaveProvisionForEmployee: async () => null,
+    // CBK rates (FN-238) MOCK stubs.
+    listCbkRates: mockListCbkRates,
+    getCbkRate: mockGetCbkRate,
+    lookupCbkRateForDate: mockLookupCbkRateForDate,
+    lookupLatestCbkRate: mockLookupLatestCbkRate,
+    getCbkRateStaleness: mockGetCbkRateStaleness,
+    upsertCbkRate: mockUpsertCbkRate,
+    deleteCbkRate: mockDeleteCbkRate,
   };
+}
+
+// ── CBK rates MOCK stubs (FN-238) ──
+let _mockCbkCounter = 0;
+const _mockCbkRates = [];
+async function mockListCbkRates(filters = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  return _mockCbkRates
+    .filter((r) => {
+      if (filters.currency && r.currency !== filters.currency) return false;
+      if (filters.rateDateFrom && r.rateDate < filters.rateDateFrom) return false;
+      if (filters.rateDateTo && r.rateDate > filters.rateDateTo) return false;
+      return true;
+    })
+    .slice(0, filters.limit || 500)
+    .map((r) => ({ ...r }));
+}
+async function mockGetCbkRate(id) {
+  await new Promise((r) => setTimeout(r, 20));
+  const row = _mockCbkRates.find((r) => r.id === id);
+  return row ? { ...row } : null;
+}
+async function mockLookupCbkRateForDate(query = {}) {
+  await new Promise((r) => setTimeout(r, 20));
+  const row = _mockCbkRates.find(
+    (r) =>
+      r.currency === query.currency &&
+      r.rateDate === (query.asOf || new Date().toISOString().slice(0, 10)),
+  );
+  return row ? { ...row } : null;
+}
+async function mockLookupLatestCbkRate(query = {}) {
+  await new Promise((r) => setTimeout(r, 20));
+  const asOf = query.asOf || new Date().toISOString().slice(0, 10);
+  const candidates = _mockCbkRates
+    .filter((r) => r.currency === query.currency && r.rateDate <= asOf)
+    .sort((a, b) => (a.rateDate < b.rateDate ? 1 : -1));
+  return candidates[0] ? { ...candidates[0] } : null;
+}
+async function mockGetCbkRateStaleness(query = {}) {
+  await new Promise((r) => setTimeout(r, 30));
+  const asOfIso = query.asOf || new Date().toISOString().slice(0, 10);
+  const threshold = query.staleThresholdDays ?? 7;
+  const latest = await mockLookupLatestCbkRate({
+    currency: query.currency,
+    asOf: asOfIso,
+  });
+  if (!latest) {
+    return {
+      currency: query.currency,
+      asOf: asOfIso,
+      latestRate: null,
+      ageInDays: null,
+      staleThresholdDays: threshold,
+      isStale: true,
+      note: 'mock: no rate recorded',
+    };
+  }
+  const ageInDays = Math.round(
+    (new Date(asOfIso) - new Date(latest.rateDate)) / 86400000,
+  );
+  return {
+    currency: query.currency,
+    asOf: asOfIso,
+    latestRate: latest,
+    ageInDays,
+    staleThresholdDays: threshold,
+    isStale: ageInDays > threshold,
+    note: `mock: latest rate is ${ageInDays}d old`,
+  };
+}
+async function mockUpsertCbkRate(payload = {}) {
+  await new Promise((r) => setTimeout(r, 60));
+  const existingIdx = _mockCbkRates.findIndex(
+    (r) => r.currency === payload.currency && r.rateDate === payload.rateDate,
+  );
+  if (existingIdx >= 0) {
+    _mockCbkRates[existingIdx] = {
+      ..._mockCbkRates[existingIdx],
+      rateKwd: payload.rateKwd,
+      source: payload.source || 'MANUAL',
+      notes: payload.notes ?? null,
+      updatedAt: new Date().toISOString(),
+    };
+    return { ..._mockCbkRates[existingIdx] };
+  }
+  _mockCbkCounter += 1;
+  const row = {
+    id: `mock-cbk-${_mockCbkCounter}`,
+    currency: payload.currency || 'USD',
+    rateDate: payload.rateDate || new Date().toISOString().slice(0, 10),
+    rateKwd: payload.rateKwd || '0.30600',
+    source: payload.source || 'MANUAL',
+    notes: payload.notes ?? null,
+    createdBy: 'mock-user',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    _mock: true,
+  };
+  _mockCbkRates.unshift(row);
+  return { ...row };
+}
+async function mockDeleteCbkRate(id) {
+  await new Promise((r) => setTimeout(r, 40));
+  const idx = _mockCbkRates.findIndex((r) => r.id === id);
+  if (idx < 0) return null;
+  const [removed] = _mockCbkRates.splice(idx, 1);
+  return { ...removed };
 }
 
 // ── Leave provision MOCK stubs (FN-255) ──
@@ -2270,3 +2405,15 @@ export const getLeaveBalance = surface.getLeaveBalance;
 export const upsertLeaveBalance = surface.upsertLeaveBalance;
 export const getLeaveProvisionSummary = surface.getLeaveProvisionSummary;
 export const getLeaveProvisionForEmployee = surface.getLeaveProvisionForEmployee;
+
+// CBK rates (FN-238, Phase 4 Track A Tier 5 — 2026-04-19).
+// Central Bank of Kuwait exchange-rate register. Manual entry only in
+// this partial; scheduled fetcher + bank-embedded sources reserved.
+// Consumers: FX revaluation (FN-175), bilingual reports.
+export const listCbkRates = surface.listCbkRates;
+export const getCbkRate = surface.getCbkRate;
+export const lookupCbkRateForDate = surface.lookupCbkRateForDate;
+export const lookupLatestCbkRate = surface.lookupLatestCbkRate;
+export const getCbkRateStaleness = surface.getCbkRateStaleness;
+export const upsertCbkRate = surface.upsertCbkRate;
+export const deleteCbkRate = surface.deleteCbkRate;

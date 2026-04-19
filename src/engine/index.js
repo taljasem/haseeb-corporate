@@ -71,6 +71,7 @@ import * as pettyCashApi from '../api/petty-cash';
 import * as costAllocationApi from '../api/cost-allocation';
 import * as relatedPartyApi from '../api/related-party';
 import * as bulkReclassApi from '../api/bulk-reclassifications';
+import * as migrationAuditApi from '../api/migration-audit';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -386,6 +387,11 @@ const REAL_IMPLS = {
   approveBulkReclassification: bulkReclassApi.approveBulkReclassification,
   cancelBulkReclassification: bulkReclassApi.cancelBulkReclassification,
   getBulkReclassificationJeShape: bulkReclassApi.getBulkReclassificationJeShape,
+
+  // Migration audit trail (FN-245, Phase 4 Track A Tier 5 — 2026-04-19).
+  listMigrationAudits: migrationAuditApi.listMigrationAudits,
+  getMigrationSchemaChain: migrationAuditApi.getMigrationSchemaChain,
+  getMigrationAudit: migrationAuditApi.getMigrationAudit,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -581,6 +587,11 @@ function buildLiveSurface() {
   surface.cancelBulkReclassification = bulkReclassApi.cancelBulkReclassification;
   surface.getBulkReclassificationJeShape = bulkReclassApi.getBulkReclassificationJeShape;
 
+  // Migration audit trail (FN-245). Extras pattern.
+  surface.listMigrationAudits = migrationAuditApi.listMigrationAudits;
+  surface.getMigrationSchemaChain = migrationAuditApi.getMigrationSchemaChain;
+  surface.getMigrationAudit = migrationAuditApi.getMigrationAudit;
+
   return surface;
 }
 
@@ -761,6 +772,11 @@ function buildMockExtras() {
     approveBulkReclassification: mockApproveBulkReclassification,
     cancelBulkReclassification: mockCancelBulkReclassification,
     getBulkReclassificationJeShape: mockGetBulkReclassificationJeShape,
+    // Migration audit (FN-245) MOCK stubs — empty; append-only trail
+    // is backend-only territory, no in-app creation happens in MOCK.
+    listMigrationAudits: async () => [],
+    getMigrationSchemaChain: async () => [],
+    getMigrationAudit: async () => null,
   };
 }
 
@@ -1903,3 +1919,11 @@ export const previewBulkReclassification = surface.previewBulkReclassification;
 export const approveBulkReclassification = surface.approveBulkReclassification;
 export const cancelBulkReclassification = surface.cancelBulkReclassification;
 export const getBulkReclassificationJeShape = surface.getBulkReclassificationJeShape;
+
+// Migration audit trail (FN-245, Phase 4 Track A Tier 5 — 2026-04-19).
+// Read-only infrastructure trail. OWNER + AUDITOR only. Reads the
+// append-only MigrationAudit register + computes per-row schema-hash
+// chain-integrity (feeds FN-226 Data Inalterability Panel).
+export const listMigrationAudits = surface.listMigrationAudits;
+export const getMigrationSchemaChain = surface.getMigrationSchemaChain;
+export const getMigrationAudit = surface.getMigrationAudit;

@@ -146,5 +146,33 @@
       "BUDGET_VARIANCE": "انحراف الموازنة",
       "CUSTOM": "مخصص"
     }
+  },
+  "migration_audit": {
+    "title": "سجل ترحيلات قاعدة البيانات",
+    "subtitle": "سجل لا يقبل التعديل · سلامة سلسلة بصمات المخطط",
+    "summary_count": "{{count}} ترحيل",
+    "summary_total": "الإجمالي",
+    "summary_success": "نجاح",
+    "summary_failed": "فشل",
+    "summary_chain_status": "السلسلة",
+    "chain_intact": "السلسلة متصلة",
+    "chain_breaks": "{{count}} كسر في السلسلة",
+    "chain_intact_short": "متصلة",
+    "chain_break_short": "{{count}} كسر",
+    "chain_broken": "السلسلة مكسورة",
+    "failed_count": "{{count}} فشل",
+    "loading": "جارٍ تحميل سجل الترحيلات…",
+    "empty": "لا توجد ترحيلات مسجَّلة على قاعدة بيانات هذا الكيان بعد.",
+    "outcome_SUCCESS": "نجاح",
+    "outcome_FAILED": "فشل",
+    "outcome_ROLLED_BACK": "تراجع",
+    "trigger_MIGRATE_DEPLOY": "ترحيل",
+    "trigger_SELF_HEAL": "إصلاح ذاتي",
+    "trigger_MANUAL": "يدوي",
+    "label_by": "بواسطة",
+    "label_diff": "ملخص التغيير",
+    "label_hash_before": "البصمة قبل",
+    "label_hash_after": "البصمة بعد",
+    "label_error": "خطأ"
   }
 }

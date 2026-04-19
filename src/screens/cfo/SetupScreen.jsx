@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  BookOpen, Calendar, Calculator, Coins, Plug, Users, Cpu,
+  BookOpen, Calendar, Calculator, Coins, Plug, Users, Cpu, Ban,
   Plus, Search, Edit3, Trash2, RefreshCw, AlertTriangle, Check, X as XIcon,
 } from "lucide-react";
 import LtrText from "../../components/shared/LtrText";
@@ -14,7 +14,12 @@ import { formatRelativeTime } from "../../utils/relativeTime";
 // (fiscal, tax, currencies, integrations, team access, engine rules) has
 // no backend yet and stays on the mockEngine direct path — the router
 // will fall back to mock in LIVE mode with a one-shot warn.
-import { getSetupChartOfAccounts } from "../../engine";
+import {
+  getSetupChartOfAccounts,
+  getAccountsFlat,
+  listDisallowanceRules,
+  deactivateDisallowanceRule,
+} from "../../engine";
 import {
   getFiscalYearConfig,
   getTaxConfiguration,
@@ -34,6 +39,7 @@ import DeactivateAccountModal from "../../components/setup/DeactivateAccountModa
 import PeriodActionModal from "../../components/setup/PeriodActionModal";
 import ApplyRoleTemplateModal from "../../components/setup/ApplyRoleTemplateModal";
 import ChangeEngineRuleModal from "../../components/setup/ChangeEngineRuleModal";
+import DisallowanceRuleModal from "../../components/setup/DisallowanceRuleModal";
 
 function fmtKWD(n) {
   if (n == null) return "—";
@@ -44,6 +50,7 @@ const SECTIONS = [
   { id: "chart",         icon: BookOpen },
   { id: "fiscal",        icon: Calendar },
   { id: "tax",           icon: Calculator },
+  { id: "disallowance",  icon: Ban },
   { id: "currencies",    icon: Coins },
   { id: "integrations",  icon: Plug },
   { id: "team_access",   icon: Users },
@@ -99,7 +106,7 @@ export default function SetupScreen() {
                 onMouseLeave={(e) => { if (!on) e.currentTarget.style.background = "transparent"; }}
               >
                 <Icon size={14} strokeWidth={2} />
-                <span>{t(`sections.${s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id}`)}</span>
+                <span>{t(`sections.${s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id}`)}</span>
               </button>
             );
           })}
@@ -110,6 +117,7 @@ export default function SetupScreen() {
             {active === "chart"         && <ChartSection />}
             {active === "fiscal"        && <FiscalSection />}
             {active === "tax"           && <TaxSection />}
+            {active === "disallowance"  && <DisallowanceSection />}
             {active === "currencies"    && <CurrenciesSection />}
             {active === "integrations"  && <IntegrationsSection />}
             {active === "team_access"   && <TeamAccessSection />}
@@ -651,6 +659,351 @@ function EngineRulesSection() {
         currentValue={editing ? cfg[editing] : 0}
         onClose={() => setEditing(null)}
         onSaved={() => { reload(); setToast(t("engine_rules.saved_toast")); }}
+      />
+    </Card>
+  );
+}
+
+// ── Disallowance Rules (FN-222, 2026-04-19) ─────────────────────
+// Kuwait CIT disallowance-rule register. OWNER-only write surface.
+// Reads open to OWNER/ACCOUNTANT/VIEWER/AUDITOR. Rules drive
+// DISALLOWED_EXPENSES tagging in the four-levy pipeline (FN-233).
+function DisallowanceSection() {
+  const { t } = useTranslation("setup");
+  const [rows, setRows] = useState(null);
+  const [accounts, setAccounts] = useState([]);
+  const [activeOnly, setActiveOnly] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState("create");
+  const [editingRule, setEditingRule] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [loadError, setLoadError] = useState(null);
+
+  const reload = async () => {
+    setLoadError(null);
+    try {
+      const list = await listDisallowanceRules({ activeOnly });
+      setRows(list || []);
+    } catch (err) {
+      setRows([]);
+      setLoadError(err?.message || t("disallowance.error_load"));
+    }
+  };
+
+  useEffect(() => {
+    reload();
+    // accounts for the targetAccountId picker (COA leaves).
+    getAccountsFlat()
+      .then((arr) => {
+        const adapted = (arr || []).map((a) => ({
+          id: a.raw?.id || a.id || a.code,
+          code: a.code,
+          nameEn: a.name || a.nameEn,
+          nameAr: a.nameAr,
+        }));
+        setAccounts(adapted);
+      })
+      .catch(() => setAccounts([]));
+    // activeOnly is a dependency because the query param changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeOnly]);
+
+  const handleDeactivate = async (rule) => {
+    try {
+      await deactivateDisallowanceRule(rule.id);
+      setToast(t("disallowance.deactivated_toast"));
+      reload();
+    } catch (err) {
+      setToast(err?.message || t("disallowance.error_deactivate"));
+    }
+  };
+
+  return (
+    <Card
+      title={t("disallowance.title")}
+      description={t("disallowance.description")}
+      extra={
+        <button
+          onClick={() => {
+            setModalMode("create");
+            setEditingRule(null);
+            setModalOpen(true);
+          }}
+          style={btnPrimary(false)}
+        >
+          <Plus size={13} style={{ verticalAlign: "middle", marginInlineEnd: 6 }} />
+          {t("disallowance.add_rule")}
+        </button>
+      }
+    >
+      <Toast text={toast} onClear={() => setToast(null)} />
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          marginBottom: 12,
+        }}
+      >
+        <button
+          onClick={() => setActiveOnly(false)}
+          style={{
+            ...btnMini,
+            background: !activeOnly ? "var(--accent-primary-subtle)" : "transparent",
+            borderColor: !activeOnly ? "rgba(0,196,140,0.30)" : "var(--border-strong)",
+            color: !activeOnly ? "var(--accent-primary)" : "var(--text-secondary)",
+          }}
+        >
+          {t("disallowance.filter_all")}
+        </button>
+        <button
+          onClick={() => setActiveOnly(true)}
+          style={{
+            ...btnMini,
+            background: activeOnly ? "var(--accent-primary-subtle)" : "transparent",
+            borderColor: activeOnly ? "rgba(0,196,140,0.30)" : "var(--border-strong)",
+            color: activeOnly ? "var(--accent-primary)" : "var(--text-secondary)",
+          }}
+        >
+          {t("disallowance.filter_active_only")}
+        </button>
+      </div>
+
+      {loadError && (
+        <div
+          role="alert"
+          style={{
+            display: "flex",
+            gap: 8,
+            padding: "10px 12px",
+            background: "var(--semantic-danger-subtle)",
+            border: "1px solid var(--semantic-danger)",
+            borderRadius: 8,
+            color: "var(--semantic-danger)",
+            fontSize: 12,
+            marginBottom: 12,
+          }}
+        >
+          <AlertTriangle size={14} /> {loadError}
+        </div>
+      )}
+
+      {rows === null && (
+        <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>…</div>
+      )}
+
+      {rows && rows.length === 0 && !loadError && (
+        <EmptyState
+          icon={Ban}
+          title={t("disallowance.empty_title")}
+          description={t("disallowance.empty_description")}
+        />
+      )}
+
+      {rows && rows.length > 0 && (
+        <div
+          style={{
+            border: "1px solid var(--border-default)",
+            borderRadius: 8,
+            overflow: "hidden",
+          }}
+        >
+          {rows.map((rule, idx) => {
+            const today = new Date().toISOString().slice(0, 10);
+            const isActive =
+              rule.activeFrom <= today &&
+              (!rule.activeUntil || rule.activeUntil >= today);
+            return (
+              <div
+                key={rule.id}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  gap: 14,
+                  padding: "14px 18px",
+                  borderBottom:
+                    idx === rows.length - 1
+                      ? "none"
+                      : "1px solid var(--border-subtle)",
+                  background: isActive ? "transparent" : "var(--bg-surface-sunken)",
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      {rule.name}
+                    </div>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: "0.1em",
+                        padding: "2px 8px",
+                        borderRadius: 10,
+                        background: isActive
+                          ? "var(--accent-primary-subtle)"
+                          : "var(--bg-surface)",
+                        color: isActive
+                          ? "var(--accent-primary)"
+                          : "var(--text-tertiary)",
+                        border: isActive
+                          ? "1px solid rgba(0,196,140,0.30)"
+                          : "1px solid var(--border-default)",
+                      }}
+                    >
+                      {isActive
+                        ? t("disallowance.status_active")
+                        : t("disallowance.status_inactive")}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: "0.1em",
+                        padding: "2px 8px",
+                        borderRadius: 10,
+                        background: "var(--bg-surface)",
+                        color: "var(--text-tertiary)",
+                        border: "1px solid var(--border-default)",
+                      }}
+                    >
+                      {t(`disallowance.rule_type_${rule.ruleType}`)}
+                    </span>
+                  </div>
+                  {rule.description && (
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: "var(--text-secondary)",
+                        marginTop: 4,
+                      }}
+                    >
+                      {rule.description}
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 14,
+                      marginTop: 6,
+                      fontSize: 11,
+                      color: "var(--text-tertiary)",
+                    }}
+                  >
+                    <div>
+                      {t("disallowance.label_percent")}:{" "}
+                      <LtrText>
+                        <span
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontFamily: "'DM Mono', monospace",
+                          }}
+                        >
+                          {rule.disallowedPercent}%
+                        </span>
+                      </LtrText>
+                    </div>
+                    <div>
+                      {t("disallowance.label_target")}:{" "}
+                      <span style={{ color: "var(--text-secondary)" }}>
+                        {rule.targetRole
+                          ? rule.targetRole
+                          : rule.targetAccountId
+                          ? t("disallowance.target_account_short")
+                          : "—"}
+                      </span>
+                    </div>
+                    <div>
+                      {t("disallowance.label_active_from")}:{" "}
+                      <LtrText>
+                        <span
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontFamily: "'DM Mono', monospace",
+                          }}
+                        >
+                          {rule.activeFrom}
+                        </span>
+                      </LtrText>
+                    </div>
+                    {rule.activeUntil && (
+                      <div>
+                        {t("disallowance.label_active_until")}:{" "}
+                        <LtrText>
+                          <span
+                            style={{
+                              color: "var(--text-secondary)",
+                              fontFamily: "'DM Mono', monospace",
+                            }}
+                          >
+                            {rule.activeUntil}
+                          </span>
+                        </LtrText>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <button
+                    onClick={() => {
+                      setModalMode("edit");
+                      setEditingRule(rule);
+                      setModalOpen(true);
+                    }}
+                    style={btnMini}
+                  >
+                    <Edit3 size={11} style={{ verticalAlign: "middle", marginInlineEnd: 4 }} />
+                    {t("disallowance.action_edit")}
+                  </button>
+                  {isActive && (
+                    <button
+                      onClick={() => handleDeactivate(rule)}
+                      style={{
+                        ...btnMini,
+                        color: "var(--semantic-danger)",
+                        borderColor: "rgba(208,90,90,0.30)",
+                      }}
+                    >
+                      {t("disallowance.action_deactivate")}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <DisallowanceRuleModal
+        open={modalOpen}
+        mode={modalMode}
+        rule={editingRule}
+        accounts={accounts}
+        onClose={() => setModalOpen(false)}
+        onSaved={() => {
+          reload();
+          setToast(
+            modalMode === "edit"
+              ? t("disallowance.saved_edit_toast")
+              : t("disallowance.saved_create_toast"),
+          );
+        }}
       />
     </Card>
   );

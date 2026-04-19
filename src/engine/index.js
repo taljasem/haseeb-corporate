@@ -63,6 +63,7 @@ import * as advisorPendingApi from '../api/advisor-pending';
 import * as agingApi from '../api/aging';
 import * as invoicesApi from '../api/invoices';
 import * as billsApi from '../api/bills';
+import * as disallowanceRulesApi from '../api/disallowance-rules';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -300,6 +301,15 @@ const REAL_IMPLS = {
   // createWriteOffJE: PHASE-4-BLOCKED-ON-BACKEND. See FUNCTION_ROUTING
   // comment block above. Falls through to mockEngine.createWriteOffJE
   // via the default mock_fallback wrapper until HASEEB-068/069 ship.
+
+  // Disallowance rules (FN-222, Phase 4 Track A Wave 2 — 2026-04-19).
+  // Backend 5/5 live; these are extras surfaced in both MOCK and LIVE
+  // modes via buildLiveSurface / buildMockExtras (no mockEngine impl).
+  listDisallowanceRules: disallowanceRulesApi.listDisallowanceRules,
+  getDisallowanceRule: disallowanceRulesApi.getDisallowanceRule,
+  createDisallowanceRule: disallowanceRulesApi.createDisallowanceRule,
+  updateDisallowanceRule: disallowanceRulesApi.updateDisallowanceRule,
+  deactivateDisallowanceRule: disallowanceRulesApi.deactivateDisallowanceRule,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -422,6 +432,15 @@ function buildLiveSurface() {
   // up via FUNCTION_ROUTING['getDataInalterabilityReport'] = 'wired'
   // + REAL_IMPLS. No explicit override needed here.
 
+  // Disallowance rules (FN-222, Phase 4 Track A Wave 2). Not on
+  // mockEngine's namespace — surfaced via extras the same way report
+  // versions / advisor-pending are. Backend 5/5 live.
+  surface.listDisallowanceRules = disallowanceRulesApi.listDisallowanceRules;
+  surface.getDisallowanceRule = disallowanceRulesApi.getDisallowanceRule;
+  surface.createDisallowanceRule = disallowanceRulesApi.createDisallowanceRule;
+  surface.updateDisallowanceRule = disallowanceRulesApi.updateDisallowanceRule;
+  surface.deactivateDisallowanceRule = disallowanceRulesApi.deactivateDisallowanceRule;
+
   return surface;
 }
 
@@ -538,7 +557,84 @@ function buildMockExtras() {
     // NOTE: the FN-226 mock (getDataInalterabilityReport) lives in
     // mockEngine.js itself, so it is already picked up via the
     // `...mockEngine` spread above and does not need an override here.
+    // Disallowance rules (FN-222) MOCK stubs — module-scoped store so
+    // create/update/deactivate persist for the lifetime of the tab.
+    listDisallowanceRules: mockListDisallowanceRules,
+    getDisallowanceRule: mockGetDisallowanceRule,
+    createDisallowanceRule: mockCreateDisallowanceRule,
+    updateDisallowanceRule: mockUpdateDisallowanceRule,
+    deactivateDisallowanceRule: mockDeactivateDisallowanceRule,
   };
+}
+
+// ── Disallowance rules MOCK stubs (FN-222) ──
+let _mockDisallowanceCounter = 0;
+const _mockDisallowanceRules = [];
+async function mockListDisallowanceRules(filters = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  const asOf = filters.asOf ? new Date(filters.asOf) : new Date();
+  return _mockDisallowanceRules
+    .filter((rule) => {
+      if (filters.ruleType && rule.ruleType !== filters.ruleType) return false;
+      if (filters.activeOnly) {
+        const from = new Date(rule.activeFrom);
+        const until = rule.activeUntil ? new Date(rule.activeUntil) : null;
+        if (asOf < from) return false;
+        if (until && asOf > until) return false;
+      }
+      return true;
+    })
+    .map((r) => ({ ...r }));
+}
+async function mockGetDisallowanceRule(id) {
+  await new Promise((r) => setTimeout(r, 20));
+  const row = _mockDisallowanceRules.find((v) => v.id === id);
+  return row ? { ...row } : null;
+}
+async function mockCreateDisallowanceRule(payload = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  _mockDisallowanceCounter += 1;
+  const row = {
+    id: `mock-dr-${_mockDisallowanceCounter}`,
+    name: payload.name || '',
+    description: payload.description ?? null,
+    ruleType: payload.ruleType || 'CUSTOM',
+    disallowedPercent: Number(payload.disallowedPercent ?? 0),
+    targetRole: payload.targetRole ?? null,
+    targetAccountId: payload.targetAccountId ?? null,
+    activeFrom: payload.activeFrom || new Date().toISOString().slice(0, 10),
+    activeUntil: payload.activeUntil ?? null,
+    notes: payload.notes ?? null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    _mock: true,
+  };
+  _mockDisallowanceRules.unshift(row);
+  return row;
+}
+async function mockUpdateDisallowanceRule(id, patch = {}) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockDisallowanceRules.findIndex((v) => v.id === id);
+  if (idx < 0) return null;
+  const next = {
+    ..._mockDisallowanceRules[idx],
+    ...patch,
+    updatedAt: new Date().toISOString(),
+  };
+  _mockDisallowanceRules[idx] = next;
+  return { ...next };
+}
+async function mockDeactivateDisallowanceRule(id) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockDisallowanceRules.findIndex((v) => v.id === id);
+  if (idx < 0) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  _mockDisallowanceRules[idx] = {
+    ..._mockDisallowanceRules[idx],
+    activeUntil: today,
+    updatedAt: new Date().toISOString(),
+  };
+  return { ..._mockDisallowanceRules[idx] };
 }
 
 // ── Report versions MOCK stubs (module-scoped so state survives calls) ──
@@ -703,3 +799,13 @@ export const scheduleVendorPayment = surface.scheduleVendorPayment;
 // semantic mismatch with credit-note path (see FUNCTION_ROUTING block
 // above + HASEEB-068/069).
 export const createWriteOffJE = surface.createWriteOffJE;
+
+// Disallowance rules (FN-222, Phase 4 Track A Wave 2 — 2026-04-19).
+// Kuwait CIT disallowance-rule register. OWNER-only mutations; reads
+// open to OWNER/ACCOUNTANT/VIEWER/AUDITOR. See src/api/disallowance-rules.js
+// and memory-bank/2026-04-19-phase4-breakdown.md row 3.
+export const listDisallowanceRules = surface.listDisallowanceRules;
+export const getDisallowanceRule = surface.getDisallowanceRule;
+export const createDisallowanceRule = surface.createDisallowanceRule;
+export const updateDisallowanceRule = surface.updateDisallowanceRule;
+export const deactivateDisallowanceRule = surface.deactivateDisallowanceRule;

@@ -77,6 +77,7 @@ import * as bankFormatsApi from '../api/bank-formats';
 import * as leaveProvisionApi from '../api/leave-provision';
 import * as cbkRatesApi from '../api/cbk-rates';
 import * as boardPackApi from '../api/board-pack';
+import * as ocrGatingApi from '../api/ocr-gating';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -436,6 +437,14 @@ const REAL_IMPLS = {
 
   // Board pack (FN-258, Phase 4 Track A Tier 5 — 2026-04-19).
   getBoardPack: boardPackApi.getBoardPack,
+
+  // OCR gating (FN-224, Phase 4 Track A Tier 5 — 2026-04-19).
+  listOcrExtractions: ocrGatingApi.listOcrExtractions,
+  getOcrExtraction: ocrGatingApi.getOcrExtraction,
+  recordOcrExtraction: ocrGatingApi.recordOcrExtraction,
+  correctOcrField: ocrGatingApi.correctOcrField,
+  approveOcrExtraction: ocrGatingApi.approveOcrExtraction,
+  rejectOcrExtraction: ocrGatingApi.rejectOcrExtraction,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -675,6 +684,14 @@ function buildLiveSurface() {
   // Board pack (FN-258). Extras pattern.
   surface.getBoardPack = boardPackApi.getBoardPack;
 
+  // OCR gating (FN-224). Extras pattern.
+  surface.listOcrExtractions = ocrGatingApi.listOcrExtractions;
+  surface.getOcrExtraction = ocrGatingApi.getOcrExtraction;
+  surface.recordOcrExtraction = ocrGatingApi.recordOcrExtraction;
+  surface.correctOcrField = ocrGatingApi.correctOcrField;
+  surface.approveOcrExtraction = ocrGatingApi.approveOcrExtraction;
+  surface.rejectOcrExtraction = ocrGatingApi.rejectOcrExtraction;
+
   return surface;
 }
 
@@ -892,6 +909,13 @@ function buildMockExtras() {
     getCbkRateStaleness: mockGetCbkRateStaleness,
     upsertCbkRate: mockUpsertCbkRate,
     deleteCbkRate: mockDeleteCbkRate,
+    // OCR gating (FN-224) MOCK stubs — empty queue.
+    listOcrExtractions: async () => [],
+    getOcrExtraction: async () => null,
+    recordOcrExtraction: async (p) => ({ ...p, id: 'mock-ocr-1', status: 'PENDING_REVIEW' }),
+    correctOcrField: async () => null,
+    approveOcrExtraction: async () => null,
+    rejectOcrExtraction: async () => null,
     // Board pack (FN-258) MOCK stub — empty pack in MOCK mode.
     getBoardPack: async (q = {}) => ({
       fiscalYear: q.fiscalYear || new Date().getFullYear() - 1,
@@ -2440,3 +2464,14 @@ export const deleteCbkRate = surface.deleteCbkRate;
 // Annual composite: current+prior report versions + YoY comparisons +
 // disclosure-note summaries + warnings. OWNER+AUDITOR only.
 export const getBoardPack = surface.getBoardPack;
+
+// OCR gating (FN-224, Phase 4 Track A Tier 5 — 2026-04-19).
+// Receipt / statement OCR extraction review surface. Upload pipelines
+// record extractions; OWNER approves/rejects; OWNER+ACCOUNTANT correct
+// individual fields.
+export const listOcrExtractions = surface.listOcrExtractions;
+export const getOcrExtraction = surface.getOcrExtraction;
+export const recordOcrExtraction = surface.recordOcrExtraction;
+export const correctOcrField = surface.correctOcrField;
+export const approveOcrExtraction = surface.approveOcrExtraction;
+export const rejectOcrExtraction = surface.rejectOcrExtraction;

@@ -24,6 +24,7 @@
     "reconciliation": "Reconciliation",
     "petty_cash": "Petty Cash",
     "bulk_reclass": "Bulk Reclassify",
+    "ocr_review": "OCR Review",
     "budget": "Budget",
     "forecast": "Forecast",
     "financial_statements": "Financial Statements",

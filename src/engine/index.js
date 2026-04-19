@@ -81,6 +81,7 @@ import * as ocrGatingApi from '../api/ocr-gating';
 import * as inventoryCountApi from '../api/inventory-count';
 import * as spinoffApi from '../api/spinoff';
 import * as islamicFinanceApi from '../api/islamic-finance';
+import * as purchaseOrdersApi from '../api/purchase-orders';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -478,6 +479,15 @@ const REAL_IMPLS = {
   generateIslamicSchedule: islamicFinanceApi.generateIslamicSchedule,
   markIslamicInstallmentPaid: islamicFinanceApi.markIslamicInstallmentPaid,
   getIslamicPosition: islamicFinanceApi.getIslamicPosition,
+
+  // Purchase Orders + Goods Receipts + 3-way match (FN-217+218, Phase 4 Tier 4).
+  listPurchaseOrders: purchaseOrdersApi.listPurchaseOrders,
+  getPurchaseOrder: purchaseOrdersApi.getPurchaseOrder,
+  createPurchaseOrder: purchaseOrdersApi.createPurchaseOrder,
+  transitionPurchaseOrderStatus: purchaseOrdersApi.transitionPurchaseOrderStatus,
+  createGoodsReceipt: purchaseOrdersApi.createGoodsReceipt,
+  runThreeWayMatch: purchaseOrdersApi.runThreeWayMatch,
+  predictiveBillMatch: purchaseOrdersApi.predictiveBillMatch,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -755,6 +765,15 @@ function buildLiveSurface() {
     islamicFinanceApi.markIslamicInstallmentPaid;
   surface.getIslamicPosition = islamicFinanceApi.getIslamicPosition;
 
+  surface.listPurchaseOrders = purchaseOrdersApi.listPurchaseOrders;
+  surface.getPurchaseOrder = purchaseOrdersApi.getPurchaseOrder;
+  surface.createPurchaseOrder = purchaseOrdersApi.createPurchaseOrder;
+  surface.transitionPurchaseOrderStatus =
+    purchaseOrdersApi.transitionPurchaseOrderStatus;
+  surface.createGoodsReceipt = purchaseOrdersApi.createGoodsReceipt;
+  surface.runThreeWayMatch = purchaseOrdersApi.runThreeWayMatch;
+  surface.predictiveBillMatch = purchaseOrdersApi.predictiveBillMatch;
+
   return surface;
 }
 
@@ -1006,6 +1025,14 @@ function buildMockExtras() {
     generateIslamicSchedule: mockGenerateIslamicSchedule,
     markIslamicInstallmentPaid: mockMarkIslamicInstallmentPaid,
     getIslamicPosition: mockGetIslamicPosition,
+    // Purchase Orders + GR + 3-way match (FN-217+218) MOCK stubs.
+    listPurchaseOrders: mockListPurchaseOrders,
+    getPurchaseOrder: mockGetPurchaseOrder,
+    createPurchaseOrder: mockCreatePurchaseOrder,
+    transitionPurchaseOrderStatus: mockTransitionPurchaseOrderStatus,
+    createGoodsReceipt: mockCreateGoodsReceipt,
+    runThreeWayMatch: mockRunThreeWayMatch,
+    predictiveBillMatch: mockPredictiveBillMatch,
     // Board pack (FN-258) MOCK stub — empty pack in MOCK mode.
     getBoardPack: async (q = {}) => ({
       fiscalYear: q.fiscalYear || new Date().getFullYear() - 1,
@@ -2809,6 +2836,245 @@ async function mockGetIslamicPosition(id, asOf = null) {
   };
 }
 
+// ── Purchase Orders + Goods Receipts (FN-217+218) MOCK stubs. ──
+let _mockPoCounter = 0;
+let _mockPoLineCounter = 0;
+let _mockGrCounter = 0;
+let _mockGrLineCounter = 0;
+const _mockPurchaseOrders = [];
+const _mockGoodsReceipts = [];
+
+async function mockListPurchaseOrders(filters = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  return _mockPurchaseOrders.filter((p) => {
+    if (filters.vendorId && p.vendorId !== filters.vendorId) return false;
+    if (filters.status && p.status !== filters.status) return false;
+    return true;
+  });
+}
+async function mockGetPurchaseOrder(id) {
+  await new Promise((r) => setTimeout(r, 30));
+  const p = _mockPurchaseOrders.find((x) => x.id === id);
+  if (!p) return null;
+  const receipts = _mockGoodsReceipts
+    .filter((g) => g.purchaseOrderId === id)
+    .map((g) => ({ ...g, lines: g.lines.slice() }));
+  return { ...p, lines: p.lines.slice(), receipts };
+}
+async function mockCreatePurchaseOrder(payload) {
+  await new Promise((r) => setTimeout(r, 80));
+  _mockPoCounter += 1;
+  let total = 0;
+  const lines = (payload.lines || []).map((l) => {
+    _mockPoLineCounter += 1;
+    const q = Number(l.quantity);
+    const p = Number(l.unitPriceKwd);
+    total += q * p;
+    return {
+      id: `mock-pol-${_mockPoLineCounter}`,
+      purchaseOrderId: `mock-po-${_mockPoCounter}`,
+      inventoryItemId: l.inventoryItemId || null,
+      description: l.description,
+      quantity: q.toFixed(2),
+      unitPriceKwd: p.toFixed(3),
+      lineTotalKwd: (q * p).toFixed(3),
+    };
+  });
+  const row = {
+    id: `mock-po-${_mockPoCounter}`,
+    poNumber: payload.poNumber,
+    vendorId: payload.vendorId,
+    orderDate: payload.orderDate,
+    expectedDeliveryDate: payload.expectedDeliveryDate || null,
+    status: 'DRAFT',
+    totalAmountKwd: total.toFixed(3),
+    notes: payload.notes || null,
+    createdBy: 'mock-user',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    lines,
+  };
+  _mockPurchaseOrders.unshift(row);
+  return row;
+}
+async function mockTransitionPurchaseOrderStatus(id, status) {
+  await new Promise((r) => setTimeout(r, 40));
+  const p = _mockPurchaseOrders.find((x) => x.id === id);
+  if (!p) throw new Error('purchase order not found');
+  if ((p.status === 'CLOSED' || p.status === 'CANCELLED') && status !== p.status) {
+    throw new Error(`cannot transition from ${p.status}.`);
+  }
+  p.status = status;
+  p.updatedAt = new Date().toISOString();
+  return p;
+}
+async function mockCreateGoodsReceipt(payload) {
+  await new Promise((r) => setTimeout(r, 60));
+  const po = _mockPurchaseOrders.find((p) => p.id === payload.purchaseOrderId);
+  if (!po) throw new Error('purchase order not found');
+  const poLineIds = new Set(po.lines.map((l) => l.id));
+  for (const l of payload.lines || []) {
+    if (!poLineIds.has(l.purchaseOrderLineId)) {
+      throw new Error(`purchaseOrderLineId ${l.purchaseOrderLineId} does not belong to this PO.`);
+    }
+    if (!(Number(l.quantityReceived) > 0)) {
+      throw new Error('quantityReceived must be > 0.');
+    }
+  }
+  _mockGrCounter += 1;
+  const lines = (payload.lines || []).map((l) => {
+    _mockGrLineCounter += 1;
+    return {
+      id: `mock-grl-${_mockGrLineCounter}`,
+      goodsReceiptId: `mock-gr-${_mockGrCounter}`,
+      purchaseOrderLineId: l.purchaseOrderLineId,
+      quantityReceived: Number(l.quantityReceived).toFixed(2),
+      notes: l.notes || null,
+    };
+  });
+  const gr = {
+    id: `mock-gr-${_mockGrCounter}`,
+    receiptNumber: payload.receiptNumber,
+    purchaseOrderId: payload.purchaseOrderId,
+    receivedDate: payload.receivedDate,
+    receivedBy: 'mock-user',
+    notes: payload.notes || null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    lines,
+  };
+  _mockGoodsReceipts.unshift(gr);
+  return gr;
+}
+
+async function mockRunThreeWayMatch(input) {
+  await new Promise((r) => setTimeout(r, 60));
+  const po = _mockPurchaseOrders.find((p) => p.id === input.purchaseOrderId);
+  if (!po) throw new Error('purchase order not found');
+  const receipts = _mockGoodsReceipts.filter((g) => g.purchaseOrderId === input.purchaseOrderId);
+  const receivedByLine = new Map();
+  for (const g of receipts) {
+    for (const rl of g.lines) {
+      receivedByLine.set(
+        rl.purchaseOrderLineId,
+        (receivedByLine.get(rl.purchaseOrderLineId) || 0) + Number(rl.quantityReceived),
+      );
+    }
+  }
+  const billedByLine = new Map();
+  if (input.billedQuantitiesByPoLine) {
+    for (const [k, v] of Object.entries(input.billedQuantitiesByPoLine)) {
+      billedByLine.set(k, Number(v));
+    }
+  }
+  const discrepancies = [];
+  let receivedValue = 0;
+  let matchedLines = 0;
+  for (const l of po.lines) {
+    const ordered = Number(l.quantity);
+    const received = receivedByLine.get(l.id) || 0;
+    const billed = input.billId ? billedByLine.get(l.id) || 0 : null;
+    receivedValue += received * Number(l.unitPriceKwd);
+    let status;
+    let note;
+    if (received > ordered) {
+      status = 'OVER_RECEIVED';
+      note = `received ${received.toFixed(2)} > ordered ${ordered.toFixed(2)}`;
+    } else if (received < ordered) {
+      status = 'UNDER_RECEIVED';
+      note = `received ${received.toFixed(2)} < ordered ${ordered.toFixed(2)}`;
+    } else if (billed === null) {
+      status = 'OK';
+      note = 'PO↔GR match; no bill reference supplied';
+      matchedLines++;
+    } else if (billed === 0 && received > 0) {
+      status = 'NOT_BILLED';
+      note = 'received but not yet billed';
+    } else if (billed > received) {
+      status = 'OVER_BILLED';
+      note = `billed ${billed.toFixed(2)} > received ${received.toFixed(2)}`;
+    } else if (billed < received) {
+      status = 'UNDER_BILLED';
+      note = `billed ${billed.toFixed(2)} < received ${received.toFixed(2)}`;
+    } else {
+      status = 'OK';
+      note = 'PO↔GR↔Bill match';
+      matchedLines++;
+    }
+    discrepancies.push({
+      purchaseOrderLineId: l.id,
+      description: l.description,
+      orderedQty: ordered.toFixed(2),
+      receivedQty: received.toFixed(2),
+      billedQty: billed == null ? null : billed.toFixed(2),
+      unitPriceKwd: l.unitPriceKwd,
+      qtyMatchStatus: status,
+      note,
+    });
+  }
+  const totalLines = po.lines.length;
+  const confidence = totalLines > 0 ? Math.round((matchedLines / totalLines) * 100) : 100;
+  const overallStatus = discrepancies.every((d) => d.qtyMatchStatus === 'OK')
+    ? 'MATCHED'
+    : 'DISCREPANCIES';
+  return {
+    purchaseOrderId: po.id,
+    vendorId: po.vendorId,
+    billId: input.billId || null,
+    poTotalKwd: po.totalAmountKwd,
+    receivedValueKwd: receivedValue.toFixed(3),
+    billedAmountKwd: input.billedAmountKwd != null ? Number(input.billedAmountKwd).toFixed(3) : null,
+    lineDiscrepancies: discrepancies,
+    overallStatus,
+    confidenceScore: confidence,
+    note:
+      overallStatus === 'MATCHED'
+        ? `all ${totalLines} line(s) matched (${confidence}% confidence)`
+        : `${discrepancies.filter((d) => d.qtyMatchStatus !== 'OK').length} discrepancy line(s) of ${totalLines} (${confidence}% confidence)`,
+  };
+}
+async function mockPredictiveBillMatch(input) {
+  await new Promise((r) => setTimeout(r, 50));
+  const lookBack = input.lookBackDays ?? 120;
+  const billDate = new Date(input.billDate);
+  const earliest = new Date(billDate);
+  earliest.setUTCDate(earliest.getUTCDate() - lookBack);
+  const pos = _mockPurchaseOrders.filter(
+    (p) =>
+      p.vendorId === input.vendorId &&
+      (p.status === 'OPEN' || p.status === 'PARTIALLY_RECEIVED') &&
+      new Date(p.orderDate) >= earliest &&
+      new Date(p.orderDate) <= billDate,
+  );
+  const billAmt = Number(input.billAmountKwd);
+  const candidates = pos.map((po) => {
+    const poTotal = Number(po.totalAmountKwd);
+    const delta = billAmt - poTotal;
+    const deltaPct = poTotal === 0 ? 100 : Math.abs(delta / poTotal) * 100;
+    const dateDelta = Math.floor(
+      (billDate.getTime() - new Date(po.orderDate).getTime()) / 86_400_000,
+    );
+    let score = 50;
+    if (deltaPct <= 1) score += 30;
+    else if (deltaPct <= 5) score += 20;
+    else if (deltaPct <= 20) score += 10;
+    if (dateDelta <= 14 && dateDelta >= 0) score += 15;
+    else if (dateDelta <= 60 && dateDelta >= 0) score += 5;
+    return {
+      purchaseOrderId: po.id,
+      poNumber: po.poNumber,
+      vendorMatch: true,
+      amountDeltaKwd: delta.toFixed(3),
+      amountDeltaPercent: deltaPct.toFixed(2),
+      dateDeltaDays: dateDelta,
+      score,
+      note: `Δamount ${delta.toFixed(3)} KWD (${deltaPct.toFixed(2)}%); Δdate ${dateDelta}d; score ${score}`,
+    };
+  });
+  candidates.sort((a, b) => b.score - a.score);
+  return candidates;
+}
+
 // ── Report versions MOCK stubs (module-scoped so state survives calls) ──
 let _mockReportVersionCounter = 0;
 const _mockReportVersions = [];
@@ -3176,3 +3442,10 @@ export const transitionIslamicStatus = surface.transitionIslamicStatus;
 export const generateIslamicSchedule = surface.generateIslamicSchedule;
 export const markIslamicInstallmentPaid = surface.markIslamicInstallmentPaid;
 export const getIslamicPosition = surface.getIslamicPosition;
+export const listPurchaseOrders = surface.listPurchaseOrders;
+export const getPurchaseOrder = surface.getPurchaseOrder;
+export const createPurchaseOrder = surface.createPurchaseOrder;
+export const transitionPurchaseOrderStatus = surface.transitionPurchaseOrderStatus;
+export const createGoodsReceipt = surface.createGoodsReceipt;
+export const runThreeWayMatch = surface.runThreeWayMatch;
+export const predictiveBillMatch = surface.predictiveBillMatch;

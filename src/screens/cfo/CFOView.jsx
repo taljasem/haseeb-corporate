@@ -29,6 +29,7 @@ import OcrReviewScreen from "./OcrReviewScreen";
 import InventoryCountScreen from "./InventoryCountScreen";
 import SpinoffScreen from "./SpinoffScreen";
 import IslamicFinanceScreen from "./IslamicFinanceScreen";
+import PurchaseOrdersScreen from "./PurchaseOrdersScreen";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
 
@@ -148,6 +149,8 @@ export default function CFOView({ registerNav }) {
         return <SpinoffScreen role="CFO" />;
       case "islamic-finance":
         return <IslamicFinanceScreen role="CFO" />;
+      case "purchase-orders":
+        return <PurchaseOrdersScreen role="CFO" />;
       default:
         return (
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-tertiary)", fontSize: 13 }}>

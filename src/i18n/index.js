@@ -36,6 +36,7 @@ import enOcr from "./locales/en/ocr.json";
 import enInventoryCount from "./locales/en/inventory-count.json";
 import enSpinoff from "./locales/en/spinoff.json";
 import enIslamicFinance from "./locales/en/islamic-finance.json";
+import enPurchaseOrders from "./locales/en/purchase-orders.json";
 
 import arCommon from "./locales/ar/common.json";
 import arHeader from "./locales/ar/header.json";
@@ -71,6 +72,7 @@ import arOcr from "./locales/ar/ocr.json";
 import arInventoryCount from "./locales/ar/inventory-count.json";
 import arSpinoff from "./locales/ar/spinoff.json";
 import arIslamicFinance from "./locales/ar/islamic-finance.json";
+import arPurchaseOrders from "./locales/ar/purchase-orders.json";
 
 const namespaces = [
   "common", "header", "sidebar", "hero", "taskbox",
@@ -80,7 +82,7 @@ const namespaces = [
   "budget", "owner-today", "junior-today", "owner-overview",
   "settings", "profile", "forecast", "variance", "aging", "setup",
   "petty-cash", "bulk-reclass", "ocr", "inventory-count",
-  "spinoff", "islamic-finance",
+  "spinoff", "islamic-finance", "purchase-orders",
 ];
 
 i18n
@@ -123,6 +125,7 @@ i18n
         "inventory-count": enInventoryCount,
         spinoff: enSpinoff,
         "islamic-finance": enIslamicFinance,
+        "purchase-orders": enPurchaseOrders,
       },
       ar: {
         common: arCommon,
@@ -159,6 +162,7 @@ i18n
         "inventory-count": arInventoryCount,
         spinoff: arSpinoff,
         "islamic-finance": arIslamicFinance,
+        "purchase-orders": arPurchaseOrders,
       },
     },
     fallbackLng: "en",

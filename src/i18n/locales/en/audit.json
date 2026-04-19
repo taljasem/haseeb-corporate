@@ -174,5 +174,31 @@
     "label_hash_before": "Hash before",
     "label_hash_after": "Hash after",
     "label_error": "Error"
+  },
+  "board_pack": {
+    "title": "Board Pack",
+    "subtitle": "ANNUAL COMPOSITE · YOY + DISCLOSURES",
+    "fiscal_year_label": "Fiscal year",
+    "prior_fy_label": "Prior",
+    "generated_at_label": "Generated",
+    "loading": "Generating board pack…",
+    "warnings_heading": "Warnings",
+    "count_current_reports": "Current reports",
+    "count_prior_reports": "Prior reports",
+    "count_yoy": "YoY metrics",
+    "count_disclosure_runs": "Disclosure runs",
+    "yoy_heading": "Year-over-year comparisons",
+    "current_reports_heading": "Current year · FY{{year}}",
+    "prior_reports_heading": "Prior year · FY{{year}}",
+    "disclosure_heading": "Disclosure runs",
+    "material_notes": "{{count}} material note(s)",
+    "metric_header": "Metric",
+    "prior_header": "Prior",
+    "current_header": "Current",
+    "delta_header": "Δ",
+    "delta_pct_header": "Δ%",
+    "no_versions": "No versions published",
+    "empty_pack": "Nothing published for this fiscal year yet. Publish report versions from Financial Statements to populate the board pack.",
+    "pdf_deferred_note": "PDF rendering is deferred to Phase 5. This panel is data-only."
   }
 }

@@ -32,6 +32,7 @@ import enAging from "./locales/en/aging.json";
 import enSetup from "./locales/en/setup.json";
 import enPettyCash from "./locales/en/petty-cash.json";
 import enBulkReclass from "./locales/en/bulk-reclass.json";
+import enOcr from "./locales/en/ocr.json";
 
 import arCommon from "./locales/ar/common.json";
 import arHeader from "./locales/ar/header.json";
@@ -63,6 +64,7 @@ import arAging from "./locales/ar/aging.json";
 import arSetup from "./locales/ar/setup.json";
 import arPettyCash from "./locales/ar/petty-cash.json";
 import arBulkReclass from "./locales/ar/bulk-reclass.json";
+import arOcr from "./locales/ar/ocr.json";
 
 const namespaces = [
   "common", "header", "sidebar", "hero", "taskbox",
@@ -71,7 +73,7 @@ const namespaces = [
   "aminah", "notifications", "cfo-today",
   "budget", "owner-today", "junior-today", "owner-overview",
   "settings", "profile", "forecast", "variance", "aging", "setup",
-  "petty-cash", "bulk-reclass",
+  "petty-cash", "bulk-reclass", "ocr",
 ];
 
 i18n
@@ -110,6 +112,7 @@ i18n
         setup: enSetup,
         "petty-cash": enPettyCash,
         "bulk-reclass": enBulkReclass,
+        ocr: enOcr,
       },
       ar: {
         common: arCommon,
@@ -142,6 +145,7 @@ i18n
         setup: arSetup,
         "petty-cash": arPettyCash,
         "bulk-reclass": arBulkReclass,
+        ocr: arOcr,
       },
     },
     fallbackLng: "en",

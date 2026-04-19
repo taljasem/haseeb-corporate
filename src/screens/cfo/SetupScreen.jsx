@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import {
   BookOpen, Calendar, Calculator, Coins, Plug, Users, Cpu, Ban, Receipt,
   Plus, Search, Edit3, Trash2, RefreshCw, AlertTriangle, Check, X as XIcon,
-  Scale, Gavel, Clock,
+  Scale, Gavel, Clock, Percent,
 } from "lucide-react";
 import LtrText from "../../components/shared/LtrText";
 import EmptyState from "../../components/shared/EmptyState";
@@ -28,6 +28,9 @@ import {
   listApproachingStatute,
   closeCitAssessment,
   markCitAssessmentStatuteExpired,
+  listWhtConfigs,
+  deactivateWhtConfig,
+  listWhtCertificates,
 } from "../../engine";
 import {
   getFiscalYearConfig,
@@ -52,6 +55,7 @@ import DisallowanceRuleModal from "../../components/setup/DisallowanceRuleModal"
 import TaxLodgementModal from "../../components/setup/TaxLodgementModal";
 import CitAssessmentCreateModal from "../../components/setup/CitAssessmentCreateModal";
 import CitAssessmentTransitionModal from "../../components/setup/CitAssessmentTransitionModal";
+import WhtConfigModal from "../../components/setup/WhtConfigModal";
 
 function fmtKWD(n) {
   if (n == null) return "—";
@@ -65,6 +69,7 @@ const SECTIONS = [
   { id: "disallowance",    icon: Ban },
   { id: "tax_lodgement",   icon: Receipt },
   { id: "cit_assessment",  icon: Gavel },
+  { id: "wht",             icon: Percent },
   { id: "currencies",      icon: Coins },
   { id: "integrations",    icon: Plug },
   { id: "team_access",     icon: Users },
@@ -120,7 +125,7 @@ export default function SetupScreen() {
                 onMouseLeave={(e) => { if (!on) e.currentTarget.style.background = "transparent"; }}
               >
                 <Icon size={14} strokeWidth={2} />
-                <span>{t(`sections.${s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id === "tax_lodgement" ? "tax_lodgement" : s.id === "cit_assessment" ? "cit_assessment" : s.id}`)}</span>
+                <span>{t(`sections.${s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id === "tax_lodgement" ? "tax_lodgement" : s.id === "cit_assessment" ? "cit_assessment" : s.id === "wht" ? "wht" : s.id}`)}</span>
               </button>
             );
           })}
@@ -134,6 +139,7 @@ export default function SetupScreen() {
             {active === "disallowance"  && <DisallowanceSection />}
             {active === "tax_lodgement" && <TaxLodgementSection />}
             {active === "cit_assessment" && <CitAssessmentSection />}
+            {active === "wht"           && <WhtSection />}
             {active === "currencies"    && <CurrenciesSection />}
             {active === "integrations"  && <IntegrationsSection />}
             {active === "team_access"   && <TeamAccessSection />}
@@ -2132,6 +2138,556 @@ function CitAssessmentSection() {
         }}
       />
     </Card>
+  );
+}
+
+// ── WHT — Withholding Tax (FN-250, 2026-04-19) ───────────────────
+// Per-tenant WHT policy (effective-dated per-category basis-point
+// rates + minimum-threshold) + read-only certificate register.
+// OWNER-only config writes; OWNER/ACCOUNTANT/AUDITOR on both reads.
+// Certificate creation is service-layer only via a future AP-flow
+// splice — the UI is purposely read-only on the certificate side.
+const WHT_CATEGORY_FILTERS = [
+  "ALL",
+  "SERVICE",
+  "PROFESSIONAL",
+  "RENTAL",
+  "INTEREST",
+  "CUSTOM",
+];
+
+function fmtBpsPercent(bps) {
+  if (bps == null) return "—";
+  return `${(bps / 100).toFixed(2)}%`;
+}
+
+function WhtSection() {
+  const { t } = useTranslation("setup");
+  const [configs, setConfigs] = useState(null);
+  const [certificates, setCertificates] = useState(null);
+  const [activeOnly, setActiveOnly] = useState(false);
+  const [certCategory, setCertCategory] = useState("ALL");
+  const [modalState, setModalState] = useState({
+    open: false,
+    mode: "create",
+    config: null,
+  });
+  const [toast, setToast] = useState(null);
+  const [loadError, setLoadError] = useState(null);
+
+  const reload = async () => {
+    setLoadError(null);
+    try {
+      const cfgFilters = activeOnly ? { activeOnly: true } : {};
+      const certFilters =
+        certCategory === "ALL" ? { limit: 100 } : { category: certCategory, limit: 100 };
+      const [cfg, cert] = await Promise.all([
+        listWhtConfigs(cfgFilters),
+        listWhtCertificates(certFilters).catch(() => []),
+      ]);
+      setConfigs(cfg || []);
+      setCertificates(cert || []);
+    } catch (err) {
+      setConfigs([]);
+      setCertificates([]);
+      setLoadError(err?.message || t("wht.error_load"));
+    }
+  };
+
+  useEffect(() => {
+    reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeOnly, certCategory]);
+
+  const handleDeactivate = async (cfg) => {
+    try {
+      await deactivateWhtConfig(cfg.id);
+      setToast(t("wht.deactivated_toast"));
+      reload();
+    } catch (err) {
+      setToast(err?.message || t("wht.error_deactivate"));
+    }
+  };
+
+  return (
+    <div>
+      <Card
+        title={t("wht.policy_title")}
+        description={t("wht.policy_description")}
+        extra={
+          <button
+            onClick={() =>
+              setModalState({ open: true, mode: "create", config: null })
+            }
+            style={btnPrimary(false)}
+          >
+            <Plus size={13} style={{ verticalAlign: "middle", marginInlineEnd: 6 }} />
+            {t("wht.add_policy")}
+          </button>
+        }
+      >
+        <Toast text={toast} onClear={() => setToast(null)} />
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            marginBottom: 12,
+          }}
+        >
+          <button
+            onClick={() => setActiveOnly(false)}
+            style={{
+              ...btnMini,
+              background: !activeOnly ? "var(--accent-primary-subtle)" : "transparent",
+              borderColor: !activeOnly ? "rgba(0,196,140,0.30)" : "var(--border-strong)",
+              color: !activeOnly ? "var(--accent-primary)" : "var(--text-secondary)",
+            }}
+          >
+            {t("wht.filter_all")}
+          </button>
+          <button
+            onClick={() => setActiveOnly(true)}
+            style={{
+              ...btnMini,
+              background: activeOnly ? "var(--accent-primary-subtle)" : "transparent",
+              borderColor: activeOnly ? "rgba(0,196,140,0.30)" : "var(--border-strong)",
+              color: activeOnly ? "var(--accent-primary)" : "var(--text-secondary)",
+            }}
+          >
+            {t("wht.filter_active_only")}
+          </button>
+        </div>
+
+        {loadError && (
+          <div
+            role="alert"
+            style={{
+              display: "flex",
+              gap: 8,
+              padding: "10px 12px",
+              background: "var(--semantic-danger-subtle)",
+              border: "1px solid var(--semantic-danger)",
+              borderRadius: 8,
+              color: "var(--semantic-danger)",
+              fontSize: 12,
+              marginBottom: 12,
+            }}
+          >
+            <AlertTriangle size={14} /> {loadError}
+          </div>
+        )}
+
+        {configs === null && (
+          <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>…</div>
+        )}
+
+        {configs && configs.length === 0 && !loadError && (
+          <EmptyState
+            icon={Percent}
+            title={t("wht.empty_policy_title")}
+            description={t("wht.empty_policy_description")}
+          />
+        )}
+
+        {configs && configs.length > 0 && (
+          <div
+            style={{
+              border: "1px solid var(--border-default)",
+              borderRadius: 8,
+              overflow: "hidden",
+            }}
+          >
+            {configs.map((cfg, idx) => {
+              const today = new Date().toISOString().slice(0, 10);
+              const isActive =
+                cfg.activeFrom <= today &&
+                (!cfg.activeUntil || cfg.activeUntil >= today);
+              return (
+                <div
+                  key={cfg.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                    gap: 14,
+                    padding: "14px 18px",
+                    borderBottom:
+                      idx === configs.length - 1
+                        ? "none"
+                        : "1px solid var(--border-subtle)",
+                    background: isActive ? "transparent" : "var(--bg-surface-sunken)",
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          letterSpacing: "0.1em",
+                          padding: "2px 8px",
+                          borderRadius: 10,
+                          background: isActive
+                            ? "var(--accent-primary-subtle)"
+                            : "var(--bg-surface)",
+                          color: isActive
+                            ? "var(--accent-primary)"
+                            : "var(--text-tertiary)",
+                          border: isActive
+                            ? "1px solid rgba(0,196,140,0.30)"
+                            : "1px solid var(--border-default)",
+                        }}
+                      >
+                        {isActive ? t("wht.status_active") : t("wht.status_inactive")}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: "var(--text-tertiary)",
+                        }}
+                      >
+                        <LtrText>
+                          <span style={{ fontFamily: "'DM Mono', monospace" }}>
+                            {cfg.activeFrom}
+                          </span>
+                        </LtrText>{" "}
+                        →{" "}
+                        <LtrText>
+                          <span style={{ fontFamily: "'DM Mono', monospace" }}>
+                            {cfg.activeUntil || "…"}
+                          </span>
+                        </LtrText>
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 14,
+                        marginTop: 8,
+                        fontSize: 11,
+                        color: "var(--text-tertiary)",
+                      }}
+                    >
+                      <RateChip
+                        label={t("wht.cat_SERVICE")}
+                        bps={cfg.rateServicePercent}
+                      />
+                      <RateChip
+                        label={t("wht.cat_PROFESSIONAL")}
+                        bps={cfg.rateProfessionalPercent}
+                      />
+                      <RateChip
+                        label={t("wht.cat_RENTAL")}
+                        bps={cfg.rateRentalPercent}
+                      />
+                      <RateChip
+                        label={t("wht.cat_INTEREST")}
+                        bps={cfg.rateInterestPercent}
+                      />
+                      <RateChip
+                        label={t("wht.cat_CUSTOM")}
+                        bps={cfg.rateCustomPercent}
+                      />
+                      <RateChip
+                        label={t("wht.min_threshold")}
+                        raw={
+                          cfg.minThresholdKwd
+                            ? `${cfg.minThresholdKwd} KWD`
+                            : "—"
+                        }
+                      />
+                    </div>
+                    {cfg.notes && (
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "var(--text-secondary)",
+                          marginTop: 6,
+                          fontStyle: "italic",
+                        }}
+                      >
+                        {cfg.notes}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <button
+                      onClick={() =>
+                        setModalState({ open: true, mode: "edit", config: cfg })
+                      }
+                      style={btnMini}
+                    >
+                      <Edit3
+                        size={11}
+                        style={{ verticalAlign: "middle", marginInlineEnd: 4 }}
+                      />
+                      {t("wht.action_edit")}
+                    </button>
+                    {isActive && (
+                      <button
+                        onClick={() => handleDeactivate(cfg)}
+                        style={{
+                          ...btnMini,
+                          color: "var(--semantic-danger)",
+                          borderColor: "rgba(208,90,90,0.30)",
+                        }}
+                      >
+                        {t("wht.action_deactivate")}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <WhtConfigModal
+          open={modalState.open}
+          mode={modalState.mode}
+          config={modalState.config}
+          onClose={() =>
+            setModalState({ open: false, mode: "create", config: null })
+          }
+          onSaved={() => {
+            reload();
+            setToast(
+              modalState.mode === "edit"
+                ? t("wht.saved_edit_toast")
+                : t("wht.saved_create_toast"),
+            );
+          }}
+        />
+      </Card>
+
+      <Card
+        title={t("wht.certificates_title")}
+        description={t("wht.certificates_description")}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            marginBottom: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          {WHT_CATEGORY_FILTERS.map((c) => {
+            const on = certCategory === c;
+            return (
+              <button
+                key={c}
+                onClick={() => setCertCategory(c)}
+                style={{
+                  ...btnMini,
+                  background: on ? "var(--accent-primary-subtle)" : "transparent",
+                  borderColor: on
+                    ? "rgba(0,196,140,0.30)"
+                    : "var(--border-strong)",
+                  color: on ? "var(--accent-primary)" : "var(--text-secondary)",
+                }}
+              >
+                {t(`wht.cert_filter_${c}`)}
+              </button>
+            );
+          })}
+        </div>
+
+        {certificates === null && (
+          <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>…</div>
+        )}
+
+        {certificates && certificates.length === 0 && (
+          <EmptyState
+            icon={Receipt}
+            title={t("wht.empty_certificates_title")}
+            description={t("wht.empty_certificates_description")}
+          />
+        )}
+
+        {certificates && certificates.length > 0 && (
+          <div
+            style={{
+              border: "1px solid var(--border-default)",
+              borderRadius: 8,
+              overflow: "hidden",
+            }}
+          >
+            {certificates.map((cert, idx) => (
+              <div
+                key={cert.id}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  gap: 14,
+                  padding: "12px 18px",
+                  borderBottom:
+                    idx === certificates.length - 1
+                      ? "none"
+                      : "1px solid var(--border-subtle)",
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "var(--text-primary)",
+                        fontFamily: "'DM Mono', monospace",
+                      }}
+                    >
+                      <LtrText>{cert.certificateNumber}</LtrText>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: "0.1em",
+                        padding: "2px 8px",
+                        borderRadius: 10,
+                        background: "var(--bg-surface)",
+                        color: "var(--text-tertiary)",
+                        border: "1px solid var(--border-default)",
+                      }}
+                    >
+                      {t(`wht.cat_${cert.category}`)}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 14,
+                      marginTop: 6,
+                      fontSize: 11,
+                      color: "var(--text-tertiary)",
+                    }}
+                  >
+                    <div>
+                      {t("wht.label_gross")}:{" "}
+                      <LtrText>
+                        <span
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontFamily: "'DM Mono', monospace",
+                          }}
+                        >
+                          {cert.grossAmountKwd} KWD
+                        </span>
+                      </LtrText>
+                    </div>
+                    <div>
+                      {t("wht.label_rate")}:{" "}
+                      <LtrText>
+                        <span
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontFamily: "'DM Mono', monospace",
+                          }}
+                        >
+                          {fmtBpsPercent(cert.ratePercent)}
+                        </span>
+                      </LtrText>
+                    </div>
+                    <div>
+                      {t("wht.label_withheld")}:{" "}
+                      <LtrText>
+                        <span
+                          style={{
+                            color: "var(--semantic-danger)",
+                            fontFamily: "'DM Mono', monospace",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {cert.withheldAmountKwd} KWD
+                        </span>
+                      </LtrText>
+                    </div>
+                    <div>
+                      {t("wht.label_net_paid")}:{" "}
+                      <LtrText>
+                        <span
+                          style={{
+                            color: "var(--accent-primary)",
+                            fontFamily: "'DM Mono', monospace",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {cert.netPaidAmountKwd} KWD
+                        </span>
+                      </LtrText>
+                    </div>
+                    <div>
+                      {t("wht.label_payment_date")}:{" "}
+                      <LtrText>
+                        <span
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontFamily: "'DM Mono', monospace",
+                          }}
+                        >
+                          {cert.paymentDate}
+                        </span>
+                      </LtrText>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+function RateChip({ label, bps, raw }) {
+  const value = raw != null ? raw : bps != null ? fmtBpsPercent(bps) : "—";
+  const hasValue = raw != null || bps != null;
+  return (
+    <div>
+      <span
+        style={{
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: "0.1em",
+          color: "var(--text-tertiary)",
+          textTransform: "uppercase",
+        }}
+      >
+        {label}
+      </span>{" "}
+      <LtrText>
+        <span
+          style={{
+            fontFamily: "'DM Mono', monospace",
+            color: hasValue ? "var(--text-secondary)" : "var(--text-tertiary)",
+          }}
+        >
+          {value}
+        </span>
+      </LtrText>
+    </div>
   );
 }
 

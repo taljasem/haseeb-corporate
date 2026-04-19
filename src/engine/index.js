@@ -66,6 +66,7 @@ import * as billsApi from '../api/bills';
 import * as disallowanceRulesApi from '../api/disallowance-rules';
 import * as taxLodgementsApi from '../api/tax-lodgements';
 import * as citAssessmentApi from '../api/cit-assessment';
+import * as whtApi from '../api/wht';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -333,6 +334,18 @@ const REAL_IMPLS = {
   finalizeCitAssessment: citAssessmentApi.finalizeCitAssessment,
   closeCitAssessment: citAssessmentApi.closeCitAssessment,
   markCitAssessmentStatuteExpired: citAssessmentApi.markCitAssessmentStatuteExpired,
+
+  // WHT (FN-250, Phase 4 Track A Wave 2 — 2026-04-19).
+  // Policy CRUD (6 endpoints) + certificate read-only (2). Certificate
+  // creation is service-layer only via future AP-flow splice.
+  listWhtConfigs: whtApi.listWhtConfigs,
+  getActiveWhtConfig: whtApi.getActiveWhtConfig,
+  getWhtConfig: whtApi.getWhtConfig,
+  createWhtConfig: whtApi.createWhtConfig,
+  updateWhtConfig: whtApi.updateWhtConfig,
+  deactivateWhtConfig: whtApi.deactivateWhtConfig,
+  listWhtCertificates: whtApi.listWhtCertificates,
+  getWhtCertificate: whtApi.getWhtCertificate,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -483,6 +496,16 @@ function buildLiveSurface() {
   surface.closeCitAssessment = citAssessmentApi.closeCitAssessment;
   surface.markCitAssessmentStatuteExpired = citAssessmentApi.markCitAssessmentStatuteExpired;
 
+  // WHT (FN-250, Phase 4 Track A Wave 2). Extras pattern.
+  surface.listWhtConfigs = whtApi.listWhtConfigs;
+  surface.getActiveWhtConfig = whtApi.getActiveWhtConfig;
+  surface.getWhtConfig = whtApi.getWhtConfig;
+  surface.createWhtConfig = whtApi.createWhtConfig;
+  surface.updateWhtConfig = whtApi.updateWhtConfig;
+  surface.deactivateWhtConfig = whtApi.deactivateWhtConfig;
+  surface.listWhtCertificates = whtApi.listWhtCertificates;
+  surface.getWhtCertificate = whtApi.getWhtCertificate;
+
   return surface;
 }
 
@@ -623,7 +646,114 @@ function buildMockExtras() {
     finalizeCitAssessment: mockFinalizeCitAssessment,
     closeCitAssessment: mockCloseCitAssessment,
     markCitAssessmentStatuteExpired: mockMarkCitAssessmentStatuteExpired,
+    // WHT (FN-250) MOCK stubs.
+    listWhtConfigs: mockListWhtConfigs,
+    getActiveWhtConfig: mockGetActiveWhtConfig,
+    getWhtConfig: mockGetWhtConfig,
+    createWhtConfig: mockCreateWhtConfig,
+    updateWhtConfig: mockUpdateWhtConfig,
+    deactivateWhtConfig: mockDeactivateWhtConfig,
+    listWhtCertificates: mockListWhtCertificates,
+    getWhtCertificate: mockGetWhtCertificate,
   };
+}
+
+// ── WHT MOCK stubs (FN-250) ──
+let _mockWhtConfigCounter = 0;
+const _mockWhtConfigs = [];
+const _mockWhtCerts = [];
+function _isConfigActive(c, asOfIso) {
+  const asOf = new Date(asOfIso || new Date().toISOString().slice(0, 10));
+  const from = new Date(c.activeFrom);
+  if (asOf < from) return false;
+  if (c.activeUntil) {
+    const until = new Date(c.activeUntil);
+    if (asOf > until) return false;
+  }
+  return true;
+}
+async function mockListWhtConfigs(filters = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  return _mockWhtConfigs
+    .filter((c) => (filters.activeOnly ? _isConfigActive(c, filters.asOf) : true))
+    .map((c) => ({ ...c }));
+}
+async function mockGetActiveWhtConfig() {
+  await new Promise((r) => setTimeout(r, 20));
+  const row = _mockWhtConfigs.find((c) => _isConfigActive(c));
+  return row ? { ...row } : null;
+}
+async function mockGetWhtConfig(id) {
+  await new Promise((r) => setTimeout(r, 20));
+  const row = _mockWhtConfigs.find((c) => c.id === id);
+  return row ? { ...row } : null;
+}
+async function mockCreateWhtConfig(payload = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  _mockWhtConfigCounter += 1;
+  const row = {
+    id: `mock-wht-cfg-${_mockWhtConfigCounter}`,
+    rateServicePercent: payload.rateServicePercent ?? null,
+    rateProfessionalPercent: payload.rateProfessionalPercent ?? null,
+    rateRentalPercent: payload.rateRentalPercent ?? null,
+    rateInterestPercent: payload.rateInterestPercent ?? null,
+    rateCustomPercent: payload.rateCustomPercent ?? null,
+    minThresholdKwd: payload.minThresholdKwd ?? '0.000',
+    notes: payload.notes ?? null,
+    activeFrom: payload.activeFrom || new Date().toISOString().slice(0, 10),
+    activeUntil: payload.activeUntil ?? null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    _mock: true,
+  };
+  _mockWhtConfigs.unshift(row);
+  return row;
+}
+async function mockUpdateWhtConfig(id, patch = {}) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockWhtConfigs.findIndex((c) => c.id === id);
+  if (idx < 0) return null;
+  const next = {
+    ..._mockWhtConfigs[idx],
+    notes: patch.notes ?? _mockWhtConfigs[idx].notes,
+    activeUntil:
+      patch.activeUntil !== undefined
+        ? patch.activeUntil
+        : _mockWhtConfigs[idx].activeUntil,
+    updatedAt: new Date().toISOString(),
+  };
+  _mockWhtConfigs[idx] = next;
+  return { ...next };
+}
+async function mockDeactivateWhtConfig(id) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockWhtConfigs.findIndex((c) => c.id === id);
+  if (idx < 0) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  _mockWhtConfigs[idx] = {
+    ..._mockWhtConfigs[idx],
+    activeUntil: today,
+    updatedAt: new Date().toISOString(),
+  };
+  return { ..._mockWhtConfigs[idx] };
+}
+async function mockListWhtCertificates(filters = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  return _mockWhtCerts
+    .filter((c) => {
+      if (filters.vendorId && c.vendorId !== filters.vendorId) return false;
+      if (filters.category && c.category !== filters.category) return false;
+      if (filters.paymentDateFrom && c.paymentDate < filters.paymentDateFrom) return false;
+      if (filters.paymentDateTo && c.paymentDate > filters.paymentDateTo) return false;
+      return true;
+    })
+    .slice(0, filters.limit || 500)
+    .map((c) => ({ ...c }));
+}
+async function mockGetWhtCertificate(id) {
+  await new Promise((r) => setTimeout(r, 20));
+  const row = _mockWhtCerts.find((c) => c.id === id);
+  return row ? { ...row } : null;
 }
 
 // ── CIT Assessment MOCK stubs (FN-249) ──
@@ -1099,3 +1229,17 @@ export const recordCitAssessmentObjection = surface.recordCitAssessmentObjection
 export const finalizeCitAssessment = surface.finalizeCitAssessment;
 export const closeCitAssessment = surface.closeCitAssessment;
 export const markCitAssessmentStatuteExpired = surface.markCitAssessmentStatuteExpired;
+
+// WHT (FN-250, Phase 4 Track A Wave 2 — 2026-04-19).
+// Per-tenant withholding-tax policy (effective-dated basis-point rates
+// per category + minimum-threshold) + certificate read-only register.
+// Certificate creation is service-layer only via a future AP-flow
+// splice; no HTTP endpoint is exposed.
+export const listWhtConfigs = surface.listWhtConfigs;
+export const getActiveWhtConfig = surface.getActiveWhtConfig;
+export const getWhtConfig = surface.getWhtConfig;
+export const createWhtConfig = surface.createWhtConfig;
+export const updateWhtConfig = surface.updateWhtConfig;
+export const deactivateWhtConfig = surface.deactivateWhtConfig;
+export const listWhtCertificates = surface.listWhtCertificates;
+export const getWhtCertificate = surface.getWhtCertificate;

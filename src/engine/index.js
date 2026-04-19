@@ -67,6 +67,7 @@ import * as disallowanceRulesApi from '../api/disallowance-rules';
 import * as taxLodgementsApi from '../api/tax-lodgements';
 import * as citAssessmentApi from '../api/cit-assessment';
 import * as whtApi from '../api/wht';
+import * as pettyCashApi from '../api/petty-cash';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -346,6 +347,16 @@ const REAL_IMPLS = {
   deactivateWhtConfig: whtApi.deactivateWhtConfig,
   listWhtCertificates: whtApi.listWhtCertificates,
   getWhtCertificate: whtApi.getWhtCertificate,
+
+  // Petty cash (FN-275, Phase 4 Track A Tier 3 — 2026-04-19).
+  // Multi-box imprest register; 7 endpoints live.
+  listPettyCashBoxes: pettyCashApi.listPettyCashBoxes,
+  getPettyCashBox: pettyCashApi.getPettyCashBox,
+  createPettyCashBox: pettyCashApi.createPettyCashBox,
+  deactivatePettyCashBox: pettyCashApi.deactivatePettyCashBox,
+  recordPettyCashTx: pettyCashApi.recordPettyCashTx,
+  listPettyCashTransactions: pettyCashApi.listPettyCashTransactions,
+  reconcilePettyCashBox: pettyCashApi.reconcilePettyCashBox,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -506,6 +517,15 @@ function buildLiveSurface() {
   surface.listWhtCertificates = whtApi.listWhtCertificates;
   surface.getWhtCertificate = whtApi.getWhtCertificate;
 
+  // Petty cash (FN-275, Phase 4 Track A Tier 3). Extras pattern.
+  surface.listPettyCashBoxes = pettyCashApi.listPettyCashBoxes;
+  surface.getPettyCashBox = pettyCashApi.getPettyCashBox;
+  surface.createPettyCashBox = pettyCashApi.createPettyCashBox;
+  surface.deactivatePettyCashBox = pettyCashApi.deactivatePettyCashBox;
+  surface.recordPettyCashTx = pettyCashApi.recordPettyCashTx;
+  surface.listPettyCashTransactions = pettyCashApi.listPettyCashTransactions;
+  surface.reconcilePettyCashBox = pettyCashApi.reconcilePettyCashBox;
+
   return surface;
 }
 
@@ -655,6 +675,144 @@ function buildMockExtras() {
     deactivateWhtConfig: mockDeactivateWhtConfig,
     listWhtCertificates: mockListWhtCertificates,
     getWhtCertificate: mockGetWhtCertificate,
+    // Petty cash (FN-275) MOCK stubs.
+    listPettyCashBoxes: mockListPettyCashBoxes,
+    getPettyCashBox: mockGetPettyCashBox,
+    createPettyCashBox: mockCreatePettyCashBox,
+    deactivatePettyCashBox: mockDeactivatePettyCashBox,
+    recordPettyCashTx: mockRecordPettyCashTx,
+    listPettyCashTransactions: mockListPettyCashTransactions,
+    reconcilePettyCashBox: mockReconcilePettyCashBox,
+  };
+}
+
+// ── Petty cash MOCK stubs (FN-275) ──
+let _mockBoxCounter = 0;
+let _mockPcTxCounter = 0;
+const _mockBoxes = [];
+const _mockPcTx = [];
+async function mockListPettyCashBoxes() {
+  await new Promise((r) => setTimeout(r, 40));
+  return _mockBoxes.map((b) => ({ ...b }));
+}
+async function mockGetPettyCashBox(id) {
+  await new Promise((r) => setTimeout(r, 20));
+  const row = _mockBoxes.find((b) => b.id === id);
+  return row ? { ...row } : null;
+}
+async function mockCreatePettyCashBox(payload = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  _mockBoxCounter += 1;
+  const row = {
+    id: `mock-pc-box-${_mockBoxCounter}`,
+    label: payload.label || 'Mock box',
+    imprestAmountKwd: payload.imprestAmountKwd || '0.000',
+    currentBalanceKwd: payload.imprestAmountKwd || '0.000',
+    custodianUserId: payload.custodianUserId ?? null,
+    isActive: true,
+    notes: payload.notes ?? null,
+    createdBy: 'mock-user',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    _mock: true,
+  };
+  _mockBoxes.unshift(row);
+  return row;
+}
+async function mockDeactivatePettyCashBox(id) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockBoxes.findIndex((b) => b.id === id);
+  if (idx < 0) return null;
+  _mockBoxes[idx] = {
+    ..._mockBoxes[idx],
+    isActive: false,
+    updatedAt: new Date().toISOString(),
+  };
+  return { ..._mockBoxes[idx] };
+}
+async function mockRecordPettyCashTx(boxId, payload = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  _mockPcTxCounter += 1;
+  const amt = Number(payload.amountKwd || 0);
+  const boxIdx = _mockBoxes.findIndex((b) => b.id === boxId);
+  if (boxIdx >= 0) {
+    const cur = Number(_mockBoxes[boxIdx].currentBalanceKwd || 0);
+    const next =
+      payload.type === 'EXPENSE'
+        ? cur - amt
+        : payload.type === 'REPLENISH'
+        ? cur + amt
+        : cur + amt; // ADJUSTMENT: signed externally; mock treats as add
+    _mockBoxes[boxIdx] = {
+      ..._mockBoxes[boxIdx],
+      currentBalanceKwd: next.toFixed(3),
+      updatedAt: new Date().toISOString(),
+    };
+  }
+  const tx = {
+    id: `mock-pc-tx-${_mockPcTxCounter}`,
+    boxId,
+    txDate: payload.txDate || new Date().toISOString().slice(0, 10),
+    type: payload.type || 'EXPENSE',
+    amountKwd: payload.amountKwd || '0.000',
+    description: payload.description || '',
+    receiptRef: payload.receiptRef ?? null,
+    expenseAccountId: payload.expenseAccountId ?? null,
+    createdBy: 'mock-user',
+    createdAt: new Date().toISOString(),
+    _mock: true,
+  };
+  _mockPcTx.unshift(tx);
+  return tx;
+}
+async function mockListPettyCashTransactions(filters = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  return _mockPcTx
+    .filter((t) => {
+      if (filters.boxId && t.boxId !== filters.boxId) return false;
+      if (filters.type && t.type !== filters.type) return false;
+      if (filters.dateFrom && t.txDate < filters.dateFrom) return false;
+      if (filters.dateTo && t.txDate > filters.dateTo) return false;
+      return true;
+    })
+    .map((t) => ({ ...t }));
+}
+async function mockReconcilePettyCashBox(id) {
+  await new Promise((r) => setTimeout(r, 40));
+  const box = _mockBoxes.find((b) => b.id === id);
+  if (!box) return null;
+  const imprest = Number(box.imprestAmountKwd);
+  const current = Number(box.currentBalanceKwd);
+  const lastReplenishIdx = _mockPcTx.findIndex(
+    (t) => t.boxId === id && t.type === 'REPLENISH',
+  );
+  const expenses = _mockPcTx.filter(
+    (t, i) =>
+      t.boxId === id &&
+      t.type === 'EXPENSE' &&
+      (lastReplenishIdx < 0 || i < lastReplenishIdx),
+  );
+  const receipts = expenses.reduce(
+    (a, t) => a + Number(t.amountKwd),
+    0,
+  );
+  const shortfall = imprest - current;
+  const countedVsImprest = current + receipts - imprest;
+  const replenishRec = imprest - current;
+  return {
+    boxId: id,
+    imprestAmountKwd: imprest.toFixed(3),
+    currentBalanceKwd: current.toFixed(3),
+    receiptsHeldKwd: receipts.toFixed(3),
+    shortfallKwd: shortfall.toFixed(3),
+    countedVsImprestKwd: countedVsImprest.toFixed(3),
+    replenishRecommendedKwd: replenishRec.toFixed(3),
+    note:
+      Math.abs(countedVsImprest) < 0.001
+        ? 'in balance'
+        : countedVsImprest > 0
+        ? `overage: ${countedVsImprest.toFixed(3)}`
+        : `shortage: ${Math.abs(countedVsImprest).toFixed(3)}`,
   };
 }
 
@@ -1243,3 +1401,15 @@ export const updateWhtConfig = surface.updateWhtConfig;
 export const deactivateWhtConfig = surface.deactivateWhtConfig;
 export const listWhtCertificates = surface.listWhtCertificates;
 export const getWhtCertificate = surface.getWhtCertificate;
+
+// Petty cash (FN-275, Phase 4 Track A Tier 3 — 2026-04-19).
+// Multi-box imprest register + transaction ledger + reconciliation.
+// OWNER-only box CRUD; OWNER/ACCOUNTANT on recordTx; reads open to
+// OWNER/ACCOUNTANT/AUDITOR.
+export const listPettyCashBoxes = surface.listPettyCashBoxes;
+export const getPettyCashBox = surface.getPettyCashBox;
+export const createPettyCashBox = surface.createPettyCashBox;
+export const deactivatePettyCashBox = surface.deactivatePettyCashBox;
+export const recordPettyCashTx = surface.recordPettyCashTx;
+export const listPettyCashTransactions = surface.listPettyCashTransactions;
+export const reconcilePettyCashBox = surface.reconcilePettyCashBox;

@@ -25,6 +25,7 @@ const ForecastIcon = I(<><polyline points="3 17 9 11 13 15 21 7" /><polyline poi
 const FileText  = I(<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><line x1="10" y1="9" x2="8" y2="9" /></>);
 const GearIcon = I(<><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></>);
 const UserIcon = I(<><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></>);
+const WalletIcon = I(<><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" /><path d="M3 5v14a2 2 0 0 0 2 2h16v-5" /><path d="M18 12a2 2 0 0 0 0 4h4v-4z" /></>);
 
 function NavItem({ icon: Icon, label, active, onClick, badge }) {
   return (
@@ -116,6 +117,7 @@ export default function CFOSidebar({ active, setActive, pendingApprovals = 0, ta
         <NavItem icon={PencilIcon}  label={t("items.manual_je")}         active={isActive("manual-je")}           onClick={() => setActive("manual-je")} />
         <NavItem icon={FileText}    label={t("items.rules")}             active={isActive("rules")}               onClick={() => setActive("rules")} />
         <NavItem icon={RecIcon}     label={t("items.reconciliation")}    active={isActive("reconciliation")}      onClick={() => setActive("reconciliation")} />
+        <NavItem icon={WalletIcon}  label={t("items.petty_cash")}        active={isActive("petty-cash")}          onClick={() => setActive("petty-cash")} />
       </SidebarGroup>
 
       <SidebarGroup label={t("groups.planning")}>

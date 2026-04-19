@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  FileText, MessageSquare, X, Sparkles, Edit3, Plus, StickyNote,
+  FileText, MessageSquare, X, Sparkles, Edit3, Plus, StickyNote, GitBranch, History,
 } from "lucide-react";
 import LtrText from "../../components/shared/LtrText";
 import EmptyState from "../../components/shared/EmptyState";
@@ -9,16 +9,21 @@ import AminahNarrationCard from "../../components/financial/AminahNarrationCard"
 import StatementTable from "../../components/financial/StatementTable";
 import ReclassifyLineModal from "../../components/financial/ReclassifyLineModal";
 import LineNoteModal from "../../components/financial/LineNoteModal";
+import PublishVersionModal from "../../components/financial/PublishVersionModal";
+import VersionHistoryDrawer from "../../components/financial/VersionHistoryDrawer";
 import { useTenant } from "../../components/shared/TenantContext";
 import { formatRelativeTime } from "../../utils/relativeTime";
 // Wave 2: IS/BS/CF come from the engine router (real API in LIVE mode,
 // mock in MOCK mode, with shape adapters in src/api/reports.js).
 // Adjusting entries, line notes, and export helpers have no backend yet
 // and stay on mockEngine (mock_fallback in LIVE mode, with a one-shot warn).
+// Phase 4 Wave 1: report versions are LIVE in both modes (mock stubs in
+// engine/index.js for MOCK).
 import {
   getIncomeStatement,
   getBalanceSheet,
   getCashFlowStatement,
+  listReportVersions,
 } from "../../engine";
 import {
   getAdjustingEntries,
@@ -28,6 +33,21 @@ import {
 
 const TAB_IDS = ["income", "balance", "cash-flow"];
 const PERIOD_IDS = ["month", "quarter", "ytd", "custom"];
+
+// FN-244: map UI tab ids to server-side ReportType enum values.
+const TAB_TO_REPORT_TYPE = {
+  income: "PROFIT_AND_LOSS",
+  balance: "BALANCE_SHEET",
+  "cash-flow": "CASH_FLOW_STATEMENT",
+};
+
+// FN-244: stable, opaque scope string the server partitions versions by.
+// Scope is (tab, period). Including the tab here is belt-and-suspenders —
+// the server also partitions by reportType — but it makes the key
+// self-describing in logs and in the drawer subtitle.
+function buildReportKey(tab, period) {
+  return `${tab}:${period}`;
+}
 const MATERIALITY_OPTIONS = [
   { id: "all",  value: 0 },
   { id: "t_1k",  value: 1000 },
@@ -166,6 +186,20 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
   // existing render path keeps working.
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
+  // FN-244 (Phase 4 Wave 1): report versioning state.
+  //   • `publishOpen` — the Publish-as-version modal.
+  //   • `historyOpen` — the Version History drawer.
+  //   • `currentVersion` — the non-superseded version for the current
+  //     (tab, period), if any. Drives the "supersedesId" picker default.
+  //   • `viewingVersion` — the ReportVersion we're viewing in historical
+  //     read-only mode. When set, the statement render path uses
+  //     `viewingVersion.snapshotData` instead of the live fetch.
+  //   • `versionsRefreshToken` — bumps on publish so the drawer re-fetches.
+  const [publishOpen, setPublishOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [currentVersion, setCurrentVersion] = useState(null);
+  const [viewingVersion, setViewingVersion] = useState(null);
+  const [versionsRefreshToken, setVersionsRefreshToken] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -199,6 +233,36 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
     };
   }, [period]);
 
+  // FN-244: reset historical-view mode when the user changes tab or
+  // period. If they were viewing v3 of "income:month" and switch to
+  // "balance", showing the old snapshot on the balance sheet would be
+  // wrong and confusing.
+  useEffect(() => {
+    setViewingVersion(null);
+  }, [tab, period]);
+
+  // FN-244: fetch the current (non-superseded) version for this
+  // (reportType, reportKey) so the Publish modal's supersedes picker
+  // can default to it. Refreshes on publish via `versionsRefreshToken`.
+  useEffect(() => {
+    let cancelled = false;
+    const reportType = TAB_TO_REPORT_TYPE[tab];
+    const reportKey = buildReportKey(tab, period);
+    if (!reportType) return;
+    listReportVersions({ reportType, reportKey, currentOnly: true, limit: 1 })
+      .then((list) => {
+        if (cancelled) return;
+        setCurrentVersion(Array.isArray(list) && list[0] ? list[0] : null);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCurrentVersion(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, period, versionsRefreshToken]);
+
   // Detect empty-ledger state: every section line is zero.
   const isEmptyLedger = useMemo(() => {
     if (loading || loadError) return false;
@@ -222,7 +286,13 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
     getLineNotes("march-2026").then(setNotes);
   }, [role, tab, adjustingFilter]);
 
-  const current = tab === "income" ? income : tab === "balance" ? balance : cashFlow;
+  // FN-244: when viewing a historical version, swap the live statement
+  // data for the snapshot. The snapshotData POSTed at publish time is
+  // the same shape the screen reads from IS/BS/CF, so this is a direct
+  // substitution without any adapter.
+  const liveCurrent = tab === "income" ? income : tab === "balance" ? balance : cashFlow;
+  const current = viewingVersion ? viewingVersion.snapshotData : liveCurrent;
+  const isHistoricalView = !!viewingVersion;
   const materialityValue = MATERIALITY_OPTIONS.find((m) => m.id === materialityId)?.value || 0;
   const filteredSections = useMemo(
     () => filterByMateriality(current?.sections, materialityValue),
@@ -258,6 +328,15 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
   }, [notes]);
 
   const heroAccent = role === "CFO" ? "var(--accent-primary)" : "var(--role-owner)";
+
+  // FN-244: only OWNER and ACCOUNTANT (which the UI surfaces as "CFO")
+  // can publish versions. VIEWER + AUDITOR can open the drawer but not
+  // the modal. Because this screen's normalizeRole collapses everything
+  // down to Owner or CFO, gating on those two values is correct for the
+  // current role surface. The backend is the real enforcement layer —
+  // a 403 comes back if a non-OWNER/ACCOUNTANT token somehow reaches
+  // publishReportVersion, and the modal surfaces the error.
+  const canPublishVersion = role === "Owner" || role === "CFO";
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -303,6 +382,43 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
               <Edit3 size={12} />
               {t("cfo.adjusting_count", { count: adjusting.length })}
             </button>
+            {/* FN-244: Publish-as-version (OWNER + ACCOUNTANT/CFO only) */}
+            {canPublishVersion && !isHistoricalView && (
+              <button
+                onClick={() => setPublishOpen(true)}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "8px 14px",
+                  background: "var(--bg-surface)",
+                  border: "1px solid var(--border-default)",
+                  color: "var(--text-secondary)",
+                  borderRadius: 6, cursor: "pointer",
+                  fontSize: 11, fontWeight: 600, fontFamily: "inherit",
+                }}
+                title={t("versions.publish_button")}
+              >
+                <GitBranch size={12} />
+                {t("versions.publish_button")}
+              </button>
+            )}
+            {/* FN-244: Version history drawer toggle — all roles */}
+            <button
+              onClick={() => setHistoryOpen((o) => !o)}
+              aria-label={t("versions.history_aria")}
+              title={t("versions.history_button")}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                padding: "8px 14px",
+                background: historyOpen ? "var(--accent-primary-subtle)" : "var(--bg-surface)",
+                border: historyOpen ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
+                color: historyOpen ? "var(--accent-primary)" : "var(--text-secondary)",
+                borderRadius: 6, cursor: "pointer",
+                fontSize: 11, fontWeight: 600, fontFamily: "inherit",
+              }}
+            >
+              <History size={12} />
+              {t("versions.history_button")}
+            </button>
             {onOpenAminah && (
               <button
                 onClick={() => onOpenAminah(`${t(`tabs.${tab}`)} — ${current?.period || ""}`)}
@@ -347,26 +463,71 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
                   </div>
                 </div>
               )}
-              <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                {PERIOD_IDS.map((pid) => {
-                  const on = period === pid;
-                  return (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                  {PERIOD_IDS.map((pid) => {
+                    const on = period === pid;
+                    return (
+                      <button
+                        key={pid}
+                        onClick={() => setPeriod(pid)}
+                        style={{
+                          fontSize: 11, fontWeight: 600,
+                          padding: "6px 12px", borderRadius: 14,
+                          background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)",
+                          border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
+                          color: on ? "var(--accent-primary)" : "var(--text-tertiary)",
+                          cursor: "pointer", fontFamily: "inherit",
+                        }}
+                      >
+                        {t(`periods.${pid}`)}
+                      </button>
+                    );
+                  })}
+                </div>
+                {role === "Owner" && (
+                  <>
+                    {/* FN-244: Owner-view Publish (OWNER can always publish) */}
+                    {canPublishVersion && !isHistoricalView && (
+                      <button
+                        onClick={() => setPublishOpen(true)}
+                        title={t("versions.publish_button")}
+                        style={{
+                          display: "inline-flex", alignItems: "center", gap: 6,
+                          padding: "6px 12px",
+                          background: "var(--bg-surface)",
+                          border: "1px solid var(--border-default)",
+                          color: "var(--text-secondary)",
+                          borderRadius: 14,
+                          cursor: "pointer",
+                          fontSize: 11, fontWeight: 600, fontFamily: "inherit",
+                        }}
+                      >
+                        <GitBranch size={12} />
+                        {t("versions.publish_button")}
+                      </button>
+                    )}
+                    {/* FN-244: Owner-view History (all roles) */}
                     <button
-                      key={pid}
-                      onClick={() => setPeriod(pid)}
+                      onClick={() => setHistoryOpen((o) => !o)}
+                      aria-label={t("versions.history_aria")}
+                      title={t("versions.history_button")}
                       style={{
-                        fontSize: 11, fontWeight: 600,
-                        padding: "6px 12px", borderRadius: 14,
-                        background: on ? "var(--accent-primary-subtle)" : "var(--bg-surface)",
-                        border: on ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
-                        color: on ? "var(--accent-primary)" : "var(--text-tertiary)",
-                        cursor: "pointer", fontFamily: "inherit",
+                        display: "inline-flex", alignItems: "center", gap: 6,
+                        padding: "6px 12px",
+                        background: historyOpen ? "var(--accent-primary-subtle)" : "var(--bg-surface)",
+                        border: historyOpen ? "1px solid rgba(0,196,140,0.30)" : "1px solid var(--border-default)",
+                        color: historyOpen ? "var(--accent-primary)" : "var(--text-secondary)",
+                        borderRadius: 14,
+                        cursor: "pointer",
+                        fontSize: 11, fontWeight: 600, fontFamily: "inherit",
                       }}
                     >
-                      {t(`periods.${pid}`)}
+                      <History size={12} />
+                      {t("versions.history_button")}
                     </button>
-                  );
-                })}
+                  </>
+                )}
               </div>
             </div>
 
@@ -533,7 +694,63 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
               </div>
             )}
 
-            {!loading && !loadError && current && (
+            {/* FN-244: historical view banner. Shown above the statement
+                render path whenever the user is viewing a published
+                snapshot instead of the live data. */}
+            {isHistoricalView && (
+              <div
+                role="status"
+                aria-live="polite"
+                style={{
+                  marginBottom: 14,
+                  background: "rgba(87,135,255,0.08)",
+                  border: "1px solid rgba(87,135,255,0.25)",
+                  borderRadius: 10,
+                  padding: "12px 16px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  flexWrap: "wrap",
+                }}
+              >
+                <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "var(--semantic-info)" }}>
+                    {t("versions.historical_banner.title_prefix")}
+                    <LtrText>{viewingVersion.version}</LtrText>
+                    {t("versions.historical_banner.title_middle")}
+                    <LtrText>
+                      {new Date(viewingVersion.publishedAt).toLocaleDateString(undefined, {
+                        year: "numeric", month: "short", day: "numeric",
+                      })}
+                    </LtrText>
+                    {t("versions.historical_banner.title_suffix")}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.5 }}>
+                    {t("versions.historical_banner.body")}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setViewingVersion(null)}
+                  style={{
+                    background: "transparent",
+                    border: "1px solid var(--border-default)",
+                    color: "var(--semantic-info)",
+                    padding: "6px 12px",
+                    borderRadius: 6,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                    flexShrink: 0,
+                  }}
+                >
+                  {t("versions.historical_banner.return")}
+                </button>
+              </div>
+            )}
+
+            {(isHistoricalView || (!loading && !loadError)) && current && (
               <>
                 <AminahNarrationCard
                   text={current.aminahNarration}
@@ -543,12 +760,15 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
                 />
                 <StatementTable
                   sections={filteredSections}
-                  mode={role === "CFO" ? "cfo" : "readonly"}
+                  mode={(role === "CFO" && !isHistoricalView) ? "cfo" : "readonly"}
                   notesByCode={notesByCode}
                   onOpenNote={(note, line) =>
                     setNoteTarget({ accountCode: note.accountCode, accountLabel: line?.account || note.accountCode, existing: note })
                   }
                   onLineAction={(actionId, line, code) => {
+                    // FN-244: historical view is readonly — suppress
+                    // all line actions that would mutate state.
+                    if (isHistoricalView) return;
                     if (actionId === "reclassify") {
                       setReclassifySource({ account: line.account, current: line.current });
                     } else if (actionId === "note") {
@@ -685,7 +905,41 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
             </div>
           </aside>
         )}
+
+        {/* FN-244: Version History drawer (all roles) */}
+        <VersionHistoryDrawer
+          open={historyOpen}
+          reportType={TAB_TO_REPORT_TYPE[tab]}
+          reportKey={buildReportKey(tab, period)}
+          reportLabel={t(`tabs.${tab}`)}
+          viewingVersionId={viewingVersion?.id}
+          refreshToken={versionsRefreshToken}
+          onClose={() => setHistoryOpen(false)}
+          onView={(v) => {
+            setViewingVersion(v);
+          }}
+        />
       </div>
+
+      {/* FN-244: Publish-as-version modal. */}
+      <PublishVersionModal
+        open={publishOpen}
+        reportType={TAB_TO_REPORT_TYPE[tab]}
+        reportKey={buildReportKey(tab, period)}
+        snapshotData={liveCurrent}
+        currentVersion={currentVersion}
+        onClose={() => setPublishOpen(false)}
+        onPublished={(row) => {
+          setVersionsRefreshToken((n) => n + 1);
+          showToast(
+            <>
+              {t("versions.publish_modal.published_toast_prefix")}
+              <LtrText>{row?.version ?? ""}</LtrText>
+              {t("versions.publish_modal.published_toast_suffix")}
+            </>
+          );
+        }}
+      />
 
       <ReclassifyLineModal
         open={!!reclassifySource}

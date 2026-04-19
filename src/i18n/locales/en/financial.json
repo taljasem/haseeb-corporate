@@ -111,5 +111,58 @@
     "copy_code": "Copy account code",
     "copied_toast": "Account code copied",
     "note_icon_tooltip": "View note"
+  },
+  "versions": {
+    "publish_button": "Publish as version",
+    "history_button": "Version history",
+    "history_aria": "Open version history",
+    "close": "Close",
+    "publish_modal": {
+      "label": "PUBLISH VERSION",
+      "title": "Publish report version",
+      "body": "This creates an immutable snapshot of the current view. Once published, the snapshot cannot be edited.",
+      "field_notes": "Notes (optional)",
+      "notes_placeholder": "What changed in this version, or why you're publishing it…",
+      "field_supersedes": "Supersedes",
+      "supersedes_none": "Don't supersede any prior version",
+      "supersedes_label_prefix": "Supersede v",
+      "supersedes_label_middle": " (published ",
+      "supersedes_label_suffix": ")",
+      "supersedes_help": "If set, the prior version is marked superseded and no longer current.",
+      "cancel": "Cancel",
+      "submit": "Publish",
+      "publishing": "Publishing…",
+      "published_toast_prefix": "Published v",
+      "published_toast_suffix": "",
+      "error_toast": "Couldn't publish version: {{message}}"
+    },
+    "drawer": {
+      "label": "VERSION HISTORY",
+      "title": "Version history",
+      "subtitle": "{{report}}",
+      "empty_title": "No versions yet",
+      "empty_desc": "Nothing has been published for this report and period yet.",
+      "loading": "Loading versions…",
+      "error": "Couldn't load versions: {{message}}",
+      "retry": "Retry",
+      "current_badge": "Current",
+      "superseded_badge": "Superseded",
+      "published_by": "by",
+      "view": "View",
+      "viewing": "Viewing"
+    },
+    "historical_banner": {
+      "title_prefix": "Viewing v",
+      "title_middle": " (published ",
+      "title_suffix": ")",
+      "body": "You are viewing a historical published snapshot. Editing is disabled.",
+      "return": "Return to live"
+    },
+    "report_types": {
+      "PROFIT_AND_LOSS": "Profit & Loss",
+      "BALANCE_SHEET": "Balance Sheet",
+      "CASH_FLOW_STATEMENT": "Cash Flow Statement",
+      "TRIAL_BALANCE": "Trial Balance"
+    }
   }
 }

@@ -80,6 +80,7 @@ import * as boardPackApi from '../api/board-pack';
 import * as ocrGatingApi from '../api/ocr-gating';
 import * as inventoryCountApi from '../api/inventory-count';
 import * as spinoffApi from '../api/spinoff';
+import * as islamicFinanceApi from '../api/islamic-finance';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -468,6 +469,15 @@ const REAL_IMPLS = {
   approveSpinoffEvent: spinoffApi.approveSpinoffEvent,
   cancelSpinoffEvent: spinoffApi.cancelSpinoffEvent,
   getSpinoffBalanceCheck: spinoffApi.getSpinoffBalanceCheck,
+
+  // Islamic Finance (FN-247, Phase 4 Track A Tier 4 — 2026-04-19).
+  listIslamicArrangements: islamicFinanceApi.listIslamicArrangements,
+  getIslamicArrangement: islamicFinanceApi.getIslamicArrangement,
+  createIslamicArrangement: islamicFinanceApi.createIslamicArrangement,
+  transitionIslamicStatus: islamicFinanceApi.transitionIslamicStatus,
+  generateIslamicSchedule: islamicFinanceApi.generateIslamicSchedule,
+  markIslamicInstallmentPaid: islamicFinanceApi.markIslamicInstallmentPaid,
+  getIslamicPosition: islamicFinanceApi.getIslamicPosition,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -736,6 +746,15 @@ function buildLiveSurface() {
   surface.cancelSpinoffEvent = spinoffApi.cancelSpinoffEvent;
   surface.getSpinoffBalanceCheck = spinoffApi.getSpinoffBalanceCheck;
 
+  surface.listIslamicArrangements = islamicFinanceApi.listIslamicArrangements;
+  surface.getIslamicArrangement = islamicFinanceApi.getIslamicArrangement;
+  surface.createIslamicArrangement = islamicFinanceApi.createIslamicArrangement;
+  surface.transitionIslamicStatus = islamicFinanceApi.transitionIslamicStatus;
+  surface.generateIslamicSchedule = islamicFinanceApi.generateIslamicSchedule;
+  surface.markIslamicInstallmentPaid =
+    islamicFinanceApi.markIslamicInstallmentPaid;
+  surface.getIslamicPosition = islamicFinanceApi.getIslamicPosition;
+
   return surface;
 }
 
@@ -979,6 +998,14 @@ function buildMockExtras() {
     approveSpinoffEvent: mockApproveSpinoffEvent,
     cancelSpinoffEvent: mockCancelSpinoffEvent,
     getSpinoffBalanceCheck: mockSpinoffBalanceCheck,
+    // Islamic Finance (FN-247) MOCK stubs.
+    listIslamicArrangements: mockListIslamicArrangements,
+    getIslamicArrangement: mockGetIslamicArrangement,
+    createIslamicArrangement: mockCreateIslamicArrangement,
+    transitionIslamicStatus: mockTransitionIslamicStatus,
+    generateIslamicSchedule: mockGenerateIslamicSchedule,
+    markIslamicInstallmentPaid: mockMarkIslamicInstallmentPaid,
+    getIslamicPosition: mockGetIslamicPosition,
     // Board pack (FN-258) MOCK stub — empty pack in MOCK mode.
     getBoardPack: async (q = {}) => ({
       fiscalYear: q.fiscalYear || new Date().getFullYear() - 1,
@@ -2573,6 +2600,215 @@ async function mockSpinoffBalanceCheck(id) {
   };
 }
 
+// ── Islamic Finance (FN-247) MOCK stubs. profitRatePercent stored as
+//    basis-points ×100 integer (500 = 5.00%) matching wire format. ──
+let _mockIslamicCounter = 0;
+let _mockIslamicScheduleCounter = 0;
+const _mockIslamicArrangements = [];
+
+function _mockIslamicScheduleRow(arrangementId, n, due, principal, profit, outstanding) {
+  _mockIslamicScheduleCounter += 1;
+  return {
+    id: `mock-ifs-${_mockIslamicScheduleCounter}`,
+    arrangementId,
+    installmentNumber: n,
+    dueDate: due,
+    principalPortionKwd: principal.toFixed(3),
+    profitPortionKwd: profit.toFixed(3),
+    totalPortionKwd: (principal + profit).toFixed(3),
+    outstandingAfterKwd: outstanding.toFixed(3),
+    status: 'SCHEDULED',
+    paidDate: null,
+    paidAmountKwd: null,
+    notes: null,
+  };
+}
+
+async function mockListIslamicArrangements(filters = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  return _mockIslamicArrangements.filter((a) => {
+    if (filters.arrangementType && a.arrangementType !== filters.arrangementType) return false;
+    if (filters.direction && a.direction !== filters.direction) return false;
+    if (filters.status && a.status !== filters.status) return false;
+    if (filters.counterpartyBank && a.counterpartyBank !== filters.counterpartyBank) return false;
+    return true;
+  });
+}
+async function mockGetIslamicArrangement(id) {
+  await new Promise((r) => setTimeout(r, 30));
+  return _mockIslamicArrangements.find((a) => a.id === id) || null;
+}
+async function mockCreateIslamicArrangement(payload) {
+  await new Promise((r) => setTimeout(r, 60));
+  _mockIslamicCounter += 1;
+  const row = {
+    id: `mock-ifa-${_mockIslamicCounter}`,
+    arrangementNumber: payload.arrangementNumber,
+    arrangementType: payload.arrangementType,
+    sourceTermLabel: payload.sourceTermLabel,
+    counterpartyBank: payload.counterpartyBank,
+    counterpartyReference: payload.counterpartyReference || null,
+    direction: payload.direction,
+    originalFacilityAmountKwd: Number(payload.originalFacilityAmountKwd).toFixed(3),
+    profitRatePercent: payload.profitRatePercent,
+    profitComputationMethod: payload.profitComputationMethod,
+    contractDate: payload.contractDate,
+    maturityDate: payload.maturityDate,
+    installmentCount: payload.installmentCount,
+    balanceSheetRoleCode: payload.balanceSheetRoleCode || 'MURABAHA_PAYABLE',
+    profitPlRoleCode: payload.profitPlRoleCode || 'MURABAHA_PROFIT_EXPENSE',
+    status: 'ACTIVE',
+    notes: payload.notes || null,
+    createdBy: 'mock-user',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    schedule: [],
+  };
+  _mockIslamicArrangements.unshift(row);
+  return row;
+}
+async function mockTransitionIslamicStatus(id, status) {
+  await new Promise((r) => setTimeout(r, 40));
+  const a = _mockIslamicArrangements.find((x) => x.id === id);
+  if (!a) throw new Error('arrangement not found');
+  if ((a.status === 'SETTLED' || a.status === 'CANCELLED') && status !== a.status) {
+    throw new Error(`cannot transition from terminal status ${a.status}.`);
+  }
+  a.status = status;
+  a.updatedAt = new Date().toISOString();
+  return a;
+}
+async function mockGenerateIslamicSchedule(id, opts = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  const a = _mockIslamicArrangements.find((x) => x.id === id);
+  if (!a) throw new Error('arrangement not found');
+  if (a.schedule.length > 0 && !opts.regenerate) {
+    throw new Error(`schedule already exists (${a.schedule.length} rows); pass regenerate=true to replace.`);
+  }
+  a.schedule = [];
+  const facility = Number(a.originalFacilityAmountKwd);
+  const ratePerYear = a.profitRatePercent / 10000;
+  const N = a.installmentCount;
+  const contractMs = new Date(a.contractDate).getTime();
+  const maturityMs = new Date(a.maturityDate).getTime();
+  const totalDays = Math.max(1, Math.floor((maturityMs - contractMs) / 86_400_000));
+  const daysPerInst = Math.max(1, Math.round(totalDays / N));
+  const yearsTotal = totalDays / 365;
+  const rows = [];
+  if (a.profitComputationMethod === 'DIMINISHING') {
+    const principalEach = facility / N;
+    const periodRate = ratePerYear * (daysPerInst / 365);
+    let outstanding = facility;
+    for (let i = 1; i <= N; i++) {
+      const profit = outstanding * periodRate;
+      const principalForThis = i === N ? outstanding : principalEach;
+      outstanding = outstanding - principalForThis;
+      const due = new Date(contractMs + daysPerInst * i * 86_400_000).toISOString().slice(0, 10);
+      rows.push(_mockIslamicScheduleRow(id, i, due, principalForThis, profit, Math.max(0, outstanding)));
+    }
+  } else {
+    const totalProfit = facility * ratePerYear * yearsTotal;
+    const principalEach = facility / N;
+    const profitEach = totalProfit / N;
+    let outstanding = facility;
+    let profitAllocated = 0;
+    for (let i = 1; i <= N; i++) {
+      const principalForThis = i === N ? outstanding : principalEach;
+      outstanding = outstanding - principalForThis;
+      const profitForThis = i === N ? totalProfit - profitAllocated : profitEach;
+      profitAllocated += profitForThis;
+      const due = new Date(contractMs + daysPerInst * i * 86_400_000).toISOString().slice(0, 10);
+      rows.push(_mockIslamicScheduleRow(id, i, due, principalForThis, profitForThis, Math.max(0, outstanding)));
+    }
+  }
+  a.schedule = rows;
+  a.updatedAt = new Date().toISOString();
+  return rows;
+}
+async function mockMarkIslamicInstallmentPaid(rowId, payload) {
+  await new Promise((r) => setTimeout(r, 40));
+  for (const a of _mockIslamicArrangements) {
+    const row = a.schedule.find((s) => s.id === rowId);
+    if (row) {
+      if (row.status === 'PAID') throw new Error('installment already marked PAID.');
+      const amt = Number(payload.paidAmountKwd);
+      if (!(amt > 0)) throw new Error('paidAmountKwd must be > 0.');
+      row.status = 'PAID';
+      row.paidDate = payload.paidDate;
+      row.paidAmountKwd = amt.toFixed(3);
+      a.updatedAt = new Date().toISOString();
+      return row;
+    }
+  }
+  throw new Error('schedule row not found');
+}
+function _mockLabelPair(type, direction) {
+  const fin = direction === 'FINANCING_RECEIVED';
+  const map = {
+    MURABAHA: fin
+      ? { aaoifiLabel: 'Murabaha Profit Expense', ifrsLabel: 'Finance Cost' }
+      : { aaoifiLabel: 'Murabaha Profit Income', ifrsLabel: 'Finance Income' },
+    IJARA: fin
+      ? { aaoifiLabel: 'Ijara Rent Expense', ifrsLabel: 'Lease Expense' }
+      : { aaoifiLabel: 'Ijara Rent Income', ifrsLabel: 'Lease Income' },
+    MUDARABA: fin
+      ? { aaoifiLabel: 'Mudaraba Profit Share (Mudarib)', ifrsLabel: 'Finance Cost' }
+      : { aaoifiLabel: 'Mudaraba Profit Share (Rab al-Maal)', ifrsLabel: 'Investment Income' },
+    MUSHARAKA: fin
+      ? { aaoifiLabel: 'Musharaka Profit Share Paid', ifrsLabel: 'Finance Cost' }
+      : { aaoifiLabel: 'Musharaka Profit Share Received', ifrsLabel: 'Investment Income' },
+    WAKALA: fin
+      ? { aaoifiLabel: 'Wakala Agency Fee Expense', ifrsLabel: 'Finance Cost' }
+      : { aaoifiLabel: 'Wakala Agency Fee Income', ifrsLabel: 'Investment Income' },
+    SUKUK: fin
+      ? { aaoifiLabel: 'Sukuk Profit Expense', ifrsLabel: 'Finance Cost (Bond Coupon)' }
+      : { aaoifiLabel: 'Sukuk Profit Income', ifrsLabel: 'Investment Income (Bond Coupon)' },
+    CUSTOM: fin
+      ? { aaoifiLabel: 'Islamic Finance Profit Expense', ifrsLabel: 'Finance Cost' }
+      : { aaoifiLabel: 'Islamic Finance Profit Income', ifrsLabel: 'Investment Income' },
+  };
+  return map[type] || map.CUSTOM;
+}
+async function mockGetIslamicPosition(id, asOf = null) {
+  await new Promise((r) => setTimeout(r, 40));
+  const a = _mockIslamicArrangements.find((x) => x.id === id);
+  if (!a) throw new Error('arrangement not found');
+  const asOfDate = asOf ? new Date(asOf) : new Date();
+  let outstanding = Number(a.originalFacilityAmountKwd);
+  let profitAccrued = 0;
+  let profitPaid = 0;
+  let profitUnearned = 0;
+  let paidCount = 0;
+  let overdueCount = 0;
+  for (const row of a.schedule) {
+    const profit = Number(row.profitPortionKwd);
+    const principal = Number(row.principalPortionKwd);
+    if (new Date(row.dueDate) <= asOfDate) {
+      profitAccrued += profit;
+      outstanding -= principal;
+      if (row.status === 'PAID') {
+        paidCount++;
+        profitPaid += profit;
+      } else {
+        overdueCount++;
+      }
+    } else {
+      profitUnearned += profit;
+    }
+  }
+  return {
+    arrangementId: a.id,
+    asOf: asOfDate.toISOString(),
+    outstandingPrincipalKwd: outstanding.toFixed(3),
+    profitAccruedToDateKwd: profitAccrued.toFixed(3),
+    profitPaidToDateKwd: profitPaid.toFixed(3),
+    profitUnearnedKwd: profitUnearned.toFixed(3),
+    installmentsPaidCount: paidCount,
+    installmentsOverdueCount: overdueCount,
+    labelPair: _mockLabelPair(a.arrangementType, a.direction),
+  };
+}
+
 // ── Report versions MOCK stubs (module-scoped so state survives calls) ──
 let _mockReportVersionCounter = 0;
 const _mockReportVersions = [];
@@ -2933,3 +3169,10 @@ export const validateSpinoffEvent = surface.validateSpinoffEvent;
 export const approveSpinoffEvent = surface.approveSpinoffEvent;
 export const cancelSpinoffEvent = surface.cancelSpinoffEvent;
 export const getSpinoffBalanceCheck = surface.getSpinoffBalanceCheck;
+export const listIslamicArrangements = surface.listIslamicArrangements;
+export const getIslamicArrangement = surface.getIslamicArrangement;
+export const createIslamicArrangement = surface.createIslamicArrangement;
+export const transitionIslamicStatus = surface.transitionIslamicStatus;
+export const generateIslamicSchedule = surface.generateIslamicSchedule;
+export const markIslamicInstallmentPaid = surface.markIslamicInstallmentPaid;
+export const getIslamicPosition = surface.getIslamicPosition;

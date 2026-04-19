@@ -6,6 +6,7 @@ import EmptyState from "../../components/shared/EmptyState";
 import ActionButton from "../../components/ds/ActionButton";
 import PersistentBanner from "../../components/ds/PersistentBanner";
 import InalterabilityPanel from "../../components/audit-bridge/InalterabilityPanel";
+import MigrationAuditPanel from "../../components/audit-bridge/MigrationAuditPanel";
 import {
   listAuditEngagements, getAuditEngagement, createAuditEngagement, createSnapshot,
   runAuditCheck, runAllAuditChecks, generateAuditPackage,
@@ -148,6 +149,12 @@ export default function AuditBridgeScreen({ onOpenAminah }) {
             on the Audit Bridge landing. Role-gating on the endpoint itself
             is backend-enforced; the panel handles 403 gracefully. */}
         <InalterabilityPanel onOpenAminah={onOpenAminah} />
+        {/* FN-245 — Migration Audit Trail (read-only). Placed adjacent
+            to the Inalterability panel because schema-hash chain
+            integrity is one of the signals that feeds inalterability.
+            OWNER/AUDITOR backend-gated; non-authorized roles see a
+            403-surfaced error inline. */}
+        <MigrationAuditPanel />
 
         {!engagements ? (
           <div style={{ color: "var(--text-tertiary)", fontSize: 13 }}>Loading...</div>

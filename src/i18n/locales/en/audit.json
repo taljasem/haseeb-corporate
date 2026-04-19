@@ -146,5 +146,33 @@
       "BUDGET_VARIANCE": "Budget Variance",
       "CUSTOM": "Custom"
     }
+  },
+  "migration_audit": {
+    "title": "Migration Audit Trail",
+    "subtitle": "APPEND-ONLY · SCHEMA-HASH CHAIN INTEGRITY",
+    "summary_count": "{{count}} migration(s)",
+    "summary_total": "Total",
+    "summary_success": "Success",
+    "summary_failed": "Failed",
+    "summary_chain_status": "Chain",
+    "chain_intact": "CHAIN INTACT",
+    "chain_breaks": "{{count}} CHAIN BREAK(S)",
+    "chain_intact_short": "Intact",
+    "chain_break_short": "{{count}} break(s)",
+    "chain_broken": "CHAIN BROKEN",
+    "failed_count": "{{count}} FAILED",
+    "loading": "Loading migration audit trail…",
+    "empty": "No migrations recorded yet on this tenant database.",
+    "outcome_SUCCESS": "SUCCESS",
+    "outcome_FAILED": "FAILED",
+    "outcome_ROLLED_BACK": "ROLLED BACK",
+    "trigger_MIGRATE_DEPLOY": "MIGRATE",
+    "trigger_SELF_HEAL": "SELF-HEAL",
+    "trigger_MANUAL": "MANUAL",
+    "label_by": "by",
+    "label_diff": "Diff summary",
+    "label_hash_before": "Hash before",
+    "label_hash_after": "Hash after",
+    "label_error": "Error"
   }
 }

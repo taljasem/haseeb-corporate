@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import useEscapeKey from "../../hooks/useEscapeKey";
 import LtrText from "../shared/LtrText";
-import { getInvoiceDetail } from "../../engine/mockEngine";
+import { getInvoiceDetail } from "../../engine";
 import { formatRelativeTime } from "../../utils/relativeTime";
 import { formatDate } from "../../utils/format";
 

@@ -4,7 +4,11 @@ import { X } from "lucide-react";
 import useEscapeKey from "../../hooks/useEscapeKey";
 import Spinner from "../shared/Spinner";
 import { runValidators, required, minLength } from "../../utils/validation";
-import { markInvoiceDisputed } from "../../engine/mockEngine";
+// PHASE-4-BLOCKED-ON-BACKEND: markInvoiceDisputed — no DISPUTED status
+// transition on Invoice. See src/engine/mockEngine.js for the full
+// block-reason comment. In LIVE mode this call falls back to the mock
+// with a one-shot console warning.
+import { markInvoiceDisputed } from "../../engine";
 
 const inputStyle = {
   width: "100%", background: "var(--bg-surface-sunken)",

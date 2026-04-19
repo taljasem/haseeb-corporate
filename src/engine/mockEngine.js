@@ -6314,6 +6314,12 @@ export async function getInvoiceDetail(invoiceId) {
   return _brandObj({ ...inv, lineItems: inv.lineItems.map((l) => ({ ...l })), partialPayments: inv.partialPayments.map((p) => ({ ...p })), communicationHistory: inv.communicationHistory.map((c) => ({ ...c })) });
 }
 
+// PHASE-4-BLOCKED-ON-BACKEND: sendAgingReminder
+// Reason: no email-service endpoint. The Corporate API has no
+//   email-dispatch surface for per-invoice reminder emails today.
+// Unblocker: an email-service backend that exposes something like
+//   POST /api/invoices/:id/reminders with {template, body, cc}.
+// Recon: 2026-04-19 architect — memory-bank/2026-04-19-phase4-breakdown.md §B-Tier 2.
 export async function sendAgingReminder(invoiceIds, template, body, cc) {
   await delay();
   const ids = Array.isArray(invoiceIds) ? invoiceIds : [invoiceIds];
@@ -6346,6 +6352,13 @@ export async function logPayment(invoiceId, amount, date, method, reference, not
   return _brandObj({ ...inv });
 }
 
+// PHASE-4-BLOCKED-ON-BACKEND: scheduleVendorPayment
+// Reason: no future-dated payment endpoint. POST /api/bills/:id/payment
+//   is pay-now only (posts a JE immediately) with no scheduledDate field.
+// Unblocker: either a new scheduled-payment surface (e.g.
+//   POST /api/bills/:id/payment-schedule) or a scheduledDate field on
+//   the existing pay-now endpoint that defers the JE post.
+// Recon: 2026-04-19 architect — memory-bank/2026-04-19-phase4-breakdown.md §B-Tier 2.
 export async function scheduleVendorPayment(invoiceId, amount, date, method, fromAccount, notes) {
   await delay();
   const inv = _getAgingInvoices("AP").find((x) => x.id === invoiceId);
@@ -6354,6 +6367,15 @@ export async function scheduleVendorPayment(invoiceId, amount, date, method, fro
   return _brandObj({ ...inv });
 }
 
+// PHASE-4-BLOCKED-ON-BACKEND: markInvoiceDisputed
+// Reason: no dispute status transition on invoices. The Invoice model
+//   has no DISPUTED status in the Prisma enum, and the invoice state
+//   machine does not expose a dispute-flag field or transition endpoint.
+// Unblocker: a DISPUTED status in the Invoice status enum plus either
+//   a dedicated transition (e.g. POST /api/invoices/:id/dispute with
+//   {reason, expectedResolutionDate}) or an updatable disputeMetadata
+//   field on the invoice resource.
+// Recon: 2026-04-19 architect — memory-bank/2026-04-19-phase4-breakdown.md §B-Tier 2.
 export async function markInvoiceDisputed(invoiceId, reason, expectedResolution, assignedTo) {
   await delay();
   const all = [..._getAgingInvoices("AR"), ..._getAgingInvoices("AP")];
@@ -6374,6 +6396,17 @@ export async function resolveDispute(invoiceId, resolution) {
   return _brandObj({ ...inv });
 }
 
+// PHASE-4-BLOCKED-ON-BACKEND: createWriteOffJE
+// Reason: no GL-flexible write-off endpoint exists. The credit-note path
+// (POST /api/invoices/:id/credit-note) is Revenue-only by design, not
+// suitable for write-offs to Bad Debt Expense 8300, Goodwill, Legal
+// Settlement, etc. The mock contract allows debiting ANY user-picked GL
+// account; no current backend supports that.
+// Unblocker: GL-flexible write-off endpoint + Owner-approval task
+// emission + AR-specific reconciliation. Paired backend dispatch logged
+// in bug-tracker as HASEEB-068 + HASEEB-069 and in the ship-sequence
+// Future-additions log.
+// Recon: 2026-04-19 architect + QA-reviewer
 export async function createWriteOffJE(invoiceId, amount, reason, glAccount) {
   await delay();
   const inv = _getAgingInvoices("AR").find((x) => x.id === invoiceId);

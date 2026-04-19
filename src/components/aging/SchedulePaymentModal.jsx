@@ -3,7 +3,11 @@ import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import useEscapeKey from "../../hooks/useEscapeKey";
 import Spinner from "../shared/Spinner";
-import { scheduleVendorPayment } from "../../engine/mockEngine";
+// PHASE-4-BLOCKED-ON-BACKEND: scheduleVendorPayment — no future-dated
+// payment endpoint. See src/engine/mockEngine.js for the full block-reason
+// comment. In LIVE mode this call falls back to the mock with a one-shot
+// console warning.
+import { scheduleVendorPayment } from "../../engine";
 
 const inputStyle = {
   width: "100%", background: "var(--bg-surface-sunken)",

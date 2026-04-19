@@ -4,7 +4,11 @@ import { X } from "lucide-react";
 import useEscapeKey from "../../hooks/useEscapeKey";
 import Spinner from "../shared/Spinner";
 import { runValidators, required, minLength } from "../../utils/validation";
-import { sendAgingReminder } from "../../engine/mockEngine";
+// PHASE-4-BLOCKED-ON-BACKEND: sendAgingReminder — no email-service endpoint.
+// See src/engine/mockEngine.js for the full block-reason comment. In LIVE
+// mode this call falls back to the mock with a one-shot console warning;
+// the modal itself stays untouched until an email-service ships.
+import { sendAgingReminder } from "../../engine";
 
 const inputStyle = {
   width: "100%", background: "var(--bg-surface-sunken)",

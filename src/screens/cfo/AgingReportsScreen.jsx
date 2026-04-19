@@ -8,7 +8,7 @@ import EmptyState from "../../components/shared/EmptyState";
 import AminahNarrationCard from "../../components/financial/AminahNarrationCard";
 import { useTenant } from "../../components/shared/TenantContext";
 import { formatDate } from "../../utils/format";
-import { getAgingReport } from "../../engine/mockEngine";
+import { getAgingReport } from "../../engine";
 import SendReminderModal from "../../components/aging/SendReminderModal";
 import LogPaymentModal from "../../components/aging/LogPaymentModal";
 import DisputeInvoiceModal from "../../components/aging/DisputeInvoiceModal";

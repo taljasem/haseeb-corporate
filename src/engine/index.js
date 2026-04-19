@@ -69,6 +69,7 @@ import * as citAssessmentApi from '../api/cit-assessment';
 import * as whtApi from '../api/wht';
 import * as pettyCashApi from '../api/petty-cash';
 import * as costAllocationApi from '../api/cost-allocation';
+import * as relatedPartyApi from '../api/related-party';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -365,6 +366,16 @@ const REAL_IMPLS = {
   createCostAllocationRule: costAllocationApi.createCostAllocationRule,
   deactivateCostAllocationRule: costAllocationApi.deactivateCostAllocationRule,
   computeCostAllocation: costAllocationApi.computeCostAllocation,
+
+  // Related-party register + report (FN-254, Phase 4 Track A Tier 3).
+  listRelatedParties: relatedPartyApi.listRelatedParties,
+  getRelatedParty: relatedPartyApi.getRelatedParty,
+  createRelatedParty: relatedPartyApi.createRelatedParty,
+  updateRelatedParty: relatedPartyApi.updateRelatedParty,
+  deactivateRelatedParty: relatedPartyApi.deactivateRelatedParty,
+  getRelatedPartyReport: relatedPartyApi.getRelatedPartyReport,
+  listVendorsForRelatedParty: relatedPartyApi.listVendorsForRelatedParty,
+  listCustomersForRelatedParty: relatedPartyApi.listCustomersForRelatedParty,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -541,6 +552,16 @@ function buildLiveSurface() {
   surface.deactivateCostAllocationRule = costAllocationApi.deactivateCostAllocationRule;
   surface.computeCostAllocation = costAllocationApi.computeCostAllocation;
 
+  // Related-party (FN-254). Extras pattern.
+  surface.listRelatedParties = relatedPartyApi.listRelatedParties;
+  surface.getRelatedParty = relatedPartyApi.getRelatedParty;
+  surface.createRelatedParty = relatedPartyApi.createRelatedParty;
+  surface.updateRelatedParty = relatedPartyApi.updateRelatedParty;
+  surface.deactivateRelatedParty = relatedPartyApi.deactivateRelatedParty;
+  surface.getRelatedPartyReport = relatedPartyApi.getRelatedPartyReport;
+  surface.listVendorsForRelatedParty = relatedPartyApi.listVendorsForRelatedParty;
+  surface.listCustomersForRelatedParty = relatedPartyApi.listCustomersForRelatedParty;
+
   return surface;
 }
 
@@ -704,6 +725,111 @@ function buildMockExtras() {
     createCostAllocationRule: mockCreateCostAllocationRule,
     deactivateCostAllocationRule: mockDeactivateCostAllocationRule,
     computeCostAllocation: mockComputeCostAllocation,
+    // Related-party (FN-254) MOCK stubs.
+    listRelatedParties: mockListRelatedParties,
+    getRelatedParty: mockGetRelatedParty,
+    createRelatedParty: mockCreateRelatedParty,
+    updateRelatedParty: mockUpdateRelatedParty,
+    deactivateRelatedParty: mockDeactivateRelatedParty,
+    getRelatedPartyReport: mockGetRelatedPartyReport,
+    listVendorsForRelatedParty: async () => [],
+    listCustomersForRelatedParty: async () => [],
+  };
+}
+
+// ── Related-party MOCK stubs (FN-254) ──
+let _mockRpCounter = 0;
+const _mockRelatedParties = [];
+function _isRpActive(r, asOfIso) {
+  const asOf = new Date(asOfIso || new Date().toISOString().slice(0, 10));
+  const from = new Date(r.activeFrom);
+  if (asOf < from) return false;
+  if (r.activeUntil) {
+    const until = new Date(r.activeUntil);
+    if (asOf > until) return false;
+  }
+  return true;
+}
+async function mockListRelatedParties(filters = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  return _mockRelatedParties
+    .filter((r) => {
+      if (filters.counterpartyType && r.counterpartyType !== filters.counterpartyType) return false;
+      if (filters.natureOfRelationship && r.natureOfRelationship !== filters.natureOfRelationship) return false;
+      if (filters.activeOnly && !_isRpActive(r, filters.asOf)) return false;
+      return true;
+    })
+    .map((r) => ({ ...r }));
+}
+async function mockGetRelatedParty(id) {
+  await new Promise((r) => setTimeout(r, 20));
+  const row = _mockRelatedParties.find((r) => r.id === id);
+  return row ? { ...row } : null;
+}
+async function mockCreateRelatedParty(payload = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  _mockRpCounter += 1;
+  const row = {
+    id: `mock-rp-${_mockRpCounter}`,
+    counterpartyType: payload.counterpartyType || 'VENDOR',
+    counterpartyVendorId: payload.counterpartyVendorId ?? null,
+    counterpartyCustomerId: payload.counterpartyCustomerId ?? null,
+    natureOfRelationship: payload.natureOfRelationship || 'OTHER',
+    disclosureNote: payload.disclosureNote ?? null,
+    activeFrom: payload.activeFrom || new Date().toISOString().slice(0, 10),
+    activeUntil: payload.activeUntil ?? null,
+    notes: payload.notes ?? null,
+    createdBy: 'mock-user',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    _mock: true,
+  };
+  _mockRelatedParties.unshift(row);
+  return row;
+}
+async function mockUpdateRelatedParty(id, patch = {}) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockRelatedParties.findIndex((r) => r.id === id);
+  if (idx < 0) return null;
+  _mockRelatedParties[idx] = {
+    ..._mockRelatedParties[idx],
+    natureOfRelationship:
+      patch.natureOfRelationship ?? _mockRelatedParties[idx].natureOfRelationship,
+    disclosureNote: patch.disclosureNote ?? _mockRelatedParties[idx].disclosureNote,
+    activeUntil:
+      patch.activeUntil !== undefined
+        ? patch.activeUntil
+        : _mockRelatedParties[idx].activeUntil,
+    notes: patch.notes ?? _mockRelatedParties[idx].notes,
+    updatedAt: new Date().toISOString(),
+  };
+  return { ..._mockRelatedParties[idx] };
+}
+async function mockDeactivateRelatedParty(id) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockRelatedParties.findIndex((r) => r.id === id);
+  if (idx < 0) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  _mockRelatedParties[idx] = {
+    ..._mockRelatedParties[idx],
+    activeUntil: today,
+    updatedAt: new Date().toISOString(),
+  };
+  return { ..._mockRelatedParties[idx] };
+}
+async function mockGetRelatedPartyReport(query = {}) {
+  await new Promise((r) => setTimeout(r, 60));
+  return {
+    periodFrom: query.periodFrom || new Date().toISOString().slice(0, 10),
+    periodTo: query.periodTo || new Date().toISOString().slice(0, 10),
+    rows: [],
+    totals: {
+      purchasesKwd: '0.000',
+      purchasePaymentsKwd: '0.000',
+      salesKwd: '0.000',
+      salesReceiptsKwd: '0.000',
+      transactionCount: 0,
+    },
   };
 }
 
@@ -1552,3 +1678,17 @@ export const getCostAllocationRule = surface.getCostAllocationRule;
 export const createCostAllocationRule = surface.createCostAllocationRule;
 export const deactivateCostAllocationRule = surface.deactivateCostAllocationRule;
 export const computeCostAllocation = surface.computeCostAllocation;
+
+// Related-party register + IAS 24 report (FN-254, Phase 4 Track A Tier 3
+// — 2026-04-19). OWNER writes; OWNER/ACCOUNTANT/AUDITOR reads + report.
+// Memo-only; no JE posting. Includes two helper listers for the modal's
+// vendor/customer pickers so the modal doesn't need to import other
+// API modules directly.
+export const listRelatedParties = surface.listRelatedParties;
+export const getRelatedParty = surface.getRelatedParty;
+export const createRelatedParty = surface.createRelatedParty;
+export const updateRelatedParty = surface.updateRelatedParty;
+export const deactivateRelatedParty = surface.deactivateRelatedParty;
+export const getRelatedPartyReport = surface.getRelatedPartyReport;
+export const listVendorsForRelatedParty = surface.listVendorsForRelatedParty;
+export const listCustomersForRelatedParty = surface.listCustomersForRelatedParty;

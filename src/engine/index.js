@@ -70,6 +70,7 @@ import * as whtApi from '../api/wht';
 import * as pettyCashApi from '../api/petty-cash';
 import * as costAllocationApi from '../api/cost-allocation';
 import * as relatedPartyApi from '../api/related-party';
+import * as bulkReclassApi from '../api/bulk-reclassifications';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -376,6 +377,15 @@ const REAL_IMPLS = {
   getRelatedPartyReport: relatedPartyApi.getRelatedPartyReport,
   listVendorsForRelatedParty: relatedPartyApi.listVendorsForRelatedParty,
   listCustomersForRelatedParty: relatedPartyApi.listCustomersForRelatedParty,
+
+  // Bulk reclassifications (FN-239, Phase 4 Track A Tier 3 — 2026-04-19).
+  listBulkReclassifications: bulkReclassApi.listBulkReclassifications,
+  getBulkReclassification: bulkReclassApi.getBulkReclassification,
+  createBulkReclassification: bulkReclassApi.createBulkReclassification,
+  previewBulkReclassification: bulkReclassApi.previewBulkReclassification,
+  approveBulkReclassification: bulkReclassApi.approveBulkReclassification,
+  cancelBulkReclassification: bulkReclassApi.cancelBulkReclassification,
+  getBulkReclassificationJeShape: bulkReclassApi.getBulkReclassificationJeShape,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -562,6 +572,15 @@ function buildLiveSurface() {
   surface.listVendorsForRelatedParty = relatedPartyApi.listVendorsForRelatedParty;
   surface.listCustomersForRelatedParty = relatedPartyApi.listCustomersForRelatedParty;
 
+  // Bulk reclassifications (FN-239, Phase 4 Track A Tier 3). Extras pattern.
+  surface.listBulkReclassifications = bulkReclassApi.listBulkReclassifications;
+  surface.getBulkReclassification = bulkReclassApi.getBulkReclassification;
+  surface.createBulkReclassification = bulkReclassApi.createBulkReclassification;
+  surface.previewBulkReclassification = bulkReclassApi.previewBulkReclassification;
+  surface.approveBulkReclassification = bulkReclassApi.approveBulkReclassification;
+  surface.cancelBulkReclassification = bulkReclassApi.cancelBulkReclassification;
+  surface.getBulkReclassificationJeShape = bulkReclassApi.getBulkReclassificationJeShape;
+
   return surface;
 }
 
@@ -734,6 +753,185 @@ function buildMockExtras() {
     getRelatedPartyReport: mockGetRelatedPartyReport,
     listVendorsForRelatedParty: async () => [],
     listCustomersForRelatedParty: async () => [],
+    // Bulk reclassifications (FN-239) MOCK stubs.
+    listBulkReclassifications: mockListBulkReclassifications,
+    getBulkReclassification: mockGetBulkReclassification,
+    createBulkReclassification: mockCreateBulkReclassification,
+    previewBulkReclassification: mockPreviewBulkReclassification,
+    approveBulkReclassification: mockApproveBulkReclassification,
+    cancelBulkReclassification: mockCancelBulkReclassification,
+    getBulkReclassificationJeShape: mockGetBulkReclassificationJeShape,
+  };
+}
+
+// ── Bulk reclassifications MOCK stubs (FN-239) ──
+let _mockReclassCounter = 0;
+const _mockReclassifications = [];
+async function mockListBulkReclassifications(filters = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  return _mockReclassifications
+    .filter((p) => !filters.status || p.status === filters.status)
+    .map((p) => ({ ...p, lines: p.lines ? p.lines.map((l) => ({ ...l })) : undefined }));
+}
+async function mockGetBulkReclassification(id) {
+  await new Promise((r) => setTimeout(r, 20));
+  const row = _mockReclassifications.find((p) => p.id === id);
+  return row
+    ? { ...row, lines: row.lines ? row.lines.map((l) => ({ ...l })) : undefined }
+    : null;
+}
+async function mockCreateBulkReclassification(payload = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  _mockReclassCounter += 1;
+  const row = {
+    id: `mock-reclass-${_mockReclassCounter}`,
+    description: payload.description || '',
+    fromAccountId: payload.fromAccountId || '',
+    toAccountId: payload.toAccountId || '',
+    dateFrom: payload.dateFrom ?? null,
+    dateTo: payload.dateTo ?? null,
+    descriptionContains: payload.descriptionContains ?? null,
+    notes: payload.notes ?? null,
+    status: 'DRAFT',
+    createdBy: 'mock-user',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    lines: [],
+    _mock: true,
+  };
+  _mockReclassifications.unshift(row);
+  return { ...row, lines: [] };
+}
+async function mockPreviewBulkReclassification(id) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockReclassifications.findIndex((p) => p.id === id);
+  if (idx < 0) return null;
+  // MOCK: fabricate 3 plausible preview lines totalling 1500 KWD debit.
+  const lines = [
+    {
+      id: `mock-reclass-line-${id}-1`,
+      reclassificationId: id,
+      originJournalEntryLineId: 'mock-jel-1',
+      originJournalEntryId: 'mock-je-1',
+      originDate: new Date().toISOString().slice(0, 10),
+      originDescription: 'Mock JE line 1',
+      debit: '600.000',
+      credit: '0.000',
+    },
+    {
+      id: `mock-reclass-line-${id}-2`,
+      reclassificationId: id,
+      originJournalEntryLineId: 'mock-jel-2',
+      originJournalEntryId: 'mock-je-2',
+      originDate: new Date().toISOString().slice(0, 10),
+      originDescription: 'Mock JE line 2',
+      debit: '500.000',
+      credit: '0.000',
+    },
+    {
+      id: `mock-reclass-line-${id}-3`,
+      reclassificationId: id,
+      originJournalEntryLineId: 'mock-jel-3',
+      originJournalEntryId: 'mock-je-3',
+      originDate: new Date().toISOString().slice(0, 10),
+      originDescription: 'Mock JE line 3',
+      debit: '400.000',
+      credit: '0.000',
+    },
+  ];
+  _mockReclassifications[idx] = {
+    ..._mockReclassifications[idx],
+    status: 'PREVIEWED',
+    lines,
+    updatedAt: new Date().toISOString(),
+  };
+  return {
+    ..._mockReclassifications[idx],
+    lines: lines.map((l) => ({ ...l })),
+  };
+}
+async function mockApproveBulkReclassification(id) {
+  await new Promise((r) => setTimeout(r, 80));
+  const idx = _mockReclassifications.findIndex((p) => p.id === id);
+  if (idx < 0) return null;
+  if (_mockReclassifications[idx].status !== 'PREVIEWED') return null;
+  _mockReclassifications[idx] = {
+    ..._mockReclassifications[idx],
+    status: 'APPROVED',
+    updatedAt: new Date().toISOString(),
+  };
+  return {
+    ..._mockReclassifications[idx],
+    lines: _mockReclassifications[idx].lines
+      ? _mockReclassifications[idx].lines.map((l) => ({ ...l }))
+      : undefined,
+  };
+}
+async function mockCancelBulkReclassification(id) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockReclassifications.findIndex((p) => p.id === id);
+  if (idx < 0) return null;
+  if (
+    _mockReclassifications[idx].status !== 'DRAFT' &&
+    _mockReclassifications[idx].status !== 'PREVIEWED'
+  ) {
+    return null;
+  }
+  _mockReclassifications[idx] = {
+    ..._mockReclassifications[idx],
+    status: 'CANCELLED',
+    updatedAt: new Date().toISOString(),
+  };
+  return {
+    ..._mockReclassifications[idx],
+    lines: _mockReclassifications[idx].lines
+      ? _mockReclassifications[idx].lines.map((l) => ({ ...l }))
+      : undefined,
+  };
+}
+async function mockGetBulkReclassificationJeShape(id) {
+  await new Promise((r) => setTimeout(r, 40));
+  const row = _mockReclassifications.find((p) => p.id === id);
+  if (!row) return null;
+  if (row.status !== 'APPROVED' && row.status !== 'POSTED') return null;
+  const totalDebit = (row.lines || []).reduce(
+    (a, l) => a + Number(l.debit || 0),
+    0,
+  );
+  const totalCredit = (row.lines || []).reduce(
+    (a, l) => a + Number(l.credit || 0),
+    0,
+  );
+  const net = totalDebit - totalCredit;
+  const abs = Math.abs(net);
+  const fromSide = net >= 0 ? 'CREDIT' : 'DEBIT';
+  const toSide = net >= 0 ? 'DEBIT' : 'CREDIT';
+  return {
+    reclassificationId: id,
+    fromAccountId: row.fromAccountId,
+    toAccountId: row.toAccountId,
+    totalMovedKwd: abs.toFixed(3),
+    legs:
+      abs === 0
+        ? []
+        : [
+            {
+              accountId: row.fromAccountId,
+              side: fromSide,
+              amountKwd: abs.toFixed(3),
+              description: `Reclassify OUT: ${row.description}`,
+            },
+            {
+              accountId: row.toAccountId,
+              side: toSide,
+              amountKwd: abs.toFixed(3),
+              description: `Reclassify IN: ${row.description}`,
+            },
+          ],
+    note:
+      abs === 0
+        ? 'net amount is zero — no JE required'
+        : `${(row.lines || []).length} line(s) aggregated`,
   };
 }
 
@@ -1692,3 +1890,16 @@ export const deactivateRelatedParty = surface.deactivateRelatedParty;
 export const getRelatedPartyReport = surface.getRelatedPartyReport;
 export const listVendorsForRelatedParty = surface.listVendorsForRelatedParty;
 export const listCustomersForRelatedParty = surface.listCustomersForRelatedParty;
+
+// Bulk reclassifications (FN-239, Phase 4 Track A Tier 3 — 2026-04-19).
+// Proposal → Preview → Approve lifecycle. Per Sarah's audit-trail model,
+// approval captures the line set and queues a future RECLASSIFICATION
+// JE (posting ships in a follow-up backend dispatch). jeShape surfaces
+// what the posting JE will look like for APPROVED / POSTED rows.
+export const listBulkReclassifications = surface.listBulkReclassifications;
+export const getBulkReclassification = surface.getBulkReclassification;
+export const createBulkReclassification = surface.createBulkReclassification;
+export const previewBulkReclassification = surface.previewBulkReclassification;
+export const approveBulkReclassification = surface.approveBulkReclassification;
+export const cancelBulkReclassification = surface.cancelBulkReclassification;
+export const getBulkReclassificationJeShape = surface.getBulkReclassificationJeShape;

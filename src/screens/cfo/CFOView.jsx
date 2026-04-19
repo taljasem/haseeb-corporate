@@ -24,6 +24,7 @@ import AgingReportsScreen from "./AgingReportsScreen";
 import SetupScreen from "./SetupScreen";
 import AuditBridgeScreen from "../owner/AuditBridgeScreen";
 import PettyCashScreen from "./PettyCashScreen";
+import BulkReclassScreen from "./BulkReclassScreen";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
 
@@ -133,6 +134,8 @@ export default function CFOView({ registerNav }) {
         return <AuditBridgeScreen onOpenAminah={openAminah} />;
       case "petty-cash":
         return <PettyCashScreen role="CFO" />;
+      case "bulk-reclass":
+        return <BulkReclassScreen role="CFO" />;
       default:
         return (
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-tertiary)", fontSize: 13 }}>

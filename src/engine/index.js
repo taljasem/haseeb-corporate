@@ -64,6 +64,7 @@ import * as agingApi from '../api/aging';
 import * as invoicesApi from '../api/invoices';
 import * as billsApi from '../api/bills';
 import * as disallowanceRulesApi from '../api/disallowance-rules';
+import * as taxLodgementsApi from '../api/tax-lodgements';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -310,6 +311,14 @@ const REAL_IMPLS = {
   createDisallowanceRule: disallowanceRulesApi.createDisallowanceRule,
   updateDisallowanceRule: disallowanceRulesApi.updateDisallowanceRule,
   deactivateDisallowanceRule: disallowanceRulesApi.deactivateDisallowanceRule,
+
+  // Tax lodgements (FN-268, Phase 4 Track A Wave 2 — 2026-04-19).
+  // Backend 5/5 live; extras pattern (no mockEngine impl).
+  listTaxLodgements: taxLodgementsApi.listTaxLodgements,
+  getTaxLodgement: taxLodgementsApi.getTaxLodgement,
+  recordTaxLodgement: taxLodgementsApi.recordTaxLodgement,
+  updateTaxLodgementStatus: taxLodgementsApi.updateTaxLodgementStatus,
+  getTaxLodgementTieOut: taxLodgementsApi.getTaxLodgementTieOut,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -441,6 +450,13 @@ function buildLiveSurface() {
   surface.updateDisallowanceRule = disallowanceRulesApi.updateDisallowanceRule;
   surface.deactivateDisallowanceRule = disallowanceRulesApi.deactivateDisallowanceRule;
 
+  // Tax lodgements (FN-268, Phase 4 Track A Wave 2). Extras pattern.
+  surface.listTaxLodgements = taxLodgementsApi.listTaxLodgements;
+  surface.getTaxLodgement = taxLodgementsApi.getTaxLodgement;
+  surface.recordTaxLodgement = taxLodgementsApi.recordTaxLodgement;
+  surface.updateTaxLodgementStatus = taxLodgementsApi.updateTaxLodgementStatus;
+  surface.getTaxLodgementTieOut = taxLodgementsApi.getTaxLodgementTieOut;
+
   return surface;
 }
 
@@ -564,6 +580,99 @@ function buildMockExtras() {
     createDisallowanceRule: mockCreateDisallowanceRule,
     updateDisallowanceRule: mockUpdateDisallowanceRule,
     deactivateDisallowanceRule: mockDeactivateDisallowanceRule,
+    // Tax lodgements (FN-268) MOCK stubs.
+    listTaxLodgements: mockListTaxLodgements,
+    getTaxLodgement: mockGetTaxLodgement,
+    recordTaxLodgement: mockRecordTaxLodgement,
+    updateTaxLodgementStatus: mockUpdateTaxLodgementStatus,
+    getTaxLodgementTieOut: mockGetTaxLodgementTieOut,
+  };
+}
+
+// ── Tax lodgements MOCK stubs (FN-268) ──
+let _mockLodgementCounter = 0;
+const _mockLodgements = [];
+async function mockListTaxLodgements(filters = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  return _mockLodgements
+    .filter((l) => {
+      if (filters.lodgementType && l.lodgementType !== filters.lodgementType) return false;
+      if (filters.status && l.status !== filters.status) return false;
+      if (filters.periodFrom && l.periodTo < filters.periodFrom) return false;
+      if (filters.periodTo && l.periodFrom > filters.periodTo) return false;
+      return true;
+    })
+    .map((l) => ({ ...l }));
+}
+async function mockGetTaxLodgement(id) {
+  await new Promise((r) => setTimeout(r, 20));
+  const row = _mockLodgements.find((l) => l.id === id);
+  return row ? { ...row } : null;
+}
+async function mockRecordTaxLodgement(payload = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  _mockLodgementCounter += 1;
+  const row = {
+    id: `mock-tl-${_mockLodgementCounter}`,
+    lodgementType: payload.lodgementType || 'OTHER',
+    filingReference: payload.filingReference || '',
+    periodFrom: payload.periodFrom || new Date().toISOString().slice(0, 10),
+    periodTo: payload.periodTo || new Date().toISOString().slice(0, 10),
+    filedOnDate: payload.filedOnDate || new Date().toISOString().slice(0, 10),
+    filedAmountKwd: payload.filedAmountKwd || '0.000',
+    glAccountRole: payload.glAccountRole ?? null,
+    upstreamEntityType: payload.upstreamEntityType ?? null,
+    upstreamEntityId: payload.upstreamEntityId ?? null,
+    notes: payload.notes ?? null,
+    status: 'SUBMITTED',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    _mock: true,
+  };
+  _mockLodgements.unshift(row);
+  return row;
+}
+async function mockUpdateTaxLodgementStatus(id, patch = {}) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockLodgements.findIndex((l) => l.id === id);
+  if (idx < 0) return null;
+  _mockLodgements[idx] = {
+    ..._mockLodgements[idx],
+    status: patch.status || _mockLodgements[idx].status,
+    notes: patch.notes ?? _mockLodgements[idx].notes,
+    updatedAt: new Date().toISOString(),
+  };
+  return { ..._mockLodgements[idx] };
+}
+async function mockGetTaxLodgementTieOut(id) {
+  await new Promise((r) => setTimeout(r, 40));
+  const row = _mockLodgements.find((l) => l.id === id);
+  if (!row) return null;
+  if (!row.glAccountRole) {
+    return {
+      lodgementId: row.id,
+      lodgementType: row.lodgementType,
+      filingReference: row.filingReference,
+      periodFrom: row.periodFrom,
+      periodTo: row.periodTo,
+      filedAmountKwd: row.filedAmountKwd,
+      glBalanceKwd: '0.000',
+      varianceKwd: row.filedAmountKwd,
+      status: 'SKIPPED',
+      note: 'no glAccountRole set — tie-out skipped',
+    };
+  }
+  return {
+    lodgementId: row.id,
+    lodgementType: row.lodgementType,
+    filingReference: row.filingReference,
+    periodFrom: row.periodFrom,
+    periodTo: row.periodTo,
+    filedAmountKwd: row.filedAmountKwd,
+    glBalanceKwd: row.filedAmountKwd,
+    varianceKwd: '0.000',
+    status: 'TIE_OK',
+    note: 'mock: tie-out stubbed TIE_OK (no GL in MOCK mode)',
   };
 }
 
@@ -809,3 +918,13 @@ export const getDisallowanceRule = surface.getDisallowanceRule;
 export const createDisallowanceRule = surface.createDisallowanceRule;
 export const updateDisallowanceRule = surface.updateDisallowanceRule;
 export const deactivateDisallowanceRule = surface.deactivateDisallowanceRule;
+
+// Tax lodgements (FN-268, Phase 4 Track A Wave 2 — 2026-04-19).
+// Generic TaxLodgement register (CIT/WHT/VAT/KFAS/NLST/Zakat/OTHER)
+// with GL tie-out endpoint. OWNER writes; OWNER/ACCOUNTANT/VIEWER/AUDITOR
+// reads; VIEWER excluded from tie-out (reveals GL balances).
+export const listTaxLodgements = surface.listTaxLodgements;
+export const getTaxLodgement = surface.getTaxLodgement;
+export const recordTaxLodgement = surface.recordTaxLodgement;
+export const updateTaxLodgementStatus = surface.updateTaxLodgementStatus;
+export const getTaxLodgementTieOut = surface.getTaxLodgementTieOut;

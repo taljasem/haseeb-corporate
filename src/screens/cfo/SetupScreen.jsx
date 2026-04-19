@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import {
   BookOpen, Calendar, Calculator, Coins, Plug, Users, Cpu, Ban, Receipt,
   Plus, Search, Edit3, Trash2, RefreshCw, AlertTriangle, Check, X as XIcon,
-  Scale, Gavel, Clock, Percent,
+  Scale, Gavel, Clock, Percent, Split, Play,
 } from "lucide-react";
 import LtrText from "../../components/shared/LtrText";
 import EmptyState from "../../components/shared/EmptyState";
@@ -31,6 +31,9 @@ import {
   listWhtConfigs,
   deactivateWhtConfig,
   listWhtCertificates,
+  listCostAllocationRules,
+  deactivateCostAllocationRule,
+  computeCostAllocation,
 } from "../../engine";
 import {
   getFiscalYearConfig,
@@ -56,6 +59,7 @@ import TaxLodgementModal from "../../components/setup/TaxLodgementModal";
 import CitAssessmentCreateModal from "../../components/setup/CitAssessmentCreateModal";
 import CitAssessmentTransitionModal from "../../components/setup/CitAssessmentTransitionModal";
 import WhtConfigModal from "../../components/setup/WhtConfigModal";
+import CostAllocationRuleModal from "../../components/setup/CostAllocationRuleModal";
 
 function fmtKWD(n) {
   if (n == null) return "—";
@@ -70,6 +74,7 @@ const SECTIONS = [
   { id: "tax_lodgement",   icon: Receipt },
   { id: "cit_assessment",  icon: Gavel },
   { id: "wht",             icon: Percent },
+  { id: "cost_allocation", icon: Split },
   { id: "currencies",      icon: Coins },
   { id: "integrations",    icon: Plug },
   { id: "team_access",     icon: Users },
@@ -125,7 +130,7 @@ export default function SetupScreen() {
                 onMouseLeave={(e) => { if (!on) e.currentTarget.style.background = "transparent"; }}
               >
                 <Icon size={14} strokeWidth={2} />
-                <span>{t(`sections.${s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id === "tax_lodgement" ? "tax_lodgement" : s.id === "cit_assessment" ? "cit_assessment" : s.id === "wht" ? "wht" : s.id}`)}</span>
+                <span>{t(`sections.${s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id === "tax_lodgement" ? "tax_lodgement" : s.id === "cit_assessment" ? "cit_assessment" : s.id === "wht" ? "wht" : s.id === "cost_allocation" ? "cost_allocation" : s.id}`)}</span>
               </button>
             );
           })}
@@ -140,6 +145,7 @@ export default function SetupScreen() {
             {active === "tax_lodgement" && <TaxLodgementSection />}
             {active === "cit_assessment" && <CitAssessmentSection />}
             {active === "wht"           && <WhtSection />}
+            {active === "cost_allocation" && <CostAllocationSection />}
             {active === "currencies"    && <CurrenciesSection />}
             {active === "integrations"  && <IntegrationsSection />}
             {active === "team_access"   && <TeamAccessSection />}
@@ -2658,6 +2664,699 @@ function WhtSection() {
         )}
       </Card>
     </div>
+  );
+}
+
+// ── Cost allocation (FN-243, 2026-04-19) ────────────────────────
+// Shared-overhead allocation rules. Each rule has a source account
+// + ordered targets (costCenterLabel, weight). Rules are immutable
+// after create; compute preview is a separate API call.
+function CostAllocationSection() {
+  const { t } = useTranslation("setup");
+  const [rows, setRows] = useState(null);
+  const [accounts, setAccounts] = useState([]);
+  const [activeOnly, setActiveOnly] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [computeState, setComputeState] = useState({
+    open: false,
+    rule: null,
+    periodFrom: "",
+    periodTo: "",
+    result: null,
+    loading: false,
+    error: null,
+  });
+  const [toast, setToast] = useState(null);
+  const [loadError, setLoadError] = useState(null);
+
+  const reload = async () => {
+    setLoadError(null);
+    try {
+      const filters = activeOnly ? { activeOnly: true } : {};
+      const list = await listCostAllocationRules(filters);
+      setRows(list || []);
+    } catch (err) {
+      setRows([]);
+      setLoadError(err?.message || t("cost_allocation.error_load"));
+    }
+  };
+
+  useEffect(() => {
+    reload();
+    getAccountsFlat()
+      .then((arr) =>
+        setAccounts(
+          (arr || []).map((a) => ({
+            id: a.raw?.id || a.id || a.code,
+            code: a.code,
+            nameEn: a.name || a.nameEn,
+          })),
+        ),
+      )
+      .catch(() => setAccounts([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeOnly]);
+
+  const handleDeactivate = async (rule) => {
+    try {
+      await deactivateCostAllocationRule(rule.id);
+      setToast(t("cost_allocation.deactivated_toast"));
+      reload();
+    } catch (err) {
+      setToast(err?.message || t("cost_allocation.error_deactivate"));
+    }
+  };
+
+  const openCompute = (rule) => {
+    const today = new Date();
+    const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+      .toISOString()
+      .slice(0, 10);
+    const todayIso = today.toISOString().slice(0, 10);
+    setComputeState({
+      open: true,
+      rule,
+      periodFrom: firstOfMonth,
+      periodTo: todayIso,
+      result: null,
+      loading: false,
+      error: null,
+    });
+  };
+
+  const runCompute = async () => {
+    if (!computeState.rule) return;
+    setComputeState((s) => ({ ...s, loading: true, error: null, result: null }));
+    try {
+      const result = await computeCostAllocation(computeState.rule.id, {
+        periodFrom: computeState.periodFrom,
+        periodTo: computeState.periodTo,
+      });
+      setComputeState((s) => ({ ...s, loading: false, result }));
+    } catch (err) {
+      setComputeState((s) => ({
+        ...s,
+        loading: false,
+        error: err?.message || t("cost_allocation.error_compute"),
+      }));
+    }
+  };
+
+  const accountLabel = (accountId) => {
+    const acct = accounts.find((a) => a.id === accountId);
+    return acct ? `${acct.code} — ${acct.nameEn}` : accountId;
+  };
+
+  return (
+    <Card
+      title={t("cost_allocation.title")}
+      description={t("cost_allocation.description")}
+      extra={
+        <button
+          onClick={() => setCreateOpen(true)}
+          style={btnPrimary(false)}
+        >
+          <Plus
+            size={13}
+            style={{ verticalAlign: "middle", marginInlineEnd: 6 }}
+          />
+          {t("cost_allocation.add_rule")}
+        </button>
+      }
+    >
+      <Toast text={toast} onClear={() => setToast(null)} />
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          marginBottom: 12,
+        }}
+      >
+        <button
+          onClick={() => setActiveOnly(false)}
+          style={{
+            ...btnMini,
+            background: !activeOnly
+              ? "var(--accent-primary-subtle)"
+              : "transparent",
+            borderColor: !activeOnly
+              ? "rgba(0,196,140,0.30)"
+              : "var(--border-strong)",
+            color: !activeOnly
+              ? "var(--accent-primary)"
+              : "var(--text-secondary)",
+          }}
+        >
+          {t("cost_allocation.filter_all")}
+        </button>
+        <button
+          onClick={() => setActiveOnly(true)}
+          style={{
+            ...btnMini,
+            background: activeOnly
+              ? "var(--accent-primary-subtle)"
+              : "transparent",
+            borderColor: activeOnly
+              ? "rgba(0,196,140,0.30)"
+              : "var(--border-strong)",
+            color: activeOnly
+              ? "var(--accent-primary)"
+              : "var(--text-secondary)",
+          }}
+        >
+          {t("cost_allocation.filter_active_only")}
+        </button>
+      </div>
+
+      {loadError && (
+        <div
+          role="alert"
+          style={{
+            display: "flex",
+            gap: 8,
+            padding: "10px 12px",
+            background: "var(--semantic-danger-subtle)",
+            border: "1px solid var(--semantic-danger)",
+            borderRadius: 8,
+            color: "var(--semantic-danger)",
+            fontSize: 12,
+            marginBottom: 12,
+          }}
+        >
+          <AlertTriangle size={14} /> {loadError}
+        </div>
+      )}
+
+      {rows === null && (
+        <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>…</div>
+      )}
+
+      {rows && rows.length === 0 && !loadError && (
+        <EmptyState
+          icon={Split}
+          title={t("cost_allocation.empty_title")}
+          description={t("cost_allocation.empty_description")}
+        />
+      )}
+
+      {rows && rows.length > 0 && (
+        <div
+          style={{
+            border: "1px solid var(--border-default)",
+            borderRadius: 8,
+            overflow: "hidden",
+          }}
+        >
+          {rows.map((rule, idx) => {
+            const today = new Date().toISOString().slice(0, 10);
+            const isActive =
+              rule.activeFrom <= today &&
+              (!rule.activeUntil || rule.activeUntil >= today);
+            const totalWeight = (rule.targets || []).reduce(
+              (a, t) => a + Number(t.weight || 0),
+              0,
+            );
+            return (
+              <div
+                key={rule.id}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  gap: 14,
+                  padding: "14px 18px",
+                  borderBottom:
+                    idx === rows.length - 1
+                      ? "none"
+                      : "1px solid var(--border-subtle)",
+                  background: isActive ? "transparent" : "var(--bg-surface-sunken)",
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      {rule.name}
+                    </div>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: "0.1em",
+                        padding: "2px 8px",
+                        borderRadius: 10,
+                        background: isActive
+                          ? "var(--accent-primary-subtle)"
+                          : "var(--bg-surface)",
+                        color: isActive
+                          ? "var(--accent-primary)"
+                          : "var(--text-tertiary)",
+                        border: isActive
+                          ? "1px solid rgba(0,196,140,0.30)"
+                          : "1px solid var(--border-default)",
+                      }}
+                    >
+                      {isActive
+                        ? t("cost_allocation.status_active")
+                        : t("cost_allocation.status_inactive")}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: "0.1em",
+                        padding: "2px 8px",
+                        borderRadius: 10,
+                        background: "var(--bg-surface)",
+                        color: "var(--text-tertiary)",
+                        border: "1px solid var(--border-default)",
+                      }}
+                    >
+                      {t(`cost_allocation.driver_${rule.driverType}`)}
+                    </span>
+                  </div>
+                  {rule.description && (
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: "var(--text-secondary)",
+                        marginTop: 4,
+                      }}
+                    >
+                      {rule.description}
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 14,
+                      marginTop: 6,
+                      fontSize: 11,
+                      color: "var(--text-tertiary)",
+                    }}
+                  >
+                    <div>
+                      {t("cost_allocation.label_source")}:{" "}
+                      <LtrText>
+                        <span
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontFamily: "'DM Mono', monospace",
+                          }}
+                        >
+                          {accountLabel(rule.sourceAccountId)}
+                        </span>
+                      </LtrText>
+                    </div>
+                    <div>
+                      {t("cost_allocation.label_targets")}:{" "}
+                      <span style={{ color: "var(--text-secondary)" }}>
+                        {(rule.targets || []).length}
+                      </span>
+                    </div>
+                    <div>
+                      {t("cost_allocation.label_total_weight")}:{" "}
+                      <LtrText>
+                        <span
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontFamily: "'DM Mono', monospace",
+                          }}
+                        >
+                          {totalWeight.toFixed(3)}
+                        </span>
+                      </LtrText>
+                    </div>
+                    <div>
+                      {t("cost_allocation.label_active_from")}:{" "}
+                      <LtrText>
+                        <span
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontFamily: "'DM Mono', monospace",
+                          }}
+                        >
+                          {rule.activeFrom}
+                        </span>
+                      </LtrText>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                >
+                  <button onClick={() => openCompute(rule)} style={btnMini}>
+                    <Play
+                      size={11}
+                      style={{ verticalAlign: "middle", marginInlineEnd: 4 }}
+                    />
+                    {t("cost_allocation.action_compute")}
+                  </button>
+                  {isActive && (
+                    <button
+                      onClick={() => handleDeactivate(rule)}
+                      style={{
+                        ...btnMini,
+                        color: "var(--semantic-danger)",
+                        borderColor: "rgba(208,90,90,0.30)",
+                      }}
+                    >
+                      {t("cost_allocation.action_deactivate")}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Compute drawer */}
+      {computeState.open && (
+        <ComputeDrawer
+          state={computeState}
+          setState={setComputeState}
+          runCompute={runCompute}
+        />
+      )}
+
+      <CostAllocationRuleModal
+        open={createOpen}
+        accounts={accounts}
+        onClose={() => setCreateOpen(false)}
+        onSaved={() => {
+          reload();
+          setToast(t("cost_allocation.created_toast"));
+        }}
+      />
+    </Card>
+  );
+}
+
+function ComputeDrawer({ state, setState, runCompute }) {
+  const { t } = useTranslation("setup");
+  const { rule, periodFrom, periodTo, result, loading, error } = state;
+  const close = () =>
+    setState({
+      open: false,
+      rule: null,
+      periodFrom: "",
+      periodTo: "",
+      result: null,
+      loading: false,
+      error: null,
+    });
+  useEscapeKey(close, !!rule);
+
+  return (
+    <>
+      <div
+        onClick={close}
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.55)",
+          backdropFilter: "blur(4px)",
+          zIndex: 300,
+        }}
+      />
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          insetInlineEnd: 0,
+          height: "100vh",
+          width: 520,
+          background: "var(--panel-bg)",
+          borderInlineStart: "1px solid var(--border-default)",
+          zIndex: 301,
+          display: "flex",
+          flexDirection: "column",
+          boxShadow: "-24px 0 60px rgba(0,0,0,0.5)",
+        }}
+      >
+        <div
+          style={{
+            padding: "18px 22px",
+            borderBottom: "1px solid var(--border-subtle)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: "0.15em",
+                color: "var(--text-tertiary)",
+              }}
+            >
+              {t("cost_allocation.compute_label")}
+            </div>
+            <div
+              style={{
+                fontFamily: "'Bebas Neue', sans-serif",
+                fontSize: 22,
+                color: "var(--text-primary)",
+                marginTop: 2,
+              }}
+            >
+              {rule?.name}
+            </div>
+          </div>
+          <button
+            onClick={close}
+            aria-label={t("cost_allocation.close")}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "var(--text-tertiary)",
+              cursor: "pointer",
+              padding: 4,
+            }}
+          >
+            <XIcon size={18} />
+          </button>
+        </div>
+
+        <div
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: "18px 22px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 14,
+          }}
+        >
+          <div style={{ display: "flex", gap: 10 }}>
+            <div style={{ flex: 1 }}>
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: "0.15em",
+                  color: "var(--text-tertiary)",
+                  marginBottom: 6,
+                }}
+              >
+                {t("cost_allocation.field_period_from")}
+              </div>
+              <input
+                type="date"
+                value={periodFrom}
+                onChange={(e) =>
+                  setState((s) => ({ ...s, periodFrom: e.target.value }))
+                }
+                style={inputStyle}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: "0.15em",
+                  color: "var(--text-tertiary)",
+                  marginBottom: 6,
+                }}
+              >
+                {t("cost_allocation.field_period_to")}
+              </div>
+              <input
+                type="date"
+                value={periodTo}
+                onChange={(e) =>
+                  setState((s) => ({ ...s, periodTo: e.target.value }))
+                }
+                style={inputStyle}
+              />
+            </div>
+          </div>
+
+          <button
+            onClick={runCompute}
+            disabled={loading || !periodFrom || !periodTo}
+            style={btnPrimary(loading)}
+          >
+            {loading ? (
+              <>
+                <Spinner size={13} />
+                &nbsp;{t("cost_allocation.computing")}
+              </>
+            ) : (
+              t("cost_allocation.run_compute")
+            )}
+          </button>
+
+          {error && (
+            <div
+              role="alert"
+              style={{
+                display: "flex",
+                gap: 8,
+                padding: "10px 12px",
+                background: "var(--semantic-danger-subtle)",
+                border: "1px solid var(--semantic-danger)",
+                borderRadius: 8,
+                color: "var(--semantic-danger)",
+                fontSize: 12,
+              }}
+            >
+              <AlertTriangle size={14} /> {error}
+            </div>
+          )}
+
+          {result && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div
+                style={{
+                  padding: "10px 12px",
+                  background: "var(--bg-surface-sunken)",
+                  border: "1px solid var(--border-default)",
+                  borderRadius: 8,
+                  fontSize: 12,
+                  color: "var(--text-secondary)",
+                }}
+              >
+                <div>
+                  {t("cost_allocation.source_balance")}:{" "}
+                  <LtrText>
+                    <span style={{ fontFamily: "'DM Mono', monospace" }}>
+                      {result.sourcePeriodBalanceKwd} KWD
+                    </span>
+                  </LtrText>
+                </div>
+                <div style={{ marginTop: 4 }}>
+                  {t("cost_allocation.rounding_residual")}:{" "}
+                  <LtrText>
+                    <span
+                      style={{
+                        fontFamily: "'DM Mono', monospace",
+                        color:
+                          Math.abs(Number(result.roundingResidualKwd)) > 0.001
+                            ? "var(--semantic-warning)"
+                            : "var(--text-secondary)",
+                      }}
+                    >
+                      {result.roundingResidualKwd} KWD
+                    </span>
+                  </LtrText>
+                </div>
+                {result.note && (
+                  <div
+                    style={{
+                      marginTop: 6,
+                      fontSize: 11,
+                      color: "var(--text-tertiary)",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    {result.note}
+                  </div>
+                )}
+              </div>
+
+              <div
+                style={{
+                  border: "1px solid var(--border-default)",
+                  borderRadius: 8,
+                  overflow: "hidden",
+                }}
+              >
+                {result.rows.map((row, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "10px 14px",
+                      borderBottom:
+                        idx === result.rows.length - 1
+                          ? "none"
+                          : "1px solid var(--border-subtle)",
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: 13,
+                          color: "var(--text-primary)",
+                          fontWeight: 500,
+                        }}
+                      >
+                        {row.costCenterLabel}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: "var(--text-tertiary)",
+                          marginTop: 2,
+                        }}
+                      >
+                        <LtrText>
+                          <span style={{ fontFamily: "'DM Mono', monospace" }}>
+                            {Number(row.weightPercent).toFixed(2)}% · {t("cost_allocation.weight_short")} {row.weight}
+                          </span>
+                        </LtrText>
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: "'DM Mono', monospace",
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      <LtrText>{row.amountKwd} KWD</LtrText>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 }
 

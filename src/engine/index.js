@@ -68,6 +68,7 @@ import * as taxLodgementsApi from '../api/tax-lodgements';
 import * as citAssessmentApi from '../api/cit-assessment';
 import * as whtApi from '../api/wht';
 import * as pettyCashApi from '../api/petty-cash';
+import * as costAllocationApi from '../api/cost-allocation';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -357,6 +358,13 @@ const REAL_IMPLS = {
   recordPettyCashTx: pettyCashApi.recordPettyCashTx,
   listPettyCashTransactions: pettyCashApi.listPettyCashTransactions,
   reconcilePettyCashBox: pettyCashApi.reconcilePettyCashBox,
+
+  // Cost allocation (FN-243, Phase 4 Track A Tier 3 — 2026-04-19).
+  listCostAllocationRules: costAllocationApi.listCostAllocationRules,
+  getCostAllocationRule: costAllocationApi.getCostAllocationRule,
+  createCostAllocationRule: costAllocationApi.createCostAllocationRule,
+  deactivateCostAllocationRule: costAllocationApi.deactivateCostAllocationRule,
+  computeCostAllocation: costAllocationApi.computeCostAllocation,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -526,6 +534,13 @@ function buildLiveSurface() {
   surface.listPettyCashTransactions = pettyCashApi.listPettyCashTransactions;
   surface.reconcilePettyCashBox = pettyCashApi.reconcilePettyCashBox;
 
+  // Cost allocation (FN-243, Phase 4 Track A Tier 3). Extras pattern.
+  surface.listCostAllocationRules = costAllocationApi.listCostAllocationRules;
+  surface.getCostAllocationRule = costAllocationApi.getCostAllocationRule;
+  surface.createCostAllocationRule = costAllocationApi.createCostAllocationRule;
+  surface.deactivateCostAllocationRule = costAllocationApi.deactivateCostAllocationRule;
+  surface.computeCostAllocation = costAllocationApi.computeCostAllocation;
+
   return surface;
 }
 
@@ -683,6 +698,121 @@ function buildMockExtras() {
     recordPettyCashTx: mockRecordPettyCashTx,
     listPettyCashTransactions: mockListPettyCashTransactions,
     reconcilePettyCashBox: mockReconcilePettyCashBox,
+    // Cost allocation (FN-243) MOCK stubs.
+    listCostAllocationRules: mockListCostAllocationRules,
+    getCostAllocationRule: mockGetCostAllocationRule,
+    createCostAllocationRule: mockCreateCostAllocationRule,
+    deactivateCostAllocationRule: mockDeactivateCostAllocationRule,
+    computeCostAllocation: mockComputeCostAllocation,
+  };
+}
+
+// ── Cost allocation MOCK stubs (FN-243) ──
+let _mockAllocCounter = 0;
+const _mockAllocRules = [];
+function _isAllocActive(r, asOfIso) {
+  const asOf = new Date(asOfIso || new Date().toISOString().slice(0, 10));
+  const from = new Date(r.activeFrom);
+  if (asOf < from) return false;
+  if (r.activeUntil) {
+    const until = new Date(r.activeUntil);
+    if (asOf > until) return false;
+  }
+  return true;
+}
+async function mockListCostAllocationRules(filters = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  return _mockAllocRules
+    .filter((r) => {
+      if (filters.activeOnly && !_isAllocActive(r, filters.asOf)) return false;
+      if (filters.sourceAccountId && r.sourceAccountId !== filters.sourceAccountId) return false;
+      return true;
+    })
+    .map((r) => ({ ...r, targets: r.targets.map((t) => ({ ...t })) }));
+}
+async function mockGetCostAllocationRule(id) {
+  await new Promise((r) => setTimeout(r, 20));
+  const row = _mockAllocRules.find((r) => r.id === id);
+  return row
+    ? { ...row, targets: row.targets.map((t) => ({ ...t })) }
+    : null;
+}
+async function mockCreateCostAllocationRule(payload = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  _mockAllocCounter += 1;
+  const row = {
+    id: `mock-alloc-${_mockAllocCounter}`,
+    name: payload.name || `Rule ${_mockAllocCounter}`,
+    description: payload.description ?? null,
+    sourceAccountId: payload.sourceAccountId || '',
+    driverType: payload.driverType || 'CUSTOM',
+    targets: (payload.targets || []).map((t) => ({
+      costCenterLabel: t.costCenterLabel,
+      weight: String(t.weight),
+    })),
+    activeFrom: payload.activeFrom || new Date().toISOString().slice(0, 10),
+    activeUntil: payload.activeUntil ?? null,
+    notes: payload.notes ?? null,
+    createdBy: 'mock-user',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    _mock: true,
+  };
+  _mockAllocRules.unshift(row);
+  return { ...row, targets: row.targets.map((t) => ({ ...t })) };
+}
+async function mockDeactivateCostAllocationRule(id) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockAllocRules.findIndex((r) => r.id === id);
+  if (idx < 0) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  _mockAllocRules[idx] = {
+    ..._mockAllocRules[idx],
+    activeUntil: today,
+    updatedAt: new Date().toISOString(),
+  };
+  return {
+    ..._mockAllocRules[idx],
+    targets: _mockAllocRules[idx].targets.map((t) => ({ ...t })),
+  };
+}
+async function mockComputeCostAllocation(id, body = {}) {
+  await new Promise((r) => setTimeout(r, 60));
+  const rule = _mockAllocRules.find((r) => r.id === id);
+  if (!rule) return null;
+  // MOCK: pretend the source balance is 1000 KWD over the period.
+  const sourceBalance = 1000;
+  const totalWeight = rule.targets.reduce(
+    (a, t) => a + Number(t.weight),
+    0,
+  );
+  let residual = sourceBalance;
+  const rows = rule.targets.map((t, i) => {
+    const pct = totalWeight > 0 ? (Number(t.weight) / totalWeight) * 100 : 0;
+    const amt =
+      i === rule.targets.length - 1
+        ? Number(residual.toFixed(3))
+        : Number(((sourceBalance * Number(t.weight)) / (totalWeight || 1)).toFixed(3));
+    if (i < rule.targets.length - 1) residual -= amt;
+    return {
+      costCenterLabel: t.costCenterLabel,
+      weight: String(t.weight),
+      weightPercent: pct.toFixed(4),
+      amountKwd: amt.toFixed(3),
+    };
+  });
+  const actualTotal = rows.reduce((a, r) => a + Number(r.amountKwd), 0);
+  return {
+    ruleId: rule.id,
+    ruleName: rule.name,
+    periodFrom: body.periodFrom || new Date().toISOString().slice(0, 10),
+    periodTo: body.periodTo || new Date().toISOString().slice(0, 10),
+    sourceAccountId: rule.sourceAccountId,
+    sourcePeriodBalanceKwd: sourceBalance.toFixed(3),
+    totalWeight: totalWeight.toFixed(3),
+    rows,
+    roundingResidualKwd: (sourceBalance - actualTotal).toFixed(3),
+    note: 'mock: source balance stubbed at 1000 KWD for preview',
   };
 }
 
@@ -1413,3 +1543,12 @@ export const deactivatePettyCashBox = surface.deactivatePettyCashBox;
 export const recordPettyCashTx = surface.recordPettyCashTx;
 export const listPettyCashTransactions = surface.listPettyCashTransactions;
 export const reconcilePettyCashBox = surface.reconcilePettyCashBox;
+
+// Cost allocation (FN-243, Phase 4 Track A Tier 3 — 2026-04-19).
+// Shared-overhead allocation rules with soft-label cost centers and
+// normalized-weight compute. Memo-only; no JE posting in this partial.
+export const listCostAllocationRules = surface.listCostAllocationRules;
+export const getCostAllocationRule = surface.getCostAllocationRule;
+export const createCostAllocationRule = surface.createCostAllocationRule;
+export const deactivateCostAllocationRule = surface.deactivateCostAllocationRule;
+export const computeCostAllocation = surface.computeCostAllocation;

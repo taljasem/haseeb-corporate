@@ -15,6 +15,7 @@ import ReconciliationScreen from "../../components/reconciliation/Reconciliation
 import ManualJEScreen from "./ManualJEScreen";
 import NewTaskModal from "../../components/taskbox/NewTaskModal";
 import SettingsScreen from "../shared/SettingsScreen";
+import AdministrationScreen from "../shared/AdministrationScreen";
 import ProfileScreen from "../shared/ProfileScreen";
 import FinancialStatementsScreen from "../shared/FinancialStatementsScreen";
 import MonthEndCloseScreen from "../shared/MonthEndCloseScreen";
@@ -121,6 +122,8 @@ export default function CFOView({ registerNav }) {
         );
       case "settings":
         return <SettingsScreen role="CFO" />;
+      case "administration":
+        return <AdministrationScreen role="CFO" />;
       case "profile":
         return <ProfileScreen role="CFO" />;
       case "financial-statements":

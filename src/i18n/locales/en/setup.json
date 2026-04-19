@@ -6,7 +6,7 @@
   "sections": {
     "chart_of_accounts": "Chart of Accounts",
     "fiscal_year": "Fiscal Year",
-    "tax": "Tax Configuration",
+    "tax": "Statutory Rates",
     "disallowance": "Disallowance Rules",
     "tax_lodgement": "Tax Lodgements",
     "cit_assessment": "CIT Assessments",
@@ -111,8 +111,8 @@
     "close": "Close"
   },
   "tax": {
-    "title": "Tax Configuration",
-    "description": "Tax regime, rates, accounts, and exemptions.",
+    "title": "Statutory Rates",
+    "description": "Statutory tax, Zakat, and social-contribution rates, accounts, and exemptions.",
     "field_regime": "Tax regime",
     "regime_kuwait": "Kuwait (Zakat + Corporate + PIFSS)",
     "regime_saudi": "Saudi Arabia (15% VAT)",

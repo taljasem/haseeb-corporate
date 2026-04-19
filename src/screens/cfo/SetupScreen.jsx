@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import useEscapeKey from "../../hooks/useEscapeKey";
 import { useTranslation } from "react-i18next";
 import {
-  BookOpen, Calendar, Calculator, Coins, Plug, Users, Cpu, Ban, Receipt,
-  Plus, Search, Edit3, Trash2, RefreshCw, AlertTriangle, Check, X as XIcon,
+  BookOpen, Calendar, Calculator, Coins, Plug, Cpu, Ban, Receipt,
+  Plus, Search, Edit3, Trash2, RefreshCw, AlertTriangle, X as XIcon,
   Scale, Gavel, Clock, Percent, Split, Play, UserCheck, ShieldAlert, FileCode,
   UserMinus, Banknote,
 } from "lucide-react";
@@ -61,14 +61,11 @@ import {
   getIntegrationStatus,
   forceSyncIntegration,
   getIntegrationSyncLogs,
-  getTeamAccessMatrix,
-  updateTeamMemberPermissions,
   getEngineConfiguration,
 } from "../../engine/mockEngine";
 import AccountModal from "../../components/setup/AccountModal";
 import DeactivateAccountModal from "../../components/setup/DeactivateAccountModal";
 import PeriodActionModal from "../../components/setup/PeriodActionModal";
-import ApplyRoleTemplateModal from "../../components/setup/ApplyRoleTemplateModal";
 import ChangeEngineRuleModal from "../../components/setup/ChangeEngineRuleModal";
 import DisallowanceRuleModal from "../../components/setup/DisallowanceRuleModal";
 import TaxLodgementModal from "../../components/setup/TaxLodgementModal";
@@ -87,30 +84,53 @@ function fmtKWD(n) {
   return Number(n).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
-const SECTIONS = [
-  { id: "chart",           icon: BookOpen },
-  { id: "fiscal",          icon: Calendar },
-  { id: "tax",             icon: Calculator },
-  { id: "disallowance",    icon: Ban },
-  { id: "tax_lodgement",   icon: Receipt },
-  { id: "cit_assessment",  icon: Gavel },
-  { id: "wht",             icon: Percent },
-  { id: "cost_allocation", icon: Split },
-  { id: "related_party",   icon: UserCheck },
-  { id: "warranty",        icon: ShieldAlert },
-  { id: "bank_formats",    icon: FileCode },
-  { id: "leave",           icon: UserMinus },
-  { id: "cbk_rates",       icon: Banknote },
-  { id: "currencies",      icon: Coins },
-  { id: "integrations",    icon: Plug },
-  { id: "team_access",     icon: Users },
-  { id: "engine_rules",    icon: Cpu },
+const ALL_SECTIONS = [
+  { id: "chart",           icon: BookOpen,       foreignOnly: false },
+  { id: "fiscal",          icon: Calendar,       foreignOnly: false },
+  { id: "tax",             icon: Calculator,     foreignOnly: false },
+  { id: "disallowance",    icon: Ban,            foreignOnly: true  },
+  { id: "tax_lodgement",   icon: Receipt,        foreignOnly: true  },
+  { id: "cit_assessment",  icon: Gavel,          foreignOnly: true  },
+  { id: "wht",             icon: Percent,        foreignOnly: true  },
+  { id: "cost_allocation", icon: Split,          foreignOnly: false },
+  { id: "related_party",   icon: UserCheck,      foreignOnly: false },
+  { id: "warranty",        icon: ShieldAlert,    foreignOnly: false },
+  { id: "bank_formats",    icon: FileCode,       foreignOnly: false },
+  { id: "leave",           icon: UserMinus,      foreignOnly: false },
+  { id: "cbk_rates",       icon: Banknote,       foreignOnly: false },
+  { id: "currencies",      icon: Coins,          foreignOnly: false },
+  { id: "integrations",    icon: Plug,           foreignOnly: false },
+  { id: "engine_rules",    icon: Cpu,            foreignOnly: false },
 ];
 
 export default function SetupScreen() {
   const { t } = useTranslation("setup");
   const { tenant } = useTenant();
   const [active, setActive] = useState("chart");
+  const [hasForeignActivity, setHasForeignActivity] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    import("../../engine").then(({ getTenantFlags }) => {
+      if (!getTenantFlags) return;
+      getTenantFlags()
+        .then((f) => {
+          if (!cancelled) setHasForeignActivity(!!f?.hasForeignActivity);
+        })
+        .catch(() => {});
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const SECTIONS = hasForeignActivity
+    ? ALL_SECTIONS
+    : ALL_SECTIONS.filter((s) => !s.foreignOnly);
+
+  useEffect(() => {
+    if (!SECTIONS.find((s) => s.id === active)) setActive(SECTIONS[0].id);
+  }, [SECTIONS, active]);
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -179,7 +199,6 @@ export default function SetupScreen() {
             {active === "cbk_rates"     && <CbkRatesSection />}
             {active === "currencies"    && <CurrenciesSection />}
             {active === "integrations"  && <IntegrationsSection />}
-            {active === "team_access"   && <TeamAccessSection />}
             {active === "engine_rules"  && <EngineRulesSection />}
           </div>
         </div>
@@ -621,62 +640,6 @@ function IntegrationsSection() {
           </div>
         );
       })}
-    </Card>
-  );
-}
-
-// ── Team Access ─────────────────────────────────────────────────
-function TeamAccessSection() {
-  const { t } = useTranslation("setup");
-  const [members, setMembers] = useState([]);
-  const [templateFor, setTemplateFor] = useState(null);
-  const [toast, setToast] = useState(null);
-
-  const permKeys = ["view_financials", "post_je", "approve_je", "edit_budget", "close_periods", "configure_setup", "approve_writeoffs"];
-
-  const reload = () => getTeamAccessMatrix().then(setMembers);
-  useEffect(() => { reload(); }, []);
-
-  const togglePerm = async (memberId, perm) => {
-    const m = members.find((x) => x.memberId === memberId);
-    if (!m) return;
-    const newVal = !m.permissions[perm];
-    setMembers(members.map((x) => x.memberId === memberId ? { ...x, permissions: { ...x.permissions, [perm]: newVal } } : x));
-    await updateTeamMemberPermissions(memberId, { [perm]: newVal });
-    setToast(t("team_access.saved_toast"));
-  };
-
-  return (
-    <Card title={t("team_access.title")} description={t("team_access.description")}>
-      <Toast text={toast} onClear={() => setToast(null)} />
-      <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginBottom: 10, fontStyle: "italic" }}>{t("team_access.sensitive_note")}</div>
-      <div style={{ overflowX: "auto" }}>
-        <div style={{ minWidth: 900 }}>
-          <div style={{ display: "grid", gridTemplateColumns: `180px 120px repeat(${permKeys.length}, 1fr) 110px`, gap: 8, padding: "8px 0", borderBottom: "1px solid var(--border-default)", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "var(--text-tertiary)" }}>
-            <div>{t("team_access.col_member")}</div>
-            <div>{t("team_access.col_role")}</div>
-            {permKeys.map((p) => <div key={p} style={{ textAlign: "center", fontSize: 9 }}>{t(`team_access.permissions.${p}`)}</div>)}
-            <div>{t("team_access.col_template")}</div>
-          </div>
-          {members.map((m) => (
-            <div key={m.memberId} style={{ display: "grid", gridTemplateColumns: `180px 120px repeat(${permKeys.length}, 1fr) 110px`, gap: 8, padding: "10px 0", borderBottom: "1px solid var(--border-subtle)", alignItems: "center" }}>
-              <div style={{ fontSize: 12, color: "var(--text-primary)", fontWeight: 500 }}>{m.name}</div>
-              <div style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{m.role}</div>
-              {permKeys.map((p) => (
-                <div key={p} style={{ textAlign: "center" }}>
-                  <button onClick={() => togglePerm(m.memberId, p)} style={{ background: "transparent", border: "none", cursor: "pointer", color: m.permissions[p] ? "var(--accent-primary)" : "var(--text-tertiary)", padding: 0 }}>
-                    {m.permissions[p] ? <Check size={16} /> : <XIcon size={14} />}
-                  </button>
-                </div>
-              ))}
-              <div>
-                <button onClick={() => setTemplateFor(m)} style={btnMini}>{t("team_access.apply_template")}</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <ApplyRoleTemplateModal open={!!templateFor} member={templateFor} onClose={() => setTemplateFor(null)} onApplied={() => { reload(); setToast(t("apply_template_modal.applied_toast")); }} />
     </Card>
   );
 }

@@ -14,6 +14,7 @@ import BankAccountsScreen from "../shared/BankAccountsScreen";
 import BudgetScreen from "../../components/budget/BudgetScreen";
 import TaskboxScreen from "../../components/taskbox/TaskboxScreen";
 import SettingsScreen from "../shared/SettingsScreen";
+import AdministrationScreen from "../shared/AdministrationScreen";
 import ProfileScreen from "../shared/ProfileScreen";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
@@ -154,6 +155,8 @@ export default function OwnerView({ registerNav }) {
         return <BudgetScreen role="Owner" onOpenAminah={openAminah} />;
       case "settings":
         return <SettingsScreen role="Owner" />;
+      case "administration":
+        return <AdministrationScreen role="Owner" />;
       case "profile":
         return <ProfileScreen role="Owner" />;
       default:

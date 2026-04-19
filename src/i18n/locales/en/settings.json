@@ -8,8 +8,7 @@
     "language": "Language & Region",
     "notifications": "Notifications",
     "security": "Security",
-    "integrations": "Integrations",
-    "audit_log": "Audit Log"
+    "my_activity": "My Activity"
   },
   "account": {
     "title": "Account",
@@ -94,8 +93,8 @@
     "add_integration": "Add integration"
   },
   "audit_log": {
-    "title": "Audit Log",
-    "description": "Recent changes to your account and settings.",
+    "title": "My Activity",
+    "description": "Recent actions you've taken — sign-ins, settings changes, approvals, and journal entries. For tenant-wide history, see Administration → Audit Log.",
     "filter_action": "Action",
     "filter_all": "All actions",
     "filter_login": "Sign in",

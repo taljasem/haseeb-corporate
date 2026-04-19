@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import {
   BookOpen, Calendar, Calculator, Coins, Plug, Users, Cpu, Ban, Receipt,
   Plus, Search, Edit3, Trash2, RefreshCw, AlertTriangle, Check, X as XIcon,
-  Scale, Gavel, Clock, Percent, Split, Play, UserCheck, ShieldAlert,
+  Scale, Gavel, Clock, Percent, Split, Play, UserCheck, ShieldAlert, FileCode,
 } from "lucide-react";
 import LtrText from "../../components/shared/LtrText";
 import EmptyState from "../../components/shared/EmptyState";
@@ -41,6 +41,8 @@ import {
   listCustomersForRelatedParty,
   listWarrantyPolicies,
   deactivateWarrantyPolicy,
+  listBankFormats,
+  deactivateBankFormat,
 } from "../../engine";
 import {
   getFiscalYearConfig,
@@ -69,6 +71,7 @@ import WhtConfigModal from "../../components/setup/WhtConfigModal";
 import CostAllocationRuleModal from "../../components/setup/CostAllocationRuleModal";
 import RelatedPartyModal from "../../components/setup/RelatedPartyModal";
 import WarrantyPolicyModal from "../../components/setup/WarrantyPolicyModal";
+import BankFormatModal from "../../components/setup/BankFormatModal";
 
 function fmtKWD(n) {
   if (n == null) return "—";
@@ -86,6 +89,7 @@ const SECTIONS = [
   { id: "cost_allocation", icon: Split },
   { id: "related_party",   icon: UserCheck },
   { id: "warranty",        icon: ShieldAlert },
+  { id: "bank_formats",    icon: FileCode },
   { id: "currencies",      icon: Coins },
   { id: "integrations",    icon: Plug },
   { id: "team_access",     icon: Users },
@@ -141,7 +145,7 @@ export default function SetupScreen() {
                 onMouseLeave={(e) => { if (!on) e.currentTarget.style.background = "transparent"; }}
               >
                 <Icon size={14} strokeWidth={2} />
-                <span>{t(`sections.${s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id === "tax_lodgement" ? "tax_lodgement" : s.id === "cit_assessment" ? "cit_assessment" : s.id === "wht" ? "wht" : s.id === "cost_allocation" ? "cost_allocation" : s.id === "related_party" ? "related_party" : s.id === "warranty" ? "warranty" : s.id}`)}</span>
+                <span>{t(`sections.${s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id === "tax_lodgement" ? "tax_lodgement" : s.id === "cit_assessment" ? "cit_assessment" : s.id === "wht" ? "wht" : s.id === "cost_allocation" ? "cost_allocation" : s.id === "related_party" ? "related_party" : s.id === "warranty" ? "warranty" : s.id === "bank_formats" ? "bank_formats" : s.id}`)}</span>
               </button>
             );
           })}
@@ -159,6 +163,7 @@ export default function SetupScreen() {
             {active === "cost_allocation" && <CostAllocationSection />}
             {active === "related_party" && <RelatedPartySection />}
             {active === "warranty"      && <WarrantySection />}
+            {active === "bank_formats"  && <BankFormatsSection />}
             {active === "currencies"    && <CurrenciesSection />}
             {active === "integrations"  && <IntegrationsSection />}
             {active === "team_access"   && <TeamAccessSection />}
@@ -4529,6 +4534,343 @@ function WarrantySection() {
             modalState.mode === "edit"
               ? t("warranty.saved_edit_toast")
               : t("warranty.saved_create_toast"),
+          );
+        }}
+      />
+    </Card>
+  );
+}
+
+// ── Bank Formats (FN-246, 2026-04-19) ─────────────────────────────
+// Per-bank statement-parsing format registry. Effective-dated specs
+// with {bankCode, formatVersion, formatType, spec JSON}. Consumed by
+// statement-upload parser pipeline. OWNER writes; reads open to
+// OWNER/ACCOUNTANT/AUDITOR. Specs are immutable post-create (only
+// effectiveUntil + notes mutable via PATCH).
+function BankFormatsSection() {
+  const { t } = useTranslation("setup");
+  const [rows, setRows] = useState(null);
+  const [bankCodeFilter, setBankCodeFilter] = useState("");
+  const [modalState, setModalState] = useState({
+    open: false,
+    mode: "create",
+    spec: null,
+  });
+  const [toast, setToast] = useState(null);
+  const [loadError, setLoadError] = useState(null);
+
+  const reload = async () => {
+    setLoadError(null);
+    try {
+      const filters = bankCodeFilter ? { bankCode: bankCodeFilter } : {};
+      const list = await listBankFormats(filters);
+      setRows(list || []);
+    } catch (err) {
+      setRows([]);
+      setLoadError(err?.message || t("bank_formats.error_load"));
+    }
+  };
+
+  useEffect(() => {
+    reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bankCodeFilter]);
+
+  const handleDeactivate = async (spec) => {
+    try {
+      await deactivateBankFormat(spec.id);
+      setToast(t("bank_formats.deactivated_toast"));
+      reload();
+    } catch (err) {
+      setToast(err?.message || t("bank_formats.error_deactivate"));
+    }
+  };
+
+  return (
+    <Card
+      title={t("bank_formats.title")}
+      description={t("bank_formats.description")}
+      extra={
+        <button
+          onClick={() =>
+            setModalState({ open: true, mode: "create", spec: null })
+          }
+          style={btnPrimary(false)}
+        >
+          <Plus
+            size={13}
+            style={{ verticalAlign: "middle", marginInlineEnd: 6 }}
+          />
+          {t("bank_formats.add_spec")}
+        </button>
+      }
+    >
+      <Toast text={toast} onClear={() => setToast(null)} />
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          marginBottom: 12,
+        }}
+      >
+        <div style={{ position: "relative", width: 240 }}>
+          <Search
+            size={13}
+            color="var(--text-tertiary)"
+            style={{
+              position: "absolute",
+              insetInlineStart: 10,
+              top: "50%",
+              transform: "translateY(-50%)",
+            }}
+          />
+          <input
+            value={bankCodeFilter}
+            onChange={(e) => setBankCodeFilter(e.target.value)}
+            placeholder={t("bank_formats.filter_placeholder")}
+            style={{
+              ...inputStyle,
+              paddingInlineStart: 30,
+              fontFamily: "'DM Mono', monospace",
+            }}
+          />
+        </div>
+      </div>
+
+      {loadError && (
+        <div
+          role="alert"
+          style={{
+            display: "flex",
+            gap: 8,
+            padding: "10px 12px",
+            background: "var(--semantic-danger-subtle)",
+            border: "1px solid var(--semantic-danger)",
+            borderRadius: 8,
+            color: "var(--semantic-danger)",
+            fontSize: 12,
+            marginBottom: 12,
+          }}
+        >
+          <AlertTriangle size={14} /> {loadError}
+        </div>
+      )}
+
+      {rows === null && (
+        <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>…</div>
+      )}
+
+      {rows && rows.length === 0 && !loadError && (
+        <EmptyState
+          icon={FileCode}
+          title={t("bank_formats.empty_title")}
+          description={t("bank_formats.empty_description")}
+        />
+      )}
+
+      {rows && rows.length > 0 && (
+        <div
+          style={{
+            border: "1px solid var(--border-default)",
+            borderRadius: 8,
+            overflow: "hidden",
+          }}
+        >
+          {rows.map((spec, idx) => {
+            const today = new Date().toISOString().slice(0, 10);
+            const isActive =
+              spec.effectiveFrom <= today &&
+              (!spec.effectiveUntil || spec.effectiveUntil >= today);
+            return (
+              <div
+                key={spec.id}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  gap: 14,
+                  padding: "14px 18px",
+                  borderBottom:
+                    idx === rows.length - 1
+                      ? "none"
+                      : "1px solid var(--border-subtle)",
+                  background: isActive
+                    ? "transparent"
+                    : "var(--bg-surface-sunken)",
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: "var(--text-primary)",
+                        fontFamily: "'DM Mono', monospace",
+                      }}
+                    >
+                      <LtrText>
+                        {spec.bankCode} · {spec.formatVersion}
+                      </LtrText>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: "0.1em",
+                        padding: "2px 8px",
+                        borderRadius: 10,
+                        background: "var(--bg-surface)",
+                        color: "var(--text-secondary)",
+                        border: "1px solid var(--border-default)",
+                      }}
+                    >
+                      {spec.formatType}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: "0.1em",
+                        padding: "2px 8px",
+                        borderRadius: 10,
+                        background: isActive
+                          ? "var(--accent-primary-subtle)"
+                          : "var(--bg-surface)",
+                        color: isActive
+                          ? "var(--accent-primary)"
+                          : "var(--text-tertiary)",
+                        border: isActive
+                          ? "1px solid var(--accent-primary-border)"
+                          : "1px solid var(--border-default)",
+                      }}
+                    >
+                      {isActive
+                        ? t("bank_formats.status_active")
+                        : t("bank_formats.status_inactive")}
+                    </span>
+                  </div>
+                  {spec.notes && (
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: "var(--text-secondary)",
+                        marginTop: 4,
+                        fontStyle: "italic",
+                      }}
+                    >
+                      {spec.notes}
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 14,
+                      marginTop: 6,
+                      fontSize: 11,
+                      color: "var(--text-tertiary)",
+                    }}
+                  >
+                    <div>
+                      {t("bank_formats.label_effective_from")}:{" "}
+                      <LtrText>
+                        <span
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontFamily: "'DM Mono', monospace",
+                          }}
+                        >
+                          {spec.effectiveFrom}
+                        </span>
+                      </LtrText>
+                    </div>
+                    {spec.effectiveUntil && (
+                      <div>
+                        {t("bank_formats.label_effective_until")}:{" "}
+                        <LtrText>
+                          <span
+                            style={{
+                              color: "var(--text-secondary)",
+                              fontFamily: "'DM Mono', monospace",
+                            }}
+                          >
+                            {spec.effectiveUntil}
+                          </span>
+                        </LtrText>
+                      </div>
+                    )}
+                    <div>
+                      {t("bank_formats.label_spec_keys")}:{" "}
+                      <LtrText>
+                        <span
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontFamily: "'DM Mono', monospace",
+                          }}
+                        >
+                          {Object.keys(spec.spec || {}).length}
+                        </span>
+                      </LtrText>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                >
+                  <button
+                    onClick={() =>
+                      setModalState({ open: true, mode: "edit", spec })
+                    }
+                    style={btnMini}
+                  >
+                    <Edit3
+                      size={11}
+                      style={{ verticalAlign: "middle", marginInlineEnd: 4 }}
+                    />
+                    {t("bank_formats.action_edit")}
+                  </button>
+                  {isActive && (
+                    <button
+                      onClick={() => handleDeactivate(spec)}
+                      style={{
+                        ...btnMini,
+                        color: "var(--semantic-danger)",
+                        borderColor: "rgba(208,90,90,0.30)",
+                      }}
+                    >
+                      {t("bank_formats.action_deactivate")}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <BankFormatModal
+        open={modalState.open}
+        mode={modalState.mode}
+        spec={modalState.spec}
+        onClose={() =>
+          setModalState({ open: false, mode: "create", spec: null })
+        }
+        onSaved={() => {
+          reload();
+          setToast(
+            modalState.mode === "edit"
+              ? t("bank_formats.saved_edit_toast")
+              : t("bank_formats.saved_create_toast"),
           );
         }}
       />

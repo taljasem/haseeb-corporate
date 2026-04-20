@@ -139,7 +139,7 @@ export default function CFOView({ registerNav }) {
       case "aging-reports":
         return <AgingReportsScreen onOpenAminah={openAminah} />;
       case "setup":
-        return <SetupScreen />;
+        return <SetupScreen role="CFO" />;
       case "audit-bridge":
         return <AuditBridgeScreen onOpenAminah={openAminah} />;
       case "petty-cash":

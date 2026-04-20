@@ -23,6 +23,7 @@
     "engine_rules": "Engine Rules"
   },
   "approval_banner": "Some changes in this section require Owner approval.",
+  "readonly_banner": "You have read-only access to Setup. Editing requires CFO or Senior Accountant role.",
   "chart": {
     "title": "Chart of Accounts",
     "description": "Manage GL accounts organized by type.",

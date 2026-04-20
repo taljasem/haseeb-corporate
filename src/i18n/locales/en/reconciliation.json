@@ -196,10 +196,6 @@
     "wait_clearance": "Wait for bank clearance",
     "ignore": "Ignore"
   },
-  "stale_read": {
-    "banner": "Your action was saved. The view below may not reflect the latest server state until this page is refreshed.",
-    "dismiss_aria": "Dismiss notice"
-  },
   "lock_modal": {
     "title": "Lock Reconciliation",
     "description": "Locking this reconciliation permanently seals it. Future match / unmatch / complete / reopen / import actions will be refused until it is explicitly unlocked. OWNER-only action.",

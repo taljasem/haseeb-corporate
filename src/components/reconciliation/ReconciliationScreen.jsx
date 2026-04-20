@@ -242,17 +242,6 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
   const [lockModalOpen, setLockModalOpen] = useState(false);
   const [lockReasonDraft, setLockReasonDraft] = useState("");
   const [locking, setLocking] = useState(false);
-  // HASEEB-154 short-term mitigation: live writes land on the backend,
-  // but reads (getReconciliationById / completeReconciliation / manual
-  // match / unmatch / history) remain on mockEngine pending HASEEB-150
-  // backend DTO enrichment. Full adapter-layer swap is STOP-AND-FLAG
-  // territory (5+ invented fields — pendingSuggestions, matchedItems
-  // with matchTier, unmatched{Bank,Ledger}Items, exceptions with
-  // type+suggestedAction, period:{month,year,label}, openingBalance,
-  // closingLedgerBalance, reconciliationDifference, total* counters).
-  // Until HASEEB-150 ships, warn the user after live writes so the
-  // mock-read/live-write inconsistency is visible, not silent.
-  const [staleWriteBannerVisible, setStaleWriteBannerVisible] = useState(false);
   const fileInputRef = useRef(null);
   const bannerShownRef = useRef(null);
   const suggestionsRef = useRef(null);
@@ -309,7 +298,6 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
     try {
       await resolveExceptionLive(rec.id, excId, { resolution });
       await onReload();
-      setStaleWriteBannerVisible(true); // HASEEB-154 mitigation
       showToast(t("exceptions.resolution_accepted"));
     } catch (err) {
       showToast(err?.message || t("errors.resolve_failed"), "error");
@@ -340,7 +328,6 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
       });
       setJeComposerFor(null);
       await onReload();
-      setStaleWriteBannerVisible(true); // HASEEB-154 mitigation
       showToast(t("je_composer.confirm"));
     } catch (err) {
       showToast(err?.message || t("errors.create_je_failed"), "error");
@@ -350,7 +337,6 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
     try {
       await confirmSuggestionLive(rec.id, suggId);
       await onReload();
-      setStaleWriteBannerVisible(true); // HASEEB-154 mitigation
       showToast(t("suggestions.confirm_button"));
     } catch (err) {
       showToast(err?.message || t("errors.confirm_failed"), "error");
@@ -360,7 +346,6 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
     try {
       await dismissSuggestionLive(rec.id, suggId);
       await onReload();
-      setStaleWriteBannerVisible(true); // HASEEB-154 mitigation
     } catch (err) {
       showToast(err?.message || t("errors.dismiss_failed"), "error");
     }
@@ -378,7 +363,6 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
     try {
       await reopenReconciliationLive(rec.id);
       await onReload();
-      setStaleWriteBannerVisible(true); // HASEEB-154 mitigation
       showToast(t("complete.reopened_toast"));
     } catch (err) {
       showToast(err?.message || t("errors.reopen_failed"), "error");
@@ -400,7 +384,6 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
       setLockModalOpen(false);
       setLockReasonDraft("");
       await onReload();
-      setStaleWriteBannerVisible(true); // HASEEB-154 mitigation
       showToast(t("lock_modal.locked_toast"));
     } catch (err) {
       showToast(err?.message || t("errors.lock_failed"), "error");
@@ -465,7 +448,6 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
       showToast(t("upload.success_title") + ` — ${importedCount} items${suffix}`, "success");
       setUploadState("idle");
       await onReload();
-      setStaleWriteBannerVisible(true); // HASEEB-154 mitigation
     } catch (err) {
       showToast(err?.message || t("errors.upload_failed"), "error");
       setUploadState("idle");
@@ -483,42 +465,6 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
       {readOnly && (
         <div style={{ padding: "8px 28px", background: "var(--semantic-info-subtle)", borderBottom: "1px solid var(--semantic-info)", fontSize: 11, fontWeight: 600, color: "var(--semantic-info)", display: "flex", alignItems: "center", gap: 8 }}>
           <History size={12} /> {t("history.title")} — {rec.period.label}
-        </div>
-      )}
-
-      {/* HASEEB-154 stale-write banner — visible after a live-write action
-          lands on the backend, because the read surface
-          (getReconciliationById / completeReconciliation / history /
-          manualMatch / unmatch) still uses mockEngine pending the
-          HASEEB-150 backend DTO enrichment. Dismisses on close. */}
-      {!readOnly && staleWriteBannerVisible && (
-        <div
-          role="status"
-          style={{
-            padding: "8px 28px",
-            background: "var(--semantic-warning-subtle)",
-            borderBottom: "1px solid var(--semantic-warning)",
-            fontSize: 11,
-            fontWeight: 600,
-            color: "var(--semantic-warning)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 8,
-          }}
-        >
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-            <AlertCircle size={12} />
-            {t("stale_read.banner")}
-          </span>
-          <button
-            type="button"
-            onClick={() => setStaleWriteBannerVisible(false)}
-            aria-label={t("stale_read.dismiss_aria")}
-            style={{ background: "transparent", border: "none", color: "var(--semantic-warning)", cursor: "pointer", padding: 4, lineHeight: 1 }}
-          >
-            <X size={12} />
-          </button>
         </div>
       )}
 

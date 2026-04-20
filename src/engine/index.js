@@ -84,6 +84,8 @@ import * as islamicFinanceApi from '../api/islamic-finance';
 import * as purchaseOrdersApi from '../api/purchase-orders';
 import * as tenantFlagsApi from '../api/tenant-flags';
 import * as inventoryNrvApi from '../api/inventory-nrv';
+import * as cfoTodayApi from '../api/cfo-today';
+import * as rulesApi from '../api/rules';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -198,6 +200,19 @@ const FUNCTION_ROUTING = {
   // modal's `a.type === 'Expenses'` filter is broken in MOCK — see
   // HASEEB-071 for the separate mock-shape fix).
   getChartOfAccounts: 'wired',
+
+  // CFO TodayScreen composite reads (Track B Dispatch 3a+3b, 2026-04-20).
+  // Four endpoints under /api/cfo/* + rule-suggestions under /api/rules.
+  // All four cfo-today hooks are open to every authenticated role on the
+  // backend; rules.suggestions is OWNER + ACCOUNTANT only (handled at
+  // the endpoint — 403 silently-degrades in the frontend).
+  getCFOTodayQueue: 'wired',
+  getCloseStatus: 'wired',
+  getCFOAminahNotes: 'wired',
+  getTeamActivity: 'wired',
+  getEngineStatus: 'wired',
+  getSuggestedCategorizationRules: 'wired',
+  getSuggestedRoutingRules: 'wired',
 };
 
 /**
@@ -501,6 +516,23 @@ const REAL_IMPLS = {
   getActiveNrvPolicy: inventoryNrvApi.getActiveNrvPolicy,
   listNrvPolicies: inventoryNrvApi.listNrvPolicies,
   getNrvAssessment: inventoryNrvApi.getNrvAssessment,
+
+  // CFO TodayScreen composite reads (Track B Dispatch 3a+3b, 2026-04-20).
+  // Hook → endpoint mapping:
+  //   getCFOTodayQueue              → GET /api/cfo/today-queue
+  //   getCloseStatus                → GET /api/cfo/today-queue (closeStatus sub-field)
+  //   getCFOAminahNotes             → GET /api/cfo/aminah-insights
+  //   getTeamActivity               → GET /api/cfo/team-activity
+  //   getEngineStatus               → GET /api/cfo/engine-status
+  //   getSuggestedCategorizationRules → GET /api/rules/suggestions?type=categorization
+  //   getSuggestedRoutingRules      → GET /api/rules/suggestions?type=routing
+  getCFOTodayQueue: cfoTodayApi.getCFOTodayQueue,
+  getCloseStatus: cfoTodayApi.getCloseStatus,
+  getCFOAminahNotes: cfoTodayApi.getCFOAminahNotes,
+  getTeamActivity: cfoTodayApi.getTeamActivity,
+  getEngineStatus: cfoTodayApi.getEngineStatus,
+  getSuggestedCategorizationRules: rulesApi.getSuggestedCategorizationRules,
+  getSuggestedRoutingRules: rulesApi.getSuggestedRoutingRules,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -796,6 +828,14 @@ function buildLiveSurface() {
   surface.listNrvPolicies = inventoryNrvApi.listNrvPolicies;
   surface.getNrvAssessment = inventoryNrvApi.getNrvAssessment;
 
+  // CFO TodayScreen Aminah insights — Track B Dispatch 3b. Not on
+  // mockEngine's namespace (it's a net-new structured surface beyond
+  // the legacy getCFOAminahNotes); assigned explicitly as an extras
+  // call so screens that want the full {suggestedAction, supportingData,
+  // lowConfidence, totalAvailable, suppressedCount, generatedAt} shape
+  // can import it uniformly.
+  surface.getAminahInsights = cfoTodayApi.getAminahInsights;
+
   return surface;
 }
 
@@ -1064,6 +1104,19 @@ function buildMockExtras() {
     getActiveNrvPolicy: mockGetActiveNrvPolicy,
     listNrvPolicies: mockListNrvPolicies,
     getNrvAssessment: mockGetNrvAssessment,
+    // CFO TodayScreen Aminah insights — Track B Dispatch 3b MOCK stub.
+    // The full-structured payload is new surface beyond the legacy
+    // getCFOAminahNotes (which IS on mockEngine's namespace and remains
+    // the mock source for the flat `text` rows). The structured shape
+    // has no mock backing; return an empty payload so the UI renders
+    // its empty state in MOCK mode rather than pretending to have
+    // structured narrations.
+    getAminahInsights: async () => ({
+      insights: [],
+      totalAvailable: 0,
+      suppressedCount: 0,
+      generatedAt: new Date().toISOString(),
+    }),
     // Board pack (FN-258) MOCK stub — empty pack in MOCK mode.
     getBoardPack: async (q = {}) => ({
       fiscalYear: q.fiscalYear || new Date().getFullYear() - 1,
@@ -3649,3 +3702,25 @@ export const deactivateNrvPolicy = surface.deactivateNrvPolicy;
 export const getActiveNrvPolicy = surface.getActiveNrvPolicy;
 export const listNrvPolicies = surface.listNrvPolicies;
 export const getNrvAssessment = surface.getNrvAssessment;
+
+// CFO TodayScreen composite reads (Track B Dispatch 3a+3b, 2026-04-20).
+// getCFOTodayQueue, getCloseStatus, getCFOAminahNotes, getTeamActivity,
+// getEngineStatus, getSuggestedCategorizationRules,
+// getSuggestedRoutingRules are all on mockEngine's namespace — the
+// Object.keys(mockEngine) loop in buildLiveSurface picks them up via
+// FUNCTION_ROUTING + REAL_IMPLS above. Named exports below so screens
+// can import them from '../../engine' uniformly.
+export const getCFOTodayQueue = surface.getCFOTodayQueue;
+export const getCloseStatus = surface.getCloseStatus;
+export const getCFOAminahNotes = surface.getCFOAminahNotes;
+export const getTeamActivity = surface.getTeamActivity;
+export const getEngineStatus = surface.getEngineStatus;
+export const getSuggestedCategorizationRules = surface.getSuggestedCategorizationRules;
+export const getSuggestedRoutingRules = surface.getSuggestedRoutingRules;
+// getAminahInsights is an "extras" call (NOT on mockEngine's namespace)
+// that returns the full structured insights payload — used by
+// TodayScreen's Aminah's Notes panel to surface suggestedAction buttons
+// and lowConfidence affordances. LIVE routes to the cfo-today API
+// wrapper; MOCK returns an empty shape so the UI renders its empty-
+// state rather than pretending there are narrations.
+export const getAminahInsights = surface.getAminahInsights;

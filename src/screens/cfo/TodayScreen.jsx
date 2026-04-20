@@ -7,14 +7,33 @@ import DirArrow from "../../components/shared/DirArrow";
 import EmptyState from "../../components/shared/EmptyState";
 import TaskboxSummaryCard from "../../components/taskbox/TaskboxSummaryCard";
 import SuggestedRuleRow from "../../components/rules/SuggestedRuleRow";
-import { getSuggestedCategorizationRules, getSuggestedRoutingRules } from "../../engine/mockEngine";
+// Track B Dispatch 3a+3b wire (2026-04-20) — live backend composite
+// reads. All 7 hooks now route through the engine router (MOCK vs LIVE
+// via VITE_USE_MOCKS). See src/api/cfo-today.js + src/api/rules.js for
+// the shape adapters and src/engine/index.js for the routing table.
+//
+// Hook → endpoint:
+//   getCFOTodayQueue              → GET /api/cfo/today-queue
+//     (returns pendingApprovals, bankTransactionsToReview,
+//      reconciliationExceptions, auditFailures, closeStatus)
+//   getCFOAminahNotes             → GET /api/cfo/aminah-insights
+//   getTeamActivity               → GET /api/cfo/team-activity
+//   getEngineStatus               → GET /api/cfo/engine-status
+//   getSuggestedCategorizationRules → GET /api/rules/suggestions?type=categorization
+//   getSuggestedRoutingRules      → GET /api/rules/suggestions?type=routing
+//
+// Nullable field handling (per dispatch spec): the today-queue composite
+// returns `null` for failed sub-fetches rather than 500ing the whole
+// response. We render "—" for null numeric fields and hide the close
+// panel entirely when closeStatus is null.
 import {
   getCFOTodayQueue,
-  getCFOAminahNotes,
   getTeamActivity,
   getEngineStatus,
-  getCloseStatus,
-} from "../../engine/mockEngine";
+  getSuggestedCategorizationRules,
+  getSuggestedRoutingRules,
+  getCFOAminahNotes,
+} from "../../engine";
 
 function renderHighlighted(text) {
   const parts = text.split(/(\[[^\]]+\])/g);
@@ -75,13 +94,13 @@ function QueueRow({ count, label, onClick, itemId }) {
         style={{
           fontFamily: "'DM Mono', monospace",
           fontSize: 18,
-          color: "var(--text-primary)",
+          color: count == null ? "var(--text-tertiary)" : "var(--text-primary)",
           fontWeight: 500,
           minWidth: 32,
           textAlign: "end",
         }}
       >
-        {count}
+        {count == null ? "—" : count}
       </span>
       <span style={{ flex: 1, fontSize: 13, color: "var(--text-secondary)" }}>{label}</span>
       <span
@@ -133,27 +152,57 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
   const [close, setClose] = useState(null);
 
   useEffect(() => {
+    // Single composite fetch covers both queue counters and the close-
+    // status sub-field per Track B Dispatch 3a. The backend returns
+    // nullable sub-fields on per-subfetch failure (no 500); preserve
+    // the nulls and handle at render time.
     Promise.all([
       getCFOTodayQueue(),
-      getCFOAminahNotes(),
-      getTeamActivity(),
+      getCFOAminahNotes({ scope: "today", maxInsights: 8 }),
+      getTeamActivity(10),
       getEngineStatus(),
-      getCloseStatus(),
-    ]).then(([q, n, t, e, c]) => {
-      setQueue(q);
-      setNotes(n);
-      setTeam(t);
-      setEngine(e);
-      setClose(c);
-    });
-    Promise.all([getSuggestedCategorizationRules(), getSuggestedRoutingRules()]).then(
-      ([a, b]) => setSuggestions([...a, ...b].slice(0, 3))
-    );
+    ])
+      .then(([composite, n, t, e]) => {
+        setQueue(composite);
+        setClose(composite?.closeStatus || null);
+        setNotes(n);
+        setTeam(t);
+        setEngine(e);
+      })
+      .catch(() => {
+        // Silent degradation — each card already guards on null.
+        // The shared error-banner pattern from prior wires is not
+        // applied here because TodayScreen is the app-landing surface
+        // and a partial-failure banner across all five cards would be
+        // more confusing than per-card empty states.
+      });
+    // Rule suggestions are scoped OWNER + ACCOUNTANT on the backend; a
+    // 403 for VIEWER / AUDITOR degrades silently to an empty list.
+    Promise.all([
+      getSuggestedCategorizationRules(5).catch(() => []),
+      getSuggestedRoutingRules(5).catch(() => []),
+    ]).then(([a, b]) => setSuggestions([...a, ...b].slice(0, 3)));
   }, []);
 
+  // totalQueue helper — treat null sub-fields as 0 for the summary
+  // tension-dot only. Individual row rendering below distinguishes
+  // null from 0.
+  const _q = (v) => (typeof v === "number" ? v : 0);
   const totalQueue = queue
-    ? queue.pendingApprovals + queue.bankTransactionsToReview + queue.reconciliationExceptions + queue.auditFailures
+    ? _q(queue.pendingApprovals) +
+      _q(queue.bankTransactionsToReview) +
+      _q(queue.reconciliationExceptions) +
+      _q(queue.auditFailures)
     : 0;
+  // Show the rows when there's any real work OR any sub-fetch failed
+  // (null marker). Pure all-zero → the EmptyState renders instead.
+  const hasAnyNullQueueField = queue
+    ? queue.pendingApprovals == null ||
+      queue.bankTransactionsToReview == null ||
+      queue.reconciliationExceptions == null ||
+      queue.auditFailures == null
+    : false;
+  const showQueueRows = totalQueue > 0 || hasAnyNullQueueField;
 
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px" }}>
@@ -171,10 +220,10 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
           extra={totalQueue > 0 ? <span className="tension-dot tension-dot--warning">{totalQueue}</span> : null}
           aminah
         >
-          {queue && totalQueue === 0 && (
+          {queue && !showQueueRows && (
             <EmptyState icon={CheckCircle2} title={tc("empty_states.today_no_attention_title")} description={tc("empty_states.today_no_attention_desc")} />
           )}
-          {queue && totalQueue > 0 && (
+          {queue && showQueueRows && (
             <div style={{ marginTop: 4 }}>
               <QueueRow
                 count={queue.pendingApprovals}
@@ -200,12 +249,11 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                 onClick={() => setActiveScreen("audit-bridge")}
                 itemId="audit"
               />
-              <QueueRow
-                count={1}
-                label={t("queue.budget_over_plan")}
-                onClick={() => setActiveScreen("budget")}
-                itemId="budget"
-              />
+              {/* Budget-over-plan row removed pending budget-variance endpoint.
+                  The hardcoded count={1} from the mock era has no backend
+                  source and showing it in LIVE mode would be lying about
+                  persisted data (Principle: never silently fake counts).
+                  Flagged in the dispatch commit message. */}
             </div>
           )}
         </TodaySection>
@@ -306,7 +354,19 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                     <AssignToButton
                       itemType="close-task"
                       itemId={`close-${i}`}
-                      currentAssignee={t.assignee.toLowerCase().includes("you") ? "self" : t.assignee.toLowerCase()}
+                      currentAssignee={
+                        // Backend closeStatus.nextTasks carries no
+                        // assignee column today (ChecklistTemplateItem
+                        // has no owner field). Treat empty as
+                        // unassigned rather than lie. When the backend
+                        // adds an assignee field this will pick it up
+                        // automatically via the adapter in cfo-today.js.
+                        t.assignee && typeof t.assignee === "string"
+                          ? t.assignee.toLowerCase().includes("you")
+                            ? "self"
+                            : t.assignee.toLowerCase()
+                          : undefined
+                      }
                       compact
                       onAssign={() => {}}
                       onClickOverride={() =>
@@ -339,14 +399,45 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                 key={n.id}
                 style={{
                   fontSize: 13,
-                  color: "var(--text-secondary)",
+                  // Low-confidence insights (0.5 <= confidence < 0.75
+                  // per backend flag) render with muted text per the
+                  // dispatch spec's "subtle indicator" guidance. The
+                  // SUPPRESSION_THRESHOLD filter already drops
+                  // confidence < 0.5 on the backend, so anything
+                  // rendered here is at least "possibly meaningful".
+                  color: n._lowConfidence
+                    ? "var(--text-tertiary)"
+                    : "var(--text-secondary)",
                   lineHeight: 1.8,
                   paddingBottom: 8,
                   marginBottom: 8,
                   borderBottom: "1px solid var(--border-subtle)",
+                  opacity: n._lowConfidence ? 0.85 : 1,
                 }}
               >
                 {renderHighlighted(n.text)}
+                {n._suggestedAction && n._suggestedAction.label && (
+                  <div style={{ marginTop: 4 }}>
+                    <a
+                      onClick={() => {
+                        // suggestedAction.href is a relative app route.
+                        // Pure client-side navigation — parse the first
+                        // path segment as a screen key so the existing
+                        // setActiveScreen() dispatcher picks it up.
+                        const href = String(n._suggestedAction.href || "");
+                        const screen = href.replace(/^\/+/, "").split(/[\/?#]/)[0];
+                        if (screen) setActiveScreen(screen);
+                      }}
+                      style={{
+                        fontSize: 11,
+                        color: "var(--accent-primary)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {n._suggestedAction.label} →
+                    </a>
+                  </div>
+                )}
               </div>
             ))}
         </TodaySection>
@@ -419,7 +510,9 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                     {t("engine.coverage_label")}
                   </div>
                 </div>
-                <div>
+                <div
+                  title={t("engine.matched_tooltip")}
+                >
                   <div
                     style={{
                       fontFamily: "'DM Mono', monospace",
@@ -429,7 +522,17 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                       fontVariantNumeric: "tabular-nums",
                     }}
                   >
-                    {engine.autoToday}
+                    {/* Matched-in-period = ruleBased + patternBased +
+                        aiSuggested raw counts from the engine-status
+                        response. `autoMatched` is always 0 today
+                        because the Lane 1 learning-engine schema has
+                        no AUTO tier yet (backend flag); we surface the
+                        total-matched count instead so this slot
+                        communicates real work rather than a
+                        misleading zero. */}
+                    {(engine._raw?.ruleBased ?? 0) +
+                      (engine._raw?.patternBased ?? 0) +
+                      (engine._raw?.aiSuggested ?? 0)}
                   </div>
                   <div
                     style={{
@@ -440,7 +543,7 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
                       marginTop: 2,
                     }}
                   >
-                    {t("engine.auto_today_label")}
+                    {t("engine.matched_label")}
                   </div>
                 </div>
               </div>

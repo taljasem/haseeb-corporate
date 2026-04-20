@@ -24,6 +24,8 @@
   "engine": {
     "coverage_label": "COVERAGE THIS PERIOD",
     "auto_today_label": "TRANSACTIONS AUTO-CATEGORIZED TODAY",
+    "matched_label": "TRANSACTIONS MATCHED THIS PERIOD",
+    "matched_tooltip": "Rule + pattern + AI matches from the deterministic engine. AUTO tier pending schema migration.",
     "rule_based": "Rule-based",
     "pattern": "Pattern",
     "ai": "AI",

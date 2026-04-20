@@ -374,14 +374,14 @@ export default function ManualJEScreen({ onOpenAminah }) {
 
         {/* Search */}
         <div style={{ padding: "10px 14px", borderTop: `1px solid ${COLORS.border}`, position: "relative" }}>
-          <Search size={12} color={COLORS.textFaint} style={{ position: "absolute", left: 22, top: "50%", transform: "translateY(-50%)" }} />
+          <Search size={12} color={COLORS.textFaint} style={{ position: "absolute", insetInlineStart: 22, top: "50%", transform: "translateY(-50%)" }} />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("search_placeholder")}
             style={{
               width: "100%", background: "var(--bg-surface-sunken)", border: `1px solid ${COLORS.border}`,
-              borderRadius: 6, padding: "7px 10px 7px 28px", color: COLORS.text, fontSize: 11,
+              borderRadius: 6, padding: "7px 10px", paddingInlineStart: 28, color: COLORS.text, fontSize: 11,
               fontFamily: "inherit", outline: "none",
             }}
           />

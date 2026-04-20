@@ -58,7 +58,7 @@ const STATUS_META = {
   "in-progress":      { key: "in_progress",      color: "var(--semantic-warning)", icon: Circle },
   "not-started":      { key: "not_started",       color: "var(--text-tertiary)",    icon: Circle },
   "locked":           { key: "locked",            color: "var(--text-tertiary)",    icon: Lock },
-  "pending-approval": { key: "pending_approval",  color: "var(--semantic-info, #3b82f6)", icon: Clock },
+  "pending-approval": { key: "pending_approval",  color: "var(--semantic-info)", icon: Clock },
 };
 
 const EXC_TYPE_KEY = {
@@ -73,9 +73,9 @@ const EXC_TYPE_KEY = {
 
 const TIER_PILL = {
   "exact":            { color: "var(--accent-primary)",   key: "exact" },
-  "fuzzy-confirmed":  { color: "#3b82f6",                 key: "fuzzy_confirmed" },
+  "fuzzy-confirmed":  { color: "var(--semantic-info)",    key: "fuzzy_confirmed" },
   "manual":           { color: "var(--text-secondary)",    key: "manual" },
-  "bulk-rule":        { color: "#a855f7",                  key: "bulk_rule" },
+  "bulk-rule":        { color: "var(--role-owner)",        key: "bulk_rule" },
 };
 
 const fmtKWD = formatKWDAmount;
@@ -92,9 +92,9 @@ function useToast() {
 }
 function Toast({ msg }) {
   if (!msg) return null;
-  const bg = msg.type === "error" ? "rgba(239,68,68,0.15)" : msg.type === "info" ? "rgba(59,130,246,0.15)" : "rgba(0,196,140,0.15)";
-  const border = msg.type === "error" ? "rgba(239,68,68,0.35)" : msg.type === "info" ? "rgba(59,130,246,0.35)" : "rgba(0,196,140,0.35)";
-  const color = msg.type === "error" ? "#ef4444" : msg.type === "info" ? "#3b82f6" : "var(--accent-primary)";
+  const color = msg.type === "error" ? "var(--semantic-danger)" : msg.type === "info" ? "var(--semantic-info)" : "var(--accent-primary)";
+  const bg = msg.type === "error" ? "var(--semantic-danger-subtle)" : msg.type === "info" ? "var(--semantic-info-subtle)" : "var(--accent-primary-subtle)";
+  const border = msg.type === "error" ? "var(--semantic-danger-border)" : `color-mix(in srgb, ${color} 35%, transparent)`;
   return (
     <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: bg, border: `1px solid ${border}`, color, padding: "10px 20px", borderRadius: 8, fontSize: 12, fontWeight: 600, zIndex: 400, pointerEvents: "none" }}>
       {msg.text}
@@ -181,7 +181,7 @@ function ReconciliationAccountCard({ row, onOpen }) {
   return (
     <button onClick={() => row.currentReconciliationId && onOpen(row.currentReconciliationId)} disabled={!row.currentReconciliationId}
       style={{ textAlign: "start", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 10, padding: "16px 18px", cursor: row.currentReconciliationId ? "pointer" : "default", fontFamily: "inherit", color: "var(--text-primary)", transition: "all 0.15s" }}
-      onMouseEnter={(e) => { if (row.currentReconciliationId) { e.currentTarget.style.borderColor = "rgba(0,196,140,0.35)"; e.currentTarget.style.background = "rgba(0,196,140,0.04)"; } }}
+      onMouseEnter={(e) => { if (row.currentReconciliationId) { e.currentTarget.style.borderColor = "var(--accent-primary-border)"; e.currentTarget.style.background = "var(--accent-primary-subtle)"; } }}
       onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border-default)"; e.currentTarget.style.background = "var(--bg-surface)"; }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 }}>
         <div>
@@ -216,7 +216,7 @@ function StatusPill({ status }) {
   const meta = STATUS_META[status] || STATUS_META["not-started"];
   const Icon = meta.icon;
   return (
-    <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: meta.color, background: `${meta.color}1A`, border: `1px solid ${meta.color}40`, padding: "4px 8px", borderRadius: 4 }}>
+    <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: meta.color, background: `color-mix(in srgb, ${meta.color} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${meta.color} 25%, transparent)`, padding: "4px 8px", borderRadius: 4 }}>
       <Icon size={10} />{t(`status.${meta.key}`)}
     </div>
   );
@@ -474,7 +474,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {/* Read-only banner */}
       {readOnly && (
-        <div style={{ padding: "8px 28px", background: "rgba(59,130,246,0.08)", borderBottom: "1px solid rgba(59,130,246,0.2)", fontSize: 11, fontWeight: 600, color: "#3b82f6", display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ padding: "8px 28px", background: "var(--semantic-info-subtle)", borderBottom: "1px solid var(--semantic-info)", fontSize: 11, fontWeight: 600, color: "var(--semantic-info)", display: "flex", alignItems: "center", gap: 8 }}>
           <History size={12} /> {t("history.title")} — {rec.period.label}
         </div>
       )}
@@ -489,8 +489,8 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
           role="status"
           style={{
             padding: "8px 28px",
-            background: "rgba(245,166,35,0.08)",
-            borderBottom: "1px solid rgba(245,166,35,0.25)",
+            background: "var(--semantic-warning-subtle)",
+            borderBottom: "1px solid var(--semantic-warning)",
             fontSize: 11,
             fontWeight: 600,
             color: "var(--semantic-warning)",
@@ -577,7 +577,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
         <SummaryCell label={t("summary.closing_bank")} value={fmtKWD(rec.closingBalance)} />
         <SummaryCell label={t("summary.closing_ledger")} value={fmtKWD(rec.closingLedgerBalance)} />
         <SummaryCell label={t("summary.difference")} value={fmtKWD(diff)} highlight={Math.abs(diff) < 0.001 ? "var(--accent-primary)" : "var(--semantic-warning)"} onClick={() => exceptionsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} clickable={unresolvedCount > 0} />
-        {suggestionsCount > 0 && <SummaryCell label="PENDING REVIEW" value={String(suggestionsCount)} highlight="#3b82f6" onClick={() => suggestionsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} clickable />}
+        {suggestionsCount > 0 && <SummaryCell label="PENDING REVIEW" value={String(suggestionsCount)} highlight="var(--semantic-info)" onClick={() => suggestionsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} clickable />}
       </div>
 
       {/* Tier breakdown */}
@@ -620,7 +620,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
         {/* Pending Suggestions */}
         {suggestionsCount > 0 && !readOnly && (
           <div ref={suggestionsRef} style={{ marginBottom: 18 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", color: "#3b82f6", marginBottom: 10, display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", color: "var(--semantic-info)", marginBottom: 10, display: "inline-flex", alignItems: "center", gap: 6 }}>
               <Sparkles size={12} />
               {t("suggestions.title")} · {t("suggestions.subtitle", { count: suggestionsCount })}
             </div>
@@ -630,7 +630,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
                 const ledgerItem = rec.unmatchedLedgerItems.find((l) => l.id === sugg.ledgerEntryId);
                 const stale = !bankItem || !ledgerItem;
                 return (
-                  <div key={sugg.id} style={{ padding: "12px 16px", background: stale ? "var(--bg-surface)" : "rgba(59,130,246,0.04)", border: `1px solid ${stale ? "var(--border-subtle)" : "rgba(59,130,246,0.2)"}`, borderRadius: 8 }}>
+                  <div key={sugg.id} style={{ padding: "12px 16px", background: stale ? "var(--bg-surface)" : "var(--semantic-info-subtle)", border: `1px solid ${stale ? "var(--border-subtle)" : "var(--semantic-info)"}`, borderRadius: 8 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -650,7 +650,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
                       </div>
                       <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                         {!stale && (
-                          <button onClick={() => handleConfirmSuggestion(sugg.id)} style={{ background: "#3b82f6", color: "#fff", border: "none", padding: "6px 12px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{t("suggestions.confirm_button")}</button>
+                          <button onClick={() => handleConfirmSuggestion(sugg.id)} style={{ background: "var(--semantic-info)", color: "#fff", border: "none", padding: "6px 12px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{t("suggestions.confirm_button")}</button>
                         )}
                         <button onClick={() => handleDismissSuggestion(sugg.id)} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "6px 12px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{t("suggestions.dismiss_button")}</button>
                       </div>
@@ -664,9 +664,9 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
 
         {/* Bulk match CTA row — visible when enough unmatched items remain */}
         {!readOnly && rec.status === "in-progress" && (rec.unmatchedBankItems.length + rec.unmatchedLedgerItems.length) >= 3 && (
-          <div style={{ marginBottom: 14, padding: "14px 18px", background: "rgba(168,85,247,0.04)", border: "1px solid rgba(168,85,247,0.15)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ marginBottom: 14, padding: "14px 18px", background: "color-mix(in srgb, var(--role-owner) 6%, transparent)", border: "1px solid color-mix(in srgb, var(--role-owner) 20%, transparent)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 6 }}><Sparkles size={14} color="#a855f7" /> {t("bulk_rule.cta_title")}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 6 }}><Sparkles size={14} color="var(--role-owner)" /> {t("bulk_rule.cta_title")}</div>
               <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>{t("bulk_rule.cta_subtitle")}</div>
             </div>
             <ActionButton variant="secondary" size="sm" icon={Sparkles} label={t("bulk_rule.title")} onClick={() => setBulkRuleOpen(true)} />
@@ -727,8 +727,8 @@ function LockReconciliationModal({ open, onClose, reason, onReasonChange, onConf
   const canConfirm = trimmed.length > 0 && !locking;
   return (
     <>
-      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
-      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 460, background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "var(--overlay-backdrop)", backdropFilter: "blur(4px)", zIndex: 300 }} />
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 460, background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "var(--shadow-xl)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Lock size={16} color="var(--semantic-warning)" />
@@ -769,10 +769,10 @@ function LockReconciliationModal({ open, onClose, reason, onReasonChange, onConf
 
 function ConfidencePill({ confidence }) {
   const { t } = useTranslation("reconciliation");
-  const color = confidence >= 90 ? "var(--accent-primary)" : confidence >= 75 ? "#3b82f6" : confidence >= 50 ? "var(--semantic-warning)" : "var(--text-tertiary)";
+  const color = confidence >= 90 ? "var(--accent-primary)" : confidence >= 75 ? "var(--semantic-info)" : confidence >= 50 ? "var(--semantic-warning)" : "var(--text-tertiary)";
   const label = confidence >= 90 ? t("confidence.high") : confidence >= 75 ? t("confidence.medium") : t("confidence.low");
   return (
-    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color, background: `${color}1A`, border: `1px solid ${color}40`, padding: "2px 6px", borderRadius: 3 }}>
+    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color, background: `color-mix(in srgb, ${color} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${color} 25%, transparent)`, padding: "2px 6px", borderRadius: 3 }}>
       {confidence}% · {label}
     </span>
   );
@@ -782,7 +782,7 @@ function TierPill({ tier }) {
   const { t } = useTranslation("reconciliation");
   const meta = TIER_PILL[tier] || TIER_PILL["manual"];
   return (
-    <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", color: meta.color, background: `${meta.color}1A`, padding: "2px 5px", borderRadius: 3 }}>
+    <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", color: meta.color, background: `color-mix(in srgb, ${meta.color} 10%, transparent)`, padding: "2px 5px", borderRadius: 3 }}>
       {t(`confidence.${meta.key}`)}
     </span>
   );
@@ -856,7 +856,7 @@ function StatementRow({ item, exception, isBank }) {
           <span>·</span>
           <span style={{ fontFamily: "'DM Mono', monospace" }}><LtrText>{isBank ? item.reference : item.journalEntryId}</LtrText></span>
           {item.source && item.source !== "embedded" && (
-            <span style={{ fontSize: 8, fontWeight: 600, letterSpacing: "0.1em", color: "#3b82f6", background: "rgba(59,130,246,0.1)", padding: "1px 4px", borderRadius: 2 }}>{item.source.toUpperCase()}</span>
+            <span style={{ fontSize: 8, fontWeight: 600, letterSpacing: "0.1em", color: "var(--semantic-info)", background: "var(--semantic-info-subtle)", padding: "1px 4px", borderRadius: 2 }}>{item.source.toUpperCase()}</span>
           )}
         </div>
       </div>
@@ -880,10 +880,10 @@ function ExceptionRow({ exc, readOnly, onResolve, onOpenJE }) {
   const typeLabel = typeKey ? t(`exceptions.${typeKey}`) : exc.type.replace(/-/g, " ").toUpperCase();
 
   return (
-    <div style={{ padding: "12px 16px", background: exc.resolved ? "rgba(0,196,140,0.04)" : "var(--bg-surface)", border: `1px solid ${exc.resolved ? "rgba(0,196,140,0.2)" : "var(--border-default)"}`, borderInlineStart: `3px solid ${exc.resolved ? "var(--accent-primary)" : color}`, borderRadius: 6, display: "flex", alignItems: "flex-start", gap: 12 }}>
+    <div style={{ padding: "12px 16px", background: exc.resolved ? "var(--accent-primary-subtle)" : "var(--bg-surface)", border: `1px solid ${exc.resolved ? "var(--accent-primary-border)" : "var(--border-default)"}`, borderInlineStart: `3px solid ${exc.resolved ? "var(--accent-primary)" : color}`, borderRadius: 6, display: "flex", alignItems: "flex-start", gap: 12 }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color, background: `${color}1A`, padding: "2px 6px", borderRadius: 3 }}>{typeLabel}</span>
+          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color, background: `color-mix(in srgb, ${color} 10%, transparent)`, padding: "2px 6px", borderRadius: 3 }}>{typeLabel}</span>
           <span style={{ fontSize: 10, color: "var(--text-tertiary)", fontFamily: "'DM Mono', monospace" }}><LtrText>{exc.id}</LtrText></span>
           {exc.resolved && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: "var(--accent-primary)" }}>{t("exceptions.resolved")}</span>}
         </div>

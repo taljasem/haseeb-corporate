@@ -466,7 +466,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                   style={{
                     background: "transparent",
                     color: "var(--semantic-warning)",
-                    border: "1px solid rgba(212,168,75,0.30)",
+                    border: "1px solid var(--semantic-warning)",
                     padding: "8px 14px",
                     borderRadius: 6,
                     cursor: "pointer",
@@ -481,7 +481,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                   style={{
                     background: "transparent",
                     color: "var(--semantic-danger)",
-                    border: "1px solid rgba(255,90,95,0.30)",
+                    border: "1px solid var(--semantic-danger-border)",
                     padding: "8px 14px",
                     borderRadius: 6,
                     cursor: "pointer",
@@ -555,7 +555,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
             )}
             {/* Approval state pill */}
             {budget && !readOnly && (
-              <button onClick={openApprovalState} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", padding: "4px 10px", borderRadius: 12, background: budget.status === "approved" || budget.status === "active" ? "rgba(0,196,140,0.1)" : budget.status === "rejected" ? "rgba(239,68,68,0.1)" : "rgba(245,166,35,0.1)", border: `1px solid ${budget.status === "approved" || budget.status === "active" ? "rgba(0,196,140,0.3)" : budget.status === "rejected" ? "rgba(239,68,68,0.3)" : "rgba(245,166,35,0.3)"}`, color: budget.status === "approved" || budget.status === "active" ? "var(--accent-primary)" : budget.status === "rejected" ? "var(--semantic-danger)" : "var(--semantic-warning)", cursor: "pointer", fontFamily: "inherit" }}>
+              <button onClick={openApprovalState} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", padding: "4px 10px", borderRadius: 12, background: budget.status === "approved" || budget.status === "active" ? "var(--accent-primary-subtle)" : budget.status === "rejected" ? "var(--semantic-danger-subtle)" : "var(--semantic-warning-subtle)", border: `1px solid ${budget.status === "approved" || budget.status === "active" ? "var(--accent-primary-border)" : budget.status === "rejected" ? "var(--semantic-danger-border)" : "var(--semantic-warning)"}`, color: budget.status === "approved" || budget.status === "active" ? "var(--accent-primary)" : budget.status === "rejected" ? "var(--semantic-danger)" : "var(--semantic-warning)", cursor: "pointer", fontFamily: "inherit" }}>
                 {budget.status === "approved" || budget.status === "active" ? <CheckCircle2 size={10} /> : budget.status === "rejected" ? <XCircle size={10} /> : <Clock size={10} />}
                 {t(`approval.${budget.status === "active" ? "approved" : budget.status}`)}
               </button>
@@ -564,7 +564,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
             {role !== "Junior" && (
               <div style={{ display: "flex", gap: 4 }}>
                 {[2024, 2025, 2026].map((yr) => (
-                  <button key={yr} onClick={() => switchToYear(yr)} style={{ fontSize: 10, fontWeight: 600, padding: "4px 10px", borderRadius: 12, background: (viewingYear === yr || (viewingYear === null && yr === (budget?.period?.fiscalYear || 2026))) ? "rgba(0,196,140,0.08)" : "transparent", border: (viewingYear === yr || (viewingYear === null && yr === (budget?.period?.fiscalYear || 2026))) ? "1px solid rgba(0,196,140,0.3)" : "1px solid var(--border-default)", color: (viewingYear === yr || (viewingYear === null && yr === (budget?.period?.fiscalYear || 2026))) ? "var(--accent-primary)" : "var(--text-tertiary)", cursor: "pointer", fontFamily: "inherit" }}>
+                  <button key={yr} onClick={() => switchToYear(yr)} style={{ fontSize: 10, fontWeight: 600, padding: "4px 10px", borderRadius: 12, background: (viewingYear === yr || (viewingYear === null && yr === (budget?.period?.fiscalYear || 2026))) ? "var(--accent-primary-subtle)" : "transparent", border: (viewingYear === yr || (viewingYear === null && yr === (budget?.period?.fiscalYear || 2026))) ? "1px solid var(--accent-primary-border)" : "1px solid var(--border-default)", color: (viewingYear === yr || (viewingYear === null && yr === (budget?.period?.fiscalYear || 2026))) ? "var(--accent-primary)" : "var(--text-tertiary)", cursor: "pointer", fontFamily: "inherit" }}>
                     {yr === (budget?.period?.fiscalYear || 2026) ? t("historical.current", { year: yr }) : yr}
                   </button>
                 ))}
@@ -937,8 +937,8 @@ function ApproveBudgetConfirmModal({ open, onClose, onConfirm, periodLabel, subm
   if (!open) return null;
   return (
     <>
-      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
-      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 460, maxWidth: "calc(100vw - 32px)", background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "var(--overlay-backdrop)", backdropFilter: "blur(4px)", zIndex: 300 }} />
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 460, maxWidth: "calc(100vw - 32px)", background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "var(--shadow-xl)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <CheckCircle2 size={16} color="var(--accent-primary)" />
@@ -970,8 +970,8 @@ function RequestBudgetChangesModal({ open, onClose, notes, onNotesChange, onConf
   const canSubmit = trimmed.length > 0 && trimmed.length <= 1000 && !submitting;
   return (
     <>
-      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
-      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 520, maxWidth: "calc(100vw - 32px)", background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "var(--overlay-backdrop)", backdropFilter: "blur(4px)", zIndex: 300 }} />
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 520, maxWidth: "calc(100vw - 32px)", background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "var(--shadow-xl)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>{t("request_changes_modal.label")}</div>
@@ -1017,8 +1017,8 @@ function RejectBudgetModal({ open, onClose, notes, onNotesChange, onConfirm, sub
   const canSubmit = trimmed.length > 0 && trimmed.length <= 1000 && !submitting;
   return (
     <>
-      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
-      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 520, maxWidth: "calc(100vw - 32px)", background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "var(--overlay-backdrop)", backdropFilter: "blur(4px)", zIndex: 300 }} />
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 520, maxWidth: "calc(100vw - 32px)", background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "var(--shadow-xl)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--semantic-danger)" }}>{t("reject_modal.label")}</div>

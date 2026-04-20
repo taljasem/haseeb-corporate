@@ -81,6 +81,17 @@ html[data-theme="dark"] {
   --role-cfo:     #00C48C;
   --role-junior:  #3B82F6;
 
+  /* ---------------- Tiers ------------------- */
+  /* --tier-ai is the distinct AI-tier accent (bulk-rule / AI-assisted
+     matching). Separated from --role-owner post P1 Wave 1 to close
+     HASEEB-174: P1 Wave 1 mapped #a855f7 to --role-owner as a stop-gap,
+     which left AI-tier UI sharing the owner-role purple. Dark uses the
+     Tailwind purple-500 (#A855F7) — AA-readable on the near-black
+     #05070A base and visually distinct from --role-owner (#8B5CF6). */
+  --tier-ai:         #A855F7;
+  --tier-ai-subtle:  rgba(168, 85, 247, 0.10);
+  --tier-ai-border:  rgba(168, 85, 247, 0.30);
+
   /* ---------------- Confidence pills -------- */
   --pill-rule-bg:       #00C48C;
   --pill-rule-fg:       #05070A;
@@ -145,6 +156,15 @@ html[data-theme="light"] {
   --role-owner:   #7C3AED;
   --role-cfo:     #00A684;
   --role-junior:  #2563EB;
+
+  /* ---------------- Tiers ------------------- */
+  /* --tier-ai — see dark-theme block for rationale. Light uses the
+     Tailwind purple-600 (#9333EA) so the text / icon use of the token
+     retains AA contrast over the cream #F8F6F2 base; purple-500 would
+     be too loud and at the edge of AA under strong light ambient. */
+  --tier-ai:         #9333EA;
+  --tier-ai-subtle:  rgba(147, 51, 234, 0.10);
+  --tier-ai-border:  rgba(147, 51, 234, 0.35);
 
   /* ---------------- Confidence pills -------- */
   --pill-rule-bg:       #00A684;

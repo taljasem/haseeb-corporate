@@ -5,6 +5,8 @@ import useEscapeKey from "../../hooks/useEscapeKey";
 import Spinner from "../shared/Spinner";
 import { runValidators, required, minLength } from "../../utils/validation";
 import { flagVariance } from "../../engine/mockEngine";
+import { listTeamMembersLive } from "../../engine";
+import { normalizeRole, ROLES } from "../../utils/role";
 import { emitTaskboxChange } from "../../utils/taskboxBus";
 
 export default function FlagVarianceModal({ open, varianceId, onClose, onFlagged }) {
@@ -12,20 +14,60 @@ export default function FlagVarianceModal({ open, varianceId, onClose, onFlagged
   const { t: tc } = useTranslation("common");
   useEscapeKey(onClose, open);
   const [reason, setReason] = useState("");
-  // HASEEB-179 — UX default change. Previously defaulted to "sara"
-  // (seed Junior id), which pre-selected a specific person whenever
-  // the flagger was someone else. Now defaults to unselected and the
-  // user must pick an assignee before the submit button enables. The
-  // two pill options are still a specific Junior ("sara" — the seed
-  // user id the mock engine understands) and the CFO role ("cfo");
-  // swapping those for a role→user resolution is scoped out (needs
-  // tenant-config per HASEEB-179 spec).
+  // HASEEB-181 — assignee options are now fetched dynamically via
+  // listTeamMembersLive rather than the two hardcoded "sara"+"cfo" pills.
+  // Seeded ids are no longer assumed; whatever team the tenant has is
+  // what the CFO picks from. We still offer a "Myself (CFO)" synthetic
+  // pill (id "cfo") for the self-assign case, matching the pre-181 UX.
+  // HASEEB-179 default (unselected; submit disabled until pick) stands.
   const [assignee, setAssignee] = useState("");
   const [errors, setErrors] = useState({});
   const [flagging, setFlagging] = useState(false);
+  // HASEEB-181 — team fetch state machine.
+  const [team, setTeam] = useState([]);
+  const [teamLoading, setTeamLoading] = useState(false);
+  const [teamError, setTeamError] = useState(false);
 
-  useEffect(() => { if (open) { setReason(""); setErrors({}); setAssignee(""); } }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    setReason("");
+    setErrors({});
+    setAssignee("");
+    setTeamError(false);
+    setTeamLoading(true);
+    let cancelled = false;
+    listTeamMembersLive()
+      .then((members) => {
+        if (cancelled) return;
+        // Drop the synthetic "self" row (mock-only — represents the
+        // current CFO; the live endpoint does not emit it). The explicit
+        // "Myself (CFO)" pill below covers the self-assign case.
+        const non_self = (members || []).filter((m) => m.id !== "self");
+        setTeam(non_self);
+        setTeamLoading(false);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        console.error("[FlagVarianceModal] listTeamMembersLive failed", e);
+        setTeam([]);
+        setTeamError(true);
+        setTeamLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [open]);
+
   if (!open) return null;
+
+  // HASEEB-181 — split assignables into non-CFO accountants (Senior +
+  // Junior) vs everyone else. "Myself (CFO)" is an explicit synthetic
+  // pill appended below; tenants whose team has a CFO peer row would
+  // see that peer as a regular pill alongside. normalizeRole centralises
+  // the role-bucket mapping (HASEEB-155) so we don't re-derive here.
+  const assignablePeers = team.filter((m) => {
+    const r = normalizeRole(m.role);
+    return r === ROLES.SENIOR || r === ROLES.JUNIOR;
+  });
+  const hasAssignees = assignablePeers.length > 0;
 
   const handleFlag = async () => {
     const e = runValidators({ reason }, { reason: [required(), minLength(10)] });
@@ -71,16 +113,72 @@ export default function FlagVarianceModal({ open, varianceId, onClose, onFlagged
           </div>
           <div>
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 6 }}>{t("flag_modal.field_assignee")}</div>
-            <div style={{ display: "flex", gap: 6 }}>
-              {[{ id: "sara", label: t("flag_modal.assignee_sara") }, { id: "cfo", label: t("flag_modal.assignee_cfo") }].map((a) => {
-                const on = assignee === a.id;
-                return (
-                  <button key={a.id} onClick={() => setAssignee(a.id)} style={{ flex: 1, padding: "9px 12px", background: on ? "var(--accent-primary-subtle)" : "transparent", border: on ? "1px solid var(--accent-primary-border)" : "1px solid var(--border-default)", color: on ? "var(--accent-primary)" : "var(--text-secondary)", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "inherit" }}>
-                    {a.label}
-                  </button>
-                );
-              })}
-            </div>
+            {teamLoading && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 0", color: "var(--text-tertiary)", fontSize: 12 }}>
+                <Spinner size={13} />&nbsp;{t("flag_modal.loading_team")}
+              </div>
+            )}
+            {!teamLoading && teamError && (
+              <div style={{ fontSize: 12, color: "var(--semantic-danger)", padding: "8px 0" }}>
+                {t("flag_modal.team_load_error")}
+              </div>
+            )}
+            {!teamLoading && !teamError && !hasAssignees && (
+              <div style={{ fontSize: 12, color: "var(--text-tertiary)", padding: "8px 0", lineHeight: 1.4 }}>
+                {t("flag_modal.no_team_members")}
+              </div>
+            )}
+            {!teamLoading && !teamError && hasAssignees && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {assignablePeers.map((m) => {
+                  const on = assignee === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => setAssignee(m.id)}
+                      aria-pressed={on}
+                      style={{
+                        padding: "9px 12px",
+                        background: on ? "var(--accent-primary-subtle)" : "transparent",
+                        border: on ? "1px solid var(--accent-primary-border)" : "1px solid var(--border-default)",
+                        color: on ? "var(--accent-primary)" : "var(--text-secondary)",
+                        borderRadius: 6,
+                        cursor: "pointer",
+                        fontSize: 11,
+                        fontWeight: 600,
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      <span style={{ display: "block" }}>{m.name}</span>
+                      <span style={{ display: "block", fontSize: 10, fontWeight: 500, color: on ? "var(--accent-primary)" : "var(--text-tertiary)", marginTop: 1, opacity: 0.8 }}>{m.role}</span>
+                    </button>
+                  );
+                })}
+                {(() => {
+                  const on = assignee === "cfo";
+                  return (
+                    <button
+                      key="cfo"
+                      onClick={() => setAssignee("cfo")}
+                      aria-pressed={on}
+                      style={{
+                        padding: "9px 12px",
+                        background: on ? "var(--accent-primary-subtle)" : "transparent",
+                        border: on ? "1px solid var(--accent-primary-border)" : "1px solid var(--border-default)",
+                        color: on ? "var(--accent-primary)" : "var(--text-secondary)",
+                        borderRadius: 6,
+                        cursor: "pointer",
+                        fontSize: 11,
+                        fontWeight: 600,
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      {t("flag_modal.assignee_cfo")}
+                    </button>
+                  );
+                })()}
+              </div>
+            )}
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>

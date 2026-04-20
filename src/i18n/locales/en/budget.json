@@ -73,6 +73,42 @@
     "ahead_of_plan": "KWD {{amount}} ahead of plan",
     "over_plan": "KWD {{amount}} over plan"
   },
+  "prompts": {
+    "change_request_notes": "Change request notes for CFO:"
+  },
+  "request_changes_modal": {
+    "label": "REQUEST CHANGES",
+    "title": "Request changes from CFO",
+    "body": "Describe what needs to change. The CFO will receive your feedback and can revise the budget draft.",
+    "notes_label": "Notes for CFO",
+    "notes_placeholder": "e.g. Marketing spend needs a 15% reduction in Q2…",
+    "notes_counter": "{{count}} / 1000",
+    "cancel": "Cancel",
+    "submit": "Send to CFO",
+    "submitting": "Sending…",
+    "error_notes_required": "Please describe the changes needed.",
+    "close": "Close"
+  },
+  "reject_modal": {
+    "label": "REJECT BUDGET",
+    "title": "Reject this budget",
+    "body": "Rejection is a terminal outcome. The CFO will need to create a new budget from scratch. Provide a reason so the CFO understands the rejection.",
+    "notes_label": "Rejection reason",
+    "notes_placeholder": "e.g. Revenue targets unrealistic; rebuild against revised forecast.",
+    "cancel": "Cancel",
+    "submit": "Reject budget",
+    "submitting": "Rejecting…",
+    "error_notes_required": "Please provide a rejection reason."
+  },
+  "approve_confirm": {
+    "title": "Approve this budget?",
+    "body_prefix": "Approve the ",
+    "body_suffix": " budget? After approval you can lock the fiscal year."
+  },
+  "not_implemented": {
+    "lock_fy": "Lock FY requires a backend lock endpoint; pending (HASEEB-173).",
+    "edit_budget": "Edit requires a backend status-change endpoint; pending (HASEEB-173)."
+  },
   "toast": {
     "approved": "{{name}} approved",
     "revision_sent": "Revision request sent",
@@ -83,10 +119,12 @@
     "request_changes_failed": "Could not send change request",
     "not_delegated_approver": "You are not the delegated approver for this department",
     "approve_failed": "Could not approve department",
-    "revision_failed": "Could not send revision request"
-  },
-  "prompts": {
-    "change_request_notes": "Change request notes for CFO:"
+    "revision_failed": "Could not send revision request",
+    "approve_budget_failed": "Could not approve budget",
+    "reject_budget_failed": "Could not reject budget",
+    "approve_budget_success": "Budget approved",
+    "reject_budget_success": "Budget rejected",
+    "request_changes_success": "Change request sent to CFO"
   },
   "revision": {
     "label": "REVISION REQUESTED BY CFO",

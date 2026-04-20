@@ -195,5 +195,9 @@
     "accept_timing": "Accept timing difference",
     "wait_clearance": "Wait for bank clearance",
     "ignore": "Ignore"
+  },
+  "stale_read": {
+    "banner": "Your action was saved. The view below may not reflect the latest server state until this page is refreshed.",
+    "dismiss_aria": "Dismiss notice"
   }
 }

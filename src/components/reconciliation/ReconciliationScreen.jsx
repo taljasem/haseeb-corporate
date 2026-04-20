@@ -52,6 +52,7 @@ import {
   getFiscalPeriodStatus,
 } from "../../engine";
 import { formatKWDAmount, formatDate } from "../../utils/format";
+import { useAuth } from "../../contexts/AuthContext";
 
 const STATUS_META = {
   "completed":        { key: "completed",        color: "var(--accent-primary)",   icon: CheckCircle2 },
@@ -227,6 +228,7 @@ function StatusPill({ status }) {
 // ═══════════════════════════════════════════════════════════════
 function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, onSelectHistorical }) {
   const { t } = useTranslation("reconciliation");
+  const { user: authUser } = useAuth();
   const [toast, showToast] = useToast();
   const [jeComposerFor, setJeComposerFor] = useState(null);
   const [bannerVisible, setBannerVisible] = useState(false);
@@ -286,7 +288,12 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
   const diff = rec.reconciliationDifference;
   const unresolvedCount = (rec.exceptions || []).filter((e) => !e.resolved).length;
   const isClean = Math.abs(diff) < 0.001 && unresolvedCount === 0;
-  const author = role === "CFO" ? "cfo" : role === "Owner" ? "owner" : "sara";
+  // HASEEB-164 — source the author id from the authenticated user, not a
+  // role→demo-identity lookup. In LIVE mode the backend re-derives identity
+  // from the JWT and the arg is ignored; in MOCK mode the arg lands in the
+  // activity log / completion record. Falls back to null when auth hasn't
+  // hydrated (the mockEngine default will then apply).
+  const author = authUser?.id ?? null;
   const suggestionsCount = (rec.pendingSuggestions || []).length;
 
   // Tier breakdown

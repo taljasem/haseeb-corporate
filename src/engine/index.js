@@ -91,6 +91,7 @@ import * as adminAuditLogApi from '../api/admin-audit-log';
 import * as bankAccountsApi from '../api/bank-accounts';
 import * as reconciliationApi from '../api/reconciliation';
 import * as budgetsApi from '../api/budgets';
+import * as migrationImportApi from '../api/migration-import';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -241,6 +242,27 @@ const FUNCTION_ROUTING = {
   // overrides it so the UI's { range, from, to } options shape works in
   // both MOCK and LIVE modes (mock took a single `period` positional).
   getBankAccountSummary: 'wired',
+
+  // Migration Import — Track 1 Migration Wizard (2026-04-20). Twelve
+  // wrappers: 3 ingest + 3 staged reads + 5 source-account-map + 2
+  // post/reject. All are "extras" names NOT on mockEngine's namespace;
+  // wired via buildLiveSurface direct assignment + buildMockExtras MOCK
+  // adapters (the mock returns empty/placeholder data so dev can navigate
+  // the wizard without a live backend). These routing table entries are
+  // documentation — the assignments below are what route the calls.
+  ingestInvoices: 'wired',
+  ingestBills: 'wired',
+  ingestJournalEntries: 'wired',
+  listStagedInvoices: 'wired',
+  listStagedBills: 'wired',
+  listStagedJournalEntries: 'wired',
+  listSourceAccountMap: 'wired',
+  suggestSourceMap: 'wired',
+  suggestAllSourceMap: 'wired',
+  declineSuggestion: 'wired',
+  updateSourceMap: 'wired',
+  postStagedItem: 'wired',
+  rejectStagedItem: 'wired',
 };
 
 /**
@@ -1013,6 +1035,25 @@ function buildLiveSurface() {
   surface.getBudgetApprovalStateLive = budgetsApi.getBudgetApprovalState;
   surface.listTeamMembersLive = budgetsApi.listTeamMembers;
 
+  // Migration Import — Track 1 Migration Wizard (2026-04-20). Twelve
+  // wrappers exposed as engine extras under canonical names. Not on
+  // mockEngine's namespace; MOCK mode adapters in buildMockExtras return
+  // empty/placeholder data so the wizard renders its empty states in
+  // dev without a live backend.
+  surface.ingestInvoices = migrationImportApi.ingestInvoices;
+  surface.ingestBills = migrationImportApi.ingestBills;
+  surface.ingestJournalEntries = migrationImportApi.ingestJournalEntries;
+  surface.listStagedInvoices = migrationImportApi.listStagedInvoices;
+  surface.listStagedBills = migrationImportApi.listStagedBills;
+  surface.listStagedJournalEntries = migrationImportApi.listStagedJournalEntries;
+  surface.listSourceAccountMap = migrationImportApi.listSourceAccountMap;
+  surface.suggestSourceMap = migrationImportApi.suggestSourceMap;
+  surface.suggestAllSourceMap = migrationImportApi.suggestAllSourceMap;
+  surface.declineSuggestion = migrationImportApi.declineSuggestion;
+  surface.updateSourceMap = migrationImportApi.updateSourceMap;
+  surface.postStagedItem = migrationImportApi.postStagedItem;
+  surface.rejectStagedItem = migrationImportApi.rejectStagedItem;
+
   return surface;
 }
 
@@ -1613,6 +1654,58 @@ function buildMockExtras() {
       yoyComparisons: [],
       disclosureSummaries: [],
       warnings: ['mock: no published report versions in MOCK mode'],
+    }),
+
+    // Migration Import — Track 1 Migration Wizard (2026-04-20). MOCK stubs
+    // so dev can navigate the wizard without a live backend. Ingest
+    // fabricates a plausible importJobId; all reads return empty arrays
+    // so the UI renders its empty states; mutations echo so the UI can
+    // proceed through the flow without erroring.
+    ingestInvoices: async (payload) => ({
+      importJobId: `mock-import-${Date.now()}`,
+      count: 0,
+      sourceSystem: payload?.sourceSystem || null,
+      parserVersion: payload?.parserVersion || 'v1',
+    }),
+    ingestBills: async (payload) => ({
+      importJobId: `mock-import-${Date.now()}`,
+      count: 0,
+      sourceSystem: payload?.sourceSystem || null,
+      parserVersion: payload?.parserVersion || 'v1',
+    }),
+    ingestJournalEntries: async (payload) => ({
+      importJobId: `mock-import-${Date.now()}`,
+      count: 0,
+      sourceSystem: payload?.sourceSystem || null,
+      parserVersion: payload?.parserVersion || 'v1',
+    }),
+    listStagedInvoices: async () => [],
+    listStagedBills: async () => [],
+    listStagedJournalEntries: async () => [],
+    listSourceAccountMap: async () => [],
+    suggestSourceMap: async (id) => ({
+      id,
+      suggestedHaseebAccountRole: null,
+      confidence: 0,
+      suggestionReason: null,
+    }),
+    suggestAllSourceMap: async () => ({ updated: 0 }),
+    declineSuggestion: async (id) => ({
+      id,
+      suggestedHaseebAccountRole: null,
+      confidence: 0,
+      suggestionReason: null,
+    }),
+    updateSourceMap: async (id, payload) => ({ id, ...payload }),
+    postStagedItem: async (kind, id) => ({
+      stagedId: id,
+      postedEntityId: `mock-${kind}-${id}`,
+      status: 'POSTED',
+    }),
+    rejectStagedItem: async (kind, id, reason) => ({
+      stagedId: id,
+      status: 'REJECTED',
+      reason: reason || null,
     }),
   };
 }
@@ -4335,3 +4428,22 @@ export const deleteBudgetLineCommentLive = surface.deleteBudgetLineCommentLive;
 // Group E — state + team:
 export const getBudgetApprovalStateLive = surface.getBudgetApprovalStateLive;
 export const listTeamMembersLive = surface.listTeamMembersLive;
+
+// Migration Import — Track 1 Migration Wizard (2026-04-20). Twelve
+// canonical engine-extras wrappers, all NOT on mockEngine's namespace
+// (both MOCK and LIVE assignments happen in buildMockExtras /
+// buildLiveSurface above). Wire pattern mirrors Track B reconciliation /
+// budgets extras. Screens import from '../../engine' in both modes.
+export const ingestInvoices = surface.ingestInvoices;
+export const ingestBills = surface.ingestBills;
+export const ingestJournalEntries = surface.ingestJournalEntries;
+export const listStagedInvoices = surface.listStagedInvoices;
+export const listStagedBills = surface.listStagedBills;
+export const listStagedJournalEntries = surface.listStagedJournalEntries;
+export const listSourceAccountMap = surface.listSourceAccountMap;
+export const suggestSourceMap = surface.suggestSourceMap;
+export const suggestAllSourceMap = surface.suggestAllSourceMap;
+export const declineSuggestion = surface.declineSuggestion;
+export const updateSourceMap = surface.updateSourceMap;
+export const postStagedItem = surface.postStagedItem;
+export const rejectStagedItem = surface.rejectStagedItem;

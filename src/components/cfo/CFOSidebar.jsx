@@ -33,6 +33,7 @@ const GitBranchIcon = I(<><line x1="6" y1="3" x2="6" y2="15" /><circle cx="18" c
 const LandmarkIcon = I(<><line x1="3" y1="22" x2="21" y2="22" /><line x1="6" y1="18" x2="6" y2="11" /><line x1="10" y1="18" x2="10" y2="11" /><line x1="14" y1="18" x2="14" y2="11" /><line x1="18" y1="18" x2="18" y2="11" /><polygon points="12 2 20 7 4 7" /></>);
 const ClipboardListIcon = I(<><rect x="8" y="2" width="8" height="4" rx="1" ry="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><line x1="8" y1="11" x2="16" y2="11" /><line x1="8" y1="15" x2="14" y2="15" /></>);
 const PackageXIcon = I(<><path d="M21 8V21a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8" /><path d="M1 3h22v5H1z" /><line x1="9" y1="13" x2="15" y2="19" /><line x1="15" y1="13" x2="9" y2="19" /></>);
+const MigrationIcon = I(<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></>);
 
 function NavItem({ icon: Icon, label, active, onClick, badge }) {
   return (
@@ -146,9 +147,10 @@ export default function CFOSidebar({ active, setActive, pendingApprovals = 0, ta
       </SidebarGroup>
 
       <SidebarGroup label={t("groups.operations")}>
-        <NavItem icon={CalIcon}    label={t("items.month_end_close")} active={isActive("month-end-close")} onClick={() => setActive("month-end-close")} />
-        <NavItem icon={ShieldIcon} label={t("items.audit_bridge")}    active={isActive("audit-bridge")}    onClick={() => setActive("audit-bridge")} />
-        <NavItem icon={GearIcon}   label={t("items.setup")}           active={isActive("setup")}           onClick={() => setActive("setup")} />
+        <NavItem icon={CalIcon}       label={t("items.month_end_close")} active={isActive("month-end-close")} onClick={() => setActive("month-end-close")} />
+        <NavItem icon={ShieldIcon}    label={t("items.audit_bridge")}    active={isActive("audit-bridge")}    onClick={() => setActive("audit-bridge")} />
+        <NavItem icon={GearIcon}      label={t("items.setup")}           active={isActive("setup")}           onClick={() => setActive("setup")} />
+        <NavItem icon={MigrationIcon} label={t("items.migration")}       active={isActive("migration")}       onClick={() => setActive("migration")} />
       </SidebarGroup>
 
       <SidebarGroup label={t("groups.management")}>

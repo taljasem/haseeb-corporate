@@ -16,6 +16,7 @@ import TaskboxScreen from "../../components/taskbox/TaskboxScreen";
 import SettingsScreen from "../shared/SettingsScreen";
 import AdministrationScreen from "../shared/AdministrationScreen";
 import ProfileScreen from "../shared/ProfileScreen";
+import MigrationWizardScreen from "../cfo/MigrationWizardScreen";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
 
@@ -159,6 +160,8 @@ export default function OwnerView({ registerNav }) {
         return <AdministrationScreen role="Owner" />;
       case "profile":
         return <ProfileScreen role="Owner" />;
+      case "migration":
+        return <MigrationWizardScreen role="Owner" />;
       default:
         return <Placeholder label={activeScreen.toUpperCase()} />;
     }

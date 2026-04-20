@@ -199,5 +199,30 @@
   "stale_read": {
     "banner": "Your action was saved. The view below may not reflect the latest server state until this page is refreshed.",
     "dismiss_aria": "Dismiss notice"
+  },
+  "lock_modal": {
+    "title": "Lock Reconciliation",
+    "description": "Locking this reconciliation permanently seals it. Future match / unmatch / complete / reopen / import actions will be refused until it is explicitly unlocked. OWNER-only action.",
+    "reason_label": "Reason (required, 1–500 chars)",
+    "reason_placeholder": "e.g. March 2026 sealed after auditor sign-off",
+    "cancel": "Cancel",
+    "lock": "Lock",
+    "locking": "…",
+    "close_aria": "Close",
+    "reason_required_toast": "Reason is required to lock a reconciliation",
+    "lock_button_label": "Lock",
+    "locked_toast": "Reconciliation locked"
+  },
+  "errors": {
+    "generic": "Something went wrong. Try again.",
+    "resolve_failed": "Failed to resolve exception",
+    "create_je_failed": "Failed to create journal entry",
+    "confirm_failed": "Failed to confirm suggestion",
+    "dismiss_failed": "Failed to dismiss suggestion",
+    "reopen_failed": "Failed to reopen reconciliation",
+    "lock_failed": "Failed to lock reconciliation",
+    "export_failed": "Export failed",
+    "upload_failed": "Upload failed",
+    "parse_failed": "No rows parsed"
   }
 }

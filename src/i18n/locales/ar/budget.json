@@ -193,6 +193,39 @@
     "revision_requested": "مطلوب تعديل",
     "workflow_title": "مسار الاعتماد",
     "next_action": "الإجراء التالي: {{action}}",
-    "next_action_label": "الإجراء التالي"
+    "next_action_label": "الإجراء التالي",
+    "reviewers_heading": "المراجعون",
+    "history_heading": "سجل المسار",
+    "status_unknown": "غير معروف"
+  },
+  "status": {
+    "draft": "مسودة",
+    "pending_approval": "بانتظار الاعتماد",
+    "changes_requested": "مطلوب تعديلات",
+    "approved": "معتمدة",
+    "active": "نشطة",
+    "closed": "مغلقة",
+    "locked": "مقفلة",
+    "rejected": "مرفوضة",
+    "delegated": "مفوّضة",
+    "in_review": "قيد المراجعة",
+    "unknown": "—"
+  },
+  "reviewer_status": {
+    "pending": "معلّق",
+    "approved": "معتمد",
+    "needs_revision": "يتطلب تعديلاً",
+    "unknown": "—"
+  },
+  "history_action": {
+    "submit": "تم الإرسال للاعتماد",
+    "approve": "تم الاعتماد",
+    "reject": "تم الرفض",
+    "request_changes": "طُلبت تعديلات",
+    "lock": "تم القفل",
+    "delegate": "تم التفويض",
+    "unlock": "تم فك القفل",
+    "resubmit": "أُعيد الإرسال",
+    "unknown": "—"
   }
 }

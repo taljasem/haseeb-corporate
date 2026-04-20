@@ -305,7 +305,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
       setStaleWriteBannerVisible(true); // HASEEB-154 mitigation
       showToast(t("exceptions.resolution_accepted"));
     } catch (err) {
-      showToast(err?.message || "Failed to resolve exception", "error");
+      showToast(err?.message || t("errors.resolve_failed"), "error");
     }
   };
   const handleCreateJE = async (excBankItemId, debit, credit) => {
@@ -336,7 +336,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
       setStaleWriteBannerVisible(true); // HASEEB-154 mitigation
       showToast(t("je_composer.confirm"));
     } catch (err) {
-      showToast(err?.message || "Failed to create journal entry", "error");
+      showToast(err?.message || t("errors.create_je_failed"), "error");
     }
   };
   const handleConfirmSuggestion = async (suggId) => {
@@ -346,7 +346,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
       setStaleWriteBannerVisible(true); // HASEEB-154 mitigation
       showToast(t("suggestions.confirm_button"));
     } catch (err) {
-      showToast(err?.message || "Failed to confirm suggestion", "error");
+      showToast(err?.message || t("errors.confirm_failed"), "error");
     }
   };
   const handleDismissSuggestion = async (suggId) => {
@@ -355,7 +355,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
       await onReload();
       setStaleWriteBannerVisible(true); // HASEEB-154 mitigation
     } catch (err) {
-      showToast(err?.message || "Failed to dismiss suggestion", "error");
+      showToast(err?.message || t("errors.dismiss_failed"), "error");
     }
   };
 
@@ -374,7 +374,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
       setStaleWriteBannerVisible(true); // HASEEB-154 mitigation
       showToast(t("complete.reopened_toast"));
     } catch (err) {
-      showToast(err?.message || "Failed to reopen reconciliation", "error");
+      showToast(err?.message || t("errors.reopen_failed"), "error");
     }
   };
 
@@ -384,7 +384,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
   const handleLockConfirm = async () => {
     const reason = lockReasonDraft.trim();
     if (!reason) {
-      showToast("Reason is required to lock a reconciliation", "error");
+      showToast(t("lock_modal.reason_required_toast"), "error");
       return;
     }
     setLocking(true);
@@ -394,9 +394,9 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
       setLockReasonDraft("");
       await onReload();
       setStaleWriteBannerVisible(true); // HASEEB-154 mitigation
-      showToast("Reconciliation locked");
+      showToast(t("lock_modal.locked_toast"));
     } catch (err) {
-      showToast(err?.message || "Failed to lock reconciliation", "error");
+      showToast(err?.message || t("errors.lock_failed"), "error");
     } finally {
       setLocking(false);
     }
@@ -405,7 +405,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
   const handleExport = async () => {
     try {
       const result = await exportReconciliationCsv(rec.id);
-      if (!result?.csvText) { showToast("Export failed", "error"); return; }
+      if (!result?.csvText) { showToast(t("errors.export_failed"), "error"); return; }
       showToast(t("export.downloading", { filename: result.filename }), "info");
       const blob = new Blob(["\uFEFF" + result.csvText], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
@@ -414,7 +414,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err) {
-      showToast(err?.message || "Export failed", "error");
+      showToast(err?.message || t("errors.export_failed"), "error");
     }
   };
 
@@ -443,7 +443,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
       }
       const items = parseResult?.items || [];
       if (items.length === 0) {
-        showToast(t("upload.error_wrong_type") || "No rows parsed", "error");
+        showToast(t("errors.parse_failed"), "error");
         setUploadState("idle");
         return;
       }
@@ -460,7 +460,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
       await onReload();
       setStaleWriteBannerVisible(true); // HASEEB-154 mitigation
     } catch (err) {
-      showToast(err?.message || "Upload failed", "error");
+      showToast(err?.message || t("errors.upload_failed"), "error");
       setUploadState("idle");
     }
   };
@@ -546,7 +546,7 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
                 Backend re-enforces OWNER role at the route layer; the UI
                 only shows the affordance to OWNER to avoid a guaranteed 403. */}
             {!readOnly && role === "Owner" && rec.status === "completed" && (
-              <ActionButton variant="secondary" size="md" icon={Lock} label="Lock" onClick={() => setLockModalOpen(true)} />
+              <ActionButton variant="secondary" size="md" icon={Lock} label={t("lock_modal.lock_button_label")} onClick={() => setLockModalOpen(true)} />
             )}
             {/* Complete — in-progress only */}
             {!readOnly && rec.status === "in-progress" && (
@@ -721,6 +721,12 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
 // `reason` (1..500 chars). On success the session transitions to
 // `locked` and further writes are refused until explicit unlock.
 function LockReconciliationModal({ open, onClose, reason, onReasonChange, onConfirm, locking }) {
+  // HASEEB-158: modal was entirely hardcoded English. Wired through
+  // `useTranslation` here rather than threading a `t` prop from the parent
+  // because the pattern matches every other sub-component in this file
+  // (StatusPill, ConfidencePill, TierPill, StatementColumn, ExceptionRow,
+  // InlineJEComposer — all call `useTranslation("reconciliation")` directly).
+  const { t } = useTranslation("reconciliation");
   useEscapeKey(onClose, open);
   if (!open) return null;
   const trimmed = (reason || "").trim();
@@ -732,30 +738,30 @@ function LockReconciliationModal({ open, onClose, reason, onReasonChange, onConf
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Lock size={16} color="var(--semantic-warning)" />
-            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)" }}>Lock Reconciliation</div>
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)" }}>{t("lock_modal.title")}</div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}><X size={18} /></button>
+          <button type="button" onClick={onClose} aria-label={t("lock_modal.close_aria")} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}><X size={18} /></button>
         </div>
         <div style={{ padding: "18px 22px" }}>
           <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
-            Locking this reconciliation permanently seals it. Future match / unmatch / complete / reopen / import actions will be refused until it is explicitly unlocked. OWNER-only action.
+            {t("lock_modal.description")}
           </div>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 5 }}>Reason (required, 1–500 chars)</div>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 5 }}>{t("lock_modal.reason_label")}</div>
             <textarea
               value={reason}
               onChange={(e) => onReasonChange(e.target.value)}
               maxLength={500}
               rows={3}
-              placeholder="e.g. March 2026 sealed after auditor sign-off"
+              placeholder={t("lock_modal.reason_placeholder")}
               style={{ width: "100%", background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 6, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, fontFamily: "inherit", outline: "none", resize: "vertical" }}
             />
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
-          <button type="button" onClick={onClose} disabled={locking} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "9px 16px", borderRadius: 6, cursor: locking ? "not-allowed" : "pointer", fontSize: 12, fontFamily: "inherit" }}>Cancel</button>
+          <button type="button" onClick={onClose} disabled={locking} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "9px 16px", borderRadius: 6, cursor: locking ? "not-allowed" : "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("lock_modal.cancel")}</button>
           <button type="button" onClick={onConfirm} disabled={!canConfirm} style={{ background: canConfirm ? "var(--semantic-warning)" : "var(--border-subtle)", color: canConfirm ? "#fff" : "var(--text-tertiary)", border: "none", padding: "9px 18px", borderRadius: 6, cursor: canConfirm ? "pointer" : "not-allowed", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>
-            {locking ? "…" : "Lock"}
+            {locking ? t("lock_modal.locking") : t("lock_modal.lock")}
           </button>
         </div>
       </div>

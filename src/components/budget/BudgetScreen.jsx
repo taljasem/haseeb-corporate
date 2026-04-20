@@ -49,6 +49,31 @@ import DelegateBudgetModal from "./DelegateBudgetModal";
 
 const COLS_HEADER = "minmax(160px, 1.4fr) minmax(140px, 1fr) 130px 130px 130px 130px 180px 110px 18px";
 
+// HASEEB-160 / HASEEB-168 — enum → i18n key mappers. Backend emits UPPER_SNAKE
+// for budget status, lowercase snake for reviewer status, and a small set of
+// action strings for history rows. Unknown values fall back to a human
+// "—" rather than crashing so backend enum drift is survivable.
+function budgetStatusLabel(t, status) {
+  if (!status) return t("status.unknown", { defaultValue: "—" });
+  const key = String(status).toLowerCase();
+  return t(`status.${key}`, { defaultValue: String(status) });
+}
+function reviewerStatusLabel(t, status) {
+  if (!status) return t("reviewer_status.unknown", { defaultValue: "—" });
+  const key = String(status).toLowerCase();
+  return t(`reviewer_status.${key}`, {
+    // Fallback: UPPER_SNAKE → spaced upper (legacy behaviour) so a brand-new
+    // backend status never crashes the surface; it renders readably until a
+    // key is added for it.
+    defaultValue: String(status).toUpperCase().replace(/_/g, " "),
+  });
+}
+function historyActionLabel(t, action) {
+  if (!action) return t("history_action.unknown", { defaultValue: "—" });
+  const key = String(action).toLowerCase();
+  return t(`history_action.${key}`, { defaultValue: String(action) });
+}
+
 function HeaderCell({ children, align = "left" }) {
   return (
     <div
@@ -378,9 +403,21 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                     fontWeight: 600,
                     letterSpacing: "0.12em",
                     color: "var(--text-primary)",
+                    // HASEEB-168: CSS uppercases in Latin scripts and is a
+                    // no-op in Arabic (no casing), which is the semantically
+                    // correct behaviour.
+                    textTransform: "uppercase",
                   }}
                 >
-                  {budget ? t("period_status", { period: budget.period.label.toUpperCase(), status: (budget.status || "").toUpperCase() }) : t("loading")}
+                  {/* HASEEB-168: `toUpperCase()` was an English-centric no-op
+                      in Arabic and masked null via `|| ""`. Pass the period
+                      label as-is (CSS `textTransform: uppercase` on the
+                      button container handles the visual uppercasing in EN,
+                      and is a no-op in AR — semantically correct). Status is
+                      resolved via the `budget.status.*` i18n mapper
+                      introduced for HASEEB-160 so it renders localised
+                      rather than as a raw UPPER_SNAKE enum. */}
+                  {budget ? t("period_status", { period: budget.period.label, status: budgetStatusLabel(t, budget.status) }) : t("loading")}
                   <ChevronDown size={12} color="var(--text-tertiary)" />
                 </button>
                 {periodOpen && (
@@ -836,20 +873,26 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                   <Clock size={20} color="var(--semantic-warning)" />
                 )}
                 <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>
-                  {approvalState.budgetStatus || "—"}
+                  {/* HASEEB-160: was rendering raw UPPER_SNAKE enum; now
+                      resolved via the budget.status.* i18n mapper. */}
+                  {budgetStatusLabel(t, approvalState.budgetStatus)}
                 </div>
               </div>
               {/* nextAction is the authoritative "what's next" string from
-                  the backend — rendered verbatim per wire 6 spec. */}
+                  the backend. We look it up in budget.next_action.* when a
+                  key exists so it localises cleanly; otherwise we fall
+                  through to the backend-authored prose unchanged. Backend
+                  drift flagged for future dispatch: once the backend
+                  standardises nextAction keys, add them to the locale. */}
               {approvalState.nextAction && (
                 <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 16, lineHeight: 1.5 }}>
                   <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", display: "block", marginBottom: 4 }}>
                     {t("approval.next_action_label")}
                   </span>
-                  {approvalState.nextAction}
+                  {t(`next_action.${String(approvalState.nextAction).toLowerCase()}`, { defaultValue: approvalState.nextAction })}
                 </div>
               )}
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 8 }}>REVIEWERS</div>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 8 }}>{t("approval.reviewers_heading")}</div>
               {(approvalState.reviewers || []).map((r, i) => {
                 const color = r.status === "approved"
                   ? "var(--accent-primary)"
@@ -864,18 +907,22 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                         <span style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 2 }}>{r.role}</span>
                       )}
                     </div>
+                    {/* HASEEB-160: was rendering (r.status || "pending").toUpperCase().replace(/_/g, " ")
+                        which leaked enum vocabulary and was English-centric. */}
                     <span style={{ color, fontWeight: 600, fontSize: 10, letterSpacing: "0.1em", whiteSpace: "nowrap" }}>
-                      {(r.status || "pending").toUpperCase().replace(/_/g, " ")}
+                      {reviewerStatusLabel(t, r.status || "pending")}
                     </span>
                   </div>
                 );
               })}
               {(approvalState.history || []).length > 0 && (
                 <>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginTop: 16, marginBottom: 8 }}>WORKFLOW HISTORY</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginTop: 16, marginBottom: 8 }}>{t("approval.history_heading")}</div>
                   {approvalState.history.map((h, i) => (
                     <div key={i} style={{ padding: "6px 0", borderBottom: "1px solid var(--border-subtle)", fontSize: 11, color: "var(--text-tertiary)" }}>
-                      <span style={{ color: "var(--text-secondary)" }}>{h.action || "—"}</span>
+                      {/* HASEEB-160: was rendering {h.action || "—"} raw;
+                          now resolved via budget.history_action.* mapper. */}
+                      <span style={{ color: "var(--text-secondary)" }}>{historyActionLabel(t, h.action)}</span>
                       {h.actor && <span> · {h.actor}</span>}
                       {h.timestamp && (
                         <span style={{ marginInlineStart: 6 }}>

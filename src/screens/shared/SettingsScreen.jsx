@@ -38,6 +38,7 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 import ChangePasswordModal from "../../components/settings/ChangePasswordModal";
 import EnableTwoFactorModal from "../../components/settings/EnableTwoFactorModal";
+import DisableTwoFactorModal from "../../components/settings/DisableTwoFactorModal";
 import ConfigureIntegrationModal from "../../components/settings/ConfigureIntegrationModal";
 import AddIntegrationModal from "../../components/settings/AddIntegrationModal";
 
@@ -276,8 +277,8 @@ function AccountSection({ role }) {
         if (cancelled) return;
         setProfileError(
           err?.code === "NETWORK_ERROR"
-            ? "Can't reach the server. Check your connection and try again."
-            : err?.message || "Something went wrong loading your profile."
+            ? t("errors.profile_network")
+            : err?.message || t("errors.profile_load_failed")
         );
         // Fall back to auth context data so the page still shows something.
         if (authUser) {
@@ -331,7 +332,7 @@ function AccountSection({ role }) {
             onClick={handleSignOut}
             disabled={loggingOut}
             aria-busy={loggingOut}
-            aria-label="Sign out"
+            aria-label={t("account.sign_out_aria")}
             style={{
               background: "transparent",
               color: "var(--semantic-danger)",
@@ -348,7 +349,7 @@ function AccountSection({ role }) {
             }}
           >
             <LogOut size={12} aria-hidden="true" />
-            {loggingOut ? "Signing out…" : "Sign out"}
+            {loggingOut ? t("account.signing_out") : t("account.sign_out")}
           </button>
         </div>
       </Card>
@@ -468,8 +469,8 @@ function NotificationsSection({ role }) {
     } catch (err) {
       setToast(
         err?.code === "NETWORK_ERROR"
-          ? "Can't reach the server. Check your connection and try again."
-          : err?.message || "Something went wrong saving preferences."
+          ? t("errors.network")
+          : err?.message || t("errors.notifications_save_failed")
       );
     } finally {
       setSaving(false);
@@ -519,6 +520,9 @@ function SecuritySection() {
   const [twoFA, setTwoFA] = useState(null);
   const [sessions, setSessions] = useState(null);
   const [enableOpen, setEnableOpen] = useState(false);
+  // HASEEB-157: window.prompt() for the TOTP code is replaced with
+  // DisableTwoFactorModal (same verification-code UX as the enable flow).
+  const [disableOpen, setDisableOpen] = useState(false);
   const [toast, setToast] = useState(null);
   // Disable button is kept rendered while a disable call is in flight so
   // the UI state doesn't flicker. Also used to force-disable the button
@@ -532,16 +536,7 @@ function SecuritySection() {
   };
   useEffect(() => { reload(); }, []);
 
-  const handleDisable2FA = async () => {
-    // Phase 4 UX autonomy flag (decide-and-flag): until a proper in-modal
-    // TOTP entry component ships (scheduled alongside 2FA ENABLE in a
-    // future dispatch), a window.prompt is the minimal-scope way to
-    // collect the 6-digit code. Trimmed + coerced to string; the backend
-    // validates format.
-    const code = window.prompt(
-      "Enter the 6-digit code from your authenticator app to disable two-factor authentication."
-    );
-    if (code === null) return; // user cancelled
+  const handleDisable2FASubmit = async (code) => {
     const trimmed = String(code).trim();
     if (!trimmed) return;
     setDisabling2FA(true);
@@ -551,25 +546,26 @@ function SecuritySection() {
       // resolves on 2xx and rejects on 4xx/5xx. Treat explicit
       // { success: false } as a failure too.
       if (result && result.success === false) {
-        setToast(result.error || "Unable to disable two-factor authentication.");
+        setToast(result.error || t("errors.two_factor_disable_failed"));
       } else {
-        setToast("Two-factor authentication disabled.");
+        setDisableOpen(false);
+        setToast(t("security.two_factor_disabled_toast"));
       }
     } catch (err) {
       // 400 "2FA is not enabled" — the user hit the button on a state
       // the server disagrees with (e.g. another session just disabled it).
       // Surface a clean toast and let reload() flip the UI to Enable.
       if (err?.status === 400) {
-        setToast(err?.message || "Two-factor authentication is not enabled.");
+        setToast(err?.message || t("errors.two_factor_not_enabled"));
       } else if (err?.status === 503) {
         // TOTP_PRIMITIVE_PENDING — unreachable today because no 2FA rows
         // exist, but handled cleanly. Keep the button rendered so the
         // user can retry after the feature ships.
-        setToast("Two-factor infrastructure is being finalized; check back soon.");
+        setToast(t("errors.two_factor_infra_pending"));
       } else if (err?.code === "NETWORK_ERROR") {
-        setToast("Can't reach the server. Check your connection and try again.");
+        setToast(t("errors.network"));
       } else {
-        setToast(err?.message || "Unable to disable two-factor authentication.");
+        setToast(err?.message || t("errors.two_factor_disable_failed"));
       }
     } finally {
       setDisabling2FA(false);
@@ -584,11 +580,11 @@ function SecuritySection() {
       if (err?.status === 404) {
         // Session already gone (e.g. another tab signed it out, or the
         // list is stale). Refetch and toast rather than blocking.
-        setToast("Session not found or already signed out.");
+        setToast(t("errors.session_not_found"));
       } else if (err?.code === "NETWORK_ERROR") {
-        setToast("Can't reach the server. Check your connection and try again.");
+        setToast(t("errors.network"));
       } else {
-        setToast(err?.message || "Unable to sign out that session.");
+        setToast(err?.message || t("errors.session_sign_out_failed"));
       }
     } finally {
       getActiveSessions().then(setSessions).catch(() => setSessions([]));
@@ -601,8 +597,8 @@ function SecuritySection() {
     } catch (err) {
       setToast(
         err?.code === "NETWORK_ERROR"
-          ? "Can't reach the server. Check your connection and try again."
-          : err?.message || "Unable to sign out other sessions."
+          ? t("errors.network")
+          : err?.message || t("errors.session_sign_out_all_failed")
       );
     } finally {
       getActiveSessions().then(setSessions).catch(() => setSessions([]));
@@ -624,12 +620,12 @@ function SecuritySection() {
           </div>
           {twoFA?.enabled ? (
             <button
-              onClick={handleDisable2FA}
+              onClick={() => setDisableOpen(true)}
               disabled={disabling2FA}
               aria-busy={disabling2FA}
               style={{ ...btnDanger, opacity: disabling2FA ? 0.6 : 1, cursor: disabling2FA ? "not-allowed" : "pointer" }}
             >
-              {disabling2FA ? "Disabling…" : t("security.disable_2fa")}
+              {disabling2FA ? t("security.disabling") : t("security.disable_2fa")}
             </button>
           ) : (
             <button onClick={() => setEnableOpen(true)} style={btnPrimary(false)}>{t("security.enable_2fa")}</button>
@@ -660,6 +656,12 @@ function SecuritySection() {
         open={enableOpen}
         onClose={() => setEnableOpen(false)}
         onEnabled={reload}
+      />
+      <DisableTwoFactorModal
+        open={disableOpen}
+        onClose={() => { if (!disabling2FA) setDisableOpen(false); }}
+        onSubmit={handleDisable2FASubmit}
+        submitting={disabling2FA}
       />
     </>
   );

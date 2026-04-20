@@ -18,7 +18,10 @@
     "field_role": "Role",
     "field_tenant": "Tenant",
     "field_joined": "Joined",
-    "change_password": "Change password"
+    "change_password": "Change password",
+    "sign_out": "Sign out",
+    "signing_out": "Signing out…",
+    "sign_out_aria": "Sign out"
   },
   "theme": {
     "title": "Theme",
@@ -72,6 +75,8 @@
     "two_factor_sub_disabled": "Add an extra layer of security to your account.",
     "enable_2fa": "Enable 2FA",
     "disable_2fa": "Disable 2FA",
+    "disabling": "Disabling…",
+    "two_factor_disabled_toast": "Two-factor authentication disabled.",
     "sessions_heading": "Active sessions",
     "sessions_sub": "Devices currently signed in to your account.",
     "session_current": "Current session",
@@ -165,5 +170,28 @@
   },
   "empty_audit": "No audit entries match your filters.",
   "empty_integrations": "No integrations available.",
-  "empty_sessions": "No other sessions."
+  "empty_sessions": "No other sessions.",
+  "disable_2fa_modal": {
+    "label": "SECURITY",
+    "title": "Disable two-factor authentication",
+    "body": "Enter the 6-digit code from your authenticator app to disable two-factor authentication on this account.",
+    "field_code": "Verification code",
+    "cancel": "Cancel",
+    "disable": "Disable 2FA",
+    "disabling": "Disabling…",
+    "close": "Close",
+    "validation_invalid_code": "Enter the 6-digit code from your authenticator app."
+  },
+  "errors": {
+    "profile_network": "Can't reach the server. Check your connection and try again.",
+    "profile_load_failed": "Something went wrong loading your profile.",
+    "notifications_save_failed": "Something went wrong saving preferences.",
+    "two_factor_not_enabled": "Two-factor authentication is not enabled.",
+    "two_factor_infra_pending": "Two-factor infrastructure is being finalized; check back soon.",
+    "two_factor_disable_failed": "Unable to disable two-factor authentication.",
+    "session_not_found": "Session not found or already signed out.",
+    "session_sign_out_failed": "Unable to sign out that session.",
+    "session_sign_out_all_failed": "Unable to sign out other sessions.",
+    "network": "Can't reach the server. Check your connection and try again."
+  }
 }

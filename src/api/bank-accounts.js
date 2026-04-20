@@ -12,6 +12,14 @@
  *   GET /api/banking/accounts/:id/summary?range=...
  *     → { openingBalanceKwd, closingBalanceKwd, inflowKwd, outflowKwd,
  *         txCount, currency }
+ *   GET /api/banking/accounts/:id/export?format=csv|pdf|xlsx&range=...&from?&to?
+ *     → { data, filename, rowCount, contentType }
+ *     - CSV: `data` is the raw CSV text; contentType = text/csv
+ *     - PDF: `data` is base64-encoded PDF bytes; contentType = application/pdf
+ *     - XLSX: `data` is base64-encoded workbook bytes;
+ *       contentType = application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+ *     Role gate: READ_ROLES (OWNER, ACCOUNTANT, VIEWER, AUDITOR) — same as
+ *     /statement and /summary. Shipped in corporate-api 2ff14dc (HASEEB-180).
  *
  * Calendar-window semantics (HASEEB-148 hotfix, 2026-04-20):
  *   month   → current calendar month (1st → last day UTC)
@@ -232,4 +240,40 @@ export async function getBankAccountSummary(id, opts = {}) {
   );
   const data = unwrap(r);
   return mapSummary(data);
+}
+
+/**
+ * Export the account's statement in CSV / PDF / XLSX (HASEEB-180,
+ * corporate-api 2ff14dc, 2026-04-21). All 4 roles (same READ_ROLES gate
+ * as /statement and /summary).
+ *
+ * The backend returns JSON even for binary formats: PDF/XLSX bytes are
+ * base64-encoded into `data` so a standard axios JSON response handles
+ * the transport. Caller is responsible for decoding + triggering the
+ * browser download (see BankAccountsScreen for the blob/anchor dance).
+ *
+ * @param {string} id Bank account id (primary key)
+ * @param {{format: 'csv'|'pdf'|'xlsx', range?: 'month'|'quarter'|'year'|'all',
+ *          from?: string, to?: string}} opts
+ *   `format` is required. `range` / `from` / `to` follow the same
+ *   calendar-window semantics as /statement (HASEEB-148).
+ *
+ * Returns `{ data, filename, rowCount, contentType }`:
+ *   - `data` — CSV text for format=csv; base64 for pdf / xlsx.
+ *   - `filename` — server-suggested filename (includes tenant + range).
+ *   - `rowCount` — number of statement rows included.
+ *   - `contentType` — MIME type to set on the Blob.
+ */
+export async function exportBankAccountStatement(id, opts = {}) {
+  if (!id) throw new Error('exportBankAccountStatement: id is required');
+  if (!opts.format) throw new Error('exportBankAccountStatement: format is required');
+  const params = { format: opts.format };
+  if (opts.range) params.range = opts.range;
+  if (opts.from) params.from = opts.from;
+  if (opts.to) params.to = opts.to;
+  const r = await client.get(
+    `/api/banking/accounts/${encodeURIComponent(id)}/export`,
+    { params }
+  );
+  return unwrap(r);
 }

@@ -17,6 +17,10 @@
     "outflow": "صرف"
   },
   "search_placeholder": "بحث في العمليات...",
+  "export": "تصدير {{format}}",
+  "exporting": "جارٍ التصدير…",
+  "export_error": "تعذّر التصدير. يُرجى المحاولة مرة أخرى.",
+  "export_downloaded": "تم تنزيل {{filename}}",
   "card": {
     "current_balance": "الرصيد الحالي",
     "mtd_inflow": "إيرادات الشهر حتى اليوم",

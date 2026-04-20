@@ -278,6 +278,50 @@ export async function requestBudgetChanges(id, { notes } = {}) {
   return unwrap(r);
 }
 
+/**
+ * POST /api/budgets/:id/lock — OWNER ONLY.
+ * Body: { reason: 1..1000 chars }.
+ * Transitions APPROVED | CHANGES_REQUESTED → LOCKED.
+ */
+export async function lockBudget(id, { reason } = {}) {
+  const r = await client.post(
+    `/api/budgets/${encodeURIComponent(id)}/lock`,
+    { reason },
+  );
+  return unwrap(r);
+}
+
+/**
+ * POST /api/budgets/:id/reopen-to-draft — OWNER ONLY.
+ * Body: { reason: 1..1000 chars }.
+ * Transitions LOCKED | REJECTED → DRAFT.
+ *
+ * Role note: endpoint is OWNER-only per backend. CFOs must request the
+ * Owner to reopen a non-DRAFT budget rather than having a direct edit
+ * affordance on non-DRAFT state.
+ */
+export async function reopenBudgetToDraft(id, { reason } = {}) {
+  const r = await client.post(
+    `/api/budgets/${encodeURIComponent(id)}/reopen-to-draft`,
+    { reason },
+  );
+  return unwrap(r);
+}
+
+/**
+ * POST /api/budgets/:id/reject — OWNER ONLY.
+ * Body: { reason: 1..1000 chars }.
+ * Transitions PENDING_APPROVAL | CHANGES_REQUESTED → REJECTED.
+ * REJECTED is a proper terminal state on the BudgetStatus enum.
+ */
+export async function rejectBudget(id, { reason } = {}) {
+  const r = await client.post(
+    `/api/budgets/${encodeURIComponent(id)}/reject`,
+    { reason },
+  );
+  return unwrap(r);
+}
+
 // ── Group D — comments ─────────────────────────────────────────────────────
 
 /**

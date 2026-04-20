@@ -1029,6 +1029,16 @@ function buildLiveSurface() {
   surface.approveBudgetDepartmentLive = budgetsApi.approveBudgetDepartment;
   surface.requestDepartmentRevisionLive = budgetsApi.requestDepartmentRevision;
   surface.requestBudgetChangesLive = budgetsApi.requestBudgetChanges;
+  // Three OWNER-only status-transition endpoints (2026-04-21). Reject is
+  // now a proper terminal state (no more "REJECTED: "-notes-prefix
+  // workaround on request-changes); lock and reopen-to-draft close the
+  // previous placeholder toasts.
+  //   lock            APPROVED | CHANGES_REQUESTED → LOCKED
+  //   reopen-to-draft LOCKED   | REJECTED          → DRAFT
+  //   reject          PENDING_APPROVAL | CHANGES_REQUESTED → REJECTED
+  surface.lockBudgetLive = budgetsApi.lockBudget;
+  surface.reopenBudgetToDraftLive = budgetsApi.reopenBudgetToDraft;
+  surface.rejectBudgetLive = budgetsApi.rejectBudget;
   surface.addBudgetLineCommentLive = budgetsApi.addBudgetLineComment;
   surface.listBudgetLineCommentsLive = budgetsApi.listBudgetLineComments;
   surface.deleteBudgetLineCommentLive = budgetsApi.deleteBudgetLineComment;
@@ -1585,6 +1595,15 @@ function buildMockExtras() {
       mockEngine.requestDepartmentRevision(id, deptId, notes),
     requestBudgetChangesLive: (id, { notes } = {}) =>
       mockEngine.requestBudgetChanges(id, notes),
+    // Three MOCK-mode status-transition adapters (2026-04-21). Mock-side
+    // status vocabulary is kebab-lower; the mockEngine helpers translate
+    // the reason string into the _addHistory note slot.
+    lockBudgetLive: (id, { reason } = {}) =>
+      mockEngine.lockBudget(id, reason),
+    reopenBudgetToDraftLive: (id, { reason } = {}) =>
+      mockEngine.reopenBudgetToDraft(id, reason),
+    rejectBudgetLive: (id, { reason } = {}) =>
+      mockEngine.rejectBudget(id, reason),
     addBudgetLineCommentLive: async (_id, lineId, { content } = {}) => {
       const c = await mockEngine.addBudgetLineComment(lineId, content, 'cfo');
       return c
@@ -4421,6 +4440,10 @@ export const delegateBudgetLive = surface.delegateBudgetLive;
 export const approveBudgetDepartmentLive = surface.approveBudgetDepartmentLive;
 export const requestDepartmentRevisionLive = surface.requestDepartmentRevisionLive;
 export const requestBudgetChangesLive = surface.requestBudgetChangesLive;
+// OWNER-only status transitions (2026-04-21).
+export const lockBudgetLive = surface.lockBudgetLive;
+export const reopenBudgetToDraftLive = surface.reopenBudgetToDraftLive;
+export const rejectBudgetLive = surface.rejectBudgetLive;
 // Group D — comments:
 export const addBudgetLineCommentLive = surface.addBudgetLineCommentLive;
 export const listBudgetLineCommentsLive = surface.listBudgetLineCommentsLive;

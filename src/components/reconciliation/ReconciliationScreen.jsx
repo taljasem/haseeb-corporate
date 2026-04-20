@@ -76,7 +76,7 @@ const TIER_PILL = {
   "exact":            { color: "var(--accent-primary)",   key: "exact" },
   "fuzzy-confirmed":  { color: "var(--semantic-info)",    key: "fuzzy_confirmed" },
   "manual":           { color: "var(--text-secondary)",    key: "manual" },
-  "bulk-rule":        { color: "var(--role-owner)",        key: "bulk_rule" },
+  "bulk-rule":        { color: "var(--tier-ai)",           key: "bulk_rule" },
 };
 
 const fmtKWD = formatKWDAmount;
@@ -671,9 +671,9 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
 
         {/* Bulk match CTA row — visible when enough unmatched items remain */}
         {!readOnly && rec.status === "in-progress" && (rec.unmatchedBankItems.length + rec.unmatchedLedgerItems.length) >= 3 && (
-          <div style={{ marginBottom: 14, padding: "14px 18px", background: "color-mix(in srgb, var(--role-owner) 6%, transparent)", border: "1px solid color-mix(in srgb, var(--role-owner) 20%, transparent)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ marginBottom: 14, padding: "14px 18px", background: "color-mix(in srgb, var(--tier-ai) 6%, transparent)", border: "1px solid color-mix(in srgb, var(--tier-ai) 20%, transparent)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 6 }}><Sparkles size={14} color="var(--role-owner)" /> {t("bulk_rule.cta_title")}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 6 }}><Sparkles size={14} color="var(--tier-ai)" /> {t("bulk_rule.cta_title")}</div>
               <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>{t("bulk_rule.cta_subtitle")}</div>
             </div>
             <ActionButton variant="secondary" size="sm" icon={Sparkles} label={t("bulk_rule.title")} onClick={() => setBulkRuleOpen(true)} />

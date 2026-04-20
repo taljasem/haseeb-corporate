@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronRight, MessageCircle, ArrowUpRight, CheckCircle2, Clock, XCircle, AlertCircle, X } from "lucide-react";
+import useEscapeKey from "../../hooks/useEscapeKey";
 // Track B Dispatch 6 wire 6 (2026-04-20) — imports swapped from
 // ../../engine/mockEngine to ../../engine so the screen rides the router.
 // MOCK mode preserves legacy behaviour; LIVE mode falls back to mockEngine
@@ -87,6 +88,24 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
   const [commentDraft, setCommentDraft] = useState("");
   const [approvalState, setApprovalState] = useState(null);
   const [approvalOpen, setApprovalOpen] = useState(false);
+  // HASEEB-153 — Owner approval-flow modals. Replaces window.prompt
+  // anti-pattern for Request Changes and provides a proper confirmation
+  // surface for Approve + Reject. Backend wiring:
+  //   approve  → mockEngine.approveBudget (pre-existing /api/budgets/:id/approve)
+  //   request  → requestBudgetChangesLive → POST /api/budgets/:id/request-changes
+  //   reject   → requestBudgetChangesLive with "REJECTED: " note prefix
+  //             (no dedicated backend reject endpoint in Dispatch 6; the
+  //              BudgetStatus enum has no REJECTED/CANCELLED state. This
+  //              is the pragmatic v1 mapping — flagged; true terminal
+  //              rejection requires a follow-up backend dispatch.)
+  const [requestChangesOpen, setRequestChangesOpen] = useState(false);
+  const [requestChangesNotes, setRequestChangesNotes] = useState("");
+  const [requestChangesSubmitting, setRequestChangesSubmitting] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectNotes, setRejectNotes] = useState("");
+  const [rejectSubmitting, setRejectSubmitting] = useState(false);
+  const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
+  const [approveSubmitting, setApproveSubmitting] = useState(false);
   const readOnly = viewingYear !== null;
   const activeBudget = readOnly ? historicalBudget : budget;
   const showToast = (msg) => {
@@ -140,6 +159,70 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
     await deleteBudgetLineComment(commentLineId, commentId);
     const c = await getBudgetLineComments(commentLineId);
     setComments(c || []);
+  };
+
+  // HASEEB-153 — Owner approval-flow handlers.
+  const handleApproveBudget = async () => {
+    if (!budget?.id) return;
+    setApproveSubmitting(true);
+    try {
+      await approveBudget(budget.id, "owner");
+      setApproveConfirmOpen(false);
+      refresh();
+      showToast(t("toast.approve_budget_success"));
+    } catch (err) {
+      showToast(err?.message || t("toast.approve_budget_failed"));
+    } finally {
+      setApproveSubmitting(false);
+    }
+  };
+
+  const handleRequestChangesSubmit = async () => {
+    const notes = (requestChangesNotes || "").trim();
+    if (!notes) {
+      showToast(t("request_changes_modal.error_notes_required"));
+      return;
+    }
+    if (!budget?.id) return;
+    setRequestChangesSubmitting(true);
+    try {
+      await requestBudgetChangesLive(budget.id, { notes });
+      setRequestChangesOpen(false);
+      setRequestChangesNotes("");
+      refresh();
+      showToast(t("toast.request_changes_success"));
+    } catch (err) {
+      showToast(err?.message || t("toast.request_changes_failed"));
+    } finally {
+      setRequestChangesSubmitting(false);
+    }
+  };
+
+  const handleRejectSubmit = async () => {
+    // STOP-AND-FLAG — Dispatch 6 has no dedicated reject endpoint and the
+    // BudgetStatus enum has no REJECTED/CANCELLED terminal state. Per the
+    // HASEEB-153 dispatch, wire Reject as Request-Changes with a
+    // "REJECTED: " prefix so the semantic reaches the CFO even though the
+    // backend state is CHANGES_REQUESTED. True terminal rejection needs
+    // a backend addition (HASEEB-173 follow-up).
+    const notes = (rejectNotes || "").trim();
+    if (!notes) {
+      showToast(t("reject_modal.error_notes_required"));
+      return;
+    }
+    if (!budget?.id) return;
+    setRejectSubmitting(true);
+    try {
+      await requestBudgetChangesLive(budget.id, { notes: `REJECTED: ${notes}` });
+      setRejectOpen(false);
+      setRejectNotes("");
+      refresh();
+      showToast(t("toast.reject_budget_success"));
+    } catch (err) {
+      showToast(err?.message || t("toast.reject_budget_failed"));
+    } finally {
+      setRejectSubmitting(false);
+    }
   };
 
   // Approval state handler — hits live Dispatch 6 endpoint
@@ -363,6 +446,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
             {role === "Owner" && budget?.status === "in-review" && (
               <>
                 <button
+                  onClick={() => setApproveConfirmOpen(true)}
                   style={{
                     background: "var(--accent-primary)",
                     color: "#fff",
@@ -378,6 +462,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                   {t("actions.approve_budget")}
                 </button>
                 <button
+                  onClick={() => { setRequestChangesNotes(""); setRequestChangesOpen(true); }}
                   style={{
                     background: "transparent",
                     color: "var(--semantic-warning)",
@@ -392,6 +477,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                   {t("actions.request_changes")}
                 </button>
                 <button
+                  onClick={() => { setRejectNotes(""); setRejectOpen(true); }}
                   style={{
                     background: "transparent",
                     color: "var(--semantic-danger)",
@@ -408,7 +494,15 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
               </>
             )}
             {role === "Owner" && budget?.status === "active" && (
+              // HASEEB-153 STOP-AND-FLAG: no backend endpoint to transition
+              // APPROVED → LOCKED in Dispatch 6. The BudgetStatus enum has
+              // LOCKED but no POST /:id/lock route and PATCH /:id does not
+              // accept status updates. Wiring a client-only state-flip
+              // would break the wall. Surface a clear toast so the Owner
+              // knows the affordance is pending backend work (HASEEB-173
+              // follow-up dispatch).
               <button
+                onClick={() => showToast(t("not_implemented.lock_fy"))}
                 style={{
                   background: "transparent",
                   color: "var(--text-secondary)",
@@ -440,7 +534,24 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
               </button>
             )}
             {role === "CFO" && !readOnly && (
-              <ActionButton variant="primary" label={t("actions.edit_budget")} onClick={() => {}} />
+              // HASEEB-153 STOP-AND-FLAG: no backend endpoint to transition
+              // CHANGES_REQUESTED → DRAFT in Dispatch 6 (or any clean path
+              // for CFO to re-enter edit mode from a non-DRAFT state).
+              // When budget is already DRAFT, the screen's per-line edit
+              // affordances (DepartmentRow) are already active and this
+              // top-level button is a no-op. When in CHANGES_REQUESTED,
+              // a status flip requires backend work (HASEEB-173 follow-up).
+              <ActionButton
+                variant="primary"
+                label={t("actions.edit_budget")}
+                onClick={() => {
+                  if (budget?.status === "draft") {
+                    // Already editable — scroll to departments table.
+                    return;
+                  }
+                  showToast(t("not_implemented.edit_budget"));
+                }}
+              />
             )}
             {/* Approval state pill */}
             {budget && !readOnly && (
@@ -677,6 +788,31 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
         }}
       />
 
+      {/* HASEEB-153 — Owner approval-flow modals. */}
+      <ApproveBudgetConfirmModal
+        open={approveConfirmOpen}
+        onClose={() => { if (!approveSubmitting) setApproveConfirmOpen(false); }}
+        onConfirm={handleApproveBudget}
+        periodLabel={budget?.period?.label || ""}
+        submitting={approveSubmitting}
+      />
+      <RequestBudgetChangesModal
+        open={requestChangesOpen}
+        onClose={() => { if (!requestChangesSubmitting) { setRequestChangesOpen(false); setRequestChangesNotes(""); } }}
+        notes={requestChangesNotes}
+        onNotesChange={setRequestChangesNotes}
+        onConfirm={handleRequestChangesSubmit}
+        submitting={requestChangesSubmitting}
+      />
+      <RejectBudgetModal
+        open={rejectOpen}
+        onClose={() => { if (!rejectSubmitting) { setRejectOpen(false); setRejectNotes(""); } }}
+        notes={rejectNotes}
+        onNotesChange={setRejectNotes}
+        onConfirm={handleRejectSubmit}
+        submitting={rejectSubmitting}
+      />
+
       {/* Approval workflow slide-over */}
       {approvalOpen && approvalState && (
         <>
@@ -787,5 +923,132 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
         </div>
       )}
     </div>
+  );
+}
+
+// HASEEB-153 — Owner approval modal components. Pattern mirrors the
+// LockReconciliationModal in ReconciliationScreen.jsx (Escape-to-close,
+// backdrop click, OK/Cancel footer, proper textarea with maxLength).
+// All copy is i18n; EN + AR parity preserved.
+
+function ApproveBudgetConfirmModal({ open, onClose, onConfirm, periodLabel, submitting }) {
+  const { t } = useTranslation("budget");
+  useEscapeKey(onClose, open);
+  if (!open) return null;
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 460, maxWidth: "calc(100vw - 32px)", background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <CheckCircle2 size={16} color="var(--accent-primary)" />
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)" }}>{t("approve_confirm.title")}</div>
+          </div>
+          <button type="button" onClick={onClose} aria-label={t("request_changes_modal.close")} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}><X size={18} /></button>
+        </div>
+        <div style={{ padding: "18px 22px", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+          {t("approve_confirm.body_prefix")}
+          <strong style={{ color: "var(--text-primary)" }}>{periodLabel}</strong>
+          {t("approve_confirm.body_suffix")}
+        </div>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
+          <button type="button" onClick={onClose} disabled={submitting} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "9px 16px", borderRadius: 6, cursor: submitting ? "not-allowed" : "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("request_changes_modal.cancel")}</button>
+          <button type="button" onClick={onConfirm} disabled={submitting} style={{ background: submitting ? "var(--border-subtle)" : "var(--accent-primary)", color: submitting ? "var(--text-tertiary)" : "#fff", border: "none", padding: "9px 18px", borderRadius: 6, cursor: submitting ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>
+            {submitting ? "…" : t("actions.approve_budget")}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function RequestBudgetChangesModal({ open, onClose, notes, onNotesChange, onConfirm, submitting }) {
+  const { t } = useTranslation("budget");
+  useEscapeKey(onClose, open);
+  if (!open) return null;
+  const trimmed = (notes || "").trim();
+  const canSubmit = trimmed.length > 0 && trimmed.length <= 1000 && !submitting;
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 520, maxWidth: "calc(100vw - 32px)", background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>{t("request_changes_modal.label")}</div>
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)", marginTop: 4 }}>{t("request_changes_modal.title")}</div>
+          </div>
+          <button type="button" onClick={onClose} aria-label={t("request_changes_modal.close")} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}><X size={18} /></button>
+        </div>
+        <div style={{ padding: "18px 22px" }}>
+          <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
+            {t("request_changes_modal.body")}
+          </div>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 5 }}>{t("request_changes_modal.notes_label")}</div>
+            <textarea
+              value={notes}
+              onChange={(e) => onNotesChange(e.target.value)}
+              maxLength={1000}
+              rows={5}
+              placeholder={t("request_changes_modal.notes_placeholder")}
+              style={{ width: "100%", boxSizing: "border-box", background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 6, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, fontFamily: "inherit", outline: "none", resize: "vertical" }}
+            />
+            <div style={{ marginTop: 4, fontSize: 10, color: "var(--text-tertiary)", textAlign: "end" }}>
+              {t("request_changes_modal.notes_counter", { count: (notes || "").length })}
+            </div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
+          <button type="button" onClick={onClose} disabled={submitting} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "9px 16px", borderRadius: 6, cursor: submitting ? "not-allowed" : "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("request_changes_modal.cancel")}</button>
+          <button type="button" onClick={onConfirm} disabled={!canSubmit} style={{ background: canSubmit ? "var(--semantic-warning)" : "var(--border-subtle)", color: canSubmit ? "#fff" : "var(--text-tertiary)", border: "none", padding: "9px 18px", borderRadius: 6, cursor: canSubmit ? "pointer" : "not-allowed", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>
+            {submitting ? t("request_changes_modal.submitting") : t("request_changes_modal.submit")}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function RejectBudgetModal({ open, onClose, notes, onNotesChange, onConfirm, submitting }) {
+  const { t } = useTranslation("budget");
+  useEscapeKey(onClose, open);
+  if (!open) return null;
+  const trimmed = (notes || "").trim();
+  const canSubmit = trimmed.length > 0 && trimmed.length <= 1000 && !submitting;
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 520, maxWidth: "calc(100vw - 32px)", background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--semantic-danger)" }}>{t("reject_modal.label")}</div>
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)", marginTop: 4 }}>{t("reject_modal.title")}</div>
+          </div>
+          <button type="button" onClick={onClose} aria-label={t("request_changes_modal.close")} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}><X size={18} /></button>
+        </div>
+        <div style={{ padding: "18px 22px" }}>
+          <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
+            {t("reject_modal.body")}
+          </div>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 5 }}>{t("reject_modal.notes_label")}</div>
+            <textarea
+              value={notes}
+              onChange={(e) => onNotesChange(e.target.value)}
+              maxLength={1000}
+              rows={5}
+              placeholder={t("reject_modal.notes_placeholder")}
+              style={{ width: "100%", boxSizing: "border-box", background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 6, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, fontFamily: "inherit", outline: "none", resize: "vertical" }}
+            />
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
+          <button type="button" onClick={onClose} disabled={submitting} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "9px 16px", borderRadius: 6, cursor: submitting ? "not-allowed" : "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("reject_modal.cancel")}</button>
+          <button type="button" onClick={onConfirm} disabled={!canSubmit} style={{ background: canSubmit ? "var(--semantic-danger)" : "var(--border-subtle)", color: canSubmit ? "#fff" : "var(--text-tertiary)", border: "none", padding: "9px 18px", borderRadius: 6, cursor: canSubmit ? "pointer" : "not-allowed", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>
+            {submitting ? t("reject_modal.submitting") : t("reject_modal.submit")}
+          </button>
+        </div>
+      </div>
+    </>
   );
 }

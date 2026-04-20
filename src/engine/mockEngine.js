@@ -3318,6 +3318,46 @@ export async function closeBudget(budgetId) {
   return _brandObj({ ...b });
 }
 
+// MOCK-mode adapters for the three new OWNER-only status transitions
+// (2026-04-21). Mock-side status vocabulary is kebab-lower ("active",
+// "in-review", etc.); live backend is UPPER_SNAKE ("APPROVED",
+// "CHANGES_REQUESTED", "LOCKED", "REJECTED"). Per Dispatch 6 pattern the
+// live ↔ mock vocabulary divergence is tolerated and the adapters accept
+// the set of mock states that are semantically equivalent to the backend's
+// allowed source states.
+//   lock           APPROVED | CHANGES_REQUESTED → LOCKED
+//     mock: "active" | "in-review" → "locked"
+//   reopenToDraft  LOCKED   | REJECTED           → DRAFT
+//     mock: "locked" | "rejected"                → "draft"
+//   reject         PENDING_APPROVAL | CHANGES_REQUESTED → REJECTED
+//     mock: "pending-approval" | "in-review"     → "rejected"
+export async function lockBudget(budgetId, reason) {
+  await delay();
+  const b = _BUDGETS_DB[budgetId];
+  if (!b || (b.status !== "active" && b.status !== "in-review")) return null;
+  _addHistory(b, b.status, "locked", "owner", reason || "Locked");
+  b.status = "locked";
+  return _brandObj({ ...b });
+}
+
+export async function reopenBudgetToDraft(budgetId, reason) {
+  await delay();
+  const b = _BUDGETS_DB[budgetId];
+  if (!b || (b.status !== "locked" && b.status !== "rejected")) return null;
+  _addHistory(b, b.status, "draft", "owner", reason || "Reopened to draft");
+  b.status = "draft";
+  return _brandObj({ ...b });
+}
+
+export async function rejectBudget(budgetId, reason) {
+  await delay();
+  const b = _BUDGETS_DB[budgetId];
+  if (!b || (b.status !== "pending-approval" && b.status !== "in-review")) return null;
+  _addHistory(b, b.status, "rejected", "owner", reason || "Rejected");
+  b.status = "rejected";
+  return _brandObj({ ...b });
+}
+
 // Line item edit for juniors — also triggers status flip
 export async function updateBudgetLineItemValue(budgetId, departmentId, lineItemId, newAnnual) {
   await delay();

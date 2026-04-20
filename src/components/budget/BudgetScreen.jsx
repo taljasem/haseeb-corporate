@@ -37,6 +37,14 @@ import {
   submitBudgetForApprovalLive,
   requestBudgetChangesLive,
   getBudgetApprovalStateLive,
+  // OWNER-only status transitions (2026-04-21) that close the previous
+  // Reject-prefix / Lock-FY / Edit-Budget workarounds.
+  //   lockBudgetLive           APPROVED | CHANGES_REQUESTED → LOCKED
+  //   reopenBudgetToDraftLive  LOCKED   | REJECTED          → DRAFT
+  //   rejectBudgetLive         PENDING_APPROVAL | CHANGES_REQUESTED → REJECTED
+  lockBudgetLive,
+  reopenBudgetToDraftLive,
+  rejectBudgetLive,
 } from "../../engine";
 import AminahNarrationCard from "../financial/AminahNarrationCard";
 import ActionButton from "../ds/ActionButton";
@@ -118,11 +126,17 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
   // surface for Approve + Reject. Backend wiring:
   //   approve  → mockEngine.approveBudget (pre-existing /api/budgets/:id/approve)
   //   request  → requestBudgetChangesLive → POST /api/budgets/:id/request-changes
-  //   reject   → requestBudgetChangesLive with "REJECTED: " note prefix
-  //             (no dedicated backend reject endpoint in Dispatch 6; the
-  //              BudgetStatus enum has no REJECTED/CANCELLED state. This
-  //              is the pragmatic v1 mapping — flagged; true terminal
-  //              rejection requires a follow-up backend dispatch.)
+  //   reject   → rejectBudgetLive         → POST /api/budgets/:id/reject
+  //             (REJECTED is a proper terminal state on the backend —
+  //              the REJECTED: notes-prefix workaround is gone.)
+  //
+  // 2026-04-21 added two further OWNER-only modals:
+  //   lock             → lockBudgetLive          → POST /api/budgets/:id/lock
+  //   reopen to draft  → reopenBudgetToDraftLive → POST /api/budgets/:id/reopen-to-draft
+  // The CFO's previous "Edit Budget" affordance on non-DRAFT budgets has
+  // been removed because the reopen endpoint is OWNER-only. CFOs must
+  // now ask the Owner to reopen; DRAFT-state editing remains inline on
+  // the department rows and does not need a top-level button.
   const [requestChangesOpen, setRequestChangesOpen] = useState(false);
   const [requestChangesNotes, setRequestChangesNotes] = useState("");
   const [requestChangesSubmitting, setRequestChangesSubmitting] = useState(false);
@@ -131,6 +145,13 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
   const [rejectSubmitting, setRejectSubmitting] = useState(false);
   const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
   const [approveSubmitting, setApproveSubmitting] = useState(false);
+  // Lock + Reopen-to-Draft modal state (2026-04-21).
+  const [lockOpen, setLockOpen] = useState(false);
+  const [lockReason, setLockReason] = useState("");
+  const [lockSubmitting, setLockSubmitting] = useState(false);
+  const [reopenOpen, setReopenOpen] = useState(false);
+  const [reopenReason, setReopenReason] = useState("");
+  const [reopenSubmitting, setReopenSubmitting] = useState(false);
   const readOnly = viewingYear !== null;
   const activeBudget = readOnly ? historicalBudget : budget;
   const showToast = (msg) => {
@@ -224,21 +245,19 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
   };
 
   const handleRejectSubmit = async () => {
-    // STOP-AND-FLAG — Dispatch 6 has no dedicated reject endpoint and the
-    // BudgetStatus enum has no REJECTED/CANCELLED terminal state. Per the
-    // HASEEB-153 dispatch, wire Reject as Request-Changes with a
-    // "REJECTED: " prefix so the semantic reaches the CFO even though the
-    // backend state is CHANGES_REQUESTED. True terminal rejection needs
-    // a backend addition (HASEEB-173 follow-up).
-    const notes = (rejectNotes || "").trim();
-    if (!notes) {
-      showToast(t("reject_modal.error_notes_required"));
+    // Wired to the dedicated reject endpoint (2026-04-21). Backend has
+    // a REJECTED terminal state and a POST /:id/reject route (OWNER-only).
+    // The previous "REJECTED: " notes-prefix workaround on
+    // request-changes is gone.
+    const reason = (rejectNotes || "").trim();
+    if (!reason) {
+      showToast(t("reject_modal.error_reason_required"));
       return;
     }
     if (!budget?.id) return;
     setRejectSubmitting(true);
     try {
-      await requestBudgetChangesLive(budget.id, { notes: `REJECTED: ${notes}` });
+      await rejectBudgetLive(budget.id, { reason });
       setRejectOpen(false);
       setRejectNotes("");
       refresh();
@@ -247,6 +266,55 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
       showToast(err?.message || t("toast.reject_budget_failed"));
     } finally {
       setRejectSubmitting(false);
+    }
+  };
+
+  // Lock FY handler (2026-04-21). OWNER-only; backend transitions
+  // APPROVED | CHANGES_REQUESTED → LOCKED.
+  const handleLockSubmit = async () => {
+    const reason = (lockReason || "").trim();
+    if (!reason) {
+      showToast(t("lock_modal.error_reason_required"));
+      return;
+    }
+    if (!budget?.id) return;
+    setLockSubmitting(true);
+    try {
+      await lockBudgetLive(budget.id, { reason });
+      setLockOpen(false);
+      setLockReason("");
+      refresh();
+      showToast(t("toast.lock_budget_success"));
+    } catch (err) {
+      showToast(err?.message || t("toast.lock_budget_failed"));
+    } finally {
+      setLockSubmitting(false);
+    }
+  };
+
+  // Reopen-to-Draft handler (2026-04-21). OWNER-only; backend transitions
+  // LOCKED | REJECTED → DRAFT. Replaces the previous CFO-facing "Edit
+  // Budget" affordance which is no longer present because the reopen
+  // endpoint is gated to the Owner. CFOs now ask the Owner to reopen
+  // when a non-DRAFT budget needs edits.
+  const handleReopenSubmit = async () => {
+    const reason = (reopenReason || "").trim();
+    if (!reason) {
+      showToast(t("reopen_to_draft_modal.error_reason_required"));
+      return;
+    }
+    if (!budget?.id) return;
+    setReopenSubmitting(true);
+    try {
+      await reopenBudgetToDraftLive(budget.id, { reason });
+      setReopenOpen(false);
+      setReopenReason("");
+      refresh();
+      showToast(t("toast.reopen_to_draft_success"));
+    } catch (err) {
+      showToast(err?.message || t("toast.reopen_to_draft_failed"));
+    } finally {
+      setReopenSubmitting(false);
     }
   };
 
@@ -530,16 +598,14 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                 </button>
               </>
             )}
-            {role === "Owner" && budget?.status === "active" && (
-              // HASEEB-153 STOP-AND-FLAG: no backend endpoint to transition
-              // APPROVED → LOCKED in Dispatch 6. The BudgetStatus enum has
-              // LOCKED but no POST /:id/lock route and PATCH /:id does not
-              // accept status updates. Wiring a client-only state-flip
-              // would break the wall. Surface a clear toast so the Owner
-              // knows the affordance is pending backend work (HASEEB-173
-              // follow-up dispatch).
+            {role === "Owner" && (budget?.status === "active" || budget?.status === "in-review") && (
+              // Wired to POST /api/budgets/:id/lock (2026-04-21). OWNER-only;
+              // transitions APPROVED | CHANGES_REQUESTED → LOCKED (mock
+              // equivalents: "active" | "in-review"). Opens a
+              // LockBudgetModal that collects a required reason (1..1000
+              // chars). Replaces the previous placeholder toast.
               <button
-                onClick={() => showToast(t("not_implemented.lock_fy"))}
+                onClick={() => { setLockReason(""); setLockOpen(true); }}
                 style={{
                   background: "transparent",
                   color: "var(--text-secondary)",
@@ -552,6 +618,29 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                 }}
               >
                 {t("actions.lock_fy")}
+              </button>
+            )}
+            {role === "Owner" && (budget?.status === "locked" || budget?.status === "rejected") && (
+              // Wired to POST /api/budgets/:id/reopen-to-draft (2026-04-21).
+              // OWNER-only; transitions LOCKED | REJECTED → DRAFT. Replaces
+              // the previous CFO-facing "Edit Budget" affordance. The P0
+              // dispatch envisioned Edit Budget as a CFO action but backend
+              // gated reopen to OWNER, so the UX moved: CFO asks Owner to
+              // reopen when a non-DRAFT budget needs edits.
+              <button
+                onClick={() => { setReopenReason(""); setReopenOpen(true); }}
+                style={{
+                  background: "transparent",
+                  color: "var(--text-secondary)",
+                  border: "1px solid var(--border-strong)",
+                  padding: "8px 14px",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontFamily: "inherit",
+                }}
+              >
+                {t("actions.reopen_to_draft")}
               </button>
             )}
             {role !== "Junior" && (
@@ -570,26 +659,17 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                 {t("actions.export_pdf")}
               </button>
             )}
-            {role === "CFO" && !readOnly && (
-              // HASEEB-153 STOP-AND-FLAG: no backend endpoint to transition
-              // CHANGES_REQUESTED → DRAFT in Dispatch 6 (or any clean path
-              // for CFO to re-enter edit mode from a non-DRAFT state).
-              // When budget is already DRAFT, the screen's per-line edit
-              // affordances (DepartmentRow) are already active and this
-              // top-level button is a no-op. When in CHANGES_REQUESTED,
-              // a status flip requires backend work (HASEEB-173 follow-up).
-              <ActionButton
-                variant="primary"
-                label={t("actions.edit_budget")}
-                onClick={() => {
-                  if (budget?.status === "draft") {
-                    // Already editable — scroll to departments table.
-                    return;
-                  }
-                  showToast(t("not_implemented.edit_budget"));
-                }}
-              />
-            )}
+            {/*
+              Removed CFO "Edit Budget" button (2026-04-21). Rationale:
+              backend reopen-to-draft endpoint is OWNER-only, so the CFO
+              cannot transition a non-DRAFT budget back to editable state
+              unilaterally. When budget.status === DRAFT, the per-line
+              edit affordances on DepartmentRow are already live; when
+              non-DRAFT, the CFO must now request the Owner to reopen
+              (Owner surfaces the "Reopen to draft" button above when
+              status is LOCKED | REJECTED). This eliminates the previous
+              placeholder toast dead-end on non-DRAFT state.
+            */}
             {/* Approval state pill */}
             {budget && !readOnly && (
               <button onClick={openApprovalState} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", padding: "4px 10px", borderRadius: 12, background: budget.status === "approved" || budget.status === "active" ? "var(--accent-primary-subtle)" : budget.status === "rejected" ? "var(--semantic-danger-subtle)" : "var(--semantic-warning-subtle)", border: `1px solid ${budget.status === "approved" || budget.status === "active" ? "var(--accent-primary-border)" : budget.status === "rejected" ? "var(--semantic-danger-border)" : "var(--semantic-warning)"}`, color: budget.status === "approved" || budget.status === "active" ? "var(--accent-primary)" : budget.status === "rejected" ? "var(--semantic-danger)" : "var(--semantic-warning)", cursor: "pointer", fontFamily: "inherit" }}>
@@ -849,6 +929,23 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
         onConfirm={handleRejectSubmit}
         submitting={rejectSubmitting}
       />
+      {/* Lock + Reopen-to-Draft modals (2026-04-21). */}
+      <LockBudgetModal
+        open={lockOpen}
+        onClose={() => { if (!lockSubmitting) { setLockOpen(false); setLockReason(""); } }}
+        reason={lockReason}
+        onReasonChange={setLockReason}
+        onConfirm={handleLockSubmit}
+        submitting={lockSubmitting}
+      />
+      <ReopenToDraftBudgetModal
+        open={reopenOpen}
+        onClose={() => { if (!reopenSubmitting) { setReopenOpen(false); setReopenReason(""); } }}
+        reason={reopenReason}
+        onReasonChange={setReopenReason}
+        onConfirm={handleReopenSubmit}
+        submitting={reopenSubmitting}
+      />
 
       {/* Approval workflow slide-over */}
       {approvalOpen && approvalState && (
@@ -1071,20 +1168,20 @@ function RejectBudgetModal({ open, onClose, notes, onNotesChange, onConfirm, sub
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--semantic-danger)" }}>{t("reject_modal.label")}</div>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)", marginTop: 4 }}>{t("reject_modal.title")}</div>
           </div>
-          <button type="button" onClick={onClose} aria-label={t("request_changes_modal.close")} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}><X size={18} /></button>
+          <button type="button" onClick={onClose} aria-label={t("reject_modal.close")} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}><X size={18} /></button>
         </div>
         <div style={{ padding: "18px 22px" }}>
           <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
             {t("reject_modal.body")}
           </div>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 5 }}>{t("reject_modal.notes_label")}</div>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 5 }}>{t("reject_modal.reason_label")}</div>
             <textarea
               value={notes}
               onChange={(e) => onNotesChange(e.target.value)}
               maxLength={1000}
               rows={5}
-              placeholder={t("reject_modal.notes_placeholder")}
+              placeholder={t("reject_modal.reason_placeholder")}
               style={{ width: "100%", boxSizing: "border-box", background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 6, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, fontFamily: "inherit", outline: "none", resize: "vertical" }}
             />
           </div>
@@ -1093,6 +1190,104 @@ function RejectBudgetModal({ open, onClose, notes, onNotesChange, onConfirm, sub
           <button type="button" onClick={onClose} disabled={submitting} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "9px 16px", borderRadius: 6, cursor: submitting ? "not-allowed" : "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("reject_modal.cancel")}</button>
           <button type="button" onClick={onConfirm} disabled={!canSubmit} style={{ background: canSubmit ? "var(--semantic-danger)" : "var(--border-subtle)", color: canSubmit ? "#fff" : "var(--text-tertiary)", border: "none", padding: "9px 18px", borderRadius: 6, cursor: canSubmit ? "pointer" : "not-allowed", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>
             {submitting ? t("reject_modal.submitting") : t("reject_modal.submit")}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// Lock modal (2026-04-21). Pattern mirrors RejectBudgetModal
+// (reason-required textarea, 1..1000 char validation, Escape-to-close,
+// backdrop click, submitting state). OWNER-only; transitions APPROVED |
+// CHANGES_REQUESTED → LOCKED on the backend. Copy uses the neutral-slate
+// palette (not danger) because locking is a freeze, not an alert.
+function LockBudgetModal({ open, onClose, reason, onReasonChange, onConfirm, submitting }) {
+  const { t } = useTranslation("budget");
+  useEscapeKey(onClose, open);
+  if (!open) return null;
+  const trimmed = (reason || "").trim();
+  const canSubmit = trimmed.length > 0 && trimmed.length <= 1000 && !submitting;
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "var(--overlay-backdrop)", backdropFilter: "blur(4px)", zIndex: 300 }} />
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 520, maxWidth: "calc(100vw - 32px)", background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "var(--shadow-xl)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>{t("lock_modal.label")}</div>
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)", marginTop: 4 }}>{t("lock_modal.title")}</div>
+          </div>
+          <button type="button" onClick={onClose} aria-label={t("lock_modal.close")} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}><X size={18} /></button>
+        </div>
+        <div style={{ padding: "18px 22px" }}>
+          <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
+            {t("lock_modal.body")}
+          </div>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 5 }}>{t("lock_modal.reason_label")}</div>
+            <textarea
+              value={reason}
+              onChange={(e) => onReasonChange(e.target.value)}
+              maxLength={1000}
+              rows={5}
+              placeholder={t("lock_modal.reason_placeholder")}
+              style={{ width: "100%", boxSizing: "border-box", background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 6, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, fontFamily: "inherit", outline: "none", resize: "vertical" }}
+            />
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
+          <button type="button" onClick={onClose} disabled={submitting} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "9px 16px", borderRadius: 6, cursor: submitting ? "not-allowed" : "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("lock_modal.cancel")}</button>
+          <button type="button" onClick={onConfirm} disabled={!canSubmit} style={{ background: canSubmit ? "var(--text-primary)" : "var(--border-subtle)", color: canSubmit ? "var(--bg-surface)" : "var(--text-tertiary)", border: "none", padding: "9px 18px", borderRadius: 6, cursor: canSubmit ? "pointer" : "not-allowed", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>
+            {submitting ? t("lock_modal.submitting") : t("lock_modal.submit")}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// Reopen-to-Draft modal (2026-04-21). Same pattern as Lock and Reject
+// modals. OWNER-only; transitions LOCKED | REJECTED → DRAFT. Uses the
+// accent-primary (teal) palette on submit because this is the
+// unblocking action — moving a frozen/rejected budget back into an
+// editable state.
+function ReopenToDraftBudgetModal({ open, onClose, reason, onReasonChange, onConfirm, submitting }) {
+  const { t } = useTranslation("budget");
+  useEscapeKey(onClose, open);
+  if (!open) return null;
+  const trimmed = (reason || "").trim();
+  const canSubmit = trimmed.length > 0 && trimmed.length <= 1000 && !submitting;
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "var(--overlay-backdrop)", backdropFilter: "blur(4px)", zIndex: 300 }} />
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 520, maxWidth: "calc(100vw - 32px)", background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "var(--shadow-xl)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--accent-primary)" }}>{t("reopen_to_draft_modal.label")}</div>
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)", marginTop: 4 }}>{t("reopen_to_draft_modal.title")}</div>
+          </div>
+          <button type="button" onClick={onClose} aria-label={t("reopen_to_draft_modal.close")} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}><X size={18} /></button>
+        </div>
+        <div style={{ padding: "18px 22px" }}>
+          <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
+            {t("reopen_to_draft_modal.body")}
+          </div>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 5 }}>{t("reopen_to_draft_modal.reason_label")}</div>
+            <textarea
+              value={reason}
+              onChange={(e) => onReasonChange(e.target.value)}
+              maxLength={1000}
+              rows={5}
+              placeholder={t("reopen_to_draft_modal.reason_placeholder")}
+              style={{ width: "100%", boxSizing: "border-box", background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 6, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, fontFamily: "inherit", outline: "none", resize: "vertical" }}
+            />
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
+          <button type="button" onClick={onClose} disabled={submitting} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "9px 16px", borderRadius: 6, cursor: submitting ? "not-allowed" : "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("reopen_to_draft_modal.cancel")}</button>
+          <button type="button" onClick={onConfirm} disabled={!canSubmit} style={{ background: canSubmit ? "var(--accent-primary)" : "var(--border-subtle)", color: canSubmit ? "#fff" : "var(--text-tertiary)", border: "none", padding: "9px 18px", borderRadius: 6, cursor: canSubmit ? "pointer" : "not-allowed", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>
+            {submitting ? t("reopen_to_draft_modal.submitting") : t("reopen_to_draft_modal.submit")}
           </button>
         </div>
       </div>

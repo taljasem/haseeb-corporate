@@ -68,7 +68,7 @@
     "description": "Each code from your source system must map to a Haseeb account role. Accept the suggestion, dismiss it, or pick a role manually.",
     "suggest_all": "Suggest all",
     "suggesting": "Computing suggestions…",
-    "mapped_of_total": "{{mapped}} of {{total}} codes mapped",
+    "mapped_of_total": "<l>{{mapped}}</l> of <l>{{total}}</l> codes mapped",
     "empty": "Every source code is mapped. Move on to batch categorize.",
     "row_code": "Source code",
     "row_name": "Source name",

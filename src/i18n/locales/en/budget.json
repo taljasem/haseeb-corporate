@@ -193,6 +193,39 @@
     "revision_requested": "Revision requested",
     "workflow_title": "Approval workflow",
     "next_action": "Next action: {{action}}",
-    "next_action_label": "NEXT ACTION"
+    "next_action_label": "NEXT ACTION",
+    "reviewers_heading": "REVIEWERS",
+    "history_heading": "WORKFLOW HISTORY",
+    "status_unknown": "Unknown"
+  },
+  "status": {
+    "draft": "Draft",
+    "pending_approval": "Pending approval",
+    "changes_requested": "Changes requested",
+    "approved": "Approved",
+    "active": "Active",
+    "closed": "Closed",
+    "locked": "Locked",
+    "rejected": "Rejected",
+    "delegated": "Delegated",
+    "in_review": "In review",
+    "unknown": "—"
+  },
+  "reviewer_status": {
+    "pending": "PENDING",
+    "approved": "APPROVED",
+    "needs_revision": "NEEDS REVISION",
+    "unknown": "—"
+  },
+  "history_action": {
+    "submit": "Submitted for approval",
+    "approve": "Approved",
+    "reject": "Rejected",
+    "request_changes": "Changes requested",
+    "lock": "Locked",
+    "delegate": "Delegated",
+    "unlock": "Unlocked",
+    "resubmit": "Resubmitted",
+    "unknown": "—"
   }
 }

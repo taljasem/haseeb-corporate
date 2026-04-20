@@ -34,7 +34,37 @@
   },
   "integrations": {
     "title": "Integrations",
-    "description": "Tenant-wide connections to banks, ERPs, and third-party tools."
+    "description": "Tenant-wide connections to banks, ERPs, and third-party tools.",
+    "add_integration": "Add integration",
+    "configure": "Configure",
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "never_synced": "Never synced",
+    "empty_title": "No integrations yet",
+    "empty_description": "Connect a bank, ERP, or third-party tool to get started.",
+    "status": {
+      "connected": "Connected",
+      "disconnected": "Not connected",
+      "error": "Error",
+      "unknown": "—"
+    },
+    "category": {
+      "bank": "Bank",
+      "erp": "ERP",
+      "payroll": "Payroll",
+      "payments": "Payments",
+      "reporting": "Reporting",
+      "other": "Other",
+      "unknown": "—"
+    }
+  },
+  "errors": {
+    "load_flags_failed": "Failed to load tenant flags.",
+    "save_flags_failed": "Failed to save tenant flags.",
+    "load_integrations_failed": "Failed to load integrations.",
+    "disconnect_integration_failed": "Failed to disconnect integration.",
+    "add_integration_failed": "Failed to add integration.",
+    "load_audit_log_failed": "Failed to load audit log."
   },
   "security": {
     "title": "Tenant Security",

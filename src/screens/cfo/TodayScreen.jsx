@@ -284,7 +284,11 @@ export default function TodayScreen({ setActiveScreen, onOpenTask, onCreateTask 
         )}
 
         {/* 2. CLOSE PROGRESS */}
-        <TodaySection label={close ? t("sections.close_with_period", { period: close.period.toUpperCase() }) : t("sections.month_end_close_fallback")}>
+        {/* HASEEB-167: close.period may be null on a failed sub-fetch per the
+            backend contract (today-queue composite returns nulls rather than
+            500ing the whole response). Only format the period suffix when it
+            is present; fall back to the generic heading otherwise. */}
+        <TodaySection label={close?.period ? t("sections.close_with_period", { period: close.period.toUpperCase() }) : t("sections.month_end_close_fallback")}>
           {close && (
             <>
               <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 8 }}>

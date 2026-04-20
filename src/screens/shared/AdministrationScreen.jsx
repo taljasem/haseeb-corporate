@@ -335,7 +335,7 @@ function TenantFlagsSection({ readOnly }) {
         setFlags(next);
         setDraft(next);
       })
-      .catch((err) => setError(err?.message || "Failed to load tenant flags."));
+      .catch((err) => setError(err?.message || t("errors.load_flags_failed")));
   }, []);
 
   const dirty = flags && draft && flags.hasForeignActivity !== draft.hasForeignActivity;
@@ -350,7 +350,7 @@ function TenantFlagsSection({ readOnly }) {
       setDraft(normalized);
       setToast(t("flags.saved"));
     } catch (err) {
-      setError(err?.message || "Failed to save tenant flags.");
+      setError(err?.message || t("errors.save_flags_failed"));
     } finally {
       setSaving(false);
     }
@@ -494,7 +494,7 @@ function IntegrationsAdminSection({ readOnly }) {
         // 403 is silent — backend enforces scope; we just render the
         // last known (empty) list.
         if (err?.status === 403) return;
-        setError(err?.message || "Failed to load integrations.");
+        setError(err?.message || t("errors.load_integrations_failed"));
       });
   };
   useEffect(() => {
@@ -509,7 +509,7 @@ function IntegrationsAdminSection({ readOnly }) {
       // disappears. Any other error surfaces in the error banner on
       // next reload.
       if (err?.status !== 404) {
-        setError(err?.message || "Failed to disconnect integration.");
+        setError(err?.message || t("errors.disconnect_integration_failed"));
       }
     }
     reload();
@@ -525,7 +525,7 @@ function IntegrationsAdminSection({ readOnly }) {
       // Surface server-side validation (duplicate id, unknown id, etc.)
       // via the error banner. Re-throw so the modal can keep its own
       // state.
-      setError(err?.message || "Failed to add integration.");
+      setError(err?.message || t("errors.add_integration_failed"));
       throw err;
     }
     reload();
@@ -554,7 +554,11 @@ function IntegrationsAdminSection({ readOnly }) {
       {!items ? (
         <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>…</div>
       ) : items.length === 0 ? (
-        <EmptyState icon={Plug} title="" description="" />
+        <EmptyState
+          icon={Plug}
+          title={t("integrations.empty_title")}
+          description={t("integrations.empty_description")}
+        />
       ) : (
         items.map((i) => (
           <IntegrationRow
@@ -582,7 +586,7 @@ function IntegrationsAdminSection({ readOnly }) {
               fontFamily: "inherit",
             }}
           >
-            +&nbsp;Add integration
+            +&nbsp;{t("integrations.add_integration")}
           </button>
         </div>
       )}
@@ -602,11 +606,27 @@ function IntegrationsAdminSection({ readOnly }) {
 }
 
 function IntegrationRow({ i, readOnly, onConfigure, onDisconnect }) {
+  // HASEEB-156: the row previously rendered `{i.status}` and `{i.category}`
+  // verbatim — raw backend enums leak through as untranslated strings and
+  // never adapt to Arabic. Resolved via the administration.integrations.*
+  // mappers with a defaultValue fallback so unknown enums from backend drift
+  // degrade to "—" instead of crashing or blanking.
+  const { t } = useTranslation("administration");
   const statusColor = {
     connected: "var(--accent-primary)",
     disconnected: "var(--text-tertiary)",
     error: "var(--semantic-danger)",
   }[i.status];
+  const statusLabel = i.status
+    ? t(`integrations.status.${String(i.status).toLowerCase()}`, {
+        defaultValue: t("integrations.status.unknown", { defaultValue: "—" }),
+      })
+    : t("integrations.status.unknown", { defaultValue: "—" });
+  const categoryLabel = i.category
+    ? t(`integrations.category.${String(i.category).toLowerCase()}`, {
+        defaultValue: i.category,
+      })
+    : t("integrations.category.unknown", { defaultValue: "—" });
   return (
     <div
       style={{
@@ -656,13 +676,13 @@ function IntegrationRow({ i, readOnly, onConfigure, onDisconnect }) {
                 style={{ verticalAlign: "middle", marginInlineEnd: 3 }}
               />
             )}
-            {i.status}
+            {statusLabel}
           </span>
           <span>·</span>
-          <span>{i.category}</span>
+          <span>{categoryLabel}</span>
           <span>·</span>
           <span>
-            {i.lastSync ? formatRelativeTime(i.lastSync) : "never synced"}
+            {i.lastSync ? formatRelativeTime(i.lastSync) : t("integrations.never_synced")}
           </span>
         </div>
       </div>
@@ -670,15 +690,15 @@ function IntegrationRow({ i, readOnly, onConfigure, onDisconnect }) {
         (i.status === "connected" ? (
           <>
             <button onClick={onConfigure} style={btnSecondary}>
-              Configure
+              {t("integrations.configure")}
             </button>
             <button onClick={onDisconnect} style={btnDanger}>
-              Disconnect
+              {t("integrations.disconnect")}
             </button>
           </>
         ) : (
           <button onClick={onConfigure} style={btnPrimary}>
-            Connect
+            {t("integrations.connect")}
           </button>
         ))}
     </div>
@@ -715,7 +735,7 @@ function FullAuditLogSection() {
     listAdminAuditLog({ action: "all", limit: 100 })
       .then(setItems)
       .catch((err) => {
-        setError(err?.message || "Failed to load audit log.");
+        setError(err?.message || t("errors.load_audit_log_failed"));
         setItems([]);
       });
   }, []);

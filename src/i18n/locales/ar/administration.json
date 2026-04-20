@@ -34,7 +34,37 @@
   },
   "integrations": {
     "title": "التكاملات",
-    "description": "اتصالات على مستوى المستأجر مع البنوك وأنظمة تخطيط الموارد والأدوات الخارجية."
+    "description": "اتصالات على مستوى المستأجر مع البنوك وأنظمة تخطيط الموارد والأدوات الخارجية.",
+    "add_integration": "إضافة تكامل",
+    "configure": "إعداد",
+    "connect": "ربط",
+    "disconnect": "فصل",
+    "never_synced": "لم تتم المزامنة",
+    "empty_title": "لا توجد تكاملات بعد",
+    "empty_description": "اربط بنكاً أو نظام تخطيط موارد أو أداة خارجية للبدء.",
+    "status": {
+      "connected": "متصل",
+      "disconnected": "غير متصل",
+      "error": "خطأ",
+      "unknown": "—"
+    },
+    "category": {
+      "bank": "بنك",
+      "erp": "تخطيط موارد",
+      "payroll": "رواتب",
+      "payments": "مدفوعات",
+      "reporting": "تقارير",
+      "other": "أخرى",
+      "unknown": "—"
+    }
+  },
+  "errors": {
+    "load_flags_failed": "تعذّر تحميل خصائص المستأجر.",
+    "save_flags_failed": "تعذّر حفظ خصائص المستأجر.",
+    "load_integrations_failed": "تعذّر تحميل التكاملات.",
+    "disconnect_integration_failed": "تعذّر فصل التكامل.",
+    "add_integration_failed": "تعذّر إضافة التكامل.",
+    "load_audit_log_failed": "تعذّر تحميل سجل التدقيق."
   },
   "security": {
     "title": "أمان المستأجر",

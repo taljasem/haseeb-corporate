@@ -22,7 +22,7 @@
  *     of rows still unmapped.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 import {
   Check,
   X,
@@ -226,17 +226,26 @@ export default function MigrationStep3Mapping({
             color: "var(--text-tertiary)",
           }}
         >
-          <LtrText style={{ fontFamily: "'DM Mono', monospace", color: "var(--text-primary)" }}>
-            {mappedCount}
-          </LtrText>{" "}
-          {t("step3.mapped_of_total", { mapped: "", total: "" })
-            .replace("{{mapped}}", "")
-            .replace("{{total}}", "")
-            .trim()
-            .replace(/^/, "")}{" "}
-          <LtrText style={{ fontFamily: "'DM Mono', monospace", color: "var(--text-primary)" }}>
-            {total}
-          </LtrText>
+          {/* HASEEB-161: previous approach called t() with empty interpolation
+              values, then string-replaced the raw `{{mapped}}` / `{{total}}`
+              placeholders out of the output to slot in LtrText spans
+              separately. In Arabic that left the sentence fragments without
+              their numbers (collapsed to "من أصل رموز مربوطة"). Switched to
+              <Trans> with a `components` mapping so the LtrText wrappers are
+              embedded directly into the localised template string
+              (`<l>{{mapped}}</l>` in both EN/AR resources). */}
+          <Trans
+            i18nKey="step3.mapped_of_total"
+            ns="migration"
+            values={{ mapped: mappedCount, total }}
+            components={{
+              l: (
+                <LtrText
+                  style={{ fontFamily: "'DM Mono', monospace", color: "var(--text-primary)" }}
+                />
+              ),
+            }}
+          />
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           {step3FilterCode && (

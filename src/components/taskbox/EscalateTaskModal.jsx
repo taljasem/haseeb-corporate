@@ -5,6 +5,10 @@ import useEscapeKey from "../../hooks/useEscapeKey";
 import Spinner from "../shared/Spinner";
 import { runValidators, required, minLength } from "../../utils/validation";
 import { escalateTask, bulkEscalateTasks, getRecipientsForRole } from "../../engine/mockEngine";
+// HASEEB-178 — role→escalation-target mapping lives in src/utils/role.js
+// alongside the other role helpers. Semantics preserved from the
+// previous inline: Owner → null, CFO → ["owner"], else → ["cfo", "owner"].
+import { normalizeRoleFromRecipient } from "../../utils/role";
 
 const inputStyle = {
   width: "100%",
@@ -17,15 +21,6 @@ const inputStyle = {
   fontFamily: "inherit",
   outline: "none",
 };
-
-function normalizeRoleFromRecipient(task) {
-  // Decide which roles the current assignee can escalate TO.
-  const role = task?.recipient?.role || "";
-  if (role === "Owner") return null;
-  if (role === "CFO")   return ["owner"];
-  // Junior
-  return ["cfo", "owner"];
-}
 
 export default function EscalateTaskModal({ open, task, bulkTaskIds, onClose, onEscalated }) {
   const { t } = useTranslation("taskbox");

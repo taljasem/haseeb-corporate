@@ -39,12 +39,18 @@ export default function SaveTaskTemplateModal({ open, taskDraft, onClose, onSave
     setErrors(e);
     if (Object.keys(e).length) return;
     setSaving(true);
+    // HASEEB-179 — UX default change. Previously defaulted to the seed
+    // user "sara" when no recipient was captured on the source task
+    // draft, which leaked demo-identity into saved templates. Templates
+    // are reusable, so the safe default is "unset" — when the user
+    // applies the template later, NewTaskModal prompts them to pick a
+    // recipient (existing required-field validator on that surface).
     await createTaskTemplate({
       name,
       description,
       visibility,
       type: taskDraft?.type || "request-work",
-      recipientId: taskDraft?.recipientId || "sara",
+      recipientId: taskDraft?.recipientId || null,
       priority: taskDraft?.priority || "normal",
       subject: taskDraft?.subject || "",
       body: taskDraft?.body || "",

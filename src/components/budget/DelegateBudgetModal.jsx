@@ -21,13 +21,15 @@ import {
 } from "../../engine";
 import { formatKWD } from "../../utils/format";
 
-const DEFAULT_ASSIGNMENTS = {
-  "Operations":    "noor",
-  "Sales (Ops)":   "jasem",
-  "Marketing":     "layla",
-  "Tech & Infra":  "sara",
-  "Admin":         "sara",
-};
+// HASEEB-179 — UX default change. Previously hardcoded department
+// → seed-user assignments ("noor", "jasem", "layla", "sara") which
+// pre-selected specific demo identities regardless of which team was
+// actually using the tenant. The correct default comes from tenant
+// config (not yet implemented — flagged for follow-up), so in the
+// meantime the CFO must explicitly pick an assignee per department.
+// The existing `canSend` gate (every expense dept needs a non-empty
+// assignment) already enforces this at submit time.
+const DEFAULT_ASSIGNMENTS = {};
 
 export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegated }) {
   const { t } = useTranslation("budget");
@@ -45,11 +47,16 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
     getBudgetById(budgetId).then((b) => {
       setBudget(b);
       if (b) {
+        // HASEEB-179 — leave assignments empty by default so the CFO
+        // explicitly picks each department head rather than inheriting
+        // a seed-user id. DEFAULT_ASSIGNMENTS stays as an extension
+        // point for future tenant-config-driven defaults.
         const init = {};
         b.departments
           .filter((d) => d.category === "expense")
           .forEach((d) => {
-            init[d.id] = DEFAULT_ASSIGNMENTS[d.name] || "sara";
+            const preset = DEFAULT_ASSIGNMENTS[d.name];
+            if (preset) init[d.id] = preset;
           });
         setAssignments(init);
       }
@@ -201,6 +208,8 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
                       minWidth: 160,
                     }}
                   >
+                    {/* HASEEB-179 — no preselected assignee; CFO must pick. */}
+                    <option value="">{t("delegate_modal.pick_assignee", { defaultValue: "Select assignee…" })}</option>
                     {team.map((m) => (
                       <option key={m.id} value={m.id}>
                         {m.name}

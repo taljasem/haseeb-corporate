@@ -12,17 +12,26 @@ export default function FlagVarianceModal({ open, varianceId, onClose, onFlagged
   const { t: tc } = useTranslation("common");
   useEscapeKey(onClose, open);
   const [reason, setReason] = useState("");
-  const [assignee, setAssignee] = useState("sara");
+  // HASEEB-179 — UX default change. Previously defaulted to "sara"
+  // (seed Junior id), which pre-selected a specific person whenever
+  // the flagger was someone else. Now defaults to unselected and the
+  // user must pick an assignee before the submit button enables. The
+  // two pill options are still a specific Junior ("sara" — the seed
+  // user id the mock engine understands) and the CFO role ("cfo");
+  // swapping those for a role→user resolution is scoped out (needs
+  // tenant-config per HASEEB-179 spec).
+  const [assignee, setAssignee] = useState("");
   const [errors, setErrors] = useState({});
   const [flagging, setFlagging] = useState(false);
 
-  useEffect(() => { if (open) { setReason(""); setErrors({}); setAssignee("sara"); } }, [open]);
+  useEffect(() => { if (open) { setReason(""); setErrors({}); setAssignee(""); } }, [open]);
   if (!open) return null;
 
   const handleFlag = async () => {
     const e = runValidators({ reason }, { reason: [required(), minLength(10)] });
     setErrors(e);
     if (Object.keys(e).length) return;
+    if (!assignee) return; // guard — UI disables submit when unselected
     setFlagging(true);
     const r = await flagVariance(varianceId, reason, assignee);
     emitTaskboxChange();
@@ -76,7 +85,7 @@ export default function FlagVarianceModal({ open, varianceId, onClose, onFlagged
         </div>
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
           <button onClick={onClose} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "9px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("flag_modal.cancel")}</button>
-          <button onClick={handleFlag} disabled={flagging} style={{ background: "var(--semantic-warning)", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 6, cursor: flagging ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>
+          <button onClick={handleFlag} disabled={flagging || !assignee} style={{ background: (flagging || !assignee) ? "color-mix(in srgb, var(--semantic-warning) 40%, transparent)" : "var(--semantic-warning)", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 6, cursor: (flagging || !assignee) ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>
             {flagging ? <><Spinner size={13} />&nbsp;{t("flag_modal.flagging")}</> : t("flag_modal.confirm")}
           </button>
         </div>

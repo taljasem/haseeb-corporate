@@ -19,20 +19,18 @@ import {
 } from "../../engine/mockEngine";
 import EditProfileModal from "../../components/profile/EditProfileModal";
 import FullActivitySlideOver from "../../components/profile/FullActivitySlideOver";
+// HASEEB-178 — shared role normalizer from src/utils/role.js. The
+// previous inline here had a slightly different fallback branch
+// (Junior instead of CFO for unknowns) but actual call sites pass
+// Owner / CFO / Junior string literals so the canonical util is a
+// drop-in replacement for observable behaviour.
+import { normalizeRole } from "../../utils/role";
 
 const ROLE_ACCENT = {
   Owner:  "var(--role-owner)",
   CFO:    "var(--accent-primary)",
   Junior: "var(--semantic-info)",
 };
-
-function normalizeRole(r) {
-  if (!r) return "CFO";
-  const s = String(r).toLowerCase();
-  if (s.startsWith("own")) return "Owner";
-  if (s.startsWith("cfo")) return "CFO";
-  return "Junior";
-}
 
 function getInitials(name) {
   if (!name) return "?";

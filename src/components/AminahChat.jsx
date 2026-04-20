@@ -29,6 +29,12 @@ import {
 import { createAminahSession, listRecentAminahSessions, getAminahSession, appendMessageToSession } from "../engine/mockEngine";
 import { useAuth } from "../contexts/AuthContext";
 import { formatDate } from "../utils/format";
+// HASEEB-178 — shared role normalizer from src/utils/role.js. The
+// previous inline here returned "Junior" for unknowns, which matches
+// the shared util's behaviour for jun/viewer/auditor inputs but
+// otherwise falls through to CFO. All call sites pass Owner/CFO/Junior
+// string literals so observable behaviour is unchanged.
+import { normalizeRole } from "../utils/role";
 
 // HASEEB-125: PROMPTS removed. Empty-state starter pills now derive
 // from role-aware keys (`{role}.q1..q4`) already established in the
@@ -75,14 +81,6 @@ function severityBadgeStyle(severity) {
     borderRadius: 3,
     textTransform: "uppercase",
   };
-}
-
-function normalizeRole(r) {
-  if (!r) return "CFO";
-  const s = String(r).toLowerCase();
-  if (s.startsWith("own")) return "Owner";
-  if (s.startsWith("cfo")) return "CFO";
-  return "Junior";
 }
 
 function renderBold(text) {

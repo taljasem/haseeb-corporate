@@ -41,26 +41,20 @@ import EnableTwoFactorModal from "../../components/settings/EnableTwoFactorModal
 import DisableTwoFactorModal from "../../components/settings/DisableTwoFactorModal";
 import ConfigureIntegrationModal from "../../components/settings/ConfigureIntegrationModal";
 import AddIntegrationModal from "../../components/settings/AddIntegrationModal";
+import { normalizeRole, roleLabel } from "../../utils/role";
 
+// HASEEB-155: Senior shares the CFO accent (midsize role model — Senior
+// has the same admin/setup write scope as CFO).
 const ROLE_ACCENT = {
   Owner:  "var(--role-owner)",
   CFO:    "var(--accent-primary)",
+  Senior: "var(--accent-primary)",
   Junior: "var(--semantic-info)",
 };
-
-function normalizeRole(r) {
-  if (!r) return "CFO";
-  const s = String(r).toLowerCase();
-  if (s.startsWith("own")) return "Owner";
-  if (s.startsWith("cfo")) return "CFO";
-  return "Junior";
-}
 
 export default function SettingsScreen({ role: roleRaw = "CFO" }) {
   const role = normalizeRole(roleRaw);
   const { t } = useTranslation("settings");
-  const { t: tc } = useTranslation("common");
-  const { t: ts } = useTranslation("sidebar");
   const accent = ROLE_ACCENT[role] || "var(--accent-primary)";
 
   const sections = useMemo(() => {
@@ -257,7 +251,7 @@ function Toast({ text, onClear }) {
 // ─── Sections ──────────────────────────────────────────────────────────────
 function AccountSection({ role }) {
   const { t } = useTranslation("settings");
-  const { t: ts } = useTranslation("sidebar");
+  const { t: tc } = useTranslation("common");
   const { tenant } = useTenant();
   const { logout, user: authUser, tenant: authTenant } = useAuth();
   const [profile, setProfile] = useState(null);
@@ -313,15 +307,13 @@ function AccountSection({ role }) {
     );
   }
 
-  const roleLabel = ts(`items.${role === "Owner" ? "today" : role === "CFO" ? "today" : "today"}`, { defaultValue: role });
-  const roleNameKey = role === "Owner" ? "role_owner" : role === "CFO" ? "role_cfo" : "role_junior";
   return (
     <>
       <Toast text={toast} onClear={() => setToast(null)} />
       <Card title={t("account.title")} description={t("account.description")}>
         <FieldRow label={t("account.field_name")} value={profile.name} />
         <FieldRow label={t("account.field_email")} value={<LtrText>{profile.email}</LtrText>} mono />
-        <FieldRow label={t("account.field_role")} value={t(`change_password_modal.title`, { defaultValue: role }) && role} />
+        <FieldRow label={t("account.field_role")} value={roleLabel(tc, role)} />
         <FieldRow label={t("account.field_tenant")} value={<LtrText>{tenant?.company?.name || "—"}</LtrText>} />
         <FieldRow label={t("account.field_joined")} value={formatDate(profile.joinedAt, { withYear: true })} />
         <div style={{ marginTop: 14, display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -452,12 +444,14 @@ function NotificationsSection({ role }) {
   useEffect(() => { getNotificationPreferences().then(setPrefs); }, [role]);
   if (!prefs) return <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>{t("loading")}</div>;
 
+  // HASEEB-155: Senior mirrors CFO for notification category gating
+  // (midsize role model — Senior has the same visibility scope as CFO).
   const categoryKeys = [
     "task_assignments", "approval_requests", "mentions", "daily_digest", "weekly_summary",
   ];
-  if (role === "Owner" || role === "CFO") categoryKeys.push("audit_alerts");
-  if (role === "CFO" || role === "Junior") categoryKeys.push("reconciliation_alerts");
-  if (role === "Owner" || role === "CFO") categoryKeys.push("budget_alerts");
+  if (role === "Owner" || role === "CFO" || role === "Senior") categoryKeys.push("audit_alerts");
+  if (role === "CFO" || role === "Senior" || role === "Junior") categoryKeys.push("reconciliation_alerts");
+  if (role === "Owner" || role === "CFO" || role === "Senior") categoryKeys.push("budget_alerts");
 
   const setCat = (k, v) => setPrefs({ ...prefs, categories: { ...prefs.categories, [k]: v } });
 

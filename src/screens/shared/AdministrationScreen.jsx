@@ -20,7 +20,9 @@ import {
   listAdminAuditLog,
 } from "../../engine";
 import { formatRelativeTime } from "../../utils/relativeTime";
+import { normalizeRole, canEditAdmin, canAccessAdmin } from "../../utils/role";
 
+// HASEEB-155: Senior shares the CFO accent (midsize role model).
 const ROLE_ACCENT = {
   Owner: "var(--role-owner)",
   CFO: "var(--accent-primary)",
@@ -28,28 +30,11 @@ const ROLE_ACCENT = {
   Junior: "var(--semantic-info)",
 };
 
-function normalizeRole(r) {
-  if (!r) return "CFO";
-  const s = String(r).toLowerCase();
-  if (s.startsWith("own")) return "Owner";
-  if (s.startsWith("cfo")) return "CFO";
-  if (s.startsWith("sen")) return "Senior";
-  return "Junior";
-}
-
-function canEdit(role) {
-  return role === "CFO" || role === "Senior";
-}
-
-function canAccess(role) {
-  return role === "CFO" || role === "Senior" || role === "Owner";
-}
-
 export default function AdministrationScreen({ role: roleRaw = "CFO" }) {
   const role = normalizeRole(roleRaw);
   const { t } = useTranslation("administration");
   const accent = ROLE_ACCENT[role] || "var(--accent-primary)";
-  const editable = canEdit(role);
+  const editable = canEditAdmin(role);
 
   const sections = useMemo(() => {
     const list = [
@@ -72,7 +57,7 @@ export default function AdministrationScreen({ role: roleRaw = "CFO" }) {
       ? "view_label_senior"
       : "view_label_cfo";
 
-  if (!canAccess(role)) {
+  if (!canAccessAdmin(role)) {
     return (
       <div style={{ flex: 1, overflowY: "auto", padding: "36px 28px" }}>
         <div style={{ maxWidth: 560, margin: "60px auto 0" }}>

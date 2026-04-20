@@ -31,30 +31,15 @@ import MigrationStep2Preview from "../../components/migration/MigrationStep2Prev
 import MigrationStep3Mapping from "../../components/migration/MigrationStep3Mapping";
 import MigrationStep4Batch from "../../components/migration/MigrationStep4Batch";
 import MigrationStep5Execute from "../../components/migration/MigrationStep5Execute";
+import { normalizeRole, canEditAdmin, canAccessAdmin } from "../../utils/role";
 
+// HASEEB-155: Senior shares the CFO accent (midsize role model).
 const ROLE_ACCENT = {
   Owner: "var(--role-owner)",
   CFO: "var(--accent-primary)",
   Senior: "var(--accent-primary)",
   Junior: "var(--semantic-info)",
 };
-
-function normalizeRole(r) {
-  if (!r) return "CFO";
-  const s = String(r).toLowerCase();
-  if (s.startsWith("own")) return "Owner";
-  if (s.startsWith("cfo")) return "CFO";
-  if (s.startsWith("sen")) return "Senior";
-  return "Junior";
-}
-
-function canAccess(role) {
-  return role === "CFO" || role === "Senior" || role === "Owner";
-}
-
-function canEdit(role) {
-  return role === "CFO" || role === "Senior";
-}
 
 const STEP_IDS = ["step1", "step2", "step3", "step4", "step5"];
 
@@ -191,7 +176,7 @@ export default function MigrationWizardScreen({ role: roleRaw = "CFO" }) {
   const role = normalizeRole(roleRaw);
   const { t } = useTranslation("migration");
   const accent = ROLE_ACCENT[role] || "var(--accent-primary)";
-  const readOnly = !canEdit(role);
+  const readOnly = !canEditAdmin(role);
 
   const [stepIndex, setStepIndex] = useState(0);
   const [completed, setCompleted] = useState(new Set());
@@ -211,7 +196,7 @@ export default function MigrationWizardScreen({ role: roleRaw = "CFO" }) {
     return "view_label_cfo";
   }, [role]);
 
-  if (!canAccess(role)) {
+  if (!canAccessAdmin(role)) {
     return (
       <div style={{ flex: 1, overflowY: "auto", padding: "36px 28px" }}>
         <div style={{ maxWidth: 560, margin: "60px auto 0" }}>

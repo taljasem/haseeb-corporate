@@ -326,5 +326,11 @@
     "managed_by_cfo": "Managed by CFO",
     "dev_only": "Dev only",
     "in_development": "In development"
+  },
+  "roles": {
+    "owner": "Owner",
+    "cfo": "CFO",
+    "senior": "Senior Accountant",
+    "junior": "Junior Accountant"
   }
 }

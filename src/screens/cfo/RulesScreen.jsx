@@ -261,7 +261,7 @@ export default function RulesScreen({ initialTab = "categorization" }) {
               <Search
                 size={13}
                 color="var(--text-tertiary)"
-                style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}
+                style={{ position: "absolute", insetInlineStart: 10, top: "50%", transform: "translateY(-50%)" }}
               />
               <input
                 value={query}
@@ -272,7 +272,8 @@ export default function RulesScreen({ initialTab = "categorization" }) {
                   background: "var(--bg-surface-sunken)",
                   border: "1px solid var(--border-default)",
                   borderRadius: 8,
-                  padding: "8px 12px 8px 30px",
+                  padding: "8px 12px",
+                  paddingInlineStart: 30,
                   color: "var(--text-primary)",
                   fontSize: 12,
                   fontFamily: "inherit",

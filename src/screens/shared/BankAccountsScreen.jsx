@@ -109,7 +109,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
               color: "var(--text-tertiary)",
               background: "var(--bg-surface)",
               border: "1px solid var(--border-default)",
-              borderInlineStart: "2px solid #5B6570",
+              borderInlineStart: "2px solid var(--text-tertiary)",
               borderRadius: 6,
               padding: "10px 14px",
               marginBottom: 16,
@@ -281,7 +281,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
                   <Search
                     size={13}
                     color="var(--text-tertiary)"
-                    style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}
+                    style={{ position: "absolute", insetInlineStart: 10, top: "50%", transform: "translateY(-50%)" }}
                   />
                   <input
                     value={query}
@@ -292,7 +292,8 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
                       background: "var(--bg-surface-sunken)",
                       border: "1px solid var(--border-default)",
                       borderRadius: 8,
-                      padding: "8px 12px 8px 30px",
+                      padding: "8px 12px",
+                      paddingInlineStart: 30,
                       color: "var(--text-primary)",
                       fontSize: 12,
                       fontFamily: "inherit",

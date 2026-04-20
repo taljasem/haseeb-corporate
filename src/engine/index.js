@@ -92,6 +92,8 @@ import * as bankAccountsApi from '../api/bank-accounts';
 import * as reconciliationApi from '../api/reconciliation';
 import * as budgetsApi from '../api/budgets';
 import * as migrationImportApi from '../api/migration-import';
+import * as vendorsApi from '../api/vendors';
+import * as customersApi from '../api/customers';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -611,6 +613,22 @@ const REAL_IMPLS = {
   // getBankAccountSummary collides with mockEngine; the live impl takes
   // { range, from, to } instead of the mock's positional `period`.
   getBankAccountSummary: bankAccountsApi.getBankAccountSummary,
+
+  // Vendors + Customers KYC admin (FN-272, 2026-04-19). Backend live at
+  // corporate-api 493030e (HASEEB-143). Both surfaces parallel: 5 wrappers
+  // each. listVendorsForRelatedParty / listCustomersForRelatedParty
+  // already exist on the related-party API path and stay there — these
+  // are the full CRUD surface for the new SetupScreen sub-sections.
+  listVendors: vendorsApi.listVendors,
+  getVendor: vendorsApi.getVendor,
+  createVendor: vendorsApi.createVendor,
+  updateVendor: vendorsApi.updateVendor,
+  deactivateVendor: vendorsApi.deactivateVendor,
+  listCustomers: customersApi.listCustomers,
+  getCustomer: customersApi.getCustomer,
+  createCustomer: customersApi.createCustomer,
+  updateCustomer: customersApi.updateCustomer,
+  deactivateCustomer: customersApi.deactivateCustomer,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -1063,6 +1081,22 @@ function buildLiveSurface() {
   surface.updateSourceMap = migrationImportApi.updateSourceMap;
   surface.postStagedItem = migrationImportApi.postStagedItem;
   surface.rejectStagedItem = migrationImportApi.rejectStagedItem;
+
+  // Vendors + Customers KYC admin (FN-272). Extras pattern. Names are
+  // NOT on mockEngine's namespace (the existing
+  // listVendorsForRelatedParty / listCustomersForRelatedParty are
+  // related-party-helper names with different scope), so they must be
+  // assigned explicitly — both surfaces parallel.
+  surface.listVendors = vendorsApi.listVendors;
+  surface.getVendor = vendorsApi.getVendor;
+  surface.createVendor = vendorsApi.createVendor;
+  surface.updateVendor = vendorsApi.updateVendor;
+  surface.deactivateVendor = vendorsApi.deactivateVendor;
+  surface.listCustomers = customersApi.listCustomers;
+  surface.getCustomer = customersApi.getCustomer;
+  surface.createCustomer = customersApi.createCustomer;
+  surface.updateCustomer = customersApi.updateCustomer;
+  surface.deactivateCustomer = customersApi.deactivateCustomer;
 
   return surface;
 }
@@ -1726,6 +1760,29 @@ function buildMockExtras() {
       status: 'REJECTED',
       reason: reason || null,
     }),
+
+    // Vendors + Customers KYC admin (FN-272) MOCK stubs. In-memory CRUD
+    // against a small seed list so the SetupScreen Vendors / Customers
+    // sub-sections render real-looking rows in MOCK mode, the KYCEditModal
+    // round-trips through update*, and create / deactivate persist for
+    // the lifetime of the tab. The seed shape mirrors the live DTO so
+    // the same UI works in both modes without branching.
+    listVendors: mockListVendors,
+    getVendor: mockGetVendor,
+    createVendor: mockCreateVendor,
+    updateVendor: mockUpdateVendor,
+    deactivateVendor: mockDeactivateVendor,
+    listCustomers: mockListCustomers,
+    getCustomer: mockGetCustomer,
+    createCustomer: mockCreateCustomer,
+    updateCustomer: mockUpdateCustomer,
+    deactivateCustomer: mockDeactivateCustomer,
+    // Override the related-party helper listers (which previously
+    // returned []) so the related-party modal's vendor + customer
+    // pickers see the same MOCK data as the new Vendors / Customers
+    // sub-sections — keeps the two flows visually consistent.
+    listVendorsForRelatedParty: mockListVendors,
+    listCustomersForRelatedParty: mockListCustomers,
   };
 }
 
@@ -3972,6 +4029,255 @@ async function mockGetReportVersion(id) {
   return row ? { ...row } : null;
 }
 
+// ── Vendors + Customers MOCK stubs (FN-272) ──
+//
+// In-memory CRUD against a small bilingual seed list so the SetupScreen
+// Vendors / Customers sub-sections render real-looking rows in MOCK
+// mode. Seed data deliberately covers the three KYC display states the
+// UI needs to render: (1) CR expiring within 30 days, (2) CR already
+// expired, (3) no CR tracked yet — so designers can verify all three
+// chip variants without manual edits.
+//
+// Shape mirrors the live DTO from src/api/vendors.js + customers.js so
+// the same UI works in both modes. Mutations persist for the lifetime
+// of the tab; isActive flips false on deactivate.
+
+let _mockVendorCounter = 0;
+let _mockCustomerCounter = 0;
+
+function _todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
+function _isoOffsetDays(days) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+function _seedVendors() {
+  const now = new Date().toISOString();
+  const seeds = [
+    { nameEn: 'MEW Kuwait', nameAr: 'وزارة الكهرباء والماء',
+      email: 'billing@mew.gov.kw', phone: '+965 1801802',
+      crNumber: 'CR-MEW-001', crIssuedAt: '2018-03-12',
+      crExpiryDate: _isoOffsetDays(15),  // expiring soon
+      civilIdNumber: null, kycNotes: 'Government utility — perpetual CR.',
+      paymentTermsDays: 30 },
+    { nameEn: 'Kuwait Telecom KTC', nameAr: 'كي تي سي للاتصالات',
+      email: 'ap@ktc.com.kw', phone: '+965 22456700',
+      crNumber: 'CR-KTC-44218', crIssuedAt: '2019-06-01',
+      crExpiryDate: _isoOffsetDays(-10), // expired
+      civilIdNumber: null,
+      kycNotes: 'CR renewal pending — finance to chase by month-end.',
+      paymentTermsDays: 45 },
+    { nameEn: 'AWS Middle East', nameAr: 'أمازون لخدمات الويب',
+      email: 'aws-receivables@amazon.com', phone: '+971 4 4500 100',
+      crNumber: null, crIssuedAt: null, crExpiryDate: null,
+      civilIdNumber: null, kycNotes: 'Foreign vendor — no Kuwait CR.',
+      paymentTermsDays: 30 },
+    { nameEn: 'Trade Show Productions', nameAr: 'إنتاج المعارض التجارية',
+      email: 'finance@tspkw.com', phone: '+965 22440011',
+      crNumber: 'CR-TSP-9921', crIssuedAt: '2020-01-15',
+      crExpiryDate: _isoOffsetDays(120), // healthy
+      civilIdNumber: '281030104567', kycNotes: null,
+      paymentTermsDays: 30 },
+    { nameEn: 'Deloitte & Touche', nameAr: 'ديلويت آند توش',
+      email: 'kuwait@deloitte.com', phone: '+965 22408844',
+      crNumber: 'CR-DELO-1192', crIssuedAt: '2017-09-01',
+      crExpiryDate: _isoOffsetDays(220), civilIdNumber: null,
+      kycNotes: 'Audit firm — annual engagement.', paymentTermsDays: 30 },
+  ];
+  return seeds.map((s) => {
+    _mockVendorCounter += 1;
+    return {
+      id: `mock-vn-${_mockVendorCounter}`,
+      ...s,
+      businessAddress: null,
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+      _mock: true,
+    };
+  });
+}
+function _seedCustomers() {
+  const now = new Date().toISOString();
+  const seeds = [
+    { nameEn: 'Salhiya Mall Tenants Ltd', nameAr: 'مستأجرو مجمع السالمية',
+      email: 'ar@salhiyamall.com', phone: '+965 22424001',
+      crNumber: 'CR-SMT-77110', crIssuedAt: '2019-04-12',
+      crExpiryDate: _isoOffsetDays(8),   // expiring soon
+      civilIdNumber: null,
+      kycNotes: 'Major tenant cluster — monthly invoicing.' },
+    { nameEn: 'Kuwait Petroleum Corp', nameAr: 'مؤسسة البترول الكويتية',
+      email: 'invoices@kpc.com.kw', phone: '+965 18 KPC (572)',
+      crNumber: 'CR-KPC-00001', crIssuedAt: '2010-02-20',
+      crExpiryDate: _isoOffsetDays(-30), // expired 30 days ago
+      civilIdNumber: null,
+      kycNotes: 'Strategic account — flag CR renewal to CFO.' },
+    { nameEn: 'Local Family Trust', nameAr: 'شركة العائلة',
+      email: null, phone: '+965 99887766',
+      crNumber: null, crIssuedAt: null, crExpiryDate: null,
+      civilIdNumber: '278042205541',
+      kycNotes: 'Personal account — civil ID only, no CR required.' },
+    { nameEn: 'Boubyan Investments', nameAr: 'استثمارات بوبيان',
+      email: 'invoices@boubyan-inv.com', phone: '+965 22907700',
+      crNumber: 'CR-BBYI-3344', crIssuedAt: '2021-11-01',
+      crExpiryDate: _isoOffsetDays(180), civilIdNumber: null,
+      kycNotes: null },
+    { nameEn: 'Zain Telecom B2B', nameAr: 'زين الأعمال',
+      email: 'b2b-finance@kw.zain.com', phone: '+965 1 ZAIN (9246)',
+      crNumber: 'CR-ZAIN-8801', crIssuedAt: '2018-08-08',
+      crExpiryDate: _isoOffsetDays(95), civilIdNumber: null,
+      kycNotes: 'Net-60 terms per master agreement.' },
+  ];
+  return seeds.map((s) => {
+    _mockCustomerCounter += 1;
+    return {
+      id: `mock-cu-${_mockCustomerCounter}`,
+      ...s,
+      businessAddress: null,
+      deliveryAddress: null,
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+      _mock: true,
+    };
+  });
+}
+const _mockVendors = _seedVendors();
+const _mockCustomers = _seedCustomers();
+
+function _filterAndSearch(rows, filters) {
+  let list = rows.filter((r) => r.isActive !== false);
+  if (filters?.search) {
+    const q = String(filters.search).toLowerCase();
+    list = list.filter((r) =>
+      [r.nameEn, r.nameAr, r.email, r.crNumber, r.civilIdNumber]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(q)),
+    );
+  }
+  return list;
+}
+
+async function mockListVendors(filters = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  return _filterAndSearch(_mockVendors, filters).map((r) => ({ ...r }));
+}
+async function mockGetVendor(id) {
+  await new Promise((r) => setTimeout(r, 20));
+  const row = _mockVendors.find((r) => r.id === id);
+  return row ? { ...row } : null;
+}
+async function mockCreateVendor(payload = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  _mockVendorCounter += 1;
+  const now = new Date().toISOString();
+  const row = {
+    id: `mock-vn-${_mockVendorCounter}`,
+    nameEn: payload.nameEn || `Vendor ${_mockVendorCounter}`,
+    nameAr: payload.nameAr ?? null,
+    email: payload.email ?? null,
+    phone: payload.phone ?? null,
+    businessAddress: payload.businessAddress ?? null,
+    crNumber: payload.crNumber ?? null,
+    crExpiryDate: payload.crExpiryDate ?? null,
+    crIssuedAt: payload.crIssuedAt ?? null,
+    civilIdNumber: payload.civilIdNumber ?? null,
+    kycNotes: payload.kycNotes ?? null,
+    paymentTermsDays: payload.paymentTermsDays ?? 30,
+    isActive: true,
+    createdAt: now,
+    updatedAt: now,
+    _mock: true,
+  };
+  _mockVendors.unshift(row);
+  return { ...row };
+}
+function _applyMockKycPatch(row, patch) {
+  const next = { ...row };
+  for (const key of [
+    'nameEn', 'nameAr', 'email', 'phone', 'businessAddress',
+    'crNumber', 'crExpiryDate', 'crIssuedAt', 'civilIdNumber',
+    'kycNotes', 'paymentTermsDays',
+  ]) {
+    if (patch[key] !== undefined) next[key] = patch[key];
+  }
+  next.updatedAt = new Date().toISOString();
+  return next;
+}
+async function mockUpdateVendor(id, patch = {}) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockVendors.findIndex((r) => r.id === id);
+  if (idx < 0) return null;
+  _mockVendors[idx] = _applyMockKycPatch(_mockVendors[idx], patch);
+  return { ..._mockVendors[idx] };
+}
+async function mockDeactivateVendor(id) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockVendors.findIndex((r) => r.id === id);
+  if (idx < 0) return null;
+  _mockVendors[idx] = {
+    ..._mockVendors[idx],
+    isActive: false,
+    updatedAt: new Date().toISOString(),
+  };
+  return { ..._mockVendors[idx] };
+}
+
+async function mockListCustomers(filters = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  return _filterAndSearch(_mockCustomers, filters).map((r) => ({ ...r }));
+}
+async function mockGetCustomer(id) {
+  await new Promise((r) => setTimeout(r, 20));
+  const row = _mockCustomers.find((r) => r.id === id);
+  return row ? { ...row } : null;
+}
+async function mockCreateCustomer(payload = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  _mockCustomerCounter += 1;
+  const now = new Date().toISOString();
+  const row = {
+    id: `mock-cu-${_mockCustomerCounter}`,
+    nameEn: payload.nameEn || `Customer ${_mockCustomerCounter}`,
+    nameAr: payload.nameAr ?? null,
+    email: payload.email ?? null,
+    phone: payload.phone ?? null,
+    businessAddress: payload.businessAddress ?? null,
+    deliveryAddress: payload.deliveryAddress ?? null,
+    crNumber: payload.crNumber ?? null,
+    crExpiryDate: payload.crExpiryDate ?? null,
+    crIssuedAt: payload.crIssuedAt ?? null,
+    civilIdNumber: payload.civilIdNumber ?? null,
+    kycNotes: payload.kycNotes ?? null,
+    isActive: true,
+    createdAt: now,
+    updatedAt: now,
+    _mock: true,
+  };
+  _mockCustomers.unshift(row);
+  return { ...row };
+}
+async function mockUpdateCustomer(id, patch = {}) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockCustomers.findIndex((r) => r.id === id);
+  if (idx < 0) return null;
+  _mockCustomers[idx] = _applyMockKycPatch(_mockCustomers[idx], patch);
+  return { ..._mockCustomers[idx] };
+}
+async function mockDeactivateCustomer(id) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockCustomers.findIndex((r) => r.id === id);
+  if (idx < 0) return null;
+  _mockCustomers[idx] = {
+    ..._mockCustomers[idx],
+    isActive: false,
+    updatedAt: new Date().toISOString(),
+  };
+  return { ..._mockCustomers[idx] };
+}
+
 /**
  * Mock health fallback for when mockEngine itself does not export one.
  */
@@ -4470,3 +4776,25 @@ export const declineSuggestion = surface.declineSuggestion;
 export const updateSourceMap = surface.updateSourceMap;
 export const postStagedItem = surface.postStagedItem;
 export const rejectStagedItem = surface.rejectStagedItem;
+
+// Vendors + Customers KYC admin (FN-272 — 2026-04-19). Five wrappers
+// each. Backend live at corporate-api 493030e (HASEEB-143). MOCK mode
+// runs the in-memory CRUD store seeded with five rows per surface that
+// deliberately cover the three KYC display states the SetupScreen
+// chips render: expiring-within-30, expired, and no-CR-tracked.
+//
+// Note: listVendorsForRelatedParty / listCustomersForRelatedParty
+// (FN-254 helpers) are still exported above and remain the canonical
+// names for the related-party modal pickers; in MOCK mode they now
+// share the same seed list as listVendors / listCustomers (the
+// related-party helpers used to return [] before this wire).
+export const listVendors = surface.listVendors;
+export const getVendor = surface.getVendor;
+export const createVendor = surface.createVendor;
+export const updateVendor = surface.updateVendor;
+export const deactivateVendor = surface.deactivateVendor;
+export const listCustomers = surface.listCustomers;
+export const getCustomer = surface.getCustomer;
+export const createCustomer = surface.createCustomer;
+export const updateCustomer = surface.updateCustomer;
+export const deactivateCustomer = surface.deactivateCustomer;

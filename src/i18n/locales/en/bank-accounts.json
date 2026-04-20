@@ -17,6 +17,10 @@
     "outflow": "Outflow"
   },
   "search_placeholder": "Search transactions...",
+  "export": "Export {{format}}",
+  "exporting": "Exporting…",
+  "export_error": "Export failed. Please try again.",
+  "export_downloaded": "Downloaded {{filename}}",
   "card": {
     "current_balance": "CURRENT BALANCE",
     "mtd_inflow": "MTD INFLOW",

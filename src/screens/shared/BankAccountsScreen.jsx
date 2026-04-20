@@ -7,6 +7,7 @@ import {
   listBankAccounts,
   getBankAccountStatement,
   getBankAccountSummary,
+  exportBankAccountStatement,
 } from "../../engine";
 import BankAccountCard from "../../components/banking/BankAccountCard";
 import BankAccountSummaryStrip from "../../components/banking/BankAccountSummaryStrip";
@@ -44,6 +45,12 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
   const [query, setQuery] = useState("");
   const [txs, setTxs] = useState(null);
   const [summary, setSummary] = useState(null);
+  // HASEEB-180 (2026-04-21): per-format loading + a small in-screen toast
+  // (same ephemeral-state pattern as FinancialStatementsScreen — no global
+  // toast library on this codebase).
+  const [exporting, setExporting] = useState(null); // 'csv' | 'pdf' | 'xlsx' | null
+  const [exportToast, setExportToast] = useState(null);
+  const [exportToastKind, setExportToastKind] = useState("info"); // 'info' | 'error'
 
   useEffect(() => {
     let cancelled = false;
@@ -98,6 +105,51 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
     }
     return true;
   });
+
+  // HASEEB-180 (2026-04-21): trigger the browser download for an exported
+  // statement. The backend returns { data, filename, rowCount, contentType }
+  // — CSV is raw text, PDF/XLSX are base64. Keep the conversion inline
+  // (three similar lines is better than premature abstraction).
+  const showExportToast = (text, kind = "info") => {
+    setExportToast(text);
+    setExportToastKind(kind);
+    setTimeout(() => setExportToast(null), 3000);
+  };
+  const handleExport = async (fmt) => {
+    if (!selectedId || exporting) return;
+    setExporting(fmt);
+    try {
+      const res = await exportBankAccountStatement(selectedId, { format: fmt, range });
+      const contentType = res?.contentType || "application/octet-stream";
+      const filename = res?.filename || `statement.${fmt}`;
+      let blob;
+      if (fmt === "csv") {
+        blob = new Blob([res?.data ?? ""], { type: contentType });
+      } else {
+        // base64 → Uint8Array → Blob for PDF / XLSX.
+        const b64 = res?.data || "";
+        const binary = atob(b64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        blob = new Blob([bytes], { type: contentType });
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+      showExportToast(t("export_downloaded", { filename }), "info");
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("[BankAccountsScreen] export failed", err);
+      showExportToast(t("export_error"), "error");
+    } finally {
+      setExporting(null);
+    }
+  };
 
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px 32px" }}>
@@ -316,7 +368,69 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
               <BankStatementTable txs={filteredTxs} currency={selected.currency} />
             </div>
 
-            {/* Export buttons hidden pending HASEEB-180 backend endpoint (GET /:id/export?format=csv|pdf|xlsx). */}
+            {/* Export buttons (HASEEB-180 backend wired at corporate-api 2ff14dc). */}
+            {!readOnly && (
+              <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
+                {[
+                  { id: "csv",  label: "CSV" },
+                  { id: "pdf",  label: "PDF" },
+                  { id: "xlsx", label: "Excel" },
+                ].map(({ id, label }) => {
+                  const busy = exporting === id;
+                  const anyBusy = exporting !== null;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => handleExport(id)}
+                      disabled={anyBusy}
+                      aria-busy={busy || undefined}
+                      style={{
+                        background: "transparent",
+                        color: "var(--text-secondary)",
+                        border: "1px solid var(--border-default)",
+                        padding: "7px 14px",
+                        borderRadius: 6,
+                        cursor: anyBusy ? "not-allowed" : "pointer",
+                        opacity: anyBusy && !busy ? 0.5 : 1,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        letterSpacing: "0.04em",
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      {busy ? t("exporting") : t("export", { format: label })}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {exportToast && (
+              <div
+                role="status"
+                style={{
+                  marginTop: 10,
+                  fontSize: 12,
+                  fontWeight: 500,
+                  padding: "8px 12px",
+                  borderRadius: 6,
+                  background:
+                    exportToastKind === "error"
+                      ? "var(--semantic-danger-subtle)"
+                      : "var(--accent-primary-subtle)",
+                  border:
+                    exportToastKind === "error"
+                      ? "1px solid var(--semantic-danger-border)"
+                      : "1px solid var(--accent-primary-border)",
+                  color:
+                    exportToastKind === "error"
+                      ? "var(--semantic-danger)"
+                      : "var(--accent-primary)",
+                }}
+              >
+                {exportToast}
+              </div>
+            )}
 
             {!readOnly && showFutureOps && <FutureBankOperationsCard />}
           </>

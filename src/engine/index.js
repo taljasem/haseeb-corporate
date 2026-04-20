@@ -244,6 +244,10 @@ const FUNCTION_ROUTING = {
   // overrides it so the UI's { range, from, to } options shape works in
   // both MOCK and LIVE modes (mock took a single `period` positional).
   getBankAccountSummary: 'wired',
+  // exportBankAccountStatement — new in HASEEB-180 (corporate-api 2ff14dc,
+  // 2026-04-21). "Extras" name (no mockEngine counterpart); wired via
+  // buildLiveSurface direct assignment + buildMockExtras stub below.
+  exportBankAccountStatement: 'wired',
 
   // Migration Import — Track 1 Migration Wizard (2026-04-20). Twelve
   // wrappers: 3 ingest + 3 staged reads + 5 source-account-map + 2
@@ -975,6 +979,10 @@ function buildLiveSurface() {
   surface.listBankAccounts = bankAccountsApi.listBankAccounts;
   surface.getBankAccountStatement = bankAccountsApi.getBankAccountStatement;
   surface.getBankAccountSummary = bankAccountsApi.getBankAccountSummary;
+  // HASEEB-180 (corporate-api 2ff14dc, 2026-04-21): export the statement in
+  // CSV / PDF / XLSX. JSON-wrapped response; PDF/XLSX bytes are base64 in
+  // `data` so no special axios response type is needed.
+  surface.exportBankAccountStatement = bankAccountsApi.exportBankAccountStatement;
 
   // Reconciliation — Track B Dispatch 5 + 5a/5b/5c wire 5 (2026-04-20).
   //
@@ -1452,6 +1460,21 @@ function buildMockExtras() {
       const mockPeriod =
         range === 'quarter' || range === 'year' ? 'all' : (range || 'month');
       return mockEngine.getBankAccountSummary(id, mockPeriod);
+    },
+    // HASEEB-180 (2026-04-21). mockEngine has no export plumbing for the
+    // banking statement surface; stub a minimal CSV payload for MOCK mode
+    // so the download path renders a real (if toy) file and the surface
+    // stays symmetric with LIVE. Base64 branches are exercised against
+    // real bytes in LIVE mode only — acceptable per the dispatch spec.
+    exportBankAccountStatement: async (id, opts = {}) => {
+      const fmt = (opts?.format || 'csv').toLowerCase();
+      const range = opts?.range || 'month';
+      return {
+        data: 'date,description,amount\n2026-04-01,MOCK,0.000\n',
+        filename: `mock_${id}_${range}.${fmt === 'xlsx' ? 'csv' : fmt}`,
+        rowCount: 1,
+        contentType: 'text/csv',
+      };
     },
 
     // Reconciliation — Track B Dispatch 5 + 5a/5b/5c wire 5 (2026-04-20).
@@ -4660,6 +4683,9 @@ export const getAminahInsights = surface.getAminahInsights;
 export const listBankAccounts = surface.listBankAccounts;
 export const getBankAccountStatement = surface.getBankAccountStatement;
 export const getBankAccountSummary = surface.getBankAccountSummary;
+// HASEEB-180 (corporate-api 2ff14dc, 2026-04-21): CSV / PDF / XLSX export
+// of the account's statement. JSON-wrapped response (base64 for binary).
+export const exportBankAccountStatement = surface.exportBankAccountStatement;
 
 // Reconciliation — Track B Dispatch 5 + 5a/5b/5c wire 5 (2026-04-20).
 //

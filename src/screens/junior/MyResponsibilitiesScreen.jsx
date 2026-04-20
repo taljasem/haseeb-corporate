@@ -5,6 +5,9 @@ import AminahNarrationCard from "../../components/financial/AminahNarrationCard"
 import EmptyState from "../../components/shared/EmptyState";
 import RoutingRuleReadOnlyCard from "../../components/junior/RoutingRuleReadOnlyCard";
 import { getRoutingRules, getJuniorDomainStats } from "../../engine/mockEngine";
+// HASEEB-179 — "my responsibilities" filters by the authenticated
+// Junior's id, not the seed user "sara".
+import { useAuth } from "../../contexts/AuthContext";
 
 function Stat({ label, value }) {
   return (
@@ -45,15 +48,26 @@ function Stat({ label, value }) {
 export default function MyResponsibilitiesScreen({ onContactCFO }) {
   const { t } = useTranslation("junior-today");
   const { t: tc } = useTranslation("common");
+  // HASEEB-179 — authenticated Junior's id scopes both the routing
+  // rules filter and the domain stats lookup.
+  const { user: authUser } = useAuth();
+  const juniorUserId = authUser?.id ?? null;
   const [rules, setRules] = useState(null);
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
+    // Re-run when the authenticated user hydrates; pre-auth we show
+    // an empty responsibilities list rather than leaking seed data.
+    if (!juniorUserId) {
+      setRules([]);
+      setStats(null);
+      return;
+    }
     getRoutingRules("active").then((all) =>
-      setRules(all.filter((r) => r.action.assignTo?.id === "sara"))
+      setRules(all.filter((r) => r.action.assignTo?.id === juniorUserId))
     );
-    getJuniorDomainStats("sara").then(setStats);
-  }, []);
+    getJuniorDomainStats(juniorUserId).then(setStats);
+  }, [juniorUserId]);
 
   const totalTasks = stats?.tasksHandled || 0;
   const ruleCount = rules?.length || 0;

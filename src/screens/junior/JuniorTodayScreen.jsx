@@ -13,6 +13,12 @@ import {
   getRoutingRules,
 } from "../../engine/mockEngine";
 import { formatRelativeTime } from "../../utils/relativeTime";
+// HASEEB-179 — "my today" filters by the authenticated Junior's id,
+// not the seed user "sara". The engine's getSara* helpers are seed-
+// data lookups that stay on the seed id in MOCK mode; the filters
+// that operate over real task/rule data are the ones moving to
+// `juniorUserId`.
+import { useAuth } from "../../contexts/AuthContext";
 
 function SectionCard({ label, extra, aminah = true, children }) {
   return (
@@ -99,6 +105,10 @@ function renderHighlighted(text) {
 export default function JuniorTodayScreen({ setActiveScreen, onOpenTask }) {
   const { t } = useTranslation("junior-today");
   const { t: tc } = useTranslation("common");
+  // HASEEB-179 — authenticated Junior's id drives "my tasks" and
+  // "my responsibilities" filters.
+  const { user: authUser } = useAuth();
+  const juniorUserId = authUser?.id ?? null;
   const [myTasks, setMyTasks] = useState(null);
   const [queue, setQueue] = useState(null);
   const [activity, setActivity] = useState(null);
@@ -109,7 +119,7 @@ export default function JuniorTodayScreen({ setActiveScreen, onOpenTask }) {
     getTaskbox("Junior", "received").then((tasks) =>
       setMyTasks(
         tasks
-          .filter((t) => t.recipient.id === "sara" && t.status !== "completed")
+          .filter((t) => juniorUserId && t.recipient.id === juniorUserId && t.status !== "completed")
           .slice(0, 5)
       )
     );
@@ -117,9 +127,9 @@ export default function JuniorTodayScreen({ setActiveScreen, onOpenTask }) {
     getSaraActivityLog().then(setActivity);
     getSaraAminahNotes().then(setNotes);
     getRoutingRules("active").then((rules) =>
-      setResponsibilities(rules.filter((r) => r.action.assignTo?.id === "sara"))
+      setResponsibilities(rules.filter((r) => juniorUserId && r.action.assignTo?.id === juniorUserId))
     );
-  }, []);
+  }, [juniorUserId]);
 
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px 32px" }}>

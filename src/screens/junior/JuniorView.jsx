@@ -17,6 +17,13 @@ import SettingsScreen from "../shared/SettingsScreen";
 import ProfileScreen from "../shared/ProfileScreen";
 import { getSaraTaskStats } from "../../engine/mockEngine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
+// HASEEB-179 — filterByAssignee and juniorOnlyId now come from the
+// authenticated user's id, not the seed Junior ("sara"). Downstream
+// screens receive `null` pre-auth which they already handle as
+// "unfiltered" (matches the pre-HASEEB-179 default when auth was
+// unhydrated — the id was "sara" but mock mode's sara WAS the
+// authenticated demo user in practice).
+import { useAuth } from "../../contexts/AuthContext";
 
 function Placeholder({ label, sub }) {
   const { t } = useTranslation("common");
@@ -66,6 +73,9 @@ function Placeholder({ label, sub }) {
 
 export default function JuniorView({ registerNav }) {
   const { t } = useTranslation("common");
+  // HASEEB-179 — the Junior's own id drives "my view" filters.
+  const { user: authUser } = useAuth();
+  const juniorUserId = authUser?.id ?? null;
   const [activeScreen, setActiveScreen] = useState("today");
   const [aminahOpen, setAminahOpen] = useState(false);
   const [aminahContext, setAminahContext] = useState(null);
@@ -114,7 +124,7 @@ export default function JuniorView({ registerNav }) {
         return (
           <BankTransactionsScreen
             role="Junior"
-            filterByAssignee="sara"
+            filterByAssignee={juniorUserId}
             onOpenAminah={openAminah}
             onOpenBankAccounts={() => setActiveScreen("bank-accounts")}
           />
@@ -122,7 +132,7 @@ export default function JuniorView({ registerNav }) {
       case "conversational-je":
         return <ConversationalJEScreen role="Junior" onNavigate={setActiveScreen} />;
       case "budget":
-        return <BudgetScreen role="Junior" juniorOnlyId="sara" onOpenAminah={openAminah} />;
+        return <BudgetScreen role="Junior" juniorOnlyId={juniorUserId} onOpenAminah={openAminah} />;
       case "reconciliation":
         return <ReconciliationScreen role="Junior" />;
       case "responsibilities":

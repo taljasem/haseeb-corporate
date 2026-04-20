@@ -32,6 +32,12 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 import { emitTaskboxChange } from "../../utils/taskboxBus";
 import { formatRelativeTime } from "../../utils/relativeTime";
+// HASEEB-178 — use the shared role normalizer from src/utils/role.js
+// rather than a screen-local inline. This file's previous inline
+// collapsed everything that wasn't "CFO" → "Owner" which happened to
+// work for the two surfaces that render this screen, but diverged from
+// the canonical set in ROLES.
+import { normalizeRole } from "../../utils/role";
 
 const STATUS = {
   complete:      { key: "complete",    color: "var(--text-tertiary)",  Icon: Check,          iconColor: "var(--accent-primary)" },
@@ -39,13 +45,6 @@ const STATUS = {
   pending:       { key: "pending",     color: "var(--text-tertiary)",  Icon: Circle,         iconColor: "var(--text-tertiary)" },
   blocked:       { key: "blocked",     color: "var(--semantic-danger)",Icon: AlertTriangle,  iconColor: "var(--semantic-danger)" },
 };
-
-function normalizeRole(r) {
-  if (!r) return "Owner";
-  const s = String(r).toLowerCase();
-  if (s.startsWith("cfo")) return "CFO";
-  return "Owner";
-}
 
 const CLOSE_STATUS_PILL = {
   not_started:      { key: "status_not_started",      color: "var(--text-tertiary)" },

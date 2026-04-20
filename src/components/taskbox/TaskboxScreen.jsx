@@ -34,8 +34,10 @@ import {
   getTaskTypesForDirection,
 } from "../../engine/mockEngine";
 import { emitTaskboxChange } from "../../utils/taskboxBus";
-
-const ROLE_TO_USER_ID = { CFO: "cfo", Owner: "owner", Junior: "sara" };
+// HASEEB-179 — authorship ids come from the authenticated user, not a
+// role → demo-identity lookup. Same pattern as HASEEB-164 in
+// ReconciliationScreen / BudgetScreen.
+import { useAuth } from "../../contexts/AuthContext";
 import TaskRow from "./TaskRow";
 import TaskDetail from "./TaskDetail";
 import NewTaskModal from "./NewTaskModal";
@@ -56,6 +58,13 @@ const FILTER_IDS = [
 export default function TaskboxScreen({ role = "CFO", initialTaskId = null, initialFilter = null }) {
   const { t } = useTranslation("taskbox");
   const { t: tc } = useTranslation("common");
+  // HASEEB-179 — authenticated user drives authorship ids for
+  // complete/reply/approval actions. `currentUserId` passed to
+  // TaskDetail for the task-detail authorship surface. Backend is
+  // authoritative on writes in LIVE mode; this is metadata the MOCK
+  // activity log records.
+  const { user: authUser } = useAuth();
+  const currentUserId = authUser?.id ?? null;
   const [tab, setTab] = useState("tasks"); // tasks | templates
   const [tasks, setTasks] = useState(null);
   const [filter, setFilter] = useState(initialFilter || "all");
@@ -194,19 +203,19 @@ export default function TaskboxScreen({ role = "CFO", initialTaskId = null, init
     return (
       <TaskDetail
         task={openTask}
-        currentUserId={ROLE_TO_USER_ID[role] || "cfo"}
+        currentUserId={currentUserId}
         onBack={() => setOpenTaskId(null)}
         onOpenTask={(id) => setOpenTaskId(id)}
         onComplete={async (t) => {
-          await engineCompleteTask(t.id, null, role === "CFO" ? "cfo" : role === "Owner" ? "owner" : "sara");
+          await engineCompleteTask(t.id, null, currentUserId);
           refresh();
         }}
         onReply={async (t, body) => {
-          await engineReplyToTask(t.id, body, role === "CFO" ? "cfo" : role === "Owner" ? "owner" : "sara");
+          await engineReplyToTask(t.id, body, currentUserId);
           refresh();
         }}
         onApprovalAction={async (task, action, note) => {
-          const author = role === "CFO" ? "cfo" : role === "Owner" ? "owner" : "sara";
+          const author = currentUserId;
           const isBudgetApproval = task.type === "approve-budget";
           const isCloseApproval =
             task.type === "request-approval" && task.linkedItem?.type === "month-end-close";

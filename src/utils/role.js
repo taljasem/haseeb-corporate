@@ -51,3 +51,25 @@ export const canAccessAdmin = (role) => {
   const r = normalizeRole(role);
   return r === ROLES.CFO || r === ROLES.SENIOR || r === ROLES.OWNER;
 };
+
+/**
+ * HASEEB-178 — Given a task whose current recipient has some role, return
+ * the set of roles the task can be escalated TO. Owner can't be escalated
+ * (already at the top); CFO tasks escalate to Owner; anything else (Junior,
+ * Senior) escalates to CFO or Owner.
+ *
+ * Returns either `null` (no valid target, used by EscalateTaskModal to
+ * render the "no escalation target" empty state) or an array of lowercased
+ * target role ids — `["owner"]` or `["cfo", "owner"]` — matching the
+ * recipient-id lookup map in EscalateTaskModal.
+ *
+ * Consolidated from the inline copy in EscalateTaskModal.jsx so the role
+ * → escalation-target mapping lives next to the other role helpers.
+ */
+export function normalizeRoleFromRecipient(task) {
+  const role = task?.recipient?.role || "";
+  if (role === "Owner") return null;
+  if (role === "CFO")   return ["owner"];
+  // Junior, Senior, and anything else escalate to both CFO and Owner.
+  return ["cfo", "owner"];
+}

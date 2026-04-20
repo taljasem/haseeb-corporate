@@ -30,6 +30,12 @@ import {
   getLineNotes,
   exportStatement,
 } from "../../engine/mockEngine";
+// HASEEB-178 — use the shared role normalizer from src/utils/role.js.
+// This file's inline used to collapse non-CFO → "Owner"; the canonical
+// util preserves the full ROLES set. The only call sites passing a
+// role to this screen are "CFO" and "Owner" (CFOView / OwnerView), so
+// the active behaviour is identical.
+import { normalizeRole } from "../../utils/role";
 
 const TAB_IDS = ["income", "balance", "cash-flow"];
 const PERIOD_IDS = ["month", "quarter", "ytd", "custom"];
@@ -56,13 +62,6 @@ const MATERIALITY_OPTIONS = [
   { id: "t_50k", value: 50000 },
   { id: "t_100k", value: 100000 },
 ];
-
-function normalizeRole(r) {
-  if (!r) return "Owner";
-  const s = String(r).toLowerCase();
-  if (s.startsWith("cfo")) return "CFO";
-  return "Owner";
-}
 
 // ── Materiality filter ────────────────────────────────────────────
 function filterByMateriality(sections, threshold) {

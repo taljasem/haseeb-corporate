@@ -18,8 +18,9 @@ import Avatar from "./Avatar";
 import TaskTypePill from "./TaskTypePill";
 import FileAttachment from "../shared/FileAttachment";
 import SaveTaskTemplateModal from "./SaveTaskTemplateModal";
-
-const ROLE_TO_SENDER_ID = { Owner: "owner", CFO: "cfo", Junior: "sara" };
+// HASEEB-179 — sender id comes from useAuth, not a role→demo-identity
+// map. Same pattern as HASEEB-164.
+import { useAuth } from "../../contexts/AuthContext";
 
 function inferDirection(senderRole, recipientRole) {
   if (senderRole === "CFO" && recipientRole !== "Owner" && recipientRole !== "CFO") return "downward";
@@ -87,6 +88,9 @@ const LINK_OPTIONS = [
 export default function NewTaskModal({ open, role = "CFO", onClose, onSent, prefilledLinkedItem = null }) {
   const { t } = useTranslation("taskbox");
   const { t: tc } = useTranslation("common");
+  // HASEEB-179 — authenticated user drives sender / uploader ids.
+  const { user: authUser } = useAuth();
+  const senderId = authUser?.id ?? null;
   useEscapeKey(onClose, open);
   const [recipients, setRecipients] = useState([]);
   const [types, setTypes] = useState([]);
@@ -192,7 +196,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
     if (!validate()) return;
     setSending(true);
     const task = await createTask({
-      senderId: ROLE_TO_SENDER_ID[role] || "cfo",
+      senderId,
       recipient,
       type,
       subject,
@@ -208,7 +212,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
           size: att.size,
           type: att.type,
           dataUrl: att.dataUrl,
-          uploadedBy: ROLE_TO_SENDER_ID[role] || "cfo",
+          uploadedBy: senderId,
         });
       }
     }
@@ -460,7 +464,7 @@ export default function NewTaskModal({ open, role = "CFO", onClose, onSent, pref
               attachments={pendingAttachments}
               onAttach={handleLocalAttach}
               onRemove={handleLocalRemove}
-              currentUserId={ROLE_TO_SENDER_ID[role] || "cfo"}
+              currentUserId={senderId}
             />
           </div>
 

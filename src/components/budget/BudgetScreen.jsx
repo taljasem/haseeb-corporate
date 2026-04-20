@@ -54,6 +54,7 @@ import BudgetSummaryStrip from "./BudgetSummaryStrip";
 import DepartmentRow from "./DepartmentRow";
 import BudgetWorkflowStatusStrip from "./BudgetWorkflowStatusStrip";
 import DelegateBudgetModal from "./DelegateBudgetModal";
+import { useAuth } from "../../contexts/AuthContext";
 
 const COLS_HEADER = "minmax(160px, 1.4fr) minmax(140px, 1fr) 130px 130px 130px 130px 180px 110px 18px";
 
@@ -100,6 +101,7 @@ function HeaderCell({ children, align = "left" }) {
 
 export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId = null, onViewInForecast }) {
   const { t } = useTranslation("budget");
+  const { user: authUser } = useAuth();
   const [allBudgets, setAllBudgets] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [budget, setBudget] = useState(null);
@@ -194,7 +196,10 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
   };
   const postComment = async () => {
     if (!commentDraft.trim() || !commentLineId) return;
-    const author = role === "Owner" ? "owner" : role === "Junior" ? "junior" : "cfo";
+    // HASEEB-164 — source author id from the authenticated user, not a
+    // role→demo-identity lookup. Backend derives identity from the JWT
+    // in LIVE mode; the arg is metadata for the MOCK activity log.
+    const author = authUser?.id ?? null;
     await addBudgetLineComment(commentLineId, commentDraft.trim(), author);
     setCommentDraft("");
     const c = await getBudgetLineComments(commentLineId);
@@ -799,7 +804,15 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
             } else if (role === "CFO" && budget?.status !== "active" && budget?.status !== "closed" && wf === "submitted") {
               rowMode = "review";
             }
-            const juniorMap = { Junior: "sara", CFO: "cfo", Owner: "owner" };
+            // HASEEB-164 — currentUserId now comes from the authenticated
+            // user. DepartmentRow uses it for authorship / ownership checks
+            // when posting line edits and comments. Leaves the prop as
+            // undefined (not null) when auth hasn't hydrated so the
+            // DepartmentRow default ("cfo") takes over — this matches the
+            // previous mock-mode behaviour for unauth states. The previous
+            // role→demo-identity map ({Junior:"sara", CFO:"cfo",
+            // Owner:"owner"}) leaked seed ids into the runtime.
+            const currentUserId = authUser?.id;
             return (
               <DepartmentRow
                 key={row.id}
@@ -810,7 +823,7 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
                 mode={rowMode}
                 budget={budget}
                 department={dept}
-                currentUserId={juniorMap[role] || "cfo"}
+                currentUserId={currentUserId}
                 onRefresh={refresh}
                 onToast={showToast}
               />

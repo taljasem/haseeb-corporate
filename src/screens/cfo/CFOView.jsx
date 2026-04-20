@@ -32,6 +32,7 @@ import SpinoffScreen from "./SpinoffScreen";
 import IslamicFinanceScreen from "./IslamicFinanceScreen";
 import PurchaseOrdersScreen from "./PurchaseOrdersScreen";
 import InventoryNrvScreen from "./InventoryNrvScreen";
+import MigrationWizardScreen from "./MigrationWizardScreen";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
 
@@ -157,6 +158,8 @@ export default function CFOView({ registerNav }) {
         return <PurchaseOrdersScreen role="CFO" />;
       case "inventory-nrv":
         return <InventoryNrvScreen role="CFO" />;
+      case "migration":
+        return <MigrationWizardScreen role="CFO" />;
       default:
         return (
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-tertiary)", fontSize: 13 }}>

@@ -17,7 +17,6 @@
     "outflow": "صرف"
   },
   "search_placeholder": "بحث في العمليات...",
-  "export": "تصدير {{format}}",
   "card": {
     "current_balance": "الرصيد الحالي",
     "mtd_inflow": "إيرادات الشهر حتى اليوم",

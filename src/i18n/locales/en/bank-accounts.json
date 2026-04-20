@@ -6,10 +6,10 @@
   "last_updated": "Last updated {{time}}",
   "updated": "Updated {{time}}",
   "ranges": {
-    "today": "Today",
-    "week": "This Week",
     "month": "This Month",
-    "all": "All"
+    "quarter": "This Quarter",
+    "year": "This Year",
+    "all": "All Time"
   },
   "type_filters": {
     "all": "All",

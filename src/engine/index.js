@@ -88,6 +88,7 @@ import * as cfoTodayApi from '../api/cfo-today';
 import * as rulesApi from '../api/rules';
 import * as adminIntegrationsApi from '../api/admin-integrations';
 import * as adminAuditLogApi from '../api/admin-audit-log';
+import * as bankAccountsApi from '../api/bank-accounts';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -228,6 +229,16 @@ const FUNCTION_ROUTING = {
   getTwoFactorStatus: 'wired',
   disableTwoFactor: 'wired',
   getMyActivity: 'wired',
+
+  // Banking — bank accounts surface (Track B Dispatch 4 wire 4, 2026-04-20).
+  // listBankAccounts / getBankAccountStatement are "extras" names NOT on
+  // mockEngine's namespace — they are wired via buildLiveSurface direct
+  // assignment + buildMockExtras MOCK adapters below (and MUST be named-
+  // exported from this module for screens to consume). getBankAccountSummary
+  // collides with a mockEngine function of the same name; buildMockExtras
+  // overrides it so the UI's { range, from, to } options shape works in
+  // both MOCK and LIVE modes (mock took a single `period` positional).
+  getBankAccountSummary: 'wired',
 };
 
 /**
@@ -571,6 +582,11 @@ const REAL_IMPLS = {
   getTwoFactorStatus: settingsApi.getTwoFactorStatus,
   disableTwoFactor: settingsApi.disableTwoFactor,
   getMyActivity: settingsApi.getMyActivity,
+
+  // Banking — bank accounts surface (Track B Dispatch 4 wire 4, 2026-04-20).
+  // getBankAccountSummary collides with mockEngine; the live impl takes
+  // { range, from, to } instead of the mock's positional `period`.
+  getBankAccountSummary: bankAccountsApi.getBankAccountSummary,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -908,6 +924,16 @@ function buildLiveSurface() {
   surface.disableTwoFactor = settingsApi.disableTwoFactor;
   surface.getMyActivity = settingsApi.getMyActivity;
 
+  // Banking — bank accounts (Track B Dispatch 4 wire 4, 2026-04-20).
+  // listBankAccounts + getBankAccountStatement are NEW engine surface
+  // names NOT on mockEngine's namespace (mockEngine has getBankAccounts /
+  // getBankStatement under the old names). getBankAccountSummary is
+  // routed via FUNCTION_ROUTING + REAL_IMPLS above but we also assign
+  // here for belt-and-braces / grep-ability.
+  surface.listBankAccounts = bankAccountsApi.listBankAccounts;
+  surface.getBankAccountStatement = bankAccountsApi.getBankAccountStatement;
+  surface.getBankAccountSummary = bankAccountsApi.getBankAccountSummary;
+
   return surface;
 }
 
@@ -1232,6 +1258,37 @@ function buildMockExtras() {
     // keeps working without changes.
     getMyActivity: (opts = {}) =>
       mockEngine.getAccountAuditLog({ action: opts.action || 'all' }),
+
+    // Banking — bank accounts (Track B Dispatch 4 wire 4, 2026-04-20).
+    // The live surface uses canonical names listBankAccounts /
+    // getBankAccountStatement / getBankAccountSummary with an options-
+    // object signature. mockEngine's legacy names are getBankAccounts /
+    // getBankStatement / getBankAccountSummary with positional args. We
+    // adapt here so the screen calls the same engine surface in both
+    // modes. The live range vocabulary is calendar-based (month | quarter
+    // | year | all) per HASEEB-148; mockEngine only understands today |
+    // week | month | all, so for quarter/year we widen to the mock's 'all'
+    // (which returns the full 30-day synthetic history — close enough for
+    // MOCK demos where the dataset is shallow).
+    listBankAccounts: async () => {
+      const accs = await mockEngine.getBankAccounts();
+      // Match the live-mode shape (mtdInflow/mtdOutflow already present
+      // on the mock rows, so this is a pass-through). Kept as an async
+      // wrapper so the return type is stable across modes.
+      return accs;
+    },
+    getBankAccountStatement: async (id, opts = {}) => {
+      const range = opts?.range;
+      const mockRange =
+        range === 'quarter' || range === 'year' ? 'all' : (range || 'month');
+      return mockEngine.getBankStatement(id, mockRange);
+    },
+    getBankAccountSummary: async (id, opts = {}) => {
+      const range = opts?.range;
+      const mockPeriod =
+        range === 'quarter' || range === 'year' ? 'all' : (range || 'month');
+      return mockEngine.getBankAccountSummary(id, mockPeriod);
+    },
     // Board pack (FN-258) MOCK stub — empty pack in MOCK mode.
     getBoardPack: async (q = {}) => ({
       fiscalYear: q.fiscalYear || new Date().getFullYear() - 1,
@@ -3861,3 +3918,13 @@ export const getMyActivity = surface.getMyActivity;
 // wrapper; MOCK returns an empty shape so the UI renders its empty-
 // state rather than pretending there are narrations.
 export const getAminahInsights = surface.getAminahInsights;
+
+// Banking — bank accounts surface (Track B Dispatch 4 wire 4, 2026-04-20).
+// Canonical backend naming: listBankAccounts / getBankAccountStatement /
+// getBankAccountSummary (options-object signature with calendar ranges per
+// HASEEB-148). MOCK mode adapts via buildMockExtras above to the legacy
+// mockEngine positional-arg signatures so screens call one surface in
+// both modes.
+export const listBankAccounts = surface.listBankAccounts;
+export const getBankAccountStatement = surface.getBankAccountStatement;
+export const getBankAccountSummary = surface.getBankAccountSummary;

@@ -90,6 +90,7 @@ import * as adminIntegrationsApi from '../api/admin-integrations';
 import * as adminAuditLogApi from '../api/admin-audit-log';
 import * as bankAccountsApi from '../api/bank-accounts';
 import * as reconciliationApi from '../api/reconciliation';
+import * as budgetsApi from '../api/budgets';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -977,6 +978,41 @@ function buildLiveSurface() {
   surface.createReconciliationJournalEntry = reconciliationApi.createReconciliationJournalEntry;
   surface.parseStatementLive = reconciliationApi.parseStatement;
 
+  // Budgets — Track B Dispatch 6 wire 6 (2026-04-20). 16 endpoints wrapped
+  // as canonical engine names. The BudgetScreen's existing rich mockEngine
+  // surface (getBudgetById, getAllBudgets, getActiveBudgetSummary,
+  // getBudgetVarianceByDepartment, getBudgetVarianceByLineItem,
+  // getBudgetWorkflowSummary, submitDepartment, approveDepartment,
+  // requestDepartmentRevision, delegateBudget, submitBudgetForApproval,
+  // approveBudget, requestBudgetChanges, updateBudgetLineItemValue,
+  // createBudgetLine, updateBudgetLine, deleteBudgetLine,
+  // addBudgetLineComment, getBudgetLineComments, deleteBudgetLineComment,
+  // getBudgetApprovalState, getBudgetForYear, getTeamMembers) is LEFT on
+  // mockEngine because the live DTO shape diverges significantly — see
+  // src/api/budgets.js file header for the full flagged-shape-delta list.
+  // LIVE mode falls back to mockEngine with a one-shot warn for those.
+  //
+  // The 16 live wrappers below are exposed as ENGINE EXTRAS under
+  // canonical backend-aligned names (get*Live where the mockEngine has
+  // a colliding legacy name, plain names otherwise). Future wires that
+  // reshape the screen to the live DTO can swap imports one at a time.
+  surface.getBudgetSummaryLive = budgetsApi.getBudgetSummary;
+  surface.getBudgetVarianceLive = budgetsApi.getBudgetVariance;
+  surface.getBudgetForYearLive = budgetsApi.getBudgetForYear;
+  surface.createBudgetLineLive = budgetsApi.createBudgetLine;
+  surface.updateBudgetLineLive = budgetsApi.updateBudgetLine;
+  surface.deleteBudgetLineLive = budgetsApi.deleteBudgetLine;
+  surface.submitBudgetForApprovalLive = budgetsApi.submitBudgetForApproval;
+  surface.delegateBudgetLive = budgetsApi.delegateBudget;
+  surface.approveBudgetDepartmentLive = budgetsApi.approveBudgetDepartment;
+  surface.requestDepartmentRevisionLive = budgetsApi.requestDepartmentRevision;
+  surface.requestBudgetChangesLive = budgetsApi.requestBudgetChanges;
+  surface.addBudgetLineCommentLive = budgetsApi.addBudgetLineComment;
+  surface.listBudgetLineCommentsLive = budgetsApi.listBudgetLineComments;
+  surface.deleteBudgetLineCommentLive = budgetsApi.deleteBudgetLineComment;
+  surface.getBudgetApprovalStateLive = budgetsApi.getBudgetApprovalState;
+  surface.listTeamMembersLive = budgetsApi.listTeamMembers;
+
   return surface;
 }
 
@@ -1428,6 +1464,143 @@ function buildMockExtras() {
         errors: r?.errors || [],
         formatUsed: { id: bankFormatId || 'mock', bankCode: 'MOCK', bankName: 'Mock Bank', formatVersion: 1 },
       };
+    },
+
+    // Budgets — Track B Dispatch 6 wire 6 (2026-04-20). MOCK adapters for
+    // the 16 `*Live` canonical surface names. These map back to the
+    // legacy mockEngine functions where a reasonable translation exists,
+    // and return shape-aligned payloads elsewhere so screens that opt
+    // into the *Live surface work in both modes.
+    getBudgetSummaryLive: async (id) => {
+      // mockEngine exposes getActiveBudgetSummary (no id arg) for the
+      // current active budget only. Widen to an id-aware variant by
+      // loading the full budget.
+      const b = await mockEngine.getBudgetById(id);
+      if (!b) return null;
+      return {
+        budgetId: b.id,
+        fiscalYear: b.period?.fiscalYear ?? null,
+        totalRevenueKwd: String((b.totalRevenue ?? 0).toFixed(3)),
+        totalExpensesKwd: String((b.totalExpenses ?? 0).toFixed(3)),
+        netIncomeKwd: String((b.netIncome ?? 0).toFixed(3)),
+        departmentCount: (b.departments || []).length,
+        marginPercent:
+          b.totalRevenue > 0
+            ? Number(((b.netIncome / b.totalRevenue) * 100).toFixed(1))
+            : 0,
+      };
+    },
+    getBudgetVarianceLive: async (id /* , opts */) => {
+      // mockEngine.getBudgetVarianceByDepartment() is active-budget only
+      // and returns the mock-shape rows; adapt to the live-shape.
+      const rows = await mockEngine.getBudgetVarianceByDepartment(id);
+      return (rows || []).map((r) => ({
+        departmentId: r.id,
+        departmentName: r.name,
+        category: r.category === 'revenue' ? 'Revenue' : 'Expense',
+        budgetAnnualKwd: String((r.budgetAnnual ?? 0).toFixed(3)),
+        actualYtdKwd: String((r.actualYtd ?? 0).toFixed(3)),
+        varianceKwd: String((r.varianceAmount ?? 0).toFixed(3)),
+        variancePercent: r.variancePercent ?? 0,
+        status: r.status || 'on-track',
+      }));
+    },
+    getBudgetForYearLive: (year) => mockEngine.getBudgetForYear(year),
+    createBudgetLineLive: async (id, payload) => {
+      // Mock's createBudgetLine(budgetId, {departmentId, amount|annual, ...})
+      // — best-effort shape pass-through.
+      return mockEngine.createBudgetLine(id, {
+        ...payload,
+        annual: Number(payload?.amountKwd ?? payload?.annual ?? 0),
+      });
+    },
+    updateBudgetLineLive: async (_id, lineId, updates) => {
+      // Mock's signature is (lineId, updates) without budgetId.
+      const annual =
+        updates?.amountKwd != null
+          ? Number(updates.amountKwd)
+          : updates?.annual;
+      return mockEngine.updateBudgetLine(lineId, {
+        ...updates,
+        annual,
+      });
+    },
+    deleteBudgetLineLive: async (_id, lineId) =>
+      mockEngine.deleteBudgetLine(lineId),
+    submitBudgetForApprovalLive: (id) =>
+      mockEngine.submitBudgetForApproval(id),
+    delegateBudgetLive: async (id, { delegations } = {}) => {
+      // Live shape uses assignToUserId; mock expects juniorUserId.
+      const mapped = (delegations || []).map((d) => ({
+        departmentId: d.departmentId,
+        juniorUserId: d.assignToUserId || d.juniorUserId,
+        notes: d.notes || null,
+      }));
+      return mockEngine.delegateBudget(id, mapped);
+    },
+    approveBudgetDepartmentLive: (id, deptId) =>
+      mockEngine.approveDepartment(id, deptId),
+    requestDepartmentRevisionLive: (id, deptId, { notes } = {}) =>
+      mockEngine.requestDepartmentRevision(id, deptId, notes),
+    requestBudgetChangesLive: (id, { notes } = {}) =>
+      mockEngine.requestBudgetChanges(id, notes),
+    addBudgetLineCommentLive: async (_id, lineId, { content } = {}) => {
+      const c = await mockEngine.addBudgetLineComment(lineId, content, 'cfo');
+      return c
+        ? {
+            id: c.id,
+            authorUserId: c.author,
+            authorName: c.authorRole,
+            authorRole: c.authorRole,
+            content: c.content,
+            createdAt: c.createdAt,
+          }
+        : null;
+    },
+    listBudgetLineCommentsLive: async (_id, lineId) => {
+      const rows = await mockEngine.getBudgetLineComments(lineId);
+      return (rows || []).map((c) => ({
+        id: c.id,
+        authorUserId: c.author,
+        authorName: c.authorRole,
+        authorRole: c.authorRole,
+        content: c.content,
+        createdAt: c.createdAt,
+      }));
+    },
+    deleteBudgetLineCommentLive: (_id, lineId, commentId) =>
+      mockEngine.deleteBudgetLineComment(lineId, commentId),
+    getBudgetApprovalStateLive: async (id) => {
+      const s = await mockEngine.getBudgetApprovalState(id);
+      if (!s) return null;
+      return {
+        budgetStatus: s.status,
+        nextAction: s.nextAction || '',
+        reviewers: (s.reviewers || []).map((r) => ({
+          role: r.role,
+          userId: r.userId || null,
+          userName: r.userName || r.role,
+          status: r.status || 'pending',
+          decidedAt: r.decidedAt || null,
+        })),
+        history: (s.history || []).map((h) => ({
+          action: h.toState || h.action || '',
+          actor: h.byUserId || h.actor || '',
+          timestamp: h.timestamp,
+          notes: h.note || h.notes || null,
+        })),
+      };
+    },
+    listTeamMembersLive: async () => {
+      // mockEngine.getTeamMembers returns { id, name, role, initials, color };
+      // live shape is { id, name, email, role }.
+      const members = await mockEngine.getTeamMembers();
+      return (members || []).map((m) => ({
+        id: m.id,
+        name: m.name,
+        email: m.email || `${m.id}@example.kw`,
+        role: m.role,
+      }));
     },
 
     // Board pack (FN-258) MOCK stub — empty pack in MOCK mode.
@@ -4102,3 +4275,63 @@ export const confirmSuggestionLive = surface.confirmSuggestionLive;
 export const dismissSuggestionLive = surface.dismissSuggestionLive;
 export const createReconciliationJournalEntry = surface.createReconciliationJournalEntry;
 export const parseStatementLive = surface.parseStatementLive;
+
+// Budgets — Track B Dispatch 6 wire 6 (2026-04-20).
+//
+// 16 canonical backend-aligned wrappers exposed with `*Live` suffix to
+// coexist with the legacy mockEngine functions of colliding names (which
+// remain in place because the existing BudgetScreen consumes a richer
+// DTO than the live backend surfaces — see src/api/budgets.js file
+// header for the flagged-shape-delta list). Screens that opt into the
+// live surface swap their imports explicitly to these `*Live` names.
+//
+// Legacy mock-shaped budget surface — these ARE on mockEngine's namespace,
+// picked up by the Object.keys(mockEngine) loop in buildLiveSurface +
+// routed via mock_fallback (LIVE mode warns once, then returns mock
+// data). They MUST be re-exported here so screens that import them from
+// `../../engine` get the router-wrapped function (MOCK-mode mockEngine
+// or LIVE-mode mock_fallback wrapper) rather than `undefined`. The
+// screen rewire keeps the same semantic shape; a future wire that
+// reshapes the screen to the live budgets DTO can swap these exports
+// one at a time.
+export const getActiveBudget = surface.getActiveBudget;
+export const getActiveBudgetSummary = surface.getActiveBudgetSummary;
+export const getBudgetVarianceByDepartment = surface.getBudgetVarianceByDepartment;
+export const getBudgetVarianceByLineItem = surface.getBudgetVarianceByLineItem;
+export const getBudgetById = surface.getBudgetById;
+export const getAllBudgets = surface.getAllBudgets;
+export const getTeamMembers = surface.getTeamMembers;
+export const approveBudget = surface.approveBudget;
+export const delegateBudget = surface.delegateBudget;
+export const getBudgetForYear = surface.getBudgetForYear;
+export const updateBudgetLine = surface.updateBudgetLine;
+export const deleteBudgetLine = surface.deleteBudgetLine;
+export const createBudgetLine = surface.createBudgetLine;
+export const addBudgetLineComment = surface.addBudgetLineComment;
+export const getBudgetLineComments = surface.getBudgetLineComments;
+export const deleteBudgetLineComment = surface.deleteBudgetLineComment;
+export const updateBudgetLineItemValue = surface.updateBudgetLineItemValue;
+export const submitDepartment = surface.submitDepartment;
+export const getBudgetWorkflowSummary = surface.getBudgetWorkflowSummary;
+
+// Group A — reads:
+export const getBudgetSummaryLive = surface.getBudgetSummaryLive;
+export const getBudgetVarianceLive = surface.getBudgetVarianceLive;
+export const getBudgetForYearLive = surface.getBudgetForYearLive;
+// Group B — per-line CRUD:
+export const createBudgetLineLive = surface.createBudgetLineLive;
+export const updateBudgetLineLive = surface.updateBudgetLineLive;
+export const deleteBudgetLineLive = surface.deleteBudgetLineLive;
+// Group C — approval workflow:
+export const submitBudgetForApprovalLive = surface.submitBudgetForApprovalLive;
+export const delegateBudgetLive = surface.delegateBudgetLive;
+export const approveBudgetDepartmentLive = surface.approveBudgetDepartmentLive;
+export const requestDepartmentRevisionLive = surface.requestDepartmentRevisionLive;
+export const requestBudgetChangesLive = surface.requestBudgetChangesLive;
+// Group D — comments:
+export const addBudgetLineCommentLive = surface.addBudgetLineCommentLive;
+export const listBudgetLineCommentsLive = surface.listBudgetLineCommentsLive;
+export const deleteBudgetLineCommentLive = surface.deleteBudgetLineCommentLive;
+// Group E — state + team:
+export const getBudgetApprovalStateLive = surface.getBudgetApprovalStateLive;
+export const listTeamMembersLive = surface.listTeamMembersLive;

@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getBudgetWorkflowSummary } from "../../engine/mockEngine";
+// Track B Dispatch 6 wire 6 (2026-04-20) — import swapped from
+// ../../engine/mockEngine to ../../engine. getBudgetWorkflowSummary is
+// NOT in Dispatch 6 scope — the live backend does not surface
+// per-department workflow status aggregates. LIVE mode falls back to
+// mockEngine with a one-shot warn (see engine/index.js router). The
+// Dispatch 6 /approval-state endpoint is the closest analogue but has
+// a different shape; migrating this strip would require a screen
+// architecture change (flagged — see src/api/budgets.js file header).
+import { getBudgetWorkflowSummary } from "../../engine";
 
 const STATE_STYLE = {
   draft:              { key: "draft",             color: "var(--semantic-warning)" },

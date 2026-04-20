@@ -3,13 +3,21 @@ import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { formatKWD } from "../../utils/format";
 import BudgetVarianceBar from "./BudgetVarianceBar";
+// Track B Dispatch 6 wire 6 (2026-04-20) — imports swapped from
+// ../../engine/mockEngine to ../../engine. approveDepartment and
+// requestDepartmentRevision route through the new Dispatch 6 live
+// endpoints (/departments/:deptId/approve and /request-revision);
+// getBudgetVarianceByLineItem, updateBudgetLineItemValue, and
+// submitDepartment remain on the legacy mock surface (the per-line-item
+// variance / per-department Junior submit path is not in Dispatch 6
+// scope — only budget-level line CRUD + budget-level approval).
 import {
   getBudgetVarianceByLineItem,
   updateBudgetLineItemValue,
-  approveDepartment,
-  requestDepartmentRevision,
   submitDepartment,
-} from "../../engine/mockEngine";
+  approveBudgetDepartmentLive,
+  requestDepartmentRevisionLive,
+} from "../../engine";
 import RevisionNotesCard from "./RevisionNotesCard";
 import SubmitDraftConfirmationModal from "./SubmitDraftConfirmationModal";
 import Avatar from "../taskbox/Avatar";
@@ -71,18 +79,41 @@ export default function DepartmentRow({
   };
 
   const handleApproveDept = async () => {
-    await approveDepartment(budget.id, row.id);
-    onToast && onToast(t("toast.approved", { name: row.name }));
-    onRefresh && onRefresh();
+    // Live POST /api/budgets/:id/departments/:deptId/approve (Dispatch 6).
+    // Service enforces: user matches delegated assignToUserId OR is Owner.
+    // 403 is forwarded via client.js normalised rejection → toast below.
+    //
+    // NOTE: this records the per-department approval only. The budget
+    // itself is NOT auto-finalised by the last approval — the Owner must
+    // explicitly call POST /api/budgets/:id/approve (legacy approveBudget
+    // in the screen header). `approval-state.nextAction` carries the
+    // authoritative hint for what's next.
+    try {
+      await approveBudgetDepartmentLive(budget.id, row.id);
+      onToast && onToast(t("toast.approved", { name: row.name }));
+      onRefresh && onRefresh();
+    } catch (err) {
+      const msg = err?.status === 403
+        ? t("toast.not_delegated_approver")
+        : (err?.message || t("toast.approve_failed"));
+      onToast && onToast(msg);
+    }
   };
 
   const handleRequestRevisions = async () => {
     if (!revisionText.trim()) return;
-    await requestDepartmentRevision(budget.id, row.id, revisionText.trim());
-    setShowRevisionComposer(false);
-    setRevisionText("");
-    onToast && onToast(t("toast.revision_sent"));
-    onRefresh && onRefresh();
+    // Live POST /api/budgets/:id/departments/:deptId/request-revision.
+    // Body requires { notes: 1..1000 chars }. Sets the department
+    // delegation.status to NEEDS_REVISION.
+    try {
+      await requestDepartmentRevisionLive(budget.id, row.id, { notes: revisionText.trim() });
+      setShowRevisionComposer(false);
+      setRevisionText("");
+      onToast && onToast(t("toast.revision_sent"));
+      onRefresh && onRefresh();
+    } catch (err) {
+      onToast && onToast(err?.message || t("toast.revision_failed"));
+    }
   };
 
   return (

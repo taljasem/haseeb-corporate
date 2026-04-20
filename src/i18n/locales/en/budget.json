@@ -77,7 +77,16 @@
     "approved": "{{name}} approved",
     "revision_sent": "Revision request sent",
     "submitted": "Submitted {{name}} to CFO",
-    "delegated": "Delegated to {{count}} team members"
+    "delegated": "Delegated to {{count}} team members",
+    "approval_load_failed": "Could not load approval state",
+    "submit_failed": "Could not submit for approval",
+    "request_changes_failed": "Could not send change request",
+    "not_delegated_approver": "You are not the delegated approver for this department",
+    "approve_failed": "Could not approve department",
+    "revision_failed": "Could not send revision request"
+  },
+  "prompts": {
+    "change_request_notes": "Change request notes for CFO:"
   },
   "revision": {
     "label": "REVISION REQUESTED BY CFO",
@@ -145,6 +154,7 @@
     "rejected": "Rejected",
     "revision_requested": "Revision requested",
     "workflow_title": "Approval workflow",
-    "next_action": "Next action: {{action}}"
+    "next_action": "Next action: {{action}}",
+    "next_action_label": "NEXT ACTION"
   }
 }

@@ -1,19 +1,26 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronRight, MessageCircle, ArrowUpRight, CheckCircle2, Clock, XCircle, AlertCircle, X } from "lucide-react";
+// Track B Dispatch 6 wire 6 (2026-04-20) — imports swapped from
+// ../../engine/mockEngine to ../../engine so the screen rides the router.
+// MOCK mode preserves legacy behaviour; LIVE mode falls back to mockEngine
+// with a one-shot warn for every hook where the DTO shape delta would
+// require inventing backend fields (see src/api/budgets.js file header
+// for the flagged list). The 16 new Dispatch 6 endpoints are available
+// under the canonical `*Live` names (see src/engine/index.js) and are
+// called selectively below where the shape aligns without invention.
 import {
+  // Legacy mock-shaped readers + writers (MOCK: real; LIVE: mock_fallback
+  // with one-shot warn because backend DTO is flatter and departments[]
+  // with lineItems are not surfaced).
   getActiveBudget,
   getActiveBudgetSummary,
   getBudgetVarianceByDepartment,
   getBudgetById,
   getAllBudgets,
   getTeamMembers,
-  submitBudgetForApproval,
   approveBudget,
   delegateBudget,
-  approveDepartment,
-  requestDepartmentRevision,
-  requestBudgetChanges,
   getBudgetForYear,
   updateBudgetLine,
   deleteBudgetLine,
@@ -21,8 +28,15 @@ import {
   addBudgetLineComment,
   getBudgetLineComments,
   deleteBudgetLineComment,
-  getBudgetApprovalState,
-} from "../../engine/mockEngine";
+  // Dispatch 6 canonical live wrappers — live-mode enabled, mock-mode
+  // adapter in engine/index.js::buildMockExtras. The per-department
+  // action endpoints (approveBudgetDepartmentLive,
+  // requestDepartmentRevisionLive) are consumed from DepartmentRow, not
+  // from this top-level screen.
+  submitBudgetForApprovalLive,
+  requestBudgetChangesLive,
+  getBudgetApprovalStateLive,
+} from "../../engine";
 import AminahNarrationCard from "../financial/AminahNarrationCard";
 import ActionButton from "../ds/ActionButton";
 import PersistentBanner from "../ds/PersistentBanner";
@@ -128,12 +142,22 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
     setComments(c || []);
   };
 
-  // Approval state handler
+  // Approval state handler — hits live Dispatch 6 endpoint
+  //   GET /api/budgets/:id/approval-state
+  // which returns the {budgetStatus, nextAction, reviewers, history}
+  // shape. `nextAction` is the authoritative "what's next" hint and
+  // supersedes the legacy mock.status-derived label.
   const openApprovalState = async () => {
     if (!budget?.id) return;
-    const state = await getBudgetApprovalState(budget.id);
-    setApprovalState(state);
-    setApprovalOpen(true);
+    try {
+      const state = await getBudgetApprovalStateLive(budget.id);
+      setApprovalState(state);
+      setApprovalOpen(true);
+    } catch (err) {
+      // Backend uses { ok:false, status, code, message } — forward the
+      // message to the existing toast stack so the user sees why it failed.
+      showToast(err?.message || t("toast.approval_load_failed"));
+    }
   };
 
   useEffect(() => {
@@ -457,19 +481,39 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
             role={role}
             refreshKey={refreshKey}
             onSendForApproval={async () => {
-              await submitBudgetForApproval(budget.id);
-              refresh();
+              // Live POST /api/budgets/:id/submit-approval (Dispatch 6).
+              // 400 if budget is not DRAFT — error surfaces via client.js
+              // normalised rejection; caught and toasted below.
+              try {
+                await submitBudgetForApprovalLive(budget.id);
+                refresh();
+              } catch (err) {
+                showToast(err?.message || t("toast.submit_failed"));
+              }
             }}
             onApprove={async () => {
+              // approveBudget remains on the legacy engine path — this is
+              // the EXISTING /api/budgets/:id/approve endpoint (Owner
+              // finalisation). Dispatch 6 introduced the per-department
+              // approval endpoint (see DepartmentRow) but explicitly
+              // decided the Owner-finalise call stays the existing
+              // /approve. See src/api/budgets.js file header for the
+              // nextAction contract.
               await approveBudget(budget.id, "owner");
               refresh();
             }}
             onRequestChanges={async () => {
-              // Minimal inline prompt for this pass
-              const n = window.prompt("Change request notes for CFO:", "");
-              if (n != null) {
-                await requestBudgetChanges(budget.id, n);
+              // Live POST /api/budgets/:id/request-changes (Dispatch 6).
+              // OWNER ONLY; body requires { notes: 1..1000 chars }.
+              // 400 on non-PENDING_APPROVAL; 403 to non-Owner callers —
+              // forwarded as toast.
+              const n = window.prompt(t("prompts.change_request_notes"), "");
+              if (n == null || !n.trim()) return;
+              try {
+                await requestBudgetChangesLive(budget.id, { notes: n.trim() });
                 refresh();
+              } catch (err) {
+                showToast(err?.message || t("toast.request_changes_failed"));
               }
             }}
             onDelegate={() => setDelegateOpen(true)}
@@ -643,26 +687,68 @@ export default function BudgetScreen({ role = "CFO", onOpenAminah, juniorOnlyId 
               <button onClick={() => setApprovalOpen(false)} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer" }}><X size={16} /></button>
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: "16px 22px" }}>
+              {/*
+                Live Dispatch 6 approval-state DTO:
+                  { budgetStatus, nextAction, reviewers:[{role, userId,
+                    userName, status:'pending'|'approved'|'needs_revision',
+                    decidedAt?}], history:[{action, actor, timestamp, notes?}] }
+              */}
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                {approvalState.status === "approved" || approvalState.status === "active" ? <CheckCircle2 size={20} color="var(--accent-primary)" /> : <Clock size={20} color="var(--semantic-warning)" />}
-                <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>{t(`approval.${approvalState.status === "active" ? "approved" : approvalState.status}`)}</div>
-              </div>
-              <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 16 }}>{t("approval.next_action", { action: approvalState.nextAction })}</div>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 8 }}>REVIEWERS</div>
-              {(approvalState.reviewers || []).map((r, i) => (
-                <div key={i} style={{ padding: "8px 0", borderBottom: "1px solid var(--border-subtle)", fontSize: 12, display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "var(--text-primary)" }}>{r.role}</span>
-                  <span style={{ color: r.status === "approved" ? "var(--accent-primary)" : "var(--text-tertiary)", fontWeight: 600, fontSize: 10 }}>{r.status.toUpperCase()}</span>
+                {approvalState.budgetStatus === "APPROVED" || approvalState.budgetStatus === "LOCKED" ? (
+                  <CheckCircle2 size={20} color="var(--accent-primary)" />
+                ) : (
+                  <Clock size={20} color="var(--semantic-warning)" />
+                )}
+                <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>
+                  {approvalState.budgetStatus || "—"}
                 </div>
-              ))}
+              </div>
+              {/* nextAction is the authoritative "what's next" string from
+                  the backend — rendered verbatim per wire 6 spec. */}
+              {approvalState.nextAction && (
+                <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 16, lineHeight: 1.5 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", display: "block", marginBottom: 4 }}>
+                    {t("approval.next_action_label")}
+                  </span>
+                  {approvalState.nextAction}
+                </div>
+              )}
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 8 }}>REVIEWERS</div>
+              {(approvalState.reviewers || []).map((r, i) => {
+                const color = r.status === "approved"
+                  ? "var(--accent-primary)"
+                  : r.status === "needs_revision"
+                    ? "var(--semantic-warning)"
+                    : "var(--text-tertiary)";
+                return (
+                  <div key={i} style={{ padding: "8px 0", borderBottom: "1px solid var(--border-subtle)", fontSize: 12, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                    <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                      <span style={{ color: "var(--text-primary)", fontWeight: 500 }}>{r.userName || r.role}</span>
+                      {r.userName && r.role && r.userName !== r.role && (
+                        <span style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 2 }}>{r.role}</span>
+                      )}
+                    </div>
+                    <span style={{ color, fontWeight: 600, fontSize: 10, letterSpacing: "0.1em", whiteSpace: "nowrap" }}>
+                      {(r.status || "pending").toUpperCase().replace(/_/g, " ")}
+                    </span>
+                  </div>
+                );
+              })}
               {(approvalState.history || []).length > 0 && (
                 <>
                   <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginTop: 16, marginBottom: 8 }}>WORKFLOW HISTORY</div>
                   {approvalState.history.map((h, i) => (
                     <div key={i} style={{ padding: "6px 0", borderBottom: "1px solid var(--border-subtle)", fontSize: 11, color: "var(--text-tertiary)" }}>
-                      <span style={{ color: "var(--text-secondary)" }}>{h.fromState || "—"} → {h.toState}</span>
-                      {h.byUserId && <span> · {h.byUserId}</span>}
-                      {h.note && <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 2, fontStyle: "italic" }}>{h.note}</div>}
+                      <span style={{ color: "var(--text-secondary)" }}>{h.action || "—"}</span>
+                      {h.actor && <span> · {h.actor}</span>}
+                      {h.timestamp && (
+                        <span style={{ marginInlineStart: 6 }}>
+                          · {new Date(h.timestamp).toLocaleDateString()}
+                        </span>
+                      )}
+                      {h.notes && (
+                        <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 2, fontStyle: "italic" }}>{h.notes}</div>
+                      )}
                     </div>
                   ))}
                 </>

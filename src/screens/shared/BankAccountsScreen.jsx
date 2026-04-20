@@ -316,29 +316,7 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
               <BankStatementTable txs={filteredTxs} currency={selected.currency} />
             </div>
 
-            {/* Export */}
-            {!readOnly && <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-              {["PDF", "CSV", "Excel"].map((fmt) => (
-                <button
-                  key={fmt}
-                  onClick={() => {}}
-                  style={{
-                    background: "transparent",
-                    color: "var(--text-secondary)",
-                    border: "1px solid var(--border-default)",
-                    padding: "7px 14px",
-                    borderRadius: 6,
-                    cursor: "pointer",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    letterSpacing: "0.04em",
-                    fontFamily: "inherit",
-                  }}
-                >
-                  {t("export", { format: fmt })}
-                </button>
-              ))}
-            </div>}
+            {/* Export buttons hidden pending HASEEB-180 backend endpoint (GET /:id/export?format=csv|pdf|xlsx). */}
 
             {!readOnly && showFutureOps && <FutureBankOperationsCard />}
           </>

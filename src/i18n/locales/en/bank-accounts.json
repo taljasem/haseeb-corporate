@@ -17,7 +17,6 @@
     "outflow": "Outflow"
   },
   "search_placeholder": "Search transactions...",
-  "export": "Export {{format}}",
   "card": {
     "current_balance": "CURRENT BALANCE",
     "mtd_inflow": "MTD INFLOW",

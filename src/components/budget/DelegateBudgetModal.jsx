@@ -5,7 +5,20 @@ import useEscapeKey from "../../hooks/useEscapeKey";
 import Spinner from "../shared/Spinner";
 import EmptyState from "../shared/EmptyState";
 import { Inbox } from "lucide-react";
-import { getBudgetById, delegateBudget, getTeamMembers } from "../../engine/mockEngine";
+// Track B Dispatch 6 wire 6 (2026-04-20) — imports swapped from
+// ../../engine/mockEngine to ../../engine. delegateBudget routes through
+// the live POST /api/budgets/:id/delegate endpoint (via
+// delegateBudgetLive), and getTeamMembers via listTeamMembersLive which
+// adapts the live { id, name, email, role } shape to what the modal
+// consumes. getBudgetById stays on legacy mock — the live
+// GET /api/budgets/:id does NOT return the nested departments[] with
+// lineItems + totalAnnual that this modal relies on (flagged — see
+// src/api/budgets.js file header).
+import {
+  getBudgetById,
+  delegateBudgetLive,
+  listTeamMembersLive,
+} from "../../engine";
 import { formatKWD } from "../../utils/format";
 
 const DEFAULT_ASSIGNMENTS = {
@@ -41,7 +54,14 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
         setAssignments(init);
       }
     });
-    getTeamMembers().then((t) => setTeam(t.filter((m) => m.id !== "self")));
+    // Live GET /api/team/members — returns { id, name, email, role }. The
+    // legacy mockEngine.getTeamMembers had a synthetic "self" row that
+    // represented the current CFO; the live endpoint does not emit a
+    // self-row, so the filter is a no-op against live data but preserved
+    // for MOCK-mode compatibility.
+    listTeamMembersLive().then((members) =>
+      setTeam((members || []).filter((m) => m.id !== "self")),
+    );
   }, [open, budgetId]);
 
   if (!open) return null;
@@ -51,15 +71,34 @@ export default function DelegateBudgetModal({ open, budgetId, onClose, onDelegat
 
   const handleSend = async () => {
     setSending(true);
-    const payload = expenseDepts.map((d) => ({
+    // Live POST /api/budgets/:id/delegate shape:
+    //   { delegations: [{ departmentId, assignToUserId }] }
+    // Note the LIVE endpoint does NOT carry per-delegation notes (flagged
+    // shape delta — see src/api/budgets.js file header). Notes captured in
+    // this modal are currently informational only on the live path; the
+    // mock adapter still forwards them to mockEngine via the engine
+    // extras in src/engine/index.js::buildMockExtras.
+    const delegations = expenseDepts.map((d) => ({
       departmentId: d.id,
-      juniorUserId: assignments[d.id],
+      assignToUserId: assignments[d.id],
+      // `notes` is carried in the payload for the mock adapter's benefit;
+      // the live wrapper will strip it before POSTing (see budgets.js
+      // delegateBudget — it only serialises { delegations: [...]}; the
+      // {departmentId, assignToUserId} subset is all that reaches the wire).
       notes: notes[d.id] || null,
     }));
-    await delegateBudget(budgetId, payload);
-    setSending(false);
-    onDelegated && onDelegated(payload.length);
-    onClose && onClose();
+    try {
+      await delegateBudgetLive(budgetId, { delegations });
+      onDelegated && onDelegated(delegations.length);
+      onClose && onClose();
+    } catch (err) {
+      // Surface via the parent onDelegated/toast path on next wire; for
+      // now the modal just stops the spinner and leaves itself open so
+      // the user can retry. No alert() to avoid regressing UX.
+      console.error("[DelegateBudgetModal] delegate failed", err);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (

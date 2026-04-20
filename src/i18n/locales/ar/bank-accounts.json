@@ -6,10 +6,10 @@
   "last_updated": "آخر تحديث {{time}}",
   "updated": "تم التحديث {{time}}",
   "ranges": {
-    "today": "اليوم",
-    "week": "هذا الأسبوع",
     "month": "هذا الشهر",
-    "all": "الكل"
+    "quarter": "هذا الربع",
+    "year": "هذا العام",
+    "all": "كل الفترات"
   },
   "type_filters": {
     "all": "الكل",

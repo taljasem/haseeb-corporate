@@ -23,7 +23,6 @@
     "saved": "Tenant flags saved.",
     "unsaved_changes": "You have unsaved changes.",
     "owner_readonly_note": "Owner is read-only on tenant flags. Ask the CFO to change these.",
-    "backend_pending_note": "Backend endpoint is not yet live — changes are persisted locally until the API ships. Flag this commit for review.",
     "has_foreign_activity": {
       "label": "Foreign activity",
       "description": "Enable when the company has cross-border income, expenses, or tax obligations. Adds Withholding Tax, CIT Assessments, Tax Lodgements, and Disallowance Rules to the Setup nav."

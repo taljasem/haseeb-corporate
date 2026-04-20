@@ -13,25 +13,43 @@ import DropZone from "../ds/DropZone";
 import BulkMatchRuleModal from "./BulkMatchRuleModal";
 import CompleteReconciliationModal from "./CompleteReconciliationModal";
 import ReconciliationHistorySlideOver from "./ReconciliationHistorySlideOver";
+// Reconciliation — Track B Dispatch 5 wire 5 (2026-04-20).
+//
+// 11 endpoints / 12 wrappers wired via the engine surface:
+//   • reopen, lock (OWNER only), import-statement, export (CSV), resolve-exception,
+//     confirm-suggestion, dismiss-suggestion, create-journal-entry (WALL-GATED),
+//     parse-statement, fiscal-period status, primary-operating resolver.
+//
+// STOPPED-AND-FLAGGED on mockEngine (shape mismatch too intrusive for this wire):
+//   • getReconciliationDashboard → backend returns {period, rows} with a
+//     different `status` vocabulary and NO currentReconciliationId; screen
+//     navigates by id so adapter work would be invasive.
+//   • getReconciliationById → backend returns {reconciliation, matches,
+//     unmatchedStatements, unmatchedBookEntries, difference}; screen consumes
+//     a RICH nested shape (pendingSuggestions, matchedItems[] with matchTier,
+//     period:{month,year,label}, openingBalance/closingLedgerBalance,
+//     exceptions[] with type+suggestedAction, etc.) that the current backend
+//     doesn't surface. Follow-up wire scope.
+//   • getReconciliationHistory, manualMatch, unmatch, completeReconciliation
+//     remain on mockEngine for the same reason (shape-dependent on the mock
+//     detail payload).
 import {
   getReconciliationDashboard,
   getReconciliationById,
-  resolveException,
-  createMissingJournalEntry,
-  manualMatch,
   completeReconciliation,
-  getPrimaryOperatingAccount,
-  confirmSuggestion,
-  dismissSuggestion,
-  reopenReconciliation,
-  exportReconciliationCSV,
-  parseBankStatementCSV,
-  importUploadedStatement,
-  getReconciliationHistory,
-  unmatch,
-  lockReconciliation,
-  checkPeriodStatus,
 } from "../../engine/mockEngine";
+import {
+  reopenReconciliationLive,
+  exportReconciliationCsv,
+  getPrimaryOperatingAccountLive,
+  confirmSuggestionLive,
+  dismissSuggestionLive,
+  resolveExceptionLive,
+  createReconciliationJournalEntry,
+  parseStatementLive,
+  importStatementLive,
+  getFiscalPeriodStatus,
+} from "../../engine";
 import { formatKWDAmount, formatDate } from "../../utils/format";
 
 const STATUS_META = {
@@ -217,6 +235,10 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
   const [uploadState, setUploadState] = useState("idle");
   const [uploadWarnings, setUploadWarnings] = useState([]);
   const [isSoftClosed, setIsSoftClosed] = useState(false);
+  // Lock modal (wire 5) — OWNER-only, requires `reason`.
+  const [lockModalOpen, setLockModalOpen] = useState(false);
+  const [lockReasonDraft, setLockReasonDraft] = useState("");
+  const [locking, setLocking] = useState(false);
   const fileInputRef = useRef(null);
   const bannerShownRef = useRef(null);
   const suggestionsRef = useRef(null);
@@ -231,12 +253,16 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
     }
   }, [rec?.id]);
 
-  // Check period status for complete modal
+  // Check period status for complete modal.
+  // Live wrapper `getFiscalPeriodStatus(year, month)` returns
+  // { year, month, status: 'open'|'soft-closed'|'hard-closed'|'locked',
+  //   canEditReconciliations, isApprovalRequired }. Status uses the same
+  // hyphenated lowercase vocabulary as the legacy mockEngine path.
   useEffect(() => {
-    if (rec) {
-      checkPeriodStatus(new Date(rec.period.year, rec.period.month - 1, 15)).then((ps) => {
-        setIsSoftClosed(ps.status === "soft-closed");
-      });
+    if (rec?.period?.year && rec?.period?.month) {
+      getFiscalPeriodStatus(rec.period.year, rec.period.month).then((ps) => {
+        setIsSoftClosed(ps?.status === "soft-closed");
+      }).catch(() => { /* non-blocking; UI still allows complete attempt */ });
     }
   }, [rec?.id, rec?.period?.year, rec?.period?.month]);
 
@@ -256,17 +282,66 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
   (rec.matchedItems || []).forEach((m) => { const k = m.matchTier || "exact"; if (tierCounts[k] !== undefined) tierCounts[k]++; else tierCounts.manual++; });
 
   // ─── Handlers ───
-  const handleResolve = async (excId, resolution) => { await resolveException(rec.id, excId, resolution, author); await onReload(); showToast(t("exceptions.resolution_accepted")); };
+  // All four below go through the live wrappers (wire 5). Author arg is
+  // dropped — the backend derives identity from JWT. Errors (400 period
+  // closed, 403 locked, 404 stale id, etc.) surface via the existing
+  // toast pattern.
+  const handleResolve = async (excId, resolution) => {
+    try {
+      await resolveExceptionLive(rec.id, excId, { resolution });
+      await onReload();
+      showToast(t("exceptions.resolution_accepted"));
+    } catch (err) {
+      showToast(err?.message || "Failed to resolve exception", "error");
+    }
+  };
   const handleCreateJE = async (excBankItemId, debit, credit) => {
     const bi = rec.unmatchedBankItems.find((b) => b.id === excBankItemId);
     if (!bi) return;
-    await createMissingJournalEntry(rec.id, excBankItemId, debit, credit, bi.amount, author);
-    setJeComposerFor(null);
-    await onReload();
-    showToast(t("je_composer.confirm"));
+    // The live endpoint takes AccountRole strings (not freeform labels).
+    // The InlineJEComposer currently prefills debit with a localized
+    // label and credit from the primary-operating resolver. We pass the
+    // composer inputs through as-is; backend `resolveLineAccountRefs`
+    // throws a clear ValidationError on unknown roles and we surface
+    // that as a toast. Phase 4 UX decision flagged: this keeps the
+    // composer's free-text UX; a future wire can switch to a curated
+    // role dropdown (e.g. BANK_CHARGES_EXPENSE / BANK_PRIMARY / ...).
+    // exceptionId is the currently-open composer's source exception id,
+    // if any — the backend resolves the exception with a back-link to
+    // the new JE when provided.
+    const excId = jeComposerFor?.id;
+    try {
+      await createReconciliationJournalEntry(rec.id, {
+        bankItemId: excBankItemId,
+        debitRole: debit,
+        creditRole: credit,
+        amountKwd: String(Math.abs(Number(bi.amount)).toFixed(3)),
+        exceptionId: excId,
+      });
+      setJeComposerFor(null);
+      await onReload();
+      showToast(t("je_composer.confirm"));
+    } catch (err) {
+      showToast(err?.message || "Failed to create journal entry", "error");
+    }
   };
-  const handleConfirmSuggestion = async (suggId) => { await confirmSuggestion(rec.id, suggId, author); await onReload(); showToast(t("suggestions.confirm_button")); };
-  const handleDismissSuggestion = async (suggId) => { await dismissSuggestion(rec.id, suggId, author); await onReload(); };
+  const handleConfirmSuggestion = async (suggId) => {
+    try {
+      await confirmSuggestionLive(rec.id, suggId);
+      await onReload();
+      showToast(t("suggestions.confirm_button"));
+    } catch (err) {
+      showToast(err?.message || "Failed to confirm suggestion", "error");
+    }
+  };
+  const handleDismissSuggestion = async (suggId) => {
+    try {
+      await dismissSuggestionLive(rec.id, suggId);
+      await onReload();
+    } catch (err) {
+      showToast(err?.message || "Failed to dismiss suggestion", "error");
+    }
+  };
 
   const handleComplete = async (force) => {
     const result = await completeReconciliation(rec.id, author, force ? { force: true } : {});
@@ -276,32 +351,99 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
     else { showToast(t("complete.completed_toast")); }
     await onReload();
   };
-  const handleReopen = async () => { await reopenReconciliation(rec.id, author); await onReload(); showToast(t("complete.reopened_toast")); };
-
-  const handleExport = async () => {
-    const result = await exportReconciliationCSV(rec.id);
-    if (!result?.csvText) { showToast("Export failed", "error"); return; }
-    showToast(t("export.downloading", { filename: result.filename }), "info");
-    const blob = new Blob(["\uFEFF" + result.csvText], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = result.filename;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handleReopen = async () => {
+    try {
+      await reopenReconciliationLive(rec.id);
+      await onReload();
+      showToast(t("complete.reopened_toast"));
+    } catch (err) {
+      showToast(err?.message || "Failed to reopen reconciliation", "error");
+    }
   };
 
+  // Lock handler (wire 5). OWNER only — we gate the trigger visually on
+  // `role === "Owner"` and the backend re-checks at the route layer.
+  // `reason` is required (1..500 chars) per the D5 schema.
+  const handleLockConfirm = async () => {
+    const reason = lockReasonDraft.trim();
+    if (!reason) {
+      showToast("Reason is required to lock a reconciliation", "error");
+      return;
+    }
+    setLocking(true);
+    try {
+      await lockReconciliationLive(rec.id, { reason });
+      setLockModalOpen(false);
+      setLockReasonDraft("");
+      await onReload();
+      showToast("Reconciliation locked");
+    } catch (err) {
+      showToast(err?.message || "Failed to lock reconciliation", "error");
+    } finally {
+      setLocking(false);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const result = await exportReconciliationCsv(rec.id);
+      if (!result?.csvText) { showToast("Export failed", "error"); return; }
+      showToast(t("export.downloading", { filename: result.filename }), "info");
+      const blob = new Blob(["\uFEFF" + result.csvText], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = result.filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      showToast(err?.message || "Export failed", "error");
+    }
+  };
+
+  // Live parse + import flow (wire 5). The backend `parse-statement`
+  // endpoint uses the active BankFormatSpec (D5b) to tokenise the CSV;
+  // response carries `{items, warnings, errors, formatUsed}`. The
+  // subsequent `import-statement` endpoint persists the items and
+  // reports `{imported, duplicateSkipped, reconciliation}`.
+  //
+  // Phase 4 UX decision flagged: warnings from the parser are surfaced
+  // as a compact one-liner under the drop zone (existing UI pattern);
+  // errors are surfaced as an error toast and abort import. The
+  // `formatUsed` object is NOT shown in this wire — the drop zone has
+  // no slot for it; a future wire can add a "(NBK format, v1)" chip.
   const handleCSVFile = async (file) => {
     if (file.size > 5 * 1024 * 1024) { showToast(t("upload.error_too_large"), "error"); return; }
     if (!file.name.toLowerCase().endsWith(".csv")) { showToast(t("upload.error_wrong_type"), "error"); return; }
     setUploadState("parsing");
-    const csvText = await file.text();
-    const parseResult = await parseBankStatementCSV(csvText);
-    if (parseResult.errors?.length > 0) { showToast(parseResult.errors[0], "error"); setUploadState("idle"); return; }
-    await importUploadedStatement(rec.id, parseResult.items, file.name, author);
-    if (parseResult.warnings?.length > 0) setUploadWarnings(parseResult.warnings);
-    showToast(t("upload.success_title") + ` — ${parseResult.items.length} items`, "success");
-    setUploadState("idle");
-    await onReload();
+    try {
+      const csvText = await file.text();
+      const parseResult = await parseStatementLive({ csvText });
+      if (parseResult?.errors?.length > 0) {
+        showToast(parseResult.errors[0], "error");
+        setUploadState("idle");
+        return;
+      }
+      const items = parseResult?.items || [];
+      if (items.length === 0) {
+        showToast(t("upload.error_wrong_type") || "No rows parsed", "error");
+        setUploadState("idle");
+        return;
+      }
+      const importResult = await importStatementLive(rec.id, {
+        items,
+        filename: file.name,
+      });
+      if (parseResult.warnings?.length > 0) setUploadWarnings(parseResult.warnings);
+      const importedCount = importResult?.imported ?? items.length;
+      const dupSkipped = importResult?.duplicateSkipped ?? 0;
+      const suffix = dupSkipped > 0 ? ` (${dupSkipped} duplicates skipped)` : "";
+      showToast(t("upload.success_title") + ` — ${importedCount} items${suffix}`, "success");
+      setUploadState("idle");
+      await onReload();
+    } catch (err) {
+      showToast(err?.message || "Upload failed", "error");
+      setUploadState("idle");
+    }
   };
 
   const handleBulkRuleApplied = async (result) => {
@@ -344,6 +486,12 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
             {/* Reopen — completed or locked only */}
             {!readOnly && (rec.status === "completed" || rec.status === "locked") && (
               <ActionButton variant="secondary" size="md" icon={RotateCcw} label={t("complete.reopen_button")} onClick={handleReopen} />
+            )}
+            {/* Lock — OWNER only, COMPLETED sessions, not already locked.
+                Backend re-enforces OWNER role at the route layer; the UI
+                only shows the affordance to OWNER to avoid a guaranteed 403. */}
+            {!readOnly && role === "Owner" && rec.status === "completed" && (
+              <ActionButton variant="secondary" size="md" icon={Lock} label="Lock" onClick={() => setLockModalOpen(true)} />
             )}
             {/* Complete — in-progress only */}
             {!readOnly && rec.status === "in-progress" && (
@@ -500,8 +648,63 @@ function ReconciliationDetail({ rec, loading, role, readOnly, onBack, onReload, 
       <BulkMatchRuleModal open={bulkRuleOpen} onClose={() => setBulkRuleOpen(false)} reconciliationId={rec.id} onApplied={handleBulkRuleApplied} />
       <CompleteReconciliationModal open={completeModalOpen} onClose={() => setCompleteModalOpen(false)} rec={rec} unresolvedCount={unresolvedCount} hasDifference={Math.abs(diff) > 0.001} isSoftClosed={isSoftClosed} onConfirm={handleComplete} />
       <ReconciliationHistorySlideOver open={historyOpen} onClose={() => setHistoryOpen(false)} accountId={rec.accountId} accountName={rec.accountId} onSelectHistorical={onSelectHistorical} />
+      <LockReconciliationModal
+        open={lockModalOpen}
+        onClose={() => { if (!locking) { setLockModalOpen(false); setLockReasonDraft(""); } }}
+        reason={lockReasonDraft}
+        onReasonChange={setLockReasonDraft}
+        onConfirm={handleLockConfirm}
+        locking={locking}
+      />
       <Toast msg={toast} />
     </div>
+  );
+}
+
+// Lock Reconciliation Modal (wire 5). OWNER-only — see the role gate on
+// the trigger button. Backend enforces role + requires a non-empty
+// `reason` (1..500 chars). On success the session transitions to
+// `locked` and further writes are refused until explicit unlock.
+function LockReconciliationModal({ open, onClose, reason, onReasonChange, onConfirm, locking }) {
+  useEscapeKey(onClose, open);
+  if (!open) return null;
+  const trimmed = (reason || "").trim();
+  const canConfirm = trimmed.length > 0 && !locking;
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 460, background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Lock size={16} color="var(--semantic-warning)" />
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "var(--text-primary)" }}>Lock Reconciliation</div>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close" style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}><X size={18} /></button>
+        </div>
+        <div style={{ padding: "18px 22px" }}>
+          <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
+            Locking this reconciliation permanently seals it. Future match / unmatch / complete / reopen / import actions will be refused until it is explicitly unlocked. OWNER-only action.
+          </div>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 5 }}>Reason (required, 1–500 chars)</div>
+            <textarea
+              value={reason}
+              onChange={(e) => onReasonChange(e.target.value)}
+              maxLength={500}
+              rows={3}
+              placeholder="e.g. March 2026 sealed after auditor sign-off"
+              style={{ width: "100%", background: "var(--bg-surface-sunken)", border: "1px solid var(--border-default)", borderRadius: 6, padding: "9px 12px", color: "var(--text-primary)", fontSize: 13, fontFamily: "inherit", outline: "none", resize: "vertical" }}
+            />
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
+          <button type="button" onClick={onClose} disabled={locking} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "9px 16px", borderRadius: 6, cursor: locking ? "not-allowed" : "pointer", fontSize: 12, fontFamily: "inherit" }}>Cancel</button>
+          <button type="button" onClick={onConfirm} disabled={!canConfirm} style={{ background: canConfirm ? "var(--semantic-warning)" : "var(--border-subtle)", color: canConfirm ? "#fff" : "var(--text-tertiary)", border: "none", padding: "9px 18px", borderRadius: 6, cursor: canConfirm ? "pointer" : "not-allowed", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>
+            {locking ? "…" : "Lock"}
+          </button>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -654,9 +857,20 @@ function InlineJEComposer({ exception, bankItem, onCancel, onConfirm }) {
   const [debit, setDebit] = useState("6800 — Bank Charges");
   const [credit, setCredit] = useState("");
 
+  // Prefill credit side with the tenant's primary operating bank account
+  // label via the live wrapper. Live shape is richer than mock; we use
+  // `accountName` (mock MOCK-mode adapter mirrors it from the legacy
+  // `label` field, see src/engine/index.js buildMockExtras). Failure is
+  // non-fatal — user can type the account manually.
   useEffect(() => {
     let cancelled = false;
-    getPrimaryOperatingAccount().then((acc) => { if (!cancelled && acc?.label) setCredit(acc.label); });
+    getPrimaryOperatingAccountLive()
+      .then((acc) => {
+        if (cancelled) return;
+        const label = acc?.accountName || acc?.label || "";
+        if (label) setCredit(label);
+      })
+      .catch(() => { /* non-fatal */ });
     return () => { cancelled = true; };
   }, []);
 

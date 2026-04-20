@@ -4,10 +4,10 @@ import { Search, Building2 } from "lucide-react";
 import LtrText from "../../components/shared/LtrText";
 import EmptyState from "../../components/shared/EmptyState";
 import {
-  getBankAccounts,
-  getBankStatement,
+  listBankAccounts,
+  getBankAccountStatement,
   getBankAccountSummary,
-} from "../../engine/mockEngine";
+} from "../../engine";
 import BankAccountCard from "../../components/banking/BankAccountCard";
 import BankAccountSummaryStrip from "../../components/banking/BankAccountSummaryStrip";
 import BankStatementTable from "../../components/banking/BankStatementTable";
@@ -15,11 +15,16 @@ import FutureBankOperationsCard from "../../components/banking/FutureBankOperati
 import { formatRelativeTime } from "../../utils/relativeTime";
 import { useTenant } from "../../components/shared/TenantContext";
 
+// Calendar-window ranges per HASEEB-148 (2026-04-20): the backend maps
+// each id to a calendar window (month = current calendar month 1st→last,
+// quarter = current calendar quarter, year = current calendar year,
+// all = no bounds). Labels updated to match — the previous "Today /
+// This Week" rolling labels would be misleading under calendar semantics.
 const RANGES = [
-  { id: "today", key: "today" },
-  { id: "week",  key: "week" },
-  { id: "month", key: "month" },
-  { id: "all",   key: "all" },
+  { id: "month",   key: "month" },
+  { id: "quarter", key: "quarter" },
+  { id: "year",    key: "year" },
+  { id: "all",     key: "all" },
 ];
 const TYPE_FILTERS = [
   { id: "All", key: "all" },
@@ -41,21 +46,41 @@ export default function BankAccountsScreen({ role = "CFO", readOnly = false, ini
   const [summary, setSummary] = useState(null);
 
   useEffect(() => {
-    getBankAccounts().then((accs) => {
-      setAccounts(accs);
-      if (accs.length > 0) {
-        const initial = initialAccountId && accs.find((a) => a.id === initialAccountId);
-        setSelectedId(initial ? initial.id : accs[0].id);
-      }
-    });
+    let cancelled = false;
+    listBankAccounts()
+      .then((accs) => {
+        if (cancelled) return;
+        const list = Array.isArray(accs) ? accs : [];
+        setAccounts(list);
+        if (list.length > 0) {
+          const initial = initialAccountId && list.find((a) => a.id === initialAccountId);
+          setSelectedId(initial ? initial.id : list[0].id);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setAccounts([]);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [initialAccountId]);
 
   useEffect(() => {
     if (!selectedId) return;
+    let cancelled = false;
     setTxs(null);
     setSummary(null);
-    getBankStatement(selectedId, range).then(setTxs);
-    getBankAccountSummary(selectedId).then(setSummary);
+    // Calendar-range options (HASEEB-148). The backend reads `range` and
+    // computes the window server-side; we don't pass from/to here.
+    getBankAccountStatement(selectedId, { range })
+      .then((rows) => { if (!cancelled) setTxs(Array.isArray(rows) ? rows : []); })
+      .catch(() => { if (!cancelled) setTxs([]); });
+    getBankAccountSummary(selectedId, { range })
+      .then((s) => { if (!cancelled) setSummary(s || null); })
+      .catch(() => { if (!cancelled) setSummary(null); });
+    return () => {
+      cancelled = true;
+    };
   }, [selectedId, range]);
 
   const selected = accounts ? accounts.find((a) => a.id === selectedId) : null;

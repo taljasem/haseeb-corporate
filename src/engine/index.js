@@ -84,6 +84,13 @@ import * as islamicFinanceApi from '../api/islamic-finance';
 import * as purchaseOrdersApi from '../api/purchase-orders';
 import * as tenantFlagsApi from '../api/tenant-flags';
 import * as inventoryNrvApi from '../api/inventory-nrv';
+import * as cfoTodayApi from '../api/cfo-today';
+import * as rulesApi from '../api/rules';
+import * as adminIntegrationsApi from '../api/admin-integrations';
+import * as adminAuditLogApi from '../api/admin-audit-log';
+import * as bankAccountsApi from '../api/bank-accounts';
+import * as reconciliationApi from '../api/reconciliation';
+import * as budgetsApi from '../api/budgets';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -198,6 +205,42 @@ const FUNCTION_ROUTING = {
   // modal's `a.type === 'Expenses'` filter is broken in MOCK — see
   // HASEEB-071 for the separate mock-shape fix).
   getChartOfAccounts: 'wired',
+
+  // CFO TodayScreen composite reads (Track B Dispatch 3a+3b, 2026-04-20).
+  // Four endpoints under /api/cfo/* + rule-suggestions under /api/rules.
+  // All four cfo-today hooks are open to every authenticated role on the
+  // backend; rules.suggestions is OWNER + ACCOUNTANT only (handled at
+  // the endpoint — 403 silently-degrades in the frontend).
+  getCFOTodayQueue: 'wired',
+  getCloseStatus: 'wired',
+  getCFOAminahNotes: 'wired',
+  getTeamActivity: 'wired',
+  getEngineStatus: 'wired',
+  getSuggestedCategorizationRules: 'wired',
+  getSuggestedRoutingRules: 'wired',
+
+  // Settings — personal surface (Track B Dispatch 2 wire 3, 2026-04-20).
+  // getMyActivity is an extras name (not on mockEngine). The other seven
+  // collide with mockEngine names; buildMockExtras overrides the MOCK
+  // impls to match the live no-role-arg shape.
+  getNotificationPreferences: 'wired',
+  updateNotificationPreferences: 'wired',
+  getActiveSessions: 'wired',
+  signOutSession: 'wired',
+  signOutAllOtherSessions: 'wired',
+  getTwoFactorStatus: 'wired',
+  disableTwoFactor: 'wired',
+  getMyActivity: 'wired',
+
+  // Banking — bank accounts surface (Track B Dispatch 4 wire 4, 2026-04-20).
+  // listBankAccounts / getBankAccountStatement are "extras" names NOT on
+  // mockEngine's namespace — they are wired via buildLiveSurface direct
+  // assignment + buildMockExtras MOCK adapters below (and MUST be named-
+  // exported from this module for screens to consume). getBankAccountSummary
+  // collides with a mockEngine function of the same name; buildMockExtras
+  // overrides it so the UI's { range, from, to } options shape works in
+  // both MOCK and LIVE modes (mock took a single `period` positional).
+  getBankAccountSummary: 'wired',
 };
 
 /**
@@ -491,7 +534,7 @@ const REAL_IMPLS = {
   runThreeWayMatch: purchaseOrdersApi.runThreeWayMatch,
   predictiveBillMatch: purchaseOrdersApi.predictiveBillMatch,
 
-  // Tenant Flags (Phase 4 UX Dispatch) — localStorage fallback until backend ships.
+  // Tenant Flags (Track B Dispatch 1, 2026-04-20 — backend live at fba2896).
   getTenantFlags: tenantFlagsApi.getTenantFlags,
   updateTenantFlags: tenantFlagsApi.updateTenantFlags,
 
@@ -501,6 +544,51 @@ const REAL_IMPLS = {
   getActiveNrvPolicy: inventoryNrvApi.getActiveNrvPolicy,
   listNrvPolicies: inventoryNrvApi.listNrvPolicies,
   getNrvAssessment: inventoryNrvApi.getNrvAssessment,
+
+  // CFO TodayScreen composite reads (Track B Dispatch 3a+3b, 2026-04-20).
+  // Hook → endpoint mapping:
+  //   getCFOTodayQueue              → GET /api/cfo/today-queue
+  //   getCloseStatus                → GET /api/cfo/today-queue (closeStatus sub-field)
+  //   getCFOAminahNotes             → GET /api/cfo/aminah-insights
+  //   getTeamActivity               → GET /api/cfo/team-activity
+  //   getEngineStatus               → GET /api/cfo/engine-status
+  //   getSuggestedCategorizationRules → GET /api/rules/suggestions?type=categorization
+  //   getSuggestedRoutingRules      → GET /api/rules/suggestions?type=routing
+  getCFOTodayQueue: cfoTodayApi.getCFOTodayQueue,
+  getCloseStatus: cfoTodayApi.getCloseStatus,
+  getCFOAminahNotes: cfoTodayApi.getCFOAminahNotes,
+  getTeamActivity: cfoTodayApi.getTeamActivity,
+  getEngineStatus: cfoTodayApi.getEngineStatus,
+  getSuggestedCategorizationRules: rulesApi.getSuggestedCategorizationRules,
+  getSuggestedRoutingRules: rulesApi.getSuggestedRoutingRules,
+
+  // Settings — personal surface (Track B Dispatch 2 wire 3, 2026-04-20).
+  // Role is derived from JWT on the backend; these wrappers do not take
+  // a role argument. The corresponding mockEngine functions do — the UI
+  // has been rewired to stop passing it. See buildMockExtras below for
+  // the MOCK-mode adapter that swallows the legacy role arg.
+  // NOT on mockEngine's namespace under these EXACT names (getMyActivity
+  // is a NEW personal-scope name; the tenant-wide listAdminAuditLog wire
+  // already shipped in Dispatch 2 and is a different endpoint). The other
+  // seven names (getNotificationPreferences / updateNotificationPreferences
+  // / getActiveSessions / signOutSession / signOutAllOtherSessions /
+  // getTwoFactorStatus / disableTwoFactor) collide with mockEngine
+  // functions of the same name but different signatures (role-arg vs no
+  // role-arg); buildMockExtras overrides them so MOCK mode and LIVE mode
+  // both accept the no-role-arg call shape.
+  getNotificationPreferences: settingsApi.getNotificationPreferences,
+  updateNotificationPreferences: settingsApi.updateNotificationPreferences,
+  getActiveSessions: settingsApi.getActiveSessions,
+  signOutSession: settingsApi.signOutSession,
+  signOutAllOtherSessions: settingsApi.signOutAllOtherSessions,
+  getTwoFactorStatus: settingsApi.getTwoFactorStatus,
+  disableTwoFactor: settingsApi.disableTwoFactor,
+  getMyActivity: settingsApi.getMyActivity,
+
+  // Banking — bank accounts surface (Track B Dispatch 4 wire 4, 2026-04-20).
+  // getBankAccountSummary collides with mockEngine; the live impl takes
+  // { range, from, to } instead of the mock's positional `period`.
+  getBankAccountSummary: bankAccountsApi.getBankAccountSummary,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -796,6 +884,135 @@ function buildLiveSurface() {
   surface.listNrvPolicies = inventoryNrvApi.listNrvPolicies;
   surface.getNrvAssessment = inventoryNrvApi.getNrvAssessment;
 
+  // CFO TodayScreen Aminah insights — Track B Dispatch 3b. Not on
+  // mockEngine's namespace (it's a net-new structured surface beyond
+  // the legacy getCFOAminahNotes); assigned explicitly as an extras
+  // call so screens that want the full {suggestedAction, supportingData,
+  // lowConfidence, totalAvailable, suppressedCount, generatedAt} shape
+  // can import it uniformly.
+  surface.getAminahInsights = cfoTodayApi.getAminahInsights;
+
+  // Administration — Track B Dispatch 2 (2026-04-20). Tenant-wide admin
+  // surface backed by corporate-api. NOT on mockEngine's namespace;
+  // these are new names that replace the legacy
+  // getIntegrations/addIntegration/removeIntegration/getAccountAuditLog
+  // mock trio on the AdministrationScreen consumer path. Credentials
+  // are write-only on addAdminIntegration; server strips them from
+  // every response.
+  //
+  // Mock → live mapping (for reference, enforced in the screen rewire):
+  //   getIntegrations       → listAdminIntegrations
+  //   addIntegration        → addAdminIntegration
+  //   removeIntegration     → removeAdminIntegration
+  //   getAccountAuditLog    → listAdminAuditLog (tenant-wide scope)
+  surface.listAdminIntegrations = adminIntegrationsApi.listAdminIntegrations;
+  surface.addAdminIntegration = adminIntegrationsApi.addAdminIntegration;
+  surface.removeAdminIntegration = adminIntegrationsApi.removeAdminIntegration;
+  surface.listAdminAuditLog = adminAuditLogApi.listAdminAuditLog;
+
+  // Settings — personal surface (Track B Dispatch 2 wire 3, 2026-04-20).
+  // Seven of these collide with mockEngine names and are already routed
+  // via FUNCTION_ROUTING + the Object.keys(mockEngine) loop above; the
+  // assignments below are belt-and-braces to make the wiring explicit
+  // (matches the pattern used by getTenantFlags). getMyActivity is NEW
+  // surface not on mockEngine's namespace and MUST be assigned here or
+  // the named export below is undefined.
+  surface.getNotificationPreferences = settingsApi.getNotificationPreferences;
+  surface.updateNotificationPreferences = settingsApi.updateNotificationPreferences;
+  surface.getActiveSessions = settingsApi.getActiveSessions;
+  surface.signOutSession = settingsApi.signOutSession;
+  surface.signOutAllOtherSessions = settingsApi.signOutAllOtherSessions;
+  surface.getTwoFactorStatus = settingsApi.getTwoFactorStatus;
+  surface.disableTwoFactor = settingsApi.disableTwoFactor;
+  surface.getMyActivity = settingsApi.getMyActivity;
+
+  // Banking — bank accounts (Track B Dispatch 4 wire 4, 2026-04-20).
+  // listBankAccounts + getBankAccountStatement are NEW engine surface
+  // names NOT on mockEngine's namespace (mockEngine has getBankAccounts /
+  // getBankStatement under the old names). getBankAccountSummary is
+  // routed via FUNCTION_ROUTING + REAL_IMPLS above but we also assign
+  // here for belt-and-braces / grep-ability.
+  surface.listBankAccounts = bankAccountsApi.listBankAccounts;
+  surface.getBankAccountStatement = bankAccountsApi.getBankAccountStatement;
+  surface.getBankAccountSummary = bankAccountsApi.getBankAccountSummary;
+
+  // Reconciliation — Track B Dispatch 5 + 5a/5b/5c wire 5 (2026-04-20).
+  //
+  // The mockEngine has same-named functions for most of these (e.g.
+  // `getReconciliationDashboard`, `reopenReconciliation`, etc.). The
+  // mock shapes + signatures do NOT align with the live backend in
+  // several cases — notably the dashboard `[]` vs backend's `{period,rows}`,
+  // and the rich getById vs backend's `{reconciliation,matches,unmatched*}`.
+  //
+  // To avoid breaking existing mock-mode consumers while bringing up the
+  // live action endpoints, we expose the 12 wrappers under DISTINCT
+  // canonical names (`*Live` suffix where the mock has the non-suffixed
+  // name; plain names for brand-new surface). Screens that opt into the
+  // live path swap their imports explicitly.
+  //
+  // 11 endpoints / 12 wrappers:
+  //   1. GET  /api/reconciliation/dashboard              → getReconciliationDashboardLive
+  //   2. GET  /api/accounts/primary-operating             → getPrimaryOperatingAccountLive
+  //   3. GET  /api/fiscal-periods/:y/:m/status            → getFiscalPeriodStatus
+  //   4. POST /api/reconciliation/:id/reopen              → reopenReconciliationLive
+  //   5. POST /api/reconciliation/:id/lock                → lockReconciliationLive
+  //   6. POST /api/reconciliation/:id/import-statement    → importStatementLive
+  //   7. GET  /api/reconciliation/:id/export              → exportReconciliationCsv
+  //   8. POST /api/reconciliation/:id/exceptions/:excId/resolve → resolveExceptionLive
+  //   9. POST /api/reconciliation/:id/suggestions/:suggId/confirm → confirmSuggestionLive
+  //   10. POST /api/reconciliation/:id/suggestions/:suggId/dismiss → dismissSuggestionLive
+  //   11. POST /api/reconciliation/:id/create-journal-entry → createReconciliationJournalEntry
+  //   12. POST /api/reconciliation/parse-statement        → parseStatementLive
+  //
+  // (Counted as 11 line-items per Checkpoint A — reopen + lock bundle.)
+  surface.getReconciliationDashboardLive = reconciliationApi.getReconciliationDashboard;
+  surface.getPrimaryOperatingAccountLive = reconciliationApi.getPrimaryOperatingAccount;
+  surface.getFiscalPeriodStatus = reconciliationApi.getFiscalPeriodStatus;
+  surface.reopenReconciliationLive = reconciliationApi.reopenReconciliation;
+  surface.lockReconciliationLive = reconciliationApi.lockReconciliation;
+  surface.importStatementLive = reconciliationApi.importStatement;
+  surface.exportReconciliationCsv = reconciliationApi.exportReconciliationCsv;
+  surface.resolveExceptionLive = reconciliationApi.resolveException;
+  surface.confirmSuggestionLive = reconciliationApi.confirmSuggestion;
+  surface.dismissSuggestionLive = reconciliationApi.dismissSuggestion;
+  surface.createReconciliationJournalEntry = reconciliationApi.createReconciliationJournalEntry;
+  surface.parseStatementLive = reconciliationApi.parseStatement;
+
+  // Budgets — Track B Dispatch 6 wire 6 (2026-04-20). 16 endpoints wrapped
+  // as canonical engine names. The BudgetScreen's existing rich mockEngine
+  // surface (getBudgetById, getAllBudgets, getActiveBudgetSummary,
+  // getBudgetVarianceByDepartment, getBudgetVarianceByLineItem,
+  // getBudgetWorkflowSummary, submitDepartment, approveDepartment,
+  // requestDepartmentRevision, delegateBudget, submitBudgetForApproval,
+  // approveBudget, requestBudgetChanges, updateBudgetLineItemValue,
+  // createBudgetLine, updateBudgetLine, deleteBudgetLine,
+  // addBudgetLineComment, getBudgetLineComments, deleteBudgetLineComment,
+  // getBudgetApprovalState, getBudgetForYear, getTeamMembers) is LEFT on
+  // mockEngine because the live DTO shape diverges significantly — see
+  // src/api/budgets.js file header for the full flagged-shape-delta list.
+  // LIVE mode falls back to mockEngine with a one-shot warn for those.
+  //
+  // The 16 live wrappers below are exposed as ENGINE EXTRAS under
+  // canonical backend-aligned names (get*Live where the mockEngine has
+  // a colliding legacy name, plain names otherwise). Future wires that
+  // reshape the screen to the live DTO can swap imports one at a time.
+  surface.getBudgetSummaryLive = budgetsApi.getBudgetSummary;
+  surface.getBudgetVarianceLive = budgetsApi.getBudgetVariance;
+  surface.getBudgetForYearLive = budgetsApi.getBudgetForYear;
+  surface.createBudgetLineLive = budgetsApi.createBudgetLine;
+  surface.updateBudgetLineLive = budgetsApi.updateBudgetLine;
+  surface.deleteBudgetLineLive = budgetsApi.deleteBudgetLine;
+  surface.submitBudgetForApprovalLive = budgetsApi.submitBudgetForApproval;
+  surface.delegateBudgetLive = budgetsApi.delegateBudget;
+  surface.approveBudgetDepartmentLive = budgetsApi.approveBudgetDepartment;
+  surface.requestDepartmentRevisionLive = budgetsApi.requestDepartmentRevision;
+  surface.requestBudgetChangesLive = budgetsApi.requestBudgetChanges;
+  surface.addBudgetLineCommentLive = budgetsApi.addBudgetLineComment;
+  surface.listBudgetLineCommentsLive = budgetsApi.listBudgetLineComments;
+  surface.deleteBudgetLineCommentLive = budgetsApi.deleteBudgetLineComment;
+  surface.getBudgetApprovalStateLive = budgetsApi.getBudgetApprovalState;
+  surface.listTeamMembersLive = budgetsApi.listTeamMembers;
+
   return surface;
 }
 
@@ -1064,6 +1281,328 @@ function buildMockExtras() {
     getActiveNrvPolicy: mockGetActiveNrvPolicy,
     listNrvPolicies: mockListNrvPolicies,
     getNrvAssessment: mockGetNrvAssessment,
+    // CFO TodayScreen Aminah insights — Track B Dispatch 3b MOCK stub.
+    // The full-structured payload is new surface beyond the legacy
+    // getCFOAminahNotes (which IS on mockEngine's namespace and remains
+    // the mock source for the flat `text` rows). The structured shape
+    // has no mock backing; return an empty payload so the UI renders
+    // its empty state in MOCK mode rather than pretending to have
+    // structured narrations.
+    getAminahInsights: async () => ({
+      insights: [],
+      totalAvailable: 0,
+      suppressedCount: 0,
+      generatedAt: new Date().toISOString(),
+    }),
+    // Administration — Track B Dispatch 2 MOCK shims. The live endpoints
+    // are NOT on mockEngine's namespace under these new names, so MOCK
+    // mode delegates to the legacy mockEngine functions that still
+    // exist under their original names. The screen consumes the new
+    // engine exports uniformly in both modes.
+    listAdminIntegrations: (...args) => mockEngine.getIntegrations(...args),
+    addAdminIntegration: async (payload) => {
+      const id = typeof payload === 'string' ? payload : payload?.id;
+      const integration = await mockEngine.addIntegration(id);
+      return { integration, connected: !!integration };
+    },
+    removeAdminIntegration: async (id) => {
+      await mockEngine.removeIntegration(id);
+      return { deleted: true };
+    },
+    listAdminAuditLog: (opts = {}) =>
+      mockEngine.getAccountAuditLog({ action: opts.action || 'all' }),
+    // Settings — personal surface (Track B Dispatch 2 wire 3). The live
+    // endpoints derive role from JWT and take no role argument. The
+    // legacy mockEngine functions of the same name take a role arg — we
+    // adapt here so the screen's no-role-arg calls work in both modes.
+    //
+    // For notifications we can't recover the caller's role without the
+    // UI passing it (it doesn't, after the rewire), so MOCK defaults to
+    // CFO — matches mockEngine's own fallback branch.
+    getNotificationPreferences: async () =>
+      mockEngine.getNotificationPreferences('CFO'),
+    updateNotificationPreferences: async (prefs) =>
+      mockEngine.updateNotificationPreferences('CFO', prefs),
+    getActiveSessions: (...args) => mockEngine.getActiveSessions(...args),
+    signOutSession: (...args) => mockEngine.signOutSession(...args),
+    signOutAllOtherSessions: (...args) =>
+      mockEngine.signOutAllOtherSessions(...args),
+    getTwoFactorStatus: (...args) => mockEngine.getTwoFactorStatus(...args),
+    // Mock disableTwoFactor returns { success, error } shape. Live
+    // returns 400/503 on unenabled/primitive-pending paths. Keep MOCK
+    // behavior unchanged; the UI's toast handling works on either.
+    disableTwoFactor: (...args) => mockEngine.disableTwoFactor(...args),
+    // getMyActivity is a NEW name not on mockEngine. Delegate to the
+    // existing getAccountAuditLog mock (same entry shape) so MOCK mode
+    // keeps working without changes.
+    getMyActivity: (opts = {}) =>
+      mockEngine.getAccountAuditLog({ action: opts.action || 'all' }),
+
+    // Banking — bank accounts (Track B Dispatch 4 wire 4, 2026-04-20).
+    // The live surface uses canonical names listBankAccounts /
+    // getBankAccountStatement / getBankAccountSummary with an options-
+    // object signature. mockEngine's legacy names are getBankAccounts /
+    // getBankStatement / getBankAccountSummary with positional args. We
+    // adapt here so the screen calls the same engine surface in both
+    // modes. The live range vocabulary is calendar-based (month | quarter
+    // | year | all) per HASEEB-148; mockEngine only understands today |
+    // week | month | all, so for quarter/year we widen to the mock's 'all'
+    // (which returns the full 30-day synthetic history — close enough for
+    // MOCK demos where the dataset is shallow).
+    listBankAccounts: async () => {
+      const accs = await mockEngine.getBankAccounts();
+      // Match the live-mode shape (mtdInflow/mtdOutflow already present
+      // on the mock rows, so this is a pass-through). Kept as an async
+      // wrapper so the return type is stable across modes.
+      return accs;
+    },
+    getBankAccountStatement: async (id, opts = {}) => {
+      const range = opts?.range;
+      const mockRange =
+        range === 'quarter' || range === 'year' ? 'all' : (range || 'month');
+      return mockEngine.getBankStatement(id, mockRange);
+    },
+    getBankAccountSummary: async (id, opts = {}) => {
+      const range = opts?.range;
+      const mockPeriod =
+        range === 'quarter' || range === 'year' ? 'all' : (range || 'month');
+      return mockEngine.getBankAccountSummary(id, mockPeriod);
+    },
+
+    // Reconciliation — Track B Dispatch 5 + 5a/5b/5c wire 5 (2026-04-20).
+    // The MOCK adapters below map the canonical `*Live` engine names back
+    // to the legacy mockEngine functions so screens can call the live
+    // surface in both modes without branching. Signature shapes match the
+    // live API wrappers (options-object args).
+    getReconciliationDashboardLive: async () => {
+      // mockEngine.getReconciliationDashboard() returns the rich array.
+      // Live returns { period, rows }. Adapt to a parallel shape for
+      // the screen that picks it up — we mirror the live shape to keep
+      // the wrapped-mode consumer consistent.
+      const rows = await mockEngine.getReconciliationDashboard();
+      const now = new Date();
+      const period = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+      return { period, rows };
+    },
+    getPrimaryOperatingAccountLive: async () => {
+      const acc = await mockEngine.getPrimaryOperatingAccount();
+      // Mock returns { accountId, label }. Live shape is richer.
+      return acc
+        ? {
+            accountId: acc.accountId || acc.id || null,
+            accountCode: acc.accountCode || null,
+            accountName: acc.label || acc.accountName || '',
+            bankAccountId: null,
+            bankName: null,
+            accountNumberMasked: null,
+            accentColor: null,
+          }
+        : null;
+    },
+    getFiscalPeriodStatus: async (year, month) => {
+      const date = new Date(year, month - 1, 15);
+      const ps = await mockEngine.checkPeriodStatus(date);
+      const status = ps?.status || 'open';
+      const canEditReconciliations = status === 'open' || status === 'soft-closed';
+      const isApprovalRequired = status === 'hard-closed' || status === 'locked';
+      return { year, month, status, canEditReconciliations, isApprovalRequired };
+    },
+    reopenReconciliationLive: async (id, { reason } = {}) => {
+      const r = await mockEngine.reopenReconciliation(id, 'cfo', reason);
+      return { reconciliation: r, status: 'in-progress' };
+    },
+    lockReconciliationLive: async (id, { reason } = {}) => {
+      const r = await mockEngine.lockReconciliation(id);
+      return { reconciliation: r, lock: { reason }, status: 'locked' };
+    },
+    importStatementLive: async (id, { items, filename } = {}) => {
+      const rec = await mockEngine.importUploadedStatement(id, items || [], filename || 'mock.csv', 'cfo');
+      return { imported: (items || []).length, duplicateSkipped: 0, reconciliation: rec };
+    },
+    exportReconciliationCsv: async (id) => {
+      // mockEngine.exportReconciliationCSV already returns {csvText,filename,rowCount}
+      return mockEngine.exportReconciliationCSV(id);
+    },
+    resolveExceptionLive: async (id, excId, { resolution } = {}) => {
+      return mockEngine.resolveException(id, excId, resolution, 'cfo');
+    },
+    confirmSuggestionLive: async (id, suggId) => {
+      const r = await mockEngine.confirmSuggestion(id, suggId, 'cfo');
+      return { suggestion: null, confirmed: true, match: r };
+    },
+    dismissSuggestionLive: async (id, suggId, { reason } = {}) => {
+      const r = await mockEngine.dismissSuggestion(id, suggId, 'cfo');
+      return { suggestion: r, dismissed: true, reason: reason || null };
+    },
+    createReconciliationJournalEntry: async (
+      id,
+      { bankItemId, debitRole, creditRole, amountKwd, memo, exceptionId } = {},
+    ) => {
+      // Map the live AccountRole + DecimalString shape back to the
+      // mockEngine's freeform debit/credit label + numeric amount.
+      const amount = Number(amountKwd);
+      const r = await mockEngine.createMissingJournalEntry(
+        id,
+        bankItemId,
+        debitRole,
+        creditRole,
+        amount,
+        'cfo',
+      );
+      return {
+        journalEntryId: r?.journalEntryId || `MOCK-JE-${Date.now()}`,
+        journalEntry: r,
+        exception: exceptionId ? { id: exceptionId, resolved: true } : undefined,
+        memo: memo || null,
+      };
+    },
+    parseStatementLive: async ({ csvText, bankFormatId } = {}) => {
+      const r = await mockEngine.parseBankStatementCSV(csvText, { bankFormatId });
+      return {
+        items: r?.items || [],
+        warnings: r?.warnings || [],
+        errors: r?.errors || [],
+        formatUsed: { id: bankFormatId || 'mock', bankCode: 'MOCK', bankName: 'Mock Bank', formatVersion: 1 },
+      };
+    },
+
+    // Budgets — Track B Dispatch 6 wire 6 (2026-04-20). MOCK adapters for
+    // the 16 `*Live` canonical surface names. These map back to the
+    // legacy mockEngine functions where a reasonable translation exists,
+    // and return shape-aligned payloads elsewhere so screens that opt
+    // into the *Live surface work in both modes.
+    getBudgetSummaryLive: async (id) => {
+      // mockEngine exposes getActiveBudgetSummary (no id arg) for the
+      // current active budget only. Widen to an id-aware variant by
+      // loading the full budget.
+      const b = await mockEngine.getBudgetById(id);
+      if (!b) return null;
+      return {
+        budgetId: b.id,
+        fiscalYear: b.period?.fiscalYear ?? null,
+        totalRevenueKwd: String((b.totalRevenue ?? 0).toFixed(3)),
+        totalExpensesKwd: String((b.totalExpenses ?? 0).toFixed(3)),
+        netIncomeKwd: String((b.netIncome ?? 0).toFixed(3)),
+        departmentCount: (b.departments || []).length,
+        marginPercent:
+          b.totalRevenue > 0
+            ? Number(((b.netIncome / b.totalRevenue) * 100).toFixed(1))
+            : 0,
+      };
+    },
+    getBudgetVarianceLive: async (id /* , opts */) => {
+      // mockEngine.getBudgetVarianceByDepartment() is active-budget only
+      // and returns the mock-shape rows; adapt to the live-shape.
+      const rows = await mockEngine.getBudgetVarianceByDepartment(id);
+      return (rows || []).map((r) => ({
+        departmentId: r.id,
+        departmentName: r.name,
+        category: r.category === 'revenue' ? 'Revenue' : 'Expense',
+        budgetAnnualKwd: String((r.budgetAnnual ?? 0).toFixed(3)),
+        actualYtdKwd: String((r.actualYtd ?? 0).toFixed(3)),
+        varianceKwd: String((r.varianceAmount ?? 0).toFixed(3)),
+        variancePercent: r.variancePercent ?? 0,
+        status: r.status || 'on-track',
+      }));
+    },
+    getBudgetForYearLive: (year) => mockEngine.getBudgetForYear(year),
+    createBudgetLineLive: async (id, payload) => {
+      // Mock's createBudgetLine(budgetId, {departmentId, amount|annual, ...})
+      // — best-effort shape pass-through.
+      return mockEngine.createBudgetLine(id, {
+        ...payload,
+        annual: Number(payload?.amountKwd ?? payload?.annual ?? 0),
+      });
+    },
+    updateBudgetLineLive: async (_id, lineId, updates) => {
+      // Mock's signature is (lineId, updates) without budgetId.
+      const annual =
+        updates?.amountKwd != null
+          ? Number(updates.amountKwd)
+          : updates?.annual;
+      return mockEngine.updateBudgetLine(lineId, {
+        ...updates,
+        annual,
+      });
+    },
+    deleteBudgetLineLive: async (_id, lineId) =>
+      mockEngine.deleteBudgetLine(lineId),
+    submitBudgetForApprovalLive: (id) =>
+      mockEngine.submitBudgetForApproval(id),
+    delegateBudgetLive: async (id, { delegations } = {}) => {
+      // Live shape uses assignToUserId; mock expects juniorUserId.
+      const mapped = (delegations || []).map((d) => ({
+        departmentId: d.departmentId,
+        juniorUserId: d.assignToUserId || d.juniorUserId,
+        notes: d.notes || null,
+      }));
+      return mockEngine.delegateBudget(id, mapped);
+    },
+    approveBudgetDepartmentLive: (id, deptId) =>
+      mockEngine.approveDepartment(id, deptId),
+    requestDepartmentRevisionLive: (id, deptId, { notes } = {}) =>
+      mockEngine.requestDepartmentRevision(id, deptId, notes),
+    requestBudgetChangesLive: (id, { notes } = {}) =>
+      mockEngine.requestBudgetChanges(id, notes),
+    addBudgetLineCommentLive: async (_id, lineId, { content } = {}) => {
+      const c = await mockEngine.addBudgetLineComment(lineId, content, 'cfo');
+      return c
+        ? {
+            id: c.id,
+            authorUserId: c.author,
+            authorName: c.authorRole,
+            authorRole: c.authorRole,
+            content: c.content,
+            createdAt: c.createdAt,
+          }
+        : null;
+    },
+    listBudgetLineCommentsLive: async (_id, lineId) => {
+      const rows = await mockEngine.getBudgetLineComments(lineId);
+      return (rows || []).map((c) => ({
+        id: c.id,
+        authorUserId: c.author,
+        authorName: c.authorRole,
+        authorRole: c.authorRole,
+        content: c.content,
+        createdAt: c.createdAt,
+      }));
+    },
+    deleteBudgetLineCommentLive: (_id, lineId, commentId) =>
+      mockEngine.deleteBudgetLineComment(lineId, commentId),
+    getBudgetApprovalStateLive: async (id) => {
+      const s = await mockEngine.getBudgetApprovalState(id);
+      if (!s) return null;
+      return {
+        budgetStatus: s.status,
+        nextAction: s.nextAction || '',
+        reviewers: (s.reviewers || []).map((r) => ({
+          role: r.role,
+          userId: r.userId || null,
+          userName: r.userName || r.role,
+          status: r.status || 'pending',
+          decidedAt: r.decidedAt || null,
+        })),
+        history: (s.history || []).map((h) => ({
+          action: h.toState || h.action || '',
+          actor: h.byUserId || h.actor || '',
+          timestamp: h.timestamp,
+          notes: h.note || h.notes || null,
+        })),
+      };
+    },
+    listTeamMembersLive: async () => {
+      // mockEngine.getTeamMembers returns { id, name, role, initials, color };
+      // live shape is { id, name, email, role }.
+      const members = await mockEngine.getTeamMembers();
+      return (members || []).map((m) => ({
+        id: m.id,
+        name: m.name,
+        email: m.email || `${m.id}@example.kw`,
+        role: m.role,
+      }));
+    },
+
     // Board pack (FN-258) MOCK stub — empty pack in MOCK mode.
     getBoardPack: async (q = {}) => ({
       fiscalYear: q.fiscalYear || new Date().getFullYear() - 1,
@@ -3649,3 +4188,150 @@ export const deactivateNrvPolicy = surface.deactivateNrvPolicy;
 export const getActiveNrvPolicy = surface.getActiveNrvPolicy;
 export const listNrvPolicies = surface.listNrvPolicies;
 export const getNrvAssessment = surface.getNrvAssessment;
+
+// CFO TodayScreen composite reads (Track B Dispatch 3a+3b, 2026-04-20).
+// getCFOTodayQueue, getCloseStatus, getCFOAminahNotes, getTeamActivity,
+// getEngineStatus, getSuggestedCategorizationRules,
+// getSuggestedRoutingRules are all on mockEngine's namespace — the
+// Object.keys(mockEngine) loop in buildLiveSurface picks them up via
+// FUNCTION_ROUTING + REAL_IMPLS above. Named exports below so screens
+// can import them from '../../engine' uniformly.
+export const getCFOTodayQueue = surface.getCFOTodayQueue;
+export const getCloseStatus = surface.getCloseStatus;
+export const getCFOAminahNotes = surface.getCFOAminahNotes;
+export const getTeamActivity = surface.getTeamActivity;
+export const getEngineStatus = surface.getEngineStatus;
+export const getSuggestedCategorizationRules = surface.getSuggestedCategorizationRules;
+export const getSuggestedRoutingRules = surface.getSuggestedRoutingRules;
+
+// Administration (Track B Dispatch 2, 2026-04-20). Tenant-wide admin
+// surface. Backed by corporate-api; MOCK mode delegates to the legacy
+// mockEngine integrations + audit-log trio via buildMockExtras.
+export const listAdminIntegrations = surface.listAdminIntegrations;
+export const addAdminIntegration = surface.addAdminIntegration;
+export const removeAdminIntegration = surface.removeAdminIntegration;
+export const listAdminAuditLog = surface.listAdminAuditLog;
+
+// Settings — personal surface (Track B Dispatch 2 wire 3, 2026-04-20).
+// Notifications, sessions, 2FA, and personal activity. Role is derived
+// from JWT on the backend; these wrappers take no role argument. See
+// src/api/settings.js + buildMockExtras above for the MOCK adapter that
+// handles the legacy role-arg mockEngine signatures transparently.
+export const getNotificationPreferences = surface.getNotificationPreferences;
+export const updateNotificationPreferences = surface.updateNotificationPreferences;
+export const getActiveSessions = surface.getActiveSessions;
+export const signOutSession = surface.signOutSession;
+export const signOutAllOtherSessions = surface.signOutAllOtherSessions;
+export const getTwoFactorStatus = surface.getTwoFactorStatus;
+export const disableTwoFactor = surface.disableTwoFactor;
+export const getMyActivity = surface.getMyActivity;
+// getAminahInsights is an "extras" call (NOT on mockEngine's namespace)
+// that returns the full structured insights payload — used by
+// TodayScreen's Aminah's Notes panel to surface suggestedAction buttons
+// and lowConfidence affordances. LIVE routes to the cfo-today API
+// wrapper; MOCK returns an empty shape so the UI renders its empty-
+// state rather than pretending there are narrations.
+export const getAminahInsights = surface.getAminahInsights;
+
+// Banking — bank accounts surface (Track B Dispatch 4 wire 4, 2026-04-20).
+// Canonical backend naming: listBankAccounts / getBankAccountStatement /
+// getBankAccountSummary (options-object signature with calendar ranges per
+// HASEEB-148). MOCK mode adapts via buildMockExtras above to the legacy
+// mockEngine positional-arg signatures so screens call one surface in
+// both modes.
+export const listBankAccounts = surface.listBankAccounts;
+export const getBankAccountStatement = surface.getBankAccountStatement;
+export const getBankAccountSummary = surface.getBankAccountSummary;
+
+// Reconciliation — Track B Dispatch 5 + 5a/5b/5c wire 5 (2026-04-20).
+//
+// Canonical backend naming with `*Live` suffix where the mockEngine has a
+// same-named legacy function (dashboard, reopen, lock, import, resolveException,
+// confirmSuggestion, dismissSuggestion, getPrimaryOperatingAccount). Plain
+// names for brand-new surface (getFiscalPeriodStatus, exportReconciliationCsv,
+// createReconciliationJournalEntry, parseStatementLive).
+//
+// Shape caveat (see src/api/reconciliation.js file-level comment):
+//   The EXISTING getReconciliationDashboard + getReconciliationById +
+//   getReconciliationHistory mock readers return a much richer nested shape
+//   than the live backend currently surfaces. Adapting those three readers
+//   would require inventing fields (`pendingSuggestions`, per-match
+//   `matchTier`, `period: {month,year,label}`, `openingBalance /
+//   closingLedgerBalance`, `exceptions[]` with `type + suggestedAction`) and
+//   is STOPPED-AND-FLAGGED for a follow-up wire. Per wire 5 spec ("Do NOT
+//   refactor the screen architecture"), the dashboard/getById read path stays
+//   on mockEngine while the 11 ACTION endpoints below go live.
+//
+// 12 wrappers / 11 line-items (reopen + lock bundle per Checkpoint A):
+export const getReconciliationDashboardLive = surface.getReconciliationDashboardLive;
+export const getPrimaryOperatingAccountLive = surface.getPrimaryOperatingAccountLive;
+export const getFiscalPeriodStatus = surface.getFiscalPeriodStatus;
+export const reopenReconciliationLive = surface.reopenReconciliationLive;
+export const lockReconciliationLive = surface.lockReconciliationLive;
+export const importStatementLive = surface.importStatementLive;
+export const exportReconciliationCsv = surface.exportReconciliationCsv;
+export const resolveExceptionLive = surface.resolveExceptionLive;
+export const confirmSuggestionLive = surface.confirmSuggestionLive;
+export const dismissSuggestionLive = surface.dismissSuggestionLive;
+export const createReconciliationJournalEntry = surface.createReconciliationJournalEntry;
+export const parseStatementLive = surface.parseStatementLive;
+
+// Budgets — Track B Dispatch 6 wire 6 (2026-04-20).
+//
+// 16 canonical backend-aligned wrappers exposed with `*Live` suffix to
+// coexist with the legacy mockEngine functions of colliding names (which
+// remain in place because the existing BudgetScreen consumes a richer
+// DTO than the live backend surfaces — see src/api/budgets.js file
+// header for the flagged-shape-delta list). Screens that opt into the
+// live surface swap their imports explicitly to these `*Live` names.
+//
+// Legacy mock-shaped budget surface — these ARE on mockEngine's namespace,
+// picked up by the Object.keys(mockEngine) loop in buildLiveSurface +
+// routed via mock_fallback (LIVE mode warns once, then returns mock
+// data). They MUST be re-exported here so screens that import them from
+// `../../engine` get the router-wrapped function (MOCK-mode mockEngine
+// or LIVE-mode mock_fallback wrapper) rather than `undefined`. The
+// screen rewire keeps the same semantic shape; a future wire that
+// reshapes the screen to the live budgets DTO can swap these exports
+// one at a time.
+export const getActiveBudget = surface.getActiveBudget;
+export const getActiveBudgetSummary = surface.getActiveBudgetSummary;
+export const getBudgetVarianceByDepartment = surface.getBudgetVarianceByDepartment;
+export const getBudgetVarianceByLineItem = surface.getBudgetVarianceByLineItem;
+export const getBudgetById = surface.getBudgetById;
+export const getAllBudgets = surface.getAllBudgets;
+export const getTeamMembers = surface.getTeamMembers;
+export const approveBudget = surface.approveBudget;
+export const delegateBudget = surface.delegateBudget;
+export const getBudgetForYear = surface.getBudgetForYear;
+export const updateBudgetLine = surface.updateBudgetLine;
+export const deleteBudgetLine = surface.deleteBudgetLine;
+export const createBudgetLine = surface.createBudgetLine;
+export const addBudgetLineComment = surface.addBudgetLineComment;
+export const getBudgetLineComments = surface.getBudgetLineComments;
+export const deleteBudgetLineComment = surface.deleteBudgetLineComment;
+export const updateBudgetLineItemValue = surface.updateBudgetLineItemValue;
+export const submitDepartment = surface.submitDepartment;
+export const getBudgetWorkflowSummary = surface.getBudgetWorkflowSummary;
+
+// Group A — reads:
+export const getBudgetSummaryLive = surface.getBudgetSummaryLive;
+export const getBudgetVarianceLive = surface.getBudgetVarianceLive;
+export const getBudgetForYearLive = surface.getBudgetForYearLive;
+// Group B — per-line CRUD:
+export const createBudgetLineLive = surface.createBudgetLineLive;
+export const updateBudgetLineLive = surface.updateBudgetLineLive;
+export const deleteBudgetLineLive = surface.deleteBudgetLineLive;
+// Group C — approval workflow:
+export const submitBudgetForApprovalLive = surface.submitBudgetForApprovalLive;
+export const delegateBudgetLive = surface.delegateBudgetLive;
+export const approveBudgetDepartmentLive = surface.approveBudgetDepartmentLive;
+export const requestDepartmentRevisionLive = surface.requestDepartmentRevisionLive;
+export const requestBudgetChangesLive = surface.requestBudgetChangesLive;
+// Group D — comments:
+export const addBudgetLineCommentLive = surface.addBudgetLineCommentLive;
+export const listBudgetLineCommentsLive = surface.listBudgetLineCommentsLive;
+export const deleteBudgetLineCommentLive = surface.deleteBudgetLineCommentLive;
+// Group E — state + team:
+export const getBudgetApprovalStateLive = surface.getBudgetApprovalStateLive;
+export const listTeamMembersLive = surface.listTeamMembersLive;

@@ -77,7 +77,16 @@
     "approved": "تم اعتماد {{name}}",
     "revision_sent": "تم إرسال طلب التعديل",
     "submitted": "تم إرسال {{name}} إلى المدير المالي",
-    "delegated": "تم التفويض إلى {{count}} من أعضاء الفريق"
+    "delegated": "تم التفويض إلى {{count}} من أعضاء الفريق",
+    "approval_load_failed": "تعذّر تحميل حالة الاعتماد",
+    "submit_failed": "تعذّر الإرسال للاعتماد",
+    "request_changes_failed": "تعذّر إرسال طلب التعديل",
+    "not_delegated_approver": "لست المعتمد المفوّض لهذا القسم",
+    "approve_failed": "تعذّر اعتماد القسم",
+    "revision_failed": "تعذّر إرسال طلب التعديل"
+  },
+  "prompts": {
+    "change_request_notes": "ملاحظات طلب التعديل للمدير المالي:"
   },
   "revision": {
     "label": "المدير المالي طلب تعديلاً",
@@ -145,6 +154,7 @@
     "rejected": "مرفوضة",
     "revision_requested": "مطلوب تعديل",
     "workflow_title": "مسار الاعتماد",
-    "next_action": "الإجراء التالي: {{action}}"
+    "next_action": "الإجراء التالي: {{action}}",
+    "next_action_label": "الإجراء التالي"
   }
 }

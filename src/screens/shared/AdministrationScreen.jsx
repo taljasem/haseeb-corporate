@@ -11,13 +11,14 @@ import TeamAccessSection from "../../components/admin/TeamAccessSection";
 import ConfigureIntegrationModal from "../../components/settings/ConfigureIntegrationModal";
 import AddIntegrationModal from "../../components/settings/AddIntegrationModal";
 import { useAuth } from "../../contexts/AuthContext";
-import { getTenantFlags, updateTenantFlags } from "../../engine";
 import {
-  getIntegrations,
-  removeIntegration,
-  addIntegration,
-  getAccountAuditLog,
-} from "../../engine/mockEngine";
+  getTenantFlags,
+  updateTenantFlags,
+  listAdminIntegrations,
+  addAdminIntegration,
+  removeAdminIntegration,
+  listAdminAuditLog,
+} from "../../engine";
 import { formatRelativeTime } from "../../utils/relativeTime";
 
 const ROLE_ACCENT = {
@@ -474,20 +475,6 @@ function TenantFlagsSection({ readOnly }) {
         )}
       </div>
 
-      <div
-        style={{
-          marginTop: 18,
-          padding: "10px 12px",
-          fontSize: 11,
-          color: "var(--text-tertiary)",
-          background: "var(--bg-surface-sunken)",
-          border: "1px dashed var(--border-default)",
-          borderRadius: 8,
-          fontStyle: "italic",
-        }}
-      >
-        {t("flags.backend_pending_note")}
-      </div>
     </Card>
   );
 }
@@ -495,16 +482,75 @@ function TenantFlagsSection({ readOnly }) {
 function IntegrationsAdminSection({ readOnly }) {
   const { t } = useTranslation("administration");
   const [items, setItems] = useState(null);
+  const [error, setError] = useState(null);
   const [configuring, setConfiguring] = useState(null);
   const [addOpen, setAddOpen] = useState(false);
 
-  const reload = () => getIntegrations().then(setItems);
+  const reload = () => {
+    setError(null);
+    return listAdminIntegrations()
+      .then(setItems)
+      .catch((err) => {
+        // 403 is silent — backend enforces scope; we just render the
+        // last known (empty) list.
+        if (err?.status === 403) return;
+        setError(err?.message || "Failed to load integrations.");
+      });
+  };
   useEffect(() => {
     reload();
   }, []);
 
+  const handleDisconnect = async (integration) => {
+    try {
+      await removeAdminIntegration(integration.id);
+    } catch (err) {
+      // 404 → already removed elsewhere; refresh silently so the row
+      // disappears. Any other error surfaces in the error banner on
+      // next reload.
+      if (err?.status !== 404) {
+        setError(err?.message || "Failed to disconnect integration.");
+      }
+    }
+    reload();
+  };
+
+  const handleAdd = async (id) => {
+    // NOTE: AddIntegrationModal currently doesn't collect credentials;
+    // when it does, extend this to pass `{ id, credentials }`. The
+    // backend accepts `credentials` on POST but never echoes them back.
+    try {
+      await addAdminIntegration({ id });
+    } catch (err) {
+      // Surface server-side validation (duplicate id, unknown id, etc.)
+      // via the error banner. Re-throw so the modal can keep its own
+      // state.
+      setError(err?.message || "Failed to add integration.");
+      throw err;
+    }
+    reload();
+  };
+
   return (
     <Card title={t("integrations.title")} description={t("integrations.description")}>
+      {error && (
+        <div
+          role="alert"
+          style={{
+            marginBottom: 14,
+            display: "flex",
+            gap: 8,
+            padding: "10px 12px",
+            background: "var(--semantic-danger-subtle)",
+            border: "1px solid var(--semantic-danger)",
+            borderRadius: 8,
+            color: "var(--semantic-danger)",
+            fontSize: 12,
+          }}
+        >
+          <AlertTriangle size={14} /> {error}
+        </div>
+      )}
       {!items ? (
         <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>…</div>
       ) : items.length === 0 ? (
@@ -516,10 +562,7 @@ function IntegrationsAdminSection({ readOnly }) {
             i={i}
             readOnly={readOnly}
             onConfigure={() => setConfiguring(i)}
-            onDisconnect={async () => {
-              await removeIntegration(i.id);
-              reload();
-            }}
+            onDisconnect={() => handleDisconnect(i)}
           />
         ))
       )}
@@ -552,10 +595,7 @@ function IntegrationsAdminSection({ readOnly }) {
       <AddIntegrationModal
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        onAdd={async (id) => {
-          await addIntegration(id);
-          reload();
-        }}
+        onAdd={handleAdd}
       />
     </Card>
   );
@@ -669,13 +709,37 @@ function SecurityComingSoon() {
 function FullAuditLogSection() {
   const { t } = useTranslation("administration");
   const [items, setItems] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    getAccountAuditLog({ action: "all" }).then(setItems);
+    listAdminAuditLog({ action: "all", limit: 100 })
+      .then(setItems)
+      .catch((err) => {
+        setError(err?.message || "Failed to load audit log.");
+        setItems([]);
+      });
   }, []);
 
   return (
     <Card title={t("audit_log.title")} description={t("audit_log.description")}>
+      {error && (
+        <div
+          role="alert"
+          style={{
+            marginBottom: 14,
+            display: "flex",
+            gap: 8,
+            padding: "10px 12px",
+            background: "var(--semantic-danger-subtle)",
+            border: "1px solid var(--semantic-danger)",
+            borderRadius: 8,
+            color: "var(--semantic-danger)",
+            fontSize: 12,
+          }}
+        >
+          <AlertTriangle size={14} /> {error}
+        </div>
+      )}
       {!items ? (
         <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>…</div>
       ) : items.length === 0 ? (

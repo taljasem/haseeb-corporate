@@ -86,6 +86,8 @@ import * as tenantFlagsApi from '../api/tenant-flags';
 import * as inventoryNrvApi from '../api/inventory-nrv';
 import * as cfoTodayApi from '../api/cfo-today';
 import * as rulesApi from '../api/rules';
+import * as adminIntegrationsApi from '../api/admin-integrations';
+import * as adminAuditLogApi from '../api/admin-audit-log';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -506,7 +508,7 @@ const REAL_IMPLS = {
   runThreeWayMatch: purchaseOrdersApi.runThreeWayMatch,
   predictiveBillMatch: purchaseOrdersApi.predictiveBillMatch,
 
-  // Tenant Flags (Phase 4 UX Dispatch) — localStorage fallback until backend ships.
+  // Tenant Flags (Track B Dispatch 1, 2026-04-20 — backend live at fba2896).
   getTenantFlags: tenantFlagsApi.getTenantFlags,
   updateTenantFlags: tenantFlagsApi.updateTenantFlags,
 
@@ -836,6 +838,24 @@ function buildLiveSurface() {
   // can import it uniformly.
   surface.getAminahInsights = cfoTodayApi.getAminahInsights;
 
+  // Administration — Track B Dispatch 2 (2026-04-20). Tenant-wide admin
+  // surface backed by corporate-api. NOT on mockEngine's namespace;
+  // these are new names that replace the legacy
+  // getIntegrations/addIntegration/removeIntegration/getAccountAuditLog
+  // mock trio on the AdministrationScreen consumer path. Credentials
+  // are write-only on addAdminIntegration; server strips them from
+  // every response.
+  //
+  // Mock → live mapping (for reference, enforced in the screen rewire):
+  //   getIntegrations       → listAdminIntegrations
+  //   addIntegration        → addAdminIntegration
+  //   removeIntegration     → removeAdminIntegration
+  //   getAccountAuditLog    → listAdminAuditLog (tenant-wide scope)
+  surface.listAdminIntegrations = adminIntegrationsApi.listAdminIntegrations;
+  surface.addAdminIntegration = adminIntegrationsApi.addAdminIntegration;
+  surface.removeAdminIntegration = adminIntegrationsApi.removeAdminIntegration;
+  surface.listAdminAuditLog = adminAuditLogApi.listAdminAuditLog;
+
   return surface;
 }
 
@@ -1117,6 +1137,23 @@ function buildMockExtras() {
       suppressedCount: 0,
       generatedAt: new Date().toISOString(),
     }),
+    // Administration — Track B Dispatch 2 MOCK shims. The live endpoints
+    // are NOT on mockEngine's namespace under these new names, so MOCK
+    // mode delegates to the legacy mockEngine functions that still
+    // exist under their original names. The screen consumes the new
+    // engine exports uniformly in both modes.
+    listAdminIntegrations: (...args) => mockEngine.getIntegrations(...args),
+    addAdminIntegration: async (payload) => {
+      const id = typeof payload === 'string' ? payload : payload?.id;
+      const integration = await mockEngine.addIntegration(id);
+      return { integration, connected: !!integration };
+    },
+    removeAdminIntegration: async (id) => {
+      await mockEngine.removeIntegration(id);
+      return { deleted: true };
+    },
+    listAdminAuditLog: (opts = {}) =>
+      mockEngine.getAccountAuditLog({ action: opts.action || 'all' }),
     // Board pack (FN-258) MOCK stub — empty pack in MOCK mode.
     getBoardPack: async (q = {}) => ({
       fiscalYear: q.fiscalYear || new Date().getFullYear() - 1,
@@ -3717,6 +3754,14 @@ export const getTeamActivity = surface.getTeamActivity;
 export const getEngineStatus = surface.getEngineStatus;
 export const getSuggestedCategorizationRules = surface.getSuggestedCategorizationRules;
 export const getSuggestedRoutingRules = surface.getSuggestedRoutingRules;
+
+// Administration (Track B Dispatch 2, 2026-04-20). Tenant-wide admin
+// surface. Backed by corporate-api; MOCK mode delegates to the legacy
+// mockEngine integrations + audit-log trio via buildMockExtras.
+export const listAdminIntegrations = surface.listAdminIntegrations;
+export const addAdminIntegration = surface.addAdminIntegration;
+export const removeAdminIntegration = surface.removeAdminIntegration;
+export const listAdminAuditLog = surface.listAdminAuditLog;
 // getAminahInsights is an "extras" call (NOT on mockEngine's namespace)
 // that returns the full structured insights payload — used by
 // TodayScreen's Aminah's Notes panel to surface suggestedAction buttons

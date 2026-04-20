@@ -89,6 +89,7 @@ import * as rulesApi from '../api/rules';
 import * as adminIntegrationsApi from '../api/admin-integrations';
 import * as adminAuditLogApi from '../api/admin-audit-log';
 import * as bankAccountsApi from '../api/bank-accounts';
+import * as reconciliationApi from '../api/reconciliation';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -934,6 +935,48 @@ function buildLiveSurface() {
   surface.getBankAccountStatement = bankAccountsApi.getBankAccountStatement;
   surface.getBankAccountSummary = bankAccountsApi.getBankAccountSummary;
 
+  // Reconciliation — Track B Dispatch 5 + 5a/5b/5c wire 5 (2026-04-20).
+  //
+  // The mockEngine has same-named functions for most of these (e.g.
+  // `getReconciliationDashboard`, `reopenReconciliation`, etc.). The
+  // mock shapes + signatures do NOT align with the live backend in
+  // several cases — notably the dashboard `[]` vs backend's `{period,rows}`,
+  // and the rich getById vs backend's `{reconciliation,matches,unmatched*}`.
+  //
+  // To avoid breaking existing mock-mode consumers while bringing up the
+  // live action endpoints, we expose the 12 wrappers under DISTINCT
+  // canonical names (`*Live` suffix where the mock has the non-suffixed
+  // name; plain names for brand-new surface). Screens that opt into the
+  // live path swap their imports explicitly.
+  //
+  // 11 endpoints / 12 wrappers:
+  //   1. GET  /api/reconciliation/dashboard              → getReconciliationDashboardLive
+  //   2. GET  /api/accounts/primary-operating             → getPrimaryOperatingAccountLive
+  //   3. GET  /api/fiscal-periods/:y/:m/status            → getFiscalPeriodStatus
+  //   4. POST /api/reconciliation/:id/reopen              → reopenReconciliationLive
+  //   5. POST /api/reconciliation/:id/lock                → lockReconciliationLive
+  //   6. POST /api/reconciliation/:id/import-statement    → importStatementLive
+  //   7. GET  /api/reconciliation/:id/export              → exportReconciliationCsv
+  //   8. POST /api/reconciliation/:id/exceptions/:excId/resolve → resolveExceptionLive
+  //   9. POST /api/reconciliation/:id/suggestions/:suggId/confirm → confirmSuggestionLive
+  //   10. POST /api/reconciliation/:id/suggestions/:suggId/dismiss → dismissSuggestionLive
+  //   11. POST /api/reconciliation/:id/create-journal-entry → createReconciliationJournalEntry
+  //   12. POST /api/reconciliation/parse-statement        → parseStatementLive
+  //
+  // (Counted as 11 line-items per Checkpoint A — reopen + lock bundle.)
+  surface.getReconciliationDashboardLive = reconciliationApi.getReconciliationDashboard;
+  surface.getPrimaryOperatingAccountLive = reconciliationApi.getPrimaryOperatingAccount;
+  surface.getFiscalPeriodStatus = reconciliationApi.getFiscalPeriodStatus;
+  surface.reopenReconciliationLive = reconciliationApi.reopenReconciliation;
+  surface.lockReconciliationLive = reconciliationApi.lockReconciliation;
+  surface.importStatementLive = reconciliationApi.importStatement;
+  surface.exportReconciliationCsv = reconciliationApi.exportReconciliationCsv;
+  surface.resolveExceptionLive = reconciliationApi.resolveException;
+  surface.confirmSuggestionLive = reconciliationApi.confirmSuggestion;
+  surface.dismissSuggestionLive = reconciliationApi.dismissSuggestion;
+  surface.createReconciliationJournalEntry = reconciliationApi.createReconciliationJournalEntry;
+  surface.parseStatementLive = reconciliationApi.parseStatement;
+
   return surface;
 }
 
@@ -1289,6 +1332,104 @@ function buildMockExtras() {
         range === 'quarter' || range === 'year' ? 'all' : (range || 'month');
       return mockEngine.getBankAccountSummary(id, mockPeriod);
     },
+
+    // Reconciliation — Track B Dispatch 5 + 5a/5b/5c wire 5 (2026-04-20).
+    // The MOCK adapters below map the canonical `*Live` engine names back
+    // to the legacy mockEngine functions so screens can call the live
+    // surface in both modes without branching. Signature shapes match the
+    // live API wrappers (options-object args).
+    getReconciliationDashboardLive: async () => {
+      // mockEngine.getReconciliationDashboard() returns the rich array.
+      // Live returns { period, rows }. Adapt to a parallel shape for
+      // the screen that picks it up — we mirror the live shape to keep
+      // the wrapped-mode consumer consistent.
+      const rows = await mockEngine.getReconciliationDashboard();
+      const now = new Date();
+      const period = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+      return { period, rows };
+    },
+    getPrimaryOperatingAccountLive: async () => {
+      const acc = await mockEngine.getPrimaryOperatingAccount();
+      // Mock returns { accountId, label }. Live shape is richer.
+      return acc
+        ? {
+            accountId: acc.accountId || acc.id || null,
+            accountCode: acc.accountCode || null,
+            accountName: acc.label || acc.accountName || '',
+            bankAccountId: null,
+            bankName: null,
+            accountNumberMasked: null,
+            accentColor: null,
+          }
+        : null;
+    },
+    getFiscalPeriodStatus: async (year, month) => {
+      const date = new Date(year, month - 1, 15);
+      const ps = await mockEngine.checkPeriodStatus(date);
+      const status = ps?.status || 'open';
+      const canEditReconciliations = status === 'open' || status === 'soft-closed';
+      const isApprovalRequired = status === 'hard-closed' || status === 'locked';
+      return { year, month, status, canEditReconciliations, isApprovalRequired };
+    },
+    reopenReconciliationLive: async (id, { reason } = {}) => {
+      const r = await mockEngine.reopenReconciliation(id, 'cfo', reason);
+      return { reconciliation: r, status: 'in-progress' };
+    },
+    lockReconciliationLive: async (id, { reason } = {}) => {
+      const r = await mockEngine.lockReconciliation(id);
+      return { reconciliation: r, lock: { reason }, status: 'locked' };
+    },
+    importStatementLive: async (id, { items, filename } = {}) => {
+      const rec = await mockEngine.importUploadedStatement(id, items || [], filename || 'mock.csv', 'cfo');
+      return { imported: (items || []).length, duplicateSkipped: 0, reconciliation: rec };
+    },
+    exportReconciliationCsv: async (id) => {
+      // mockEngine.exportReconciliationCSV already returns {csvText,filename,rowCount}
+      return mockEngine.exportReconciliationCSV(id);
+    },
+    resolveExceptionLive: async (id, excId, { resolution } = {}) => {
+      return mockEngine.resolveException(id, excId, resolution, 'cfo');
+    },
+    confirmSuggestionLive: async (id, suggId) => {
+      const r = await mockEngine.confirmSuggestion(id, suggId, 'cfo');
+      return { suggestion: null, confirmed: true, match: r };
+    },
+    dismissSuggestionLive: async (id, suggId, { reason } = {}) => {
+      const r = await mockEngine.dismissSuggestion(id, suggId, 'cfo');
+      return { suggestion: r, dismissed: true, reason: reason || null };
+    },
+    createReconciliationJournalEntry: async (
+      id,
+      { bankItemId, debitRole, creditRole, amountKwd, memo, exceptionId } = {},
+    ) => {
+      // Map the live AccountRole + DecimalString shape back to the
+      // mockEngine's freeform debit/credit label + numeric amount.
+      const amount = Number(amountKwd);
+      const r = await mockEngine.createMissingJournalEntry(
+        id,
+        bankItemId,
+        debitRole,
+        creditRole,
+        amount,
+        'cfo',
+      );
+      return {
+        journalEntryId: r?.journalEntryId || `MOCK-JE-${Date.now()}`,
+        journalEntry: r,
+        exception: exceptionId ? { id: exceptionId, resolved: true } : undefined,
+        memo: memo || null,
+      };
+    },
+    parseStatementLive: async ({ csvText, bankFormatId } = {}) => {
+      const r = await mockEngine.parseBankStatementCSV(csvText, { bankFormatId });
+      return {
+        items: r?.items || [],
+        warnings: r?.warnings || [],
+        errors: r?.errors || [],
+        formatUsed: { id: bankFormatId || 'mock', bankCode: 'MOCK', bankName: 'Mock Bank', formatVersion: 1 },
+      };
+    },
+
     // Board pack (FN-258) MOCK stub — empty pack in MOCK mode.
     getBoardPack: async (q = {}) => ({
       fiscalYear: q.fiscalYear || new Date().getFullYear() - 1,
@@ -3928,3 +4069,36 @@ export const getAminahInsights = surface.getAminahInsights;
 export const listBankAccounts = surface.listBankAccounts;
 export const getBankAccountStatement = surface.getBankAccountStatement;
 export const getBankAccountSummary = surface.getBankAccountSummary;
+
+// Reconciliation — Track B Dispatch 5 + 5a/5b/5c wire 5 (2026-04-20).
+//
+// Canonical backend naming with `*Live` suffix where the mockEngine has a
+// same-named legacy function (dashboard, reopen, lock, import, resolveException,
+// confirmSuggestion, dismissSuggestion, getPrimaryOperatingAccount). Plain
+// names for brand-new surface (getFiscalPeriodStatus, exportReconciliationCsv,
+// createReconciliationJournalEntry, parseStatementLive).
+//
+// Shape caveat (see src/api/reconciliation.js file-level comment):
+//   The EXISTING getReconciliationDashboard + getReconciliationById +
+//   getReconciliationHistory mock readers return a much richer nested shape
+//   than the live backend currently surfaces. Adapting those three readers
+//   would require inventing fields (`pendingSuggestions`, per-match
+//   `matchTier`, `period: {month,year,label}`, `openingBalance /
+//   closingLedgerBalance`, `exceptions[]` with `type + suggestedAction`) and
+//   is STOPPED-AND-FLAGGED for a follow-up wire. Per wire 5 spec ("Do NOT
+//   refactor the screen architecture"), the dashboard/getById read path stays
+//   on mockEngine while the 11 ACTION endpoints below go live.
+//
+// 12 wrappers / 11 line-items (reopen + lock bundle per Checkpoint A):
+export const getReconciliationDashboardLive = surface.getReconciliationDashboardLive;
+export const getPrimaryOperatingAccountLive = surface.getPrimaryOperatingAccountLive;
+export const getFiscalPeriodStatus = surface.getFiscalPeriodStatus;
+export const reopenReconciliationLive = surface.reopenReconciliationLive;
+export const lockReconciliationLive = surface.lockReconciliationLive;
+export const importStatementLive = surface.importStatementLive;
+export const exportReconciliationCsv = surface.exportReconciliationCsv;
+export const resolveExceptionLive = surface.resolveExceptionLive;
+export const confirmSuggestionLive = surface.confirmSuggestionLive;
+export const dismissSuggestionLive = surface.dismissSuggestionLive;
+export const createReconciliationJournalEntry = surface.createReconciliationJournalEntry;
+export const parseStatementLive = surface.parseStatementLive;

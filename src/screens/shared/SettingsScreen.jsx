@@ -12,12 +12,15 @@ import { useTheme } from "../../contexts/ThemeContext";
 import { useLanguage } from "../../i18n/LanguageContext";
 import { formatRelativeTime } from "../../utils/relativeTime";
 import { formatDate } from "../../utils/format";
-// Wave 2: profile comes from the engine router (GET /api/auth/me adapted
-// to the mock profile shape in src/api/settings.js). Notifications,
-// sessions list, 2FA, integrations, audit log have no backend support
-// and stay on mockEngine (mock_fallback in LIVE mode, one-shot warn).
-import { getUserProfile } from "../../engine";
+// Track B Dispatch 2 wire 3 (2026-04-20): notifications, sessions, 2FA,
+// and personal activity are now live against corporate-api. Profile comes
+// from GET /api/auth/me adapted in src/api/settings.js. Integrations are
+// owned by the Administration surface (moved there in the three-surface
+// restructure) and no longer appear on this screen — the legacy
+// IntegrationsSection component remains in this file for historical
+// reference but is not rendered.
 import {
+  getUserProfile,
   getNotificationPreferences,
   updateNotificationPreferences,
   getActiveSessions,
@@ -25,10 +28,12 @@ import {
   signOutAllOtherSessions,
   getTwoFactorStatus,
   disableTwoFactor,
+  getMyActivity,
+} from "../../engine";
+import {
   getIntegrations,
   removeIntegration,
   addIntegration,
-  getAccountAuditLog,
 } from "../../engine/mockEngine";
 import { useAuth } from "../../contexts/AuthContext";
 import ChangePasswordModal from "../../components/settings/ChangePasswordModal";
@@ -441,7 +446,9 @@ function NotificationsSection({ role }) {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
 
-  useEffect(() => { getNotificationPreferences(role).then(setPrefs); }, [role]);
+  // Backend derives role from the JWT and returns role-appropriate
+  // defaults if no persisted row exists; no role argument is sent.
+  useEffect(() => { getNotificationPreferences().then(setPrefs); }, [role]);
   if (!prefs) return <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>{t("loading")}</div>;
 
   const categoryKeys = [
@@ -455,9 +462,18 @@ function NotificationsSection({ role }) {
 
   const save = async () => {
     setSaving(true);
-    await updateNotificationPreferences(role, prefs);
-    setSaving(false);
-    setToast(t("notifications.saved"));
+    try {
+      await updateNotificationPreferences(prefs);
+      setToast(t("notifications.saved"));
+    } catch (err) {
+      setToast(
+        err?.code === "NETWORK_ERROR"
+          ? "Can't reach the server. Check your connection and try again."
+          : err?.message || "Something went wrong saving preferences."
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -504,26 +520,93 @@ function SecuritySection() {
   const [sessions, setSessions] = useState(null);
   const [enableOpen, setEnableOpen] = useState(false);
   const [toast, setToast] = useState(null);
+  // Disable button is kept rendered while a disable call is in flight so
+  // the UI state doesn't flicker. Also used to force-disable the button
+  // after a 400 "2FA is not enabled" response (the next reload() will
+  // flip the UI to Enable anyway).
+  const [disabling2FA, setDisabling2FA] = useState(false);
 
   const reload = () => {
-    getTwoFactorStatus().then(setTwoFA);
-    getActiveSessions().then(setSessions);
+    getTwoFactorStatus().then(setTwoFA).catch(() => setTwoFA({ enabled: false, lastChanged: null }));
+    getActiveSessions().then(setSessions).catch(() => setSessions([]));
   };
   useEffect(() => { reload(); }, []);
 
   const handleDisable2FA = async () => {
-    await disableTwoFactor("000000");
-    reload();
+    // Phase 4 UX autonomy flag (decide-and-flag): until a proper in-modal
+    // TOTP entry component ships (scheduled alongside 2FA ENABLE in a
+    // future dispatch), a window.prompt is the minimal-scope way to
+    // collect the 6-digit code. Trimmed + coerced to string; the backend
+    // validates format.
+    const code = window.prompt(
+      "Enter the 6-digit code from your authenticator app to disable two-factor authentication."
+    );
+    if (code === null) return; // user cancelled
+    const trimmed = String(code).trim();
+    if (!trimmed) return;
+    setDisabling2FA(true);
+    try {
+      const result = await disableTwoFactor(trimmed);
+      // MOCK-mode mockEngine returns { success, error } shape; LIVE mode
+      // resolves on 2xx and rejects on 4xx/5xx. Treat explicit
+      // { success: false } as a failure too.
+      if (result && result.success === false) {
+        setToast(result.error || "Unable to disable two-factor authentication.");
+      } else {
+        setToast("Two-factor authentication disabled.");
+      }
+    } catch (err) {
+      // 400 "2FA is not enabled" — the user hit the button on a state
+      // the server disagrees with (e.g. another session just disabled it).
+      // Surface a clean toast and let reload() flip the UI to Enable.
+      if (err?.status === 400) {
+        setToast(err?.message || "Two-factor authentication is not enabled.");
+      } else if (err?.status === 503) {
+        // TOTP_PRIMITIVE_PENDING — unreachable today because no 2FA rows
+        // exist, but handled cleanly. Keep the button rendered so the
+        // user can retry after the feature ships.
+        setToast("Two-factor infrastructure is being finalized; check back soon.");
+      } else if (err?.code === "NETWORK_ERROR") {
+        setToast("Can't reach the server. Check your connection and try again.");
+      } else {
+        setToast(err?.message || "Unable to disable two-factor authentication.");
+      }
+    } finally {
+      setDisabling2FA(false);
+      reload();
+    }
   };
 
   const handleSignOut = async (id) => {
-    await signOutSession(id);
-    getActiveSessions().then(setSessions);
+    try {
+      await signOutSession(id);
+    } catch (err) {
+      if (err?.status === 404) {
+        // Session already gone (e.g. another tab signed it out, or the
+        // list is stale). Refetch and toast rather than blocking.
+        setToast("Session not found or already signed out.");
+      } else if (err?.code === "NETWORK_ERROR") {
+        setToast("Can't reach the server. Check your connection and try again.");
+      } else {
+        setToast(err?.message || "Unable to sign out that session.");
+      }
+    } finally {
+      getActiveSessions().then(setSessions).catch(() => setSessions([]));
+    }
   };
   const handleSignOutAll = async () => {
-    const r = await signOutAllOtherSessions();
-    getActiveSessions().then(setSessions);
-    setToast(t("security.signed_out_toast", { count: r.count }));
+    try {
+      const r = await signOutAllOtherSessions();
+      setToast(t("security.signed_out_toast", { count: r?.count ?? 0 }));
+    } catch (err) {
+      setToast(
+        err?.code === "NETWORK_ERROR"
+          ? "Can't reach the server. Check your connection and try again."
+          : err?.message || "Unable to sign out other sessions."
+      );
+    } finally {
+      getActiveSessions().then(setSessions).catch(() => setSessions([]));
+    }
   };
 
   return (
@@ -540,7 +623,14 @@ function SecuritySection() {
             </div>
           </div>
           {twoFA?.enabled ? (
-            <button onClick={handleDisable2FA} style={btnDanger}>{t("security.disable_2fa")}</button>
+            <button
+              onClick={handleDisable2FA}
+              disabled={disabling2FA}
+              aria-busy={disabling2FA}
+              style={{ ...btnDanger, opacity: disabling2FA ? 0.6 : 1, cursor: disabling2FA ? "not-allowed" : "pointer" }}
+            >
+              {disabling2FA ? "Disabling…" : t("security.disable_2fa")}
+            </button>
           ) : (
             <button onClick={() => setEnableOpen(true)} style={btnPrimary(false)}>{t("security.enable_2fa")}</button>
           )}
@@ -688,7 +778,16 @@ function AuditLogSection() {
   const [items, setItems] = useState(null);
   const [filter, setFilter] = useState("all");
 
-  useEffect(() => { getAccountAuditLog({ action: filter }).then(setItems); }, [filter]);
+  // Personal-scope activity log — distinct from the tenant-wide
+  // Administration Audit Log which uses listAdminAuditLog (wired in
+  // Track B Dispatch 2 wire 2). Backend endpoint: /api/settings/my-activity.
+  useEffect(() => {
+    let cancelled = false;
+    getMyActivity({ action: filter })
+      .then((data) => { if (!cancelled) setItems(data); })
+      .catch(() => { if (!cancelled) setItems([]); });
+    return () => { cancelled = true; };
+  }, [filter]);
 
   const actions = ["all", "login", "settings_change", "approval", "post_je", "rule_create", "role_change", "reconciliation", "budget_approve", "integration"];
 

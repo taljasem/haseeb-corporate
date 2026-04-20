@@ -215,6 +215,19 @@ const FUNCTION_ROUTING = {
   getEngineStatus: 'wired',
   getSuggestedCategorizationRules: 'wired',
   getSuggestedRoutingRules: 'wired',
+
+  // Settings — personal surface (Track B Dispatch 2 wire 3, 2026-04-20).
+  // getMyActivity is an extras name (not on mockEngine). The other seven
+  // collide with mockEngine names; buildMockExtras overrides the MOCK
+  // impls to match the live no-role-arg shape.
+  getNotificationPreferences: 'wired',
+  updateNotificationPreferences: 'wired',
+  getActiveSessions: 'wired',
+  signOutSession: 'wired',
+  signOutAllOtherSessions: 'wired',
+  getTwoFactorStatus: 'wired',
+  disableTwoFactor: 'wired',
+  getMyActivity: 'wired',
 };
 
 /**
@@ -535,6 +548,29 @@ const REAL_IMPLS = {
   getEngineStatus: cfoTodayApi.getEngineStatus,
   getSuggestedCategorizationRules: rulesApi.getSuggestedCategorizationRules,
   getSuggestedRoutingRules: rulesApi.getSuggestedRoutingRules,
+
+  // Settings — personal surface (Track B Dispatch 2 wire 3, 2026-04-20).
+  // Role is derived from JWT on the backend; these wrappers do not take
+  // a role argument. The corresponding mockEngine functions do — the UI
+  // has been rewired to stop passing it. See buildMockExtras below for
+  // the MOCK-mode adapter that swallows the legacy role arg.
+  // NOT on mockEngine's namespace under these EXACT names (getMyActivity
+  // is a NEW personal-scope name; the tenant-wide listAdminAuditLog wire
+  // already shipped in Dispatch 2 and is a different endpoint). The other
+  // seven names (getNotificationPreferences / updateNotificationPreferences
+  // / getActiveSessions / signOutSession / signOutAllOtherSessions /
+  // getTwoFactorStatus / disableTwoFactor) collide with mockEngine
+  // functions of the same name but different signatures (role-arg vs no
+  // role-arg); buildMockExtras overrides them so MOCK mode and LIVE mode
+  // both accept the no-role-arg call shape.
+  getNotificationPreferences: settingsApi.getNotificationPreferences,
+  updateNotificationPreferences: settingsApi.updateNotificationPreferences,
+  getActiveSessions: settingsApi.getActiveSessions,
+  signOutSession: settingsApi.signOutSession,
+  signOutAllOtherSessions: settingsApi.signOutAllOtherSessions,
+  getTwoFactorStatus: settingsApi.getTwoFactorStatus,
+  disableTwoFactor: settingsApi.disableTwoFactor,
+  getMyActivity: settingsApi.getMyActivity,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -856,6 +892,22 @@ function buildLiveSurface() {
   surface.removeAdminIntegration = adminIntegrationsApi.removeAdminIntegration;
   surface.listAdminAuditLog = adminAuditLogApi.listAdminAuditLog;
 
+  // Settings — personal surface (Track B Dispatch 2 wire 3, 2026-04-20).
+  // Seven of these collide with mockEngine names and are already routed
+  // via FUNCTION_ROUTING + the Object.keys(mockEngine) loop above; the
+  // assignments below are belt-and-braces to make the wiring explicit
+  // (matches the pattern used by getTenantFlags). getMyActivity is NEW
+  // surface not on mockEngine's namespace and MUST be assigned here or
+  // the named export below is undefined.
+  surface.getNotificationPreferences = settingsApi.getNotificationPreferences;
+  surface.updateNotificationPreferences = settingsApi.updateNotificationPreferences;
+  surface.getActiveSessions = settingsApi.getActiveSessions;
+  surface.signOutSession = settingsApi.signOutSession;
+  surface.signOutAllOtherSessions = settingsApi.signOutAllOtherSessions;
+  surface.getTwoFactorStatus = settingsApi.getTwoFactorStatus;
+  surface.disableTwoFactor = settingsApi.disableTwoFactor;
+  surface.getMyActivity = settingsApi.getMyActivity;
+
   return surface;
 }
 
@@ -1153,6 +1205,32 @@ function buildMockExtras() {
       return { deleted: true };
     },
     listAdminAuditLog: (opts = {}) =>
+      mockEngine.getAccountAuditLog({ action: opts.action || 'all' }),
+    // Settings — personal surface (Track B Dispatch 2 wire 3). The live
+    // endpoints derive role from JWT and take no role argument. The
+    // legacy mockEngine functions of the same name take a role arg — we
+    // adapt here so the screen's no-role-arg calls work in both modes.
+    //
+    // For notifications we can't recover the caller's role without the
+    // UI passing it (it doesn't, after the rewire), so MOCK defaults to
+    // CFO — matches mockEngine's own fallback branch.
+    getNotificationPreferences: async () =>
+      mockEngine.getNotificationPreferences('CFO'),
+    updateNotificationPreferences: async (prefs) =>
+      mockEngine.updateNotificationPreferences('CFO', prefs),
+    getActiveSessions: (...args) => mockEngine.getActiveSessions(...args),
+    signOutSession: (...args) => mockEngine.signOutSession(...args),
+    signOutAllOtherSessions: (...args) =>
+      mockEngine.signOutAllOtherSessions(...args),
+    getTwoFactorStatus: (...args) => mockEngine.getTwoFactorStatus(...args),
+    // Mock disableTwoFactor returns { success, error } shape. Live
+    // returns 400/503 on unenabled/primitive-pending paths. Keep MOCK
+    // behavior unchanged; the UI's toast handling works on either.
+    disableTwoFactor: (...args) => mockEngine.disableTwoFactor(...args),
+    // getMyActivity is a NEW name not on mockEngine. Delegate to the
+    // existing getAccountAuditLog mock (same entry shape) so MOCK mode
+    // keeps working without changes.
+    getMyActivity: (opts = {}) =>
       mockEngine.getAccountAuditLog({ action: opts.action || 'all' }),
     // Board pack (FN-258) MOCK stub — empty pack in MOCK mode.
     getBoardPack: async (q = {}) => ({
@@ -3762,6 +3840,20 @@ export const listAdminIntegrations = surface.listAdminIntegrations;
 export const addAdminIntegration = surface.addAdminIntegration;
 export const removeAdminIntegration = surface.removeAdminIntegration;
 export const listAdminAuditLog = surface.listAdminAuditLog;
+
+// Settings — personal surface (Track B Dispatch 2 wire 3, 2026-04-20).
+// Notifications, sessions, 2FA, and personal activity. Role is derived
+// from JWT on the backend; these wrappers take no role argument. See
+// src/api/settings.js + buildMockExtras above for the MOCK adapter that
+// handles the legacy role-arg mockEngine signatures transparently.
+export const getNotificationPreferences = surface.getNotificationPreferences;
+export const updateNotificationPreferences = surface.updateNotificationPreferences;
+export const getActiveSessions = surface.getActiveSessions;
+export const signOutSession = surface.signOutSession;
+export const signOutAllOtherSessions = surface.signOutAllOtherSessions;
+export const getTwoFactorStatus = surface.getTwoFactorStatus;
+export const disableTwoFactor = surface.disableTwoFactor;
+export const getMyActivity = surface.getMyActivity;
 // getAminahInsights is an "extras" call (NOT on mockEngine's namespace)
 // that returns the full structured insights payload — used by
 // TodayScreen's Aminah's Notes panel to surface suggestedAction buttons

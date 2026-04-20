@@ -12,6 +12,7 @@ import EmptyState from "../../components/shared/EmptyState";
 import Spinner from "../../components/shared/Spinner";
 import { useTenant } from "../../components/shared/TenantContext";
 import { formatRelativeTime } from "../../utils/relativeTime";
+import { normalizeRole, canEditAdmin } from "../../utils/role";
 // Wave 2: COA tree pulls from the engine router (real /api/accounts in
 // LIVE mode, mock in MOCK mode). Everything else on the setup screen
 // (fiscal, tax, currencies, integrations, team access, engine rules) has
@@ -103,11 +104,20 @@ const ALL_SECTIONS = [
   { id: "engine_rules",    icon: Cpu,            foreignOnly: false },
 ];
 
-export default function SetupScreen() {
+export default function SetupScreen({ role: roleRaw = "CFO" }) {
   const { t } = useTranslation("setup");
   const { tenant } = useTenant();
   const [active, setActive] = useState("chart");
   const [hasForeignActivity, setHasForeignActivity] = useState(false);
+
+  // HASEEB-166: defense-in-depth role gating at the component level.
+  // CFO + Senior can edit; Owner + Junior are read-only. Today the
+  // primary gate is routing (OwnerView/JuniorView don't import
+  // SetupScreen) — this guards against any future sidebar/deep-link
+  // exposure from granting edit by accident. Backend is authoritative
+  // on writes regardless; this is UI clarity + defense-in-depth.
+  const role = normalizeRole(roleRaw);
+  const readOnly = !canEditAdmin(role);
 
   useEffect(() => {
     let cancelled = false;
@@ -184,22 +194,43 @@ export default function SetupScreen() {
 
         <div style={{ flex: 1, overflowY: "auto", padding: "22px 28px 32px", minWidth: 0 }}>
           <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-            {active === "chart"         && <ChartSection />}
-            {active === "fiscal"        && <FiscalSection />}
-            {active === "tax"           && <TaxSection />}
-            {active === "disallowance"  && <DisallowanceSection />}
-            {active === "tax_lodgement" && <TaxLodgementSection />}
-            {active === "cit_assessment" && <CitAssessmentSection />}
-            {active === "wht"           && <WhtSection />}
-            {active === "cost_allocation" && <CostAllocationSection />}
-            {active === "related_party" && <RelatedPartySection />}
-            {active === "warranty"      && <WarrantySection />}
-            {active === "bank_formats"  && <BankFormatsSection />}
-            {active === "leave"         && <LeaveSection />}
-            {active === "cbk_rates"     && <CbkRatesSection />}
-            {active === "currencies"    && <CurrenciesSection />}
-            {active === "integrations"  && <IntegrationsSection />}
-            {active === "engine_rules"  && <EngineRulesSection />}
+            {readOnly && (
+              <div
+                role="status"
+                style={{
+                  marginBottom: 14,
+                  padding: "10px 14px",
+                  background: "var(--semantic-warning-subtle)",
+                  border: "1px solid var(--semantic-warning)",
+                  borderRadius: 8,
+                  color: "var(--semantic-warning)",
+                  fontSize: 12,
+                  fontWeight: 500,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <AlertTriangle size={14} />
+                <span>{t("readonly_banner")}</span>
+              </div>
+            )}
+            {active === "chart"         && <ChartSection readOnly={readOnly} />}
+            {active === "fiscal"        && <FiscalSection readOnly={readOnly} />}
+            {active === "tax"           && <TaxSection readOnly={readOnly} />}
+            {active === "disallowance"  && <DisallowanceSection readOnly={readOnly} />}
+            {active === "tax_lodgement" && <TaxLodgementSection readOnly={readOnly} />}
+            {active === "cit_assessment" && <CitAssessmentSection readOnly={readOnly} />}
+            {active === "wht"           && <WhtSection readOnly={readOnly} />}
+            {active === "cost_allocation" && <CostAllocationSection readOnly={readOnly} />}
+            {active === "related_party" && <RelatedPartySection readOnly={readOnly} />}
+            {active === "warranty"      && <WarrantySection readOnly={readOnly} />}
+            {active === "bank_formats"  && <BankFormatsSection readOnly={readOnly} />}
+            {active === "leave"         && <LeaveSection readOnly={readOnly} />}
+            {active === "cbk_rates"     && <CbkRatesSection readOnly={readOnly} />}
+            {active === "currencies"    && <CurrenciesSection readOnly={readOnly} />}
+            {active === "integrations"  && <IntegrationsSection readOnly={readOnly} />}
+            {active === "engine_rules"  && <EngineRulesSection readOnly={readOnly} />}
           </div>
         </div>
       </div>
@@ -230,7 +261,7 @@ function Toast({ text, onClear }) {
 }
 
 // ── Chart of Accounts ─────────────────────────────────────────────
-function ChartSection() {
+function ChartSection({ readOnly = false }) {
   const { t } = useTranslation("setup");
   const [accounts, setAccounts] = useState([]);
   const [search, setSearch] = useState("");
@@ -286,7 +317,18 @@ function ChartSection() {
       title={t("chart.title")}
       description={t("chart.description")}
       extra={
-        <button onClick={() => { setModalMode("add"); setActiveAccount(null); }} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "var(--accent-primary)", color: "#fff", border: "none", padding: "9px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>
+        <button
+          onClick={() => { setModalMode("add"); setActiveAccount(null); }}
+          disabled={readOnly}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            background: "var(--accent-primary)", color: "#fff", border: "none",
+            padding: "9px 16px", borderRadius: 6,
+            cursor: readOnly ? "not-allowed" : "pointer",
+            opacity: readOnly ? 0.5 : 1,
+            fontSize: 12, fontWeight: 600, fontFamily: "inherit",
+          }}
+        >
           <Plus size={14} /> {t("chart.add_account")}
         </button>
       }
@@ -340,10 +382,21 @@ function ChartSection() {
                   </span>
                 </div>
                 <div style={{ position: "relative" }}>
-                  <button onClick={() => setMenuOpenCode(menuOpenCode === a.code ? null : a.code)} aria-label={t("chart.kebab.open")} style={{ width: 24, height: 24, background: "transparent", border: "none", cursor: "pointer", color: "var(--text-tertiary)", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                  <button
+                    onClick={() => setMenuOpenCode(menuOpenCode === a.code ? null : a.code)}
+                    aria-label={t("chart.kebab.open")}
+                    disabled={readOnly}
+                    style={{
+                      width: 24, height: 24, background: "transparent", border: "none",
+                      cursor: readOnly ? "not-allowed" : "pointer",
+                      opacity: readOnly ? 0.4 : 1,
+                      color: "var(--text-tertiary)",
+                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    }}
+                  >
                     <Edit3 size={12} />
                   </button>
-                  {menuOpenCode === a.code && (
+                  {menuOpenCode === a.code && !readOnly && (
                     <div style={{ position: "absolute", top: "calc(100% + 4px)", insetInlineEnd: 0, width: 180, background: "var(--bg-surface-raised)", border: "1px solid var(--border-default)", borderRadius: 8, boxShadow: "var(--panel-shadow)", zIndex: 150, padding: "6px 0" }}>
                       <MenuItem label={t("chart.kebab.edit")} onClick={() => { setActiveAccount(a); setModalMode("edit"); setMenuOpenCode(null); }} />
                       <MenuItem label={t("chart.kebab.deactivate")} onClick={() => { setActiveAccount(a); setDeactivateOpen(true); setMenuOpenCode(null); }} />
@@ -381,7 +434,7 @@ function MenuItem({ label, onClick }) {
 }
 
 // ── Fiscal Year ───────────────────────────────────────────────────
-function FiscalSection() {
+function FiscalSection({ readOnly = false }) {
   const { t } = useTranslation("setup");
   const [data, setData] = useState(null);
   const [periodAction, setPeriodAction] = useState(null);
@@ -409,10 +462,30 @@ function FiscalSection() {
                     {t(`fiscal.period_status.${p.status}`)}
                   </span>
                   {p.status === "open" && (
-                    <button onClick={() => setPeriodAction({ action: "close", month: p.month })} style={btnMini}>{t("fiscal.close_period")}</button>
+                    <button
+                      onClick={() => setPeriodAction({ action: "close", month: p.month })}
+                      disabled={readOnly}
+                      style={{
+                        ...btnMini,
+                        cursor: readOnly ? "not-allowed" : "pointer",
+                        opacity: readOnly ? 0.5 : 1,
+                      }}
+                    >
+                      {t("fiscal.close_period")}
+                    </button>
                   )}
                   {p.status === "hard_closed" && (
-                    <button onClick={() => setPeriodAction({ action: "open", month: p.month })} style={btnMini}>{t("fiscal.open_period")}</button>
+                    <button
+                      onClick={() => setPeriodAction({ action: "open", month: p.month })}
+                      disabled={readOnly}
+                      style={{
+                        ...btnMini,
+                        cursor: readOnly ? "not-allowed" : "pointer",
+                        opacity: readOnly ? 0.5 : 1,
+                      }}
+                    >
+                      {t("fiscal.open_period")}
+                    </button>
                   )}
                 </div>
               </div>
@@ -448,7 +521,7 @@ function Meta({ label, value }) {
 }
 
 // ── Tax ─────────────────────────────────────────────────────────
-function TaxSection() {
+function TaxSection({ readOnly = false }) {
   const { t } = useTranslation("setup");
   const [cfg, setCfg] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -470,21 +543,21 @@ function TaxSection() {
     <Card title={t("tax.title")} description={t("tax.description")}>
       <Toast text={toast} onClear={() => setToast(null)} />
       <FormRow label={t("tax.field_regime")}>
-        <select value={cfg.regime} onChange={(e) => update("regime", e.target.value)} style={selectStyle}>
+        <select value={cfg.regime} onChange={(e) => update("regime", e.target.value)} disabled={readOnly} style={selectStyle}>
           {["kuwait", "saudi", "uae", "bahrain"].map((r) => <option key={r} value={r}>{t(`tax.regime_${r}`)}</option>)}
         </select>
       </FormRow>
       {cfg.regime === "kuwait" && (
         <>
-          <FormRow label={t("tax.field_zakat")}><input type="number" value={cfg.zakatRate} onChange={(e) => update("zakatRate", Number(e.target.value))} style={inputStyle} /></FormRow>
-          <FormRow label={t("tax.field_zakat_account")}><input value={cfg.zakatAccount} onChange={(e) => update("zakatAccount", e.target.value)} style={inputStyle} /></FormRow>
-          <FormRow label={t("tax.field_corporate")}><input type="number" value={cfg.corporateTaxRate} onChange={(e) => update("corporateTaxRate", Number(e.target.value))} style={inputStyle} /></FormRow>
-          <FormRow label={t("tax.field_pifss")}><input type="number" value={cfg.pifssRate} onChange={(e) => update("pifssRate", Number(e.target.value))} style={inputStyle} /></FormRow>
-          <FormRow label={t("tax.field_pifss_account")}><input value={cfg.pifssAccount} onChange={(e) => update("pifssAccount", e.target.value)} style={inputStyle} /></FormRow>
+          <FormRow label={t("tax.field_zakat")}><input type="number" value={cfg.zakatRate} onChange={(e) => update("zakatRate", Number(e.target.value))} disabled={readOnly} style={inputStyle} /></FormRow>
+          <FormRow label={t("tax.field_zakat_account")}><input value={cfg.zakatAccount} onChange={(e) => update("zakatAccount", e.target.value)} disabled={readOnly} style={inputStyle} /></FormRow>
+          <FormRow label={t("tax.field_corporate")}><input type="number" value={cfg.corporateTaxRate} onChange={(e) => update("corporateTaxRate", Number(e.target.value))} disabled={readOnly} style={inputStyle} /></FormRow>
+          <FormRow label={t("tax.field_pifss")}><input type="number" value={cfg.pifssRate} onChange={(e) => update("pifssRate", Number(e.target.value))} disabled={readOnly} style={inputStyle} /></FormRow>
+          <FormRow label={t("tax.field_pifss_account")}><input value={cfg.pifssAccount} onChange={(e) => update("pifssAccount", e.target.value)} disabled={readOnly} style={inputStyle} /></FormRow>
         </>
       )}
       <FormRow label={t("tax.field_filing_frequency")}>
-        <select value={cfg.filingFrequency} onChange={(e) => update("filingFrequency", e.target.value)} style={selectStyle}>
+        <select value={cfg.filingFrequency} onChange={(e) => update("filingFrequency", e.target.value)} disabled={readOnly} style={selectStyle}>
           {["monthly", "quarterly", "annual"].map((f) => <option key={f} value={f}>{t(`tax.freq_${f}`)}</option>)}
         </select>
       </FormRow>
@@ -496,7 +569,11 @@ function TaxSection() {
         </div>
       ))}
       <div style={{ marginTop: 16 }}>
-        <button onClick={handleSave} disabled={saving} style={btnPrimary(saving)}>
+        <button
+          onClick={handleSave}
+          disabled={saving || readOnly}
+          style={{ ...btnPrimary(saving), opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnPrimary(saving).cursor }}
+        >
           {saving ? <><Spinner size={13} />&nbsp;{t("tax.saving")}</> : t("tax.save")}
         </button>
       </div>
@@ -505,7 +582,7 @@ function TaxSection() {
 }
 
 // ── Currencies ─────────────────────────────────────────────────────
-function CurrenciesSection() {
+function CurrenciesSection({ readOnly = false }) {
   const { t } = useTranslation("setup");
   const [cfg, setCfg] = useState(null);
   const [updating, setUpdating] = useState(false);
@@ -545,10 +622,14 @@ function CurrenciesSection() {
             <div style={{ fontSize: 12, color: "var(--text-tertiary)", fontFamily: "'DM Mono', monospace" }}><LtrText>{cfg.rates[c]?.toFixed(4)}</LtrText></div>
             <button
               onClick={() => toggle(c)}
+              disabled={readOnly}
               style={{
                 width: 36, height: 20, borderRadius: 10,
                 background: cfg.enabled[c] ? "var(--accent-primary)" : "var(--border-default)",
-                border: "none", padding: 2, cursor: "pointer", position: "relative",
+                border: "none", padding: 2,
+                cursor: readOnly ? "not-allowed" : "pointer",
+                opacity: readOnly ? 0.5 : 1,
+                position: "relative",
               }}
             >
               <span style={{ display: "block", width: 16, height: 16, borderRadius: "50%", background: "#fff", transform: cfg.enabled[c] ? "translateX(16px)" : "translateX(0)", transition: "transform 0.15s" }} />
@@ -557,7 +638,11 @@ function CurrenciesSection() {
         </div>
       ))}
       <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 10 }}>
-        <button onClick={handleUpdateRates} disabled={updating} style={btnPrimary(updating)}>
+        <button
+          onClick={handleUpdateRates}
+          disabled={updating || readOnly}
+          style={{ ...btnPrimary(updating), opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnPrimary(updating).cursor }}
+        >
           {updating ? <><Spinner size={13} />&nbsp;{t("currencies.updating")}</> : <><RefreshCw size={12} style={{ verticalAlign: "middle", marginInlineEnd: 6 }} />{t("currencies.update_rates")}</>}
         </button>
         <div style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
@@ -569,7 +654,7 @@ function CurrenciesSection() {
 }
 
 // ── Integrations Status ────────────────────────────────────────────
-function IntegrationsSection() {
+function IntegrationsSection({ readOnly = false }) {
   const { t } = useTranslation("setup");
   const [items, setItems] = useState([]);
   const [syncLogsFor, setSyncLogsFor] = useState(null);
@@ -610,7 +695,15 @@ function IntegrationsSection() {
                   <span><LtrText>{i.volumePerDay}</LtrText> tx/day</span>
                 </div>
               </div>
-              <button onClick={() => handleSync(i.id)} disabled={syncingId === i.id || i.status === "disconnected"} style={btnMini}>
+              <button
+                onClick={() => handleSync(i.id)}
+                disabled={syncingId === i.id || i.status === "disconnected" || readOnly}
+                style={{
+                  ...btnMini,
+                  opacity: readOnly ? 0.5 : 1,
+                  cursor: readOnly ? "not-allowed" : btnMini.cursor,
+                }}
+              >
                 {syncingId === i.id ? <><Spinner size={11} />&nbsp;{t("integrations.syncing")}</> : t("integrations.force_sync")}
               </button>
               <button onClick={() => handleViewLogs(i.id)} style={btnMini}>{t("integrations.view_logs")}</button>
@@ -645,7 +738,7 @@ function IntegrationsSection() {
 }
 
 // ── Engine Rules ────────────────────────────────────────────────
-function EngineRulesSection() {
+function EngineRulesSection({ readOnly = false }) {
   const { t } = useTranslation("setup");
   const [cfg, setCfg] = useState(null);
   const [editing, setEditing] = useState(null);
@@ -672,7 +765,17 @@ function EngineRulesSection() {
             <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>{t(`engine_rules.${r.label}`)}</div>
             <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 14, color: "var(--accent-primary)", marginTop: 2 }}><LtrText>{cfg[r.key]}</LtrText></div>
           </div>
-          <button onClick={() => setEditing(r.key)} style={btnMini}>{t("engine_rules.edit")}</button>
+          <button
+            onClick={() => setEditing(r.key)}
+            disabled={readOnly}
+            style={{
+              ...btnMini,
+              opacity: readOnly ? 0.5 : 1,
+              cursor: readOnly ? "not-allowed" : btnMini.cursor,
+            }}
+          >
+            {t("engine_rules.edit")}
+          </button>
         </div>
       ))}
       <ChangeEngineRuleModal
@@ -690,7 +793,7 @@ function EngineRulesSection() {
 // Kuwait CIT disallowance-rule register. OWNER-only write surface.
 // Reads open to OWNER/ACCOUNTANT/VIEWER/AUDITOR. Rules drive
 // DISALLOWED_EXPENSES tagging in the four-levy pipeline (FN-233).
-function DisallowanceSection() {
+function DisallowanceSection({ readOnly = false }) {
   const { t } = useTranslation("setup");
   const [rows, setRows] = useState(null);
   const [accounts, setAccounts] = useState([]);
@@ -751,7 +854,8 @@ function DisallowanceSection() {
             setEditingRule(null);
             setModalOpen(true);
           }}
-          style={btnPrimary(false)}
+          disabled={readOnly}
+          style={{ ...btnPrimary(false), opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnPrimary(false).cursor }}
         >
           <Plus size={13} style={{ verticalAlign: "middle", marginInlineEnd: 6 }} />
           {t("disallowance.add_rule")}
@@ -988,7 +1092,12 @@ function DisallowanceSection() {
                       setEditingRule(rule);
                       setModalOpen(true);
                     }}
-                    style={btnMini}
+                    disabled={readOnly}
+                    style={{
+                      ...btnMini,
+                      opacity: readOnly ? 0.5 : 1,
+                      cursor: readOnly ? "not-allowed" : btnMini.cursor,
+                    }}
                   >
                     <Edit3 size={11} style={{ verticalAlign: "middle", marginInlineEnd: 4 }} />
                     {t("disallowance.action_edit")}
@@ -996,10 +1105,13 @@ function DisallowanceSection() {
                   {isActive && (
                     <button
                       onClick={() => handleDeactivate(rule)}
+                      disabled={readOnly}
                       style={{
                         ...btnMini,
                         color: "var(--semantic-danger)",
                         borderColor: "var(--semantic-danger-border)",
+                        opacity: readOnly ? 0.5 : 1,
+                        cursor: readOnly ? "not-allowed" : btnMini.cursor,
                       }}
                     >
                       {t("disallowance.action_deactivate")}
@@ -1047,7 +1159,7 @@ const LODGEMENT_TYPES_FILTER = [
   "OTHER",
 ];
 
-function TaxLodgementSection() {
+function TaxLodgementSection({ readOnly = false }) {
   const { t } = useTranslation("setup");
   const [rows, setRows] = useState(null);
   const [typeFilter, setTypeFilter] = useState("ALL");
@@ -1109,7 +1221,8 @@ function TaxLodgementSection() {
       extra={
         <button
           onClick={() => setModalOpen(true)}
-          style={btnPrimary(false)}
+          disabled={readOnly}
+          style={{ ...btnPrimary(false), opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnPrimary(false).cursor }}
         >
           <Plus
             size={13}
@@ -1351,7 +1464,12 @@ function TaxLodgementSection() {
                   {rule.status === "SUBMITTED" && (
                     <button
                       onClick={() => handleTransition(rule, "ACKNOWLEDGED")}
-                      style={btnMini}
+                      disabled={readOnly}
+                      style={{
+                        ...btnMini,
+                        opacity: readOnly ? 0.5 : 1,
+                        cursor: readOnly ? "not-allowed" : btnMini.cursor,
+                      }}
                     >
                       {t("tax_lodgement.action_acknowledge")}
                     </button>
@@ -1359,10 +1477,13 @@ function TaxLodgementSection() {
                   {rule.status !== "VOIDED" && rule.status !== "AMENDED" && (
                     <button
                       onClick={() => handleTransition(rule, "VOIDED")}
+                      disabled={readOnly}
                       style={{
                         ...btnMini,
                         color: "var(--semantic-danger)",
                         borderColor: "var(--semantic-danger-border)",
+                        opacity: readOnly ? 0.5 : 1,
+                        cursor: readOnly ? "not-allowed" : btnMini.cursor,
                       }}
                     >
                       {t("tax_lodgement.action_void")}
@@ -1661,7 +1782,7 @@ function daysUntil(isoDate) {
   return diff;
 }
 
-function CitAssessmentSection() {
+function CitAssessmentSection({ readOnly = false }) {
   const { t } = useTranslation("setup");
   const [rows, setRows] = useState(null);
   const [approaching, setApproaching] = useState([]);
@@ -1732,7 +1853,8 @@ function CitAssessmentSection() {
       extra={
         <button
           onClick={() => setCreateOpen(true)}
-          style={btnPrimary(false)}
+          disabled={readOnly}
+          style={{ ...btnPrimary(false), opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnPrimary(false).cursor }}
         >
           <Plus
             size={13}
@@ -2051,7 +2173,8 @@ function CitAssessmentSection() {
                   {rule.status === "FILED" && (
                     <button
                       onClick={() => openTransition("open_review", rule)}
-                      style={btnMini}
+                      disabled={readOnly}
+                      style={{ ...btnMini, opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnMini.cursor }}
                     >
                       {t("cit_assessment.action_open_review")}
                     </button>
@@ -2062,7 +2185,8 @@ function CitAssessmentSection() {
                       onClick={() =>
                         openTransition("record_assessment", rule)
                       }
-                      style={btnMini}
+                      disabled={readOnly}
+                      style={{ ...btnMini, opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnMini.cursor }}
                     >
                       {t("cit_assessment.action_record_assessment")}
                     </button>
@@ -2072,7 +2196,8 @@ function CitAssessmentSection() {
                       onClick={() =>
                         openTransition("record_objection", rule)
                       }
-                      style={btnMini}
+                      disabled={readOnly}
+                      style={{ ...btnMini, opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnMini.cursor }}
                     >
                       {t("cit_assessment.action_record_objection")}
                     </button>
@@ -2081,13 +2206,18 @@ function CitAssessmentSection() {
                     rule.status === "OBJECTED") && (
                     <button
                       onClick={() => openTransition("finalize", rule)}
-                      style={btnMini}
+                      disabled={readOnly}
+                      style={{ ...btnMini, opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnMini.cursor }}
                     >
                       {t("cit_assessment.action_finalize")}
                     </button>
                   )}
                   {rule.status === "FINAL" && (
-                    <button onClick={() => handleClose(rule)} style={btnMini}>
+                    <button
+                      onClick={() => handleClose(rule)}
+                      disabled={readOnly}
+                      style={{ ...btnMini, opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnMini.cursor }}
+                    >
                       {t("cit_assessment.action_close")}
                     </button>
                   )}
@@ -2097,10 +2227,13 @@ function CitAssessmentSection() {
                     statuteDays <= 0 && (
                       <button
                         onClick={() => handleMarkStatuteExpired(rule)}
+                        disabled={readOnly}
                         style={{
                           ...btnMini,
                           color: "var(--semantic-danger)",
                           borderColor: "var(--semantic-danger-border)",
+                          opacity: readOnly ? 0.5 : 1,
+                          cursor: readOnly ? "not-allowed" : btnMini.cursor,
                         }}
                       >
                         {t("cit_assessment.action_mark_statute_expired")}
@@ -2161,7 +2294,7 @@ function fmtBpsPercent(bps) {
   return `${(bps / 100).toFixed(2)}%`;
 }
 
-function WhtSection() {
+function WhtSection({ readOnly = false }) {
   const { t } = useTranslation("setup");
   const [configs, setConfigs] = useState(null);
   const [certificates, setCertificates] = useState(null);
@@ -2219,7 +2352,8 @@ function WhtSection() {
             onClick={() =>
               setModalState({ open: true, mode: "create", config: null })
             }
-            style={btnPrimary(false)}
+            disabled={readOnly}
+            style={{ ...btnPrimary(false), opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnPrimary(false).cursor }}
           >
             <Plus size={13} style={{ verticalAlign: "middle", marginInlineEnd: 6 }} />
             {t("wht.add_policy")}
@@ -2425,7 +2559,8 @@ function WhtSection() {
                       onClick={() =>
                         setModalState({ open: true, mode: "edit", config: cfg })
                       }
-                      style={btnMini}
+                      disabled={readOnly}
+                      style={{ ...btnMini, opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnMini.cursor }}
                     >
                       <Edit3
                         size={11}
@@ -2436,10 +2571,13 @@ function WhtSection() {
                     {isActive && (
                       <button
                         onClick={() => handleDeactivate(cfg)}
+                        disabled={readOnly}
                         style={{
                           ...btnMini,
                           color: "var(--semantic-danger)",
                           borderColor: "var(--semantic-danger-border)",
+                          opacity: readOnly ? 0.5 : 1,
+                          cursor: readOnly ? "not-allowed" : btnMini.cursor,
                         }}
                       >
                         {t("wht.action_deactivate")}
@@ -2665,7 +2803,7 @@ function WhtSection() {
 // Shared-overhead allocation rules. Each rule has a source account
 // + ordered targets (costCenterLabel, weight). Rules are immutable
 // after create; compute preview is a separate API call.
-function CostAllocationSection() {
+function CostAllocationSection({ readOnly = false }) {
   const { t } = useTranslation("setup");
   const [rows, setRows] = useState(null);
   const [accounts, setAccounts] = useState([]);
@@ -2768,7 +2906,8 @@ function CostAllocationSection() {
       extra={
         <button
           onClick={() => setCreateOpen(true)}
-          style={btnPrimary(false)}
+          disabled={readOnly}
+          style={{ ...btnPrimary(false), opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnPrimary(false).cursor }}
         >
           <Plus
             size={13}
@@ -3024,10 +3163,13 @@ function CostAllocationSection() {
                   {isActive && (
                     <button
                       onClick={() => handleDeactivate(rule)}
+                      disabled={readOnly}
                       style={{
                         ...btnMini,
                         color: "var(--semantic-danger)",
                         borderColor: "var(--semantic-danger-border)",
+                        opacity: readOnly ? 0.5 : 1,
+                        cursor: readOnly ? "not-allowed" : btnMini.cursor,
                       }}
                     >
                       {t("cost_allocation.action_deactivate")}
@@ -3372,7 +3514,7 @@ const RP_NATURE_FILTERS = [
   "OTHER",
 ];
 
-function RelatedPartySection() {
+function RelatedPartySection({ readOnly = false }) {
   const { t } = useTranslation("setup");
   const [rows, setRows] = useState(null);
   const [vendors, setVendors] = useState([]);
@@ -3491,7 +3633,8 @@ function RelatedPartySection() {
             onClick={() =>
               setModalState({ open: true, mode: "create", entry: null })
             }
-            style={btnPrimary(false)}
+            disabled={readOnly}
+            style={{ ...btnPrimary(false), opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnPrimary(false).cursor }}
           >
             <Plus
               size={13}
@@ -3740,7 +3883,8 @@ function RelatedPartySection() {
                     onClick={() =>
                       setModalState({ open: true, mode: "edit", entry })
                     }
-                    style={btnMini}
+                    disabled={readOnly}
+                    style={{ ...btnMini, opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnMini.cursor }}
                   >
                     <Edit3
                       size={11}
@@ -3751,10 +3895,13 @@ function RelatedPartySection() {
                   {isActive && (
                     <button
                       onClick={() => handleDeactivate(entry)}
+                      disabled={readOnly}
                       style={{
                         ...btnMini,
                         color: "var(--semantic-danger)",
                         borderColor: "var(--semantic-danger-border)",
+                        opacity: readOnly ? 0.5 : 1,
+                        cursor: readOnly ? "not-allowed" : btnMini.cursor,
                       }}
                     >
                       {t("related_party.action_deactivate")}
@@ -4153,7 +4300,7 @@ function RelatedPartyReportDrawer({ state, setState, runReport, counterpartyLabe
 // REVENUE_PERCENT (bps of revenue) or PER_UNIT (KWD/unit). Consumed
 // by a future period-end accrual runner. OWNER writes; OWNER/
 // ACCOUNTANT/AUDITOR reads.
-function WarrantySection() {
+function WarrantySection({ readOnly = false }) {
   const { t } = useTranslation("setup");
   const [rows, setRows] = useState(null);
   const [activeOnly, setActiveOnly] = useState(false);
@@ -4210,7 +4357,8 @@ function WarrantySection() {
           onClick={() =>
             setModalState({ open: true, mode: "create", policy: null })
           }
-          style={btnPrimary(false)}
+          disabled={readOnly}
+          style={{ ...btnPrimary(false), opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnPrimary(false).cursor }}
         >
           <Plus
             size={13}
@@ -4470,7 +4618,8 @@ function WarrantySection() {
                     onClick={() =>
                       setModalState({ open: true, mode: "edit", policy })
                     }
-                    style={btnMini}
+                    disabled={readOnly}
+                    style={{ ...btnMini, opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnMini.cursor }}
                   >
                     <Edit3
                       size={11}
@@ -4481,10 +4630,13 @@ function WarrantySection() {
                   {isActive && (
                     <button
                       onClick={() => handleDeactivate(policy)}
+                      disabled={readOnly}
                       style={{
                         ...btnMini,
                         color: "var(--semantic-danger)",
                         borderColor: "var(--semantic-danger-border)",
+                        opacity: readOnly ? 0.5 : 1,
+                        cursor: readOnly ? "not-allowed" : btnMini.cursor,
                       }}
                     >
                       {t("warranty.action_deactivate")}
@@ -4523,7 +4675,7 @@ function WarrantySection() {
 // statement-upload parser pipeline. OWNER writes; reads open to
 // OWNER/ACCOUNTANT/AUDITOR. Specs are immutable post-create (only
 // effectiveUntil + notes mutable via PATCH).
-function BankFormatsSection() {
+function BankFormatsSection({ readOnly = false }) {
   const { t } = useTranslation("setup");
   const [rows, setRows] = useState(null);
   const [bankCodeFilter, setBankCodeFilter] = useState("");
@@ -4571,7 +4723,8 @@ function BankFormatsSection() {
           onClick={() =>
             setModalState({ open: true, mode: "create", spec: null })
           }
-          style={btnPrimary(false)}
+          disabled={readOnly}
+          style={{ ...btnPrimary(false), opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnPrimary(false).cursor }}
         >
           <Plus
             size={13}
@@ -4807,7 +4960,8 @@ function BankFormatsSection() {
                     onClick={() =>
                       setModalState({ open: true, mode: "edit", spec })
                     }
-                    style={btnMini}
+                    disabled={readOnly}
+                    style={{ ...btnMini, opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnMini.cursor }}
                   >
                     <Edit3
                       size={11}
@@ -4818,10 +4972,13 @@ function BankFormatsSection() {
                   {isActive && (
                     <button
                       onClick={() => handleDeactivate(spec)}
+                      disabled={readOnly}
                       style={{
                         ...btnMini,
                         color: "var(--semantic-danger)",
                         borderColor: "var(--semantic-danger-border)",
+                        opacity: readOnly ? 0.5 : 1,
+                        cursor: readOnly ? "not-allowed" : btnMini.cursor,
                       }}
                     >
                       {t("bank_formats.action_deactivate")}
@@ -4859,7 +5016,7 @@ function BankFormatsSection() {
 // provision summary widget. Per-employee balance upsert + compute
 // are service-layer-exposed but deferred from this ship pending an
 // employee-picker primitive (tracked in Future-additions).
-function LeaveSection() {
+function LeaveSection({ readOnly = false }) {
   const { t } = useTranslation("setup");
   const [rows, setRows] = useState(null);
   const [summary, setSummary] = useState(null);
@@ -4977,7 +5134,8 @@ function LeaveSection() {
             onClick={() =>
               setModalState({ open: true, mode: "create", policy: null })
             }
-            style={btnPrimary(false)}
+            disabled={readOnly}
+            style={{ ...btnPrimary(false), opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnPrimary(false).cursor }}
           >
             <Plus
               size={13}
@@ -5204,7 +5362,8 @@ function LeaveSection() {
                       onClick={() =>
                         setModalState({ open: true, mode: "edit", policy })
                       }
-                      style={btnMini}
+                      disabled={readOnly}
+                      style={{ ...btnMini, opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnMini.cursor }}
                     >
                       <Edit3
                         size={11}
@@ -5252,7 +5411,7 @@ function LeaveSection() {
 // per Q5 resolution). Consumers: FX revaluation + bilingual reports.
 const CBK_COMMON_CURRENCIES = ["USD", "EUR", "GBP", "AED", "SAR"];
 
-function CbkRatesSection() {
+function CbkRatesSection({ readOnly = false }) {
   const { t } = useTranslation("setup");
   const [rows, setRows] = useState(null);
   const [staleness, setStaleness] = useState({});
@@ -5426,7 +5585,8 @@ function CbkRatesSection() {
               setModalPrefill(null);
               setModalOpen(true);
             }}
-            style={btnPrimary(false)}
+            disabled={readOnly}
+            style={{ ...btnPrimary(false), opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnPrimary(false).cursor }}
           >
             <Plus
               size={13}
@@ -5598,7 +5758,8 @@ function CbkRatesSection() {
                 <div style={{ display: "flex", gap: 6 }}>
                   <button
                     onClick={() => handleReplaceRate(row)}
-                    style={btnMini}
+                    disabled={readOnly}
+                    style={{ ...btnMini, opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnMini.cursor }}
                   >
                     <Edit3
                       size={11}
@@ -5611,10 +5772,13 @@ function CbkRatesSection() {
                   </button>
                   <button
                     onClick={() => handleDelete(row)}
+                    disabled={readOnly}
                     style={{
                       ...btnMini,
                       color: "var(--semantic-danger)",
                       borderColor: "var(--semantic-danger-border)",
+                      opacity: readOnly ? 0.5 : 1,
+                      cursor: readOnly ? "not-allowed" : btnMini.cursor,
                     }}
                     aria-label={t("cbk_rates.action_delete")}
                   >

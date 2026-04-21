@@ -83,11 +83,37 @@
     "severity": {
       "high": "High",
       "medium": "Medium",
-      "low": "Low"
+      "low": "Low",
+      "unknown": "Unknown"
     },
     "suspend_action": "Suspend",
     "suspend_aria": "Suspend recurrence pattern for {{merchant}}",
-    "suspended_badge": "Suspended"
+    "suspended_badge": "Suspended",
+    "fx_unavailable_badge": "FX rate unavailable",
+    "fx_unavailable_tooltip": "FX rate unavailable for {{currency}}; severity cannot be computed",
+    "native_amount_prefix": "≈",
+    "fx_rate_label": "FX rate",
+    "fx_rate_source": {
+      "exact": "exact match",
+      "fallback": "fallback rate"
+    }
+  },
+  "cross_tenant_context": {
+    "title": "Cross-tenant context",
+    "tenant_count": "{{count}} tenants in {{industry}} industry",
+    "median_amount_label": "Median amount",
+    "typical_interval_label": "Typical interval",
+    "interval_days_fallback": "~{{count}} days",
+    "interval_class": {
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "semi_annual": "Semi-annual",
+      "annual": "Annual",
+      "other": "Irregular"
+    },
+    "below_threshold_title": "Not enough cross-tenant signal yet",
+    "below_threshold_explanation": "A minimum of 3 tenants must share this merchant before aggregate insight is available (privacy safeguard)."
   },
   "suspend_modal": {
     "title": "Suspend recurrence pattern?",

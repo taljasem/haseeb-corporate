@@ -83,11 +83,37 @@
     "severity": {
       "high": "عالية",
       "medium": "متوسطة",
-      "low": "منخفضة"
+      "low": "منخفضة",
+      "unknown": "غير معروف"
     },
     "suspend_action": "تعليق",
     "suspend_aria": "تعليق نمط التكرار للمورد {{merchant}}",
-    "suspended_badge": "معلّق"
+    "suspended_badge": "معلّق",
+    "fx_unavailable_badge": "سعر الصرف غير متوفر",
+    "fx_unavailable_tooltip": "سعر الصرف غير متوفر لعملة {{currency}}؛ لا يمكن احتساب درجة الخطورة",
+    "native_amount_prefix": "≈",
+    "fx_rate_label": "سعر الصرف",
+    "fx_rate_source": {
+      "exact": "تطابق تام",
+      "fallback": "تقريبي"
+    }
+  },
+  "cross_tenant_context": {
+    "title": "سياق عبر المستأجرين",
+    "tenant_count": "{{count}} مستأجرين في قطاع {{industry}}",
+    "median_amount_label": "المبلغ الوسيط",
+    "typical_interval_label": "الفترة النموذجية",
+    "interval_days_fallback": "~{{count}} يوم",
+    "interval_class": {
+      "weekly": "أسبوعي",
+      "monthly": "شهري",
+      "quarterly": "ربع سنوي",
+      "semi_annual": "نصف سنوي",
+      "annual": "سنوي",
+      "other": "غير منتظم"
+    },
+    "below_threshold_title": "لا توجد بيانات كافية عبر المستأجرين بعد",
+    "below_threshold_explanation": "يجب أن يشترك 3 مستأجرين على الأقل في هذا المورد قبل إتاحة رؤية مجمّعة (ضمان الخصوصية)."
   },
   "suspend_modal": {
     "title": "تعليق نمط التكرار؟",

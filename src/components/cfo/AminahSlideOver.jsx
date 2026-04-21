@@ -345,6 +345,20 @@ function BlockRenderer({ block, t, role }) {
     ) {
       return <MissedRecurrencesCard block={block} role={role} t={t} />;
     }
+
+    // Tier D Dispatch 3 FOLLOW-UP: typed card for the
+    // `get_cross_tenant_recurrence_context` read tool. Privacy-gated
+    // (>=3 tenants) aggregate context for a merchant name; backend
+    // returns `thresholdMet:false` with zeros when below threshold,
+    // and the card renders a neutral empty state in that case.
+    if (
+      block.toolName === "get_cross_tenant_recurrence_context" &&
+      block.status === "complete" &&
+      block.result &&
+      typeof block.result === "object"
+    ) {
+      return <CrossTenantContextCard block={block} t={t} />;
+    }
     const isComplete = block.status === "complete";
     return (
       <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "8px 12px", fontSize: 11 }}>
@@ -400,9 +414,22 @@ function BlockRenderer({ block, t, role }) {
  * Role gate (midsize model): backend accepts OWNER or ACCOUNTANT, which
  * maps to Owner / CFO / Senior on the frontend. Junior is hidden. The
  * button therefore uses `canEditAdmin(role) || role === Owner`.
+ *
+ * Tier D Dispatch 2 extension (corporate-api `a8772c8`, 2026-04-22):
+ * severity enum gained `'UNKNOWN'` for the FX-rate-unavailable path;
+ * items now carry `nativeCurrency`, `nativeExpectedAmount`, `fxRateUsed`,
+ * `fxRateDate`, `fxRateSource`. Non-KWD tenants with FX available render
+ * a dual-amount stack (primary KWD + secondary native) + subordinate
+ * FX-rate line. KWD-native tenants (`fxRateSource === 'none'`) render
+ * a single KWD amount as before. UNKNOWN items render neutral (not a
+ * severity colour) with a native-only amount and an "FX rate unavailable"
+ * tag; they sort below LOW in the list.
  */
+
+const SEVERITY_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2, UNKNOWN: 3 };
+
 function MissedRecurrencesCard({ block, role, t }) {
-  const items = block.result?.items || [];
+  const rawItems = Array.isArray(block.result?.items) ? block.result.items : [];
   const currencyNote = block.result?.currencyNote || "";
   const [suspended, setSuspended] = useState({}); // { [patternId]: true }
   const [modalOpen, setModalOpen] = useState(false);
@@ -410,6 +437,19 @@ function MissedRecurrencesCard({ block, role, t }) {
 
   const normalized = normalizeRole(role);
   const canSuspend = canEditAdmin(role) || normalized === ROLES.OWNER;
+
+  // Severity-sorted copy. Stable-sort within a severity by severityScore
+  // desc, then by merchant name for deterministic test output.
+  const items = [...rawItems].sort((a, b) => {
+    const sa = SEVERITY_ORDER[String(a.severity || "").toUpperCase()] ?? 99;
+    const sb = SEVERITY_ORDER[String(b.severity || "").toUpperCase()] ?? 99;
+    if (sa !== sb) return sa - sb;
+    const scoreDiff = (b.severityScore ?? 0) - (a.severityScore ?? 0);
+    if (scoreDiff !== 0) return scoreDiff;
+    return String(a.merchantNormalizedName || "").localeCompare(
+      String(b.merchantNormalizedName || "")
+    );
+  });
 
   const openModal = (item) => {
     setActiveItem({
@@ -428,13 +468,17 @@ function MissedRecurrencesCard({ block, role, t }) {
     setSuspended((prev) => ({ ...prev, [patternId]: true }));
   };
 
-  // Severity → tokenised background + foreground color.
+  // Severity → tokenised background + foreground colour. UNKNOWN uses a
+  // muted neutral treatment (bordered surface chip) to avoid reading as
+  // a severity hue — it means "we could not compute severity", not
+  // "severity is low".
   const severityStyle = (sev) => {
     const s = String(sev || "").toUpperCase();
     if (s === "HIGH") {
       return {
         background: "var(--semantic-danger-subtle)",
         color: "var(--semantic-danger)",
+        border: "none",
         label: t("missed_recurrences.severity.high"),
       };
     }
@@ -442,14 +486,40 @@ function MissedRecurrencesCard({ block, role, t }) {
       return {
         background: "var(--semantic-warning-subtle)",
         color: "var(--semantic-warning)",
+        border: "none",
         label: t("missed_recurrences.severity.medium"),
+      };
+    }
+    if (s === "UNKNOWN") {
+      return {
+        background: "var(--bg-surface)",
+        color: "var(--text-secondary)",
+        border: "1px solid var(--border-default)",
+        label: t("missed_recurrences.severity.unknown"),
       };
     }
     return {
       background: "transparent",
       color: "var(--text-tertiary)",
+      border: "none",
       label: t("missed_recurrences.severity.low"),
     };
+  };
+
+  // KWD-native detection (per spec §11): prefer `fxRateSource === 'none'`
+  // as the authoritative signal; fall back to `nativeCurrency === 'KWD'`
+  // if the backend omits fxRateSource.
+  const isKwdNative = (item) => {
+    if (item?.fxRateSource === "none") return true;
+    if (!item?.fxRateSource && String(item?.nativeCurrency || "").toUpperCase() === "KWD") return true;
+    return false;
+  };
+
+  // FX-rate source → bilingual label.
+  const fxSourceLabel = (src) => {
+    if (src === "exact") return t("missed_recurrences.fx_rate_source.exact");
+    if (src === "fallback") return t("missed_recurrences.fx_rate_source.fallback");
+    return "";
   };
 
   // Trim currencyNote to the first sentence for the footer.
@@ -524,6 +594,18 @@ function MissedRecurrencesCard({ block, role, t }) {
             {items.map((item) => {
               const sev = severityStyle(item.severity);
               const isSuspended = !!suspended[item.patternId];
+              const kwdNative = isKwdNative(item);
+              const severityUpper = String(item.severity || "").toUpperCase();
+              const isUnknown = severityUpper === "UNKNOWN";
+              const nativeCurrency = String(item.nativeCurrency || "").toUpperCase();
+              // Show secondary native amount only when non-KWD tenant AND
+              // FX was available (exact or fallback). UNKNOWN severity
+              // (fxRateSource='unavailable') falls through to the native-
+              // only branch below — no secondary stack.
+              const hasUsableFx =
+                !kwdNative &&
+                !isUnknown &&
+                (item.fxRateSource === "exact" || item.fxRateSource === "fallback");
               return (
                 <div
                   key={item.patternId}
@@ -561,15 +643,67 @@ function MissedRecurrencesCard({ block, role, t }) {
                         flexWrap: "wrap",
                       }}
                     >
-                      <span
-                        style={{
-                          fontFamily: "'DM Mono', monospace",
-                          fontSize: 11,
-                          color: "var(--text-secondary)",
-                        }}
-                      >
-                        {item.expectedAmountKwd} KWD
-                      </span>
+                      {/* Amount rendering — three cases:
+                          (1) KWD-native or implicit KWD: single KWD amount.
+                          (2) Non-KWD with usable FX: primary KWD + secondary native ≈ prefix.
+                          (3) UNKNOWN (FX unavailable): native amount only with fx-unavailable tag;
+                              no KWD equivalent is shown because backend returns null. */}
+                      {isUnknown ? (
+                        <>
+                          {item.nativeExpectedAmount != null && (
+                            <span
+                              style={{
+                                fontFamily: "'DM Mono', monospace",
+                                fontSize: 11,
+                                color: "var(--text-secondary)",
+                              }}
+                            >
+                              {item.nativeExpectedAmount} {nativeCurrency || ""}
+                            </span>
+                          )}
+                          <span
+                            title={t("missed_recurrences.fx_unavailable_tooltip", {
+                              currency: nativeCurrency || "—",
+                            })}
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 600,
+                              padding: "2px 7px",
+                              borderRadius: 10,
+                              background: "var(--bg-surface)",
+                              color: "var(--text-secondary)",
+                              border: "1px solid var(--border-default)",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {t("missed_recurrences.fx_unavailable_badge")}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span
+                            style={{
+                              fontFamily: "'DM Mono', monospace",
+                              fontSize: 11,
+                              color: "var(--text-secondary)",
+                            }}
+                          >
+                            {item.expectedAmountKwd} KWD
+                          </span>
+                          {hasUsableFx && item.nativeExpectedAmount != null && (
+                            <span
+                              style={{
+                                fontFamily: "'DM Mono', monospace",
+                                fontSize: 10,
+                                color: "var(--text-tertiary)",
+                              }}
+                            >
+                              {t("missed_recurrences.native_amount_prefix")}{" "}
+                              {item.nativeExpectedAmount} {nativeCurrency}
+                            </span>
+                          )}
+                        </>
+                      )}
                       <span
                         style={{
                           fontSize: 10,
@@ -578,6 +712,7 @@ function MissedRecurrencesCard({ block, role, t }) {
                           borderRadius: 10,
                           background: sev.background,
                           color: sev.color,
+                          border: sev.border,
                           whiteSpace: "nowrap",
                         }}
                       >
@@ -609,6 +744,26 @@ function MissedRecurrencesCard({ block, role, t }) {
                         </span>
                       )}
                     </div>
+                    {/* FX-rate subordinate line — only for non-KWD tenants
+                        where FX was usable. Keeps the amount row light and
+                        pushes rate/date/source into a small muted strip. */}
+                    {hasUsableFx && item.fxRateUsed && (
+                      <div
+                        style={{
+                          fontSize: 10,
+                          color: "var(--text-tertiary)",
+                          marginTop: 3,
+                          fontFamily: "'DM Mono', monospace",
+                        }}
+                      >
+                        {t("missed_recurrences.fx_rate_label")}: {item.fxRateUsed}{" "}
+                        {nativeCurrency}/KWD
+                        {item.fxRateDate ? ` · ${item.fxRateDate.slice(0, 10)}` : ""}
+                        {fxSourceLabel(item.fxRateSource)
+                          ? ` · ${fxSourceLabel(item.fxRateSource)}`
+                          : ""}
+                      </div>
+                    )}
                   </div>
                   {canSuspend && (
                     <button
@@ -669,3 +824,247 @@ function MissedRecurrencesCard({ block, role, t }) {
     </>
   );
 }
+
+/**
+ * CrossTenantContextCard — typed renderer for Aminah's
+ * `get_cross_tenant_recurrence_context` read tool (Tier D Dispatch 3;
+ * backend corporate-api `5a8d2df`, 2026-04-22).
+ *
+ * Privacy threshold: backend enforces a minimum of 3 distinct tenants
+ * sharing a merchant before returning an aggregate. Below threshold it
+ * returns `thresholdMet:false` with `distinctTenantCount:0` +
+ * `medianExpectedAmountKwd:null`; this renderer shows a neutral
+ * empty-state in that case.
+ *
+ * Read-only surface — no role gate beyond what gates the containing
+ * slide-over (Owner / CFO / Senior / Junior all see the card when
+ * Aminah chains this tool after a missed-recurrence card).
+ *
+ * Visual treatment: supplementary context card — slightly smaller than
+ * MissedRecurrencesCard, `bg-surface-sunken` background to distinguish
+ * from the action-card it typically follows.
+ */
+function CrossTenantContextCard({ block, t }) {
+  const r = block.result || {};
+  const thresholdMet = !!r.thresholdMet;
+  const merchant = r.merchantNormalizedName || "—";
+  const industry = r.industryBucket || "";
+  const distinctCount =
+    typeof r.distinctTenantCount === "number" ? r.distinctTenantCount : 0;
+  const medianAmount = r.medianExpectedAmountKwd; // string|null
+  const medianIntervalDays =
+    typeof r.medianIntervalDays === "number" ? r.medianIntervalDays : null;
+  const intervalClass = r.intervalClass; // weekly|monthly|...|null
+  const note = r.note || "";
+  const noteShort = note ? note.split(/(?<=\.)\s/)[0] : "";
+
+  const intervalLabel = (() => {
+    const valid = [
+      "weekly",
+      "monthly",
+      "quarterly",
+      "semi_annual",
+      "annual",
+      "other",
+    ];
+    if (intervalClass && valid.includes(intervalClass)) {
+      return t(`cross_tenant_context.interval_class.${intervalClass}`);
+    }
+    if (medianIntervalDays != null) {
+      return t("cross_tenant_context.interval_days_fallback", {
+        count: medianIntervalDays,
+      });
+    }
+    return null;
+  })();
+
+  // Below-threshold neutral state — muted surface, no primary colour.
+  if (!thresholdMet) {
+    return (
+      <div
+        style={{
+          background: "var(--bg-surface-sunken)",
+          border: "1px solid var(--border-subtle)",
+          borderRadius: 10,
+          padding: "10px 12px",
+          fontSize: 12,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            marginBottom: 6,
+          }}
+        >
+          <Sparkles size={12} color="var(--text-tertiary)" />
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: "0.04em",
+              color: "var(--text-secondary)",
+            }}
+          >
+            {t("cross_tenant_context.title")}
+            {merchant !== "—" ? ` · ${merchant}` : ""}
+          </span>
+        </div>
+        <div
+          style={{
+            fontSize: 12,
+            color: "var(--text-secondary)",
+            marginBottom: 4,
+          }}
+        >
+          {t("cross_tenant_context.below_threshold_title")}
+        </div>
+        <div
+          style={{
+            fontSize: 10,
+            color: "var(--text-tertiary)",
+            lineHeight: 1.5,
+          }}
+        >
+          {t("cross_tenant_context.below_threshold_explanation")}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        background: "var(--bg-surface-sunken)",
+        border: "1px solid var(--border-subtle)",
+        borderRadius: 10,
+        padding: "10px 12px",
+        fontSize: 12,
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          marginBottom: 8,
+        }}
+      >
+        <Sparkles size={12} color="var(--accent-primary)" />
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: "0.04em",
+            color: "var(--text-primary)",
+          }}
+        >
+          {t("cross_tenant_context.title")} · {merchant}
+        </span>
+      </div>
+
+      {/* Tenant-count primary line */}
+      <div
+        style={{
+          fontSize: 12,
+          color: "var(--text-secondary)",
+          marginBottom: 6,
+        }}
+      >
+        {t("cross_tenant_context.tenant_count", {
+          count: distinctCount,
+          industry: industry || "—",
+        })}
+      </div>
+
+      {/* Facts strip — median amount + typical interval */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+          marginBottom: 6,
+        }}
+      >
+        {medianAmount != null && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              gap: 6,
+              flexWrap: "wrap",
+            }}
+          >
+            <span style={{ fontSize: 10, color: "var(--text-tertiary)" }}>
+              {t("cross_tenant_context.median_amount_label")}
+            </span>
+            <span
+              style={{
+                fontFamily: "'DM Mono', monospace",
+                fontSize: 11,
+                color: "var(--text-primary)",
+                fontWeight: 600,
+              }}
+            >
+              {medianAmount} KWD
+            </span>
+          </div>
+        )}
+        {intervalLabel && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              gap: 6,
+              flexWrap: "wrap",
+            }}
+          >
+            <span style={{ fontSize: 10, color: "var(--text-tertiary)" }}>
+              {t("cross_tenant_context.typical_interval_label")}
+            </span>
+            <span
+              style={{
+                fontSize: 11,
+                color: "var(--text-primary)",
+                fontWeight: 600,
+              }}
+            >
+              {intervalLabel}
+            </span>
+            {intervalClass &&
+              medianIntervalDays != null &&
+              intervalClass !== "other" && (
+                <span style={{ fontSize: 10, color: "var(--text-tertiary)" }}>
+                  ·{" "}
+                  {t("cross_tenant_context.interval_days_fallback", {
+                    count: medianIntervalDays,
+                  })}
+                </span>
+              )}
+          </div>
+        )}
+      </div>
+
+      {/* Footer — short privacy/aggregation note from backend */}
+      {noteShort && (
+        <div
+          style={{
+            fontSize: 10,
+            fontStyle: "italic",
+            color: "var(--text-tertiary)",
+            marginTop: 6,
+            lineHeight: 1.4,
+          }}
+        >
+          {noteShort}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Named exports for test harness. These are internal BlockRenderer
+// short-circuits; the default export remains the parent slide-over.
+export { MissedRecurrencesCard, CrossTenantContextCard };

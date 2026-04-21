@@ -1,4 +1,4 @@
-import { Home, Inbox, Activity, Building2, FileText, BarChart3, Calendar, Shield, Users, Settings, User, Upload } from "lucide-react";
+import { Home, Inbox, Activity, Building2, FileText, BarChart3, Calendar, Shield, Users, Settings, User, Upload, Contact } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import SidebarGroup from "../shared/SidebarGroup";
 import LtrText from "../shared/LtrText";
@@ -98,6 +98,7 @@ export default function OwnerSidebar({ active, setActive, taskboxOpen = 0, pendi
       <SidebarGroup label={t("groups.operations")}>
         <NavItem icon={Calendar} label={t("items.month_end_close")} active={is("month-end-close")} onClick={() => setActive("month-end-close")} />
         <NavItem icon={Shield}   label={t("items.audit_bridge")}    active={is("audit-bridge")}    onClick={() => setActive("audit-bridge")} />
+        <NavItem icon={Contact}  label={t("items.contacts")}        active={is("contacts")}        onClick={() => setActive("contacts")} />
         <NavItem icon={Upload}   label={t("items.migration")}       active={is("migration")}       onClick={() => setActive("migration")} />
       </SidebarGroup>
 

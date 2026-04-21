@@ -34,6 +34,10 @@ const LandmarkIcon = I(<><line x1="3" y1="22" x2="21" y2="22" /><line x1="6" y1=
 const ClipboardListIcon = I(<><rect x="8" y="2" width="8" height="4" rx="1" ry="1" /><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><line x1="8" y1="11" x2="16" y2="11" /><line x1="8" y1="15" x2="14" y2="15" /></>);
 const PackageXIcon = I(<><path d="M21 8V21a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8" /><path d="M1 3h22v5H1z" /><line x1="9" y1="13" x2="15" y2="19" /><line x1="15" y1="13" x2="9" y2="19" /></>);
 const MigrationIcon = I(<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></>);
+// ContactIcon — lucide "contact" shape (card + person silhouette). Used
+// for the top-level Contacts surface (Vendors + Customers KYC admin,
+// Phase 5, 2026-04-21).
+const ContactIcon = I(<><path d="M16 2v2" /><path d="M8 2v2" /><rect x="3" y="4" width="18" height="18" rx="2" /><circle cx="12" cy="11" r="3" /><path d="M7 20a5 5 0 0 1 10 0" /></>);
 
 function NavItem({ icon: Icon, label, active, onClick, badge }) {
   return (
@@ -150,6 +154,7 @@ export default function CFOSidebar({ active, setActive, pendingApprovals = 0, ta
         <NavItem icon={CalIcon}       label={t("items.month_end_close")} active={isActive("month-end-close")} onClick={() => setActive("month-end-close")} />
         <NavItem icon={ShieldIcon}    label={t("items.audit_bridge")}    active={isActive("audit-bridge")}    onClick={() => setActive("audit-bridge")} />
         <NavItem icon={GearIcon}      label={t("items.setup")}           active={isActive("setup")}           onClick={() => setActive("setup")} />
+        <NavItem icon={ContactIcon}   label={t("items.contacts")}        active={isActive("contacts")}        onClick={() => setActive("contacts")} />
         <NavItem icon={MigrationIcon} label={t("items.migration")}       active={isActive("migration")}       onClick={() => setActive("migration")} />
       </SidebarGroup>
 

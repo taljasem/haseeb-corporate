@@ -1,0 +1,13 @@
+{
+  "view_label": "CONTACTS",
+  "title": "Contacts",
+  "subtitle": "Vendors and customers · KYC admin · {{tenant}}",
+  "readonly_banner": "You have read-only access to Contacts. Editing requires CFO or Senior Accountant role.",
+  "no_access_title": "Access restricted",
+  "no_access_description": "Contacts is available to Owners, CFOs, and Senior Accountants. Ask your CFO if you need access.",
+  "tabs_aria_label": "Contact category",
+  "tabs": {
+    "vendors": "Vendors",
+    "customers": "Customers"
+  }
+}

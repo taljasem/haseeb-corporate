@@ -40,6 +40,7 @@ import enPurchaseOrders from "./locales/en/purchase-orders.json";
 import enAdministration from "./locales/en/administration.json";
 import enInventoryNrv from "./locales/en/inventory-nrv.json";
 import enMigration from "./locales/en/migration.json";
+import enContacts from "./locales/en/contacts.json";
 
 import arCommon from "./locales/ar/common.json";
 import arHeader from "./locales/ar/header.json";
@@ -79,6 +80,7 @@ import arPurchaseOrders from "./locales/ar/purchase-orders.json";
 import arAdministration from "./locales/ar/administration.json";
 import arInventoryNrv from "./locales/ar/inventory-nrv.json";
 import arMigration from "./locales/ar/migration.json";
+import arContacts from "./locales/ar/contacts.json";
 
 const namespaces = [
   "common", "header", "sidebar", "hero", "taskbox",
@@ -89,7 +91,7 @@ const namespaces = [
   "settings", "profile", "forecast", "variance", "aging", "setup",
   "petty-cash", "bulk-reclass", "ocr", "inventory-count",
   "spinoff", "islamic-finance", "purchase-orders", "administration",
-  "inventory-nrv", "migration",
+  "inventory-nrv", "migration", "contacts",
 ];
 
 i18n
@@ -136,6 +138,7 @@ i18n
         administration: enAdministration,
         "inventory-nrv": enInventoryNrv,
         migration: enMigration,
+        contacts: enContacts,
       },
       ar: {
         common: arCommon,
@@ -176,6 +179,7 @@ i18n
         administration: arAdministration,
         "inventory-nrv": arInventoryNrv,
         migration: arMigration,
+        contacts: arContacts,
       },
     },
     fallbackLng: "en",

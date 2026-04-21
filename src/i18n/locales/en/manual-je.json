@@ -20,7 +20,16 @@
     "untitled": "(untitled)",
     "balanced": "balanced",
     "unbalanced": "unbalanced",
-    "lines_used": "{{count}} lines · used {{used}}×"
+    "lines_used": "{{count}} lines · used {{used}}×",
+    "next_fire": "next {{date}}"
+  },
+  "frequencies": {
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "quarterly": "Quarterly",
+    "annual": "Annual",
+    "yearly": "Yearly"
   },
   "toast": {
     "draft_from_template": "Draft created from template",
@@ -29,7 +38,10 @@
     "cannot_post": "Cannot post: {{reason}}",
     "reversal_created": "Reversal entry created",
     "scheduled": "Entry scheduled for {{date}}",
-    "template_saved": "Template saved"
+    "template_saved": "Template saved",
+    "template_fired": "Draft created from template: {{id}}",
+    "template_paused": "Template paused",
+    "template_resumed": "Template resumed"
   },
   "empty_state": {
     "title": "MANUAL JOURNAL ENTRIES",
@@ -98,7 +110,10 @@
     "lines": "LINES ({{count}})",
     "used_times": "Used <strong>{{count}}</strong> times",
     "created": "Created {{time}}",
-    "use_template": "Use Template"
+    "use_template": "Use Template",
+    "fire_now": "Fire Now",
+    "instance_history": "Instance History",
+    "next_fire": "Next fire: {{date}}"
   },
   "reverse_modal": {
     "title": "REVERSE JOURNAL ENTRY",
@@ -169,12 +184,39 @@
       "edit": "Edit",
       "duplicate": "Duplicate",
       "delete": "Delete",
-      "share": "Share"
+      "share": "Share",
+      "fire_now": "Fire Now",
+      "instances": "Instance History",
+      "pause": "Pause",
+      "resume": "Resume",
+      "open": "Open actions menu"
     },
     "delete": {
       "confirm_title": "Delete template",
       "confirm_body": "Delete this template? This cannot be undone."
-    }
+    },
+    "paused_badge": "Paused",
+    "cannot_fire_paused": "Template is paused — resume it first"
+  },
+  "instances_modal": {
+    "title": "INSTANCE HISTORY",
+    "sub": "FIRE LOG",
+    "close": "Close",
+    "empty_title": "No fires recorded yet",
+    "empty_desc": "Fire this template or wait for its scheduled run to see entries here.",
+    "col_fired_at": "FIRED AT",
+    "col_fired_by": "FIRED BY",
+    "col_status": "STATUS",
+    "col_journal": "JOURNAL ENTRY",
+    "col_amount": "AMOUNT (KWD)",
+    "fired_by_scheduler": "Scheduler",
+    "fired_by_manual": "Manual",
+    "status_draft_created": "Draft created",
+    "status_advisory_only": "Advisory",
+    "status_fire_failed": "Fire failed",
+    "pagination_of": "Page {{page}} of {{total}} · {{count}} total",
+    "prev": "Previous",
+    "next": "Next"
   },
   "badge": {
     "ai_assisted": "AI-assisted"

@@ -20,7 +20,16 @@
     "untitled": "(بدون عنوان)",
     "balanced": "متوازن",
     "unbalanced": "غير متوازن",
-    "lines_used": "{{count}} بنود · استُخدم {{used}} مرة"
+    "lines_used": "{{count}} بنود · استُخدم {{used}} مرة",
+    "next_fire": "التالي {{date}}"
+  },
+  "frequencies": {
+    "daily": "يومي",
+    "weekly": "أسبوعي",
+    "monthly": "شهري",
+    "quarterly": "ربع سنوي",
+    "annual": "سنوي",
+    "yearly": "سنوي"
   },
   "toast": {
     "draft_from_template": "تم إنشاء مسودة من القالب",
@@ -29,7 +38,10 @@
     "cannot_post": "تعذّر الترحيل: {{reason}}",
     "reversal_created": "تم إنشاء قيد عكسي",
     "scheduled": "تم جدولة القيد في {{date}}",
-    "template_saved": "تم حفظ القالب"
+    "template_saved": "تم حفظ القالب",
+    "template_fired": "تم إنشاء مسودة من القالب: {{id}}",
+    "template_paused": "تم إيقاف القالب مؤقتاً",
+    "template_resumed": "تم استئناف القالب"
   },
   "empty_state": {
     "title": "القيود المحاسبية اليدوية",
@@ -98,7 +110,10 @@
     "lines": "البنود ({{count}})",
     "used_times": "استُخدم <strong>{{count}}</strong> مرة",
     "created": "أُنشئ {{time}}",
-    "use_template": "استخدام القالب"
+    "use_template": "استخدام القالب",
+    "fire_now": "تنفيذ الآن",
+    "instance_history": "سجل التنفيذات",
+    "next_fire": "التنفيذ القادم: {{date}}"
   },
   "reverse_modal": {
     "title": "عكس القيد المحاسبي",
@@ -169,12 +184,39 @@
       "edit": "تعديل",
       "duplicate": "تكرار",
       "delete": "حذف",
-      "share": "مشاركة"
+      "share": "مشاركة",
+      "fire_now": "تنفيذ الآن",
+      "instances": "سجل التنفيذات",
+      "pause": "إيقاف مؤقت",
+      "resume": "استئناف",
+      "open": "فتح قائمة الإجراءات"
     },
     "delete": {
       "confirm_title": "حذف القالب",
       "confirm_body": "هل تريد حذف هذا القالب؟ لا يمكن التراجع عن هذا الإجراء."
-    }
+    },
+    "paused_badge": "متوقف",
+    "cannot_fire_paused": "القالب متوقف — استأنفه أولاً"
+  },
+  "instances_modal": {
+    "title": "سجل التنفيذات",
+    "sub": "تاريخ التشغيل",
+    "close": "إغلاق",
+    "empty_title": "لا توجد تنفيذات مسجّلة بعد",
+    "empty_desc": "قم بتنفيذ هذا القالب أو انتظر التشغيل المجدول لترى القيود هنا.",
+    "col_fired_at": "وقت التنفيذ",
+    "col_fired_by": "نُفّذ بواسطة",
+    "col_status": "الحالة",
+    "col_journal": "القيد المحاسبي",
+    "col_amount": "المبلغ (دينار كويتي)",
+    "fired_by_scheduler": "مجدول",
+    "fired_by_manual": "يدوي",
+    "status_draft_created": "تم إنشاء المسودة",
+    "status_advisory_only": "استشارة",
+    "status_fire_failed": "فشل التنفيذ",
+    "pagination_of": "صفحة {{page}} من {{total}} · {{count}} إجمالي",
+    "prev": "السابق",
+    "next": "التالي"
   },
   "badge": {
     "ai_assisted": "بمساعدة الذكاء الاصطناعي"

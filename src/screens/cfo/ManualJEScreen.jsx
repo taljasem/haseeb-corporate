@@ -25,8 +25,15 @@ import { formatRelativeTime } from "../../utils/relativeTime";
 //   • GET    /api/journal-entries                  (listJournalEntries)
 //   • GET    /api/journal-entries/:id              (getJournalEntry)
 //
-// Template / schedule / period-lock / attachment features are still on
-// mockEngine — they have no backend yet and stay mock in Wave 3.
+// Template / schedule features are LIVE on the recurring-entries
+// surface per AUDIT-ACC-010 (corporate-api 65ccaf6, 2026-04-22).
+// Period-lock + attachment features remain on mockEngine — they have
+// no backend yet.
+//
+// Behavior change per AUDIT-ACC-010: templates + scheduled fires now
+// produce DRAFT journal entries (not POSTED) which route through the
+// existing approval-tier pipeline. Each fire also emits an
+// AminahAdvisorPending row that surfaces in the generic advisor queue.
 import {
   getManualJEs,
   getManualJEById,
@@ -34,22 +41,29 @@ import {
   updateJournalEntryDraft,
   postJournalEntry,
   reverseJournalEntry,
+  // Recurring-entry templates (AUDIT-ACC-010 LIVE surface) — replaces
+  // the mockEngine template trio (getManualJETemplates, saveAsTemplate,
+  // createFromTemplate, useJETemplate, getJETemplateMeta,
+  // deleteJETemplateRecord, scheduleManualJE, postScheduledNow).
+  listRecurringEntries,
+  getRecurringEntry,
+  createRecurringEntry,
+  updateRecurringEntry,
+  deleteRecurringEntry,
+  fireRecurringEntryNow,
+  listRecurringEntryInstances,
 } from "../../engine";
 import {
-  getManualJETemplates,
-  createFromTemplate,
-  saveAsTemplate,
-  scheduleManualJE,
-  postScheduledNow,
   getChartOfAccounts,
   searchChartOfAccounts,
   checkPeriodStatus,
   attachJEFile,
   removeJEAttachment,
   getJEAttachments,
-  useJETemplate,
-  getJETemplateMeta,
-  deleteJETemplateRecord,
+  // shareJETemplate stays on mockEngine — no backend surface for
+  // template sharing exists. PHASE-X-BLOCKED: tracked as HASEEB-202
+  // (P3 follow-up). Kept as mock-only so the templates-tab kebab
+  // "Share" action doesn't crash.
   shareJETemplate,
 } from "../../engine/mockEngine";
 
@@ -138,6 +152,93 @@ const TABS = [
   { id: "scheduled",key: "scheduled" },
 ];
 
+/**
+ * Adapt a backend RecurringEntry DTO to the legacy template shape the
+ * ManualJEScreen UI consumes. Keeps the existing UI (list item, kebab,
+ * TemplateDetail) rendering without structural refactor while the
+ * underlying dispatch moves to the AUDIT-ACC-010 LIVE surface.
+ *
+ *   backend: { id, description, frequency, nextDate, endDate, templateLines: [...],
+ *              isActive, createdAt, updatedAt }
+ *   UI:      { id, name, description, lines: [{id, accountCode, accountName,
+ *              debit, credit, memo}], usageCount, createdAt, isActive,
+ *              frequency, nextDate }
+ */
+function adaptRecurringEntryToTemplate(entry) {
+  if (!entry) return null;
+  const lines = Array.isArray(entry.templateLines) ? entry.templateLines : [];
+  const primary = entry._mockName || entry.description || "";
+  return {
+    id: entry.id,
+    name: primary,
+    description: entry.description || primary,
+    source: "manual",
+    defaultReference: primary,
+    createdAt: entry.createdAt || new Date().toISOString(),
+    updatedAt: entry.updatedAt || entry.createdAt || null,
+    usageCount: entry._mockUsageCount ?? 0,
+    isActive: entry.isActive !== false,
+    frequency: entry.frequency || "MONTHLY",
+    nextDate: entry.nextDate || null,
+    endDate: entry.endDate || null,
+    lines: lines.map((l, i) => ({
+      id: `T${i + 1}`,
+      accountCode: l.accountCode || l.accountId || "",
+      accountName: l.accountName || "",
+      debit: Number(l.debit || 0),
+      credit: Number(l.credit || 0),
+      memo: l.description || "",
+    })),
+  };
+}
+
+/**
+ * Build a {description, frequency, nextDate, templateLines} payload for
+ * createRecurringEntry / updateRecurringEntry from the ManualJE draft +
+ * template-save modal inputs. The save-as-template modal collects
+ * (name, description); we use the name as the backend `description`
+ * (what the operator sees in the list) and keep the separate
+ * description as supporting context inside each template line's
+ * description.
+ *
+ * Frequency defaults to MONTHLY; the legacy Save-Template modal does
+ * not expose a cadence picker (a follow-up HASEEB can add it). The
+ * schedule modal does expose cadence and overrides this default.
+ */
+function buildRecurringPayload(draft, { name, description, frequency, nextDate, endDate } = {}) {
+  const safeLines = (draft.lines || [])
+    .filter((l) => l.accountCode && (Number(l.debit) > 0 || Number(l.credit) > 0))
+    .map((l) => ({
+      accountId: l.accountCode,
+      accountCode: l.accountCode,
+      accountName: l.accountName || "",
+      debit: Number(l.debit) || 0,
+      credit: Number(l.credit) || 0,
+      description: l.memo || description || "",
+    }));
+  const today = new Date().toISOString();
+  return {
+    description: name || draft.description || "Recurring entry",
+    frequency: (frequency || "MONTHLY").toUpperCase(),
+    nextDate: nextDate || today,
+    endDate: endDate || null,
+    templateLines: safeLines,
+  };
+}
+
+// Map a frequency token from the legacy schedule-modal options
+// (monthly / quarterly / annually) onto the backend enum.
+function mapLegacyFrequency(f) {
+  if (!f) return "MONTHLY";
+  const v = String(f).toLowerCase();
+  if (v === "monthly") return "MONTHLY";
+  if (v === "quarterly") return "QUARTERLY";
+  if (v === "annually" || v === "yearly" || v === "annual") return "ANNUAL";
+  if (v === "weekly") return "WEEKLY";
+  if (v === "daily") return "DAILY";
+  return "MONTHLY";
+}
+
 export default function ManualJEScreen({ onOpenAminah }) {
   const { t } = useTranslation("manual-je");
   const { t: tc } = useTranslation("common");
@@ -157,6 +258,11 @@ export default function ManualJEScreen({ onOpenAminah }) {
   // Save and Post. This sidesteps the Wave 2 per-keystroke mock path
   // which would have created a phantom server draft on every click.
   const [newDraft, setNewDraft] = useState(null);
+
+  // AUDIT-ACC-010: instance-history modal state. When set, the modal
+  // shows the fire-history for the selected recurring template
+  // (paginated via listRecurringEntryInstances).
+  const [instancesForTemplate, setInstancesForTemplate] = useState(null);
 
   const refresh = useCallback(() => setTick((t) => t + 1), []);
 
@@ -186,7 +292,17 @@ export default function ManualJEScreen({ onOpenAminah }) {
     Promise.all([
       safe(Promise.resolve().then(() => getManualJEs("drafts"))),
       safe(Promise.resolve().then(() => getManualJEs("recent-posted"))),
-      safe(Promise.resolve().then(() => getManualJETemplates())),
+      // AUDIT-ACC-010: templates come from the recurring-entries LIVE
+      // surface. Adapt the backend DTO to the legacy template shape the
+      // list UI already consumes. Active templates only by default —
+      // paused templates still appear but are badged. Scheduled fires
+      // are surfaced via instance-history, not the scheduled tab (which
+      // remains on the mockEngine JE-level schedule for now).
+      safe(
+        Promise.resolve()
+          .then(() => listRecurringEntries())
+          .then((rows) => (rows || []).map(adaptRecurringEntryToTemplate).filter(Boolean))
+      ),
       safe(Promise.resolve().then(() => getManualJEs("scheduled"))),
     ]).then(([d, r, t, s]) => {
       if (cancelled) return;
@@ -268,11 +384,81 @@ export default function ManualJEScreen({ onOpenAminah }) {
   };
 
   const handleUseTemplate = async (templateId) => {
-    const j = await createFromTemplate(templateId);
+    // AUDIT-ACC-010 rewire: "Use template" pre-fills the composer
+    // from a recurring-entry template. Backend returns the full
+    // RecurringEntry; we adapt its templateLines → composer lines
+    // and mint a client-only draft (the composer holds draft state
+    // locally and posts atomically on save). This replaces the legacy
+    // mockEngine.createFromTemplate call which created a server-side
+    // draft JE immediately — AUDIT-ACC-010's contract separates
+    // template read (getRecurringEntry) from fire (fireRecurringEntryNow).
+    const entry = await getRecurringEntry(templateId);
+    const adapted = adaptRecurringEntryToTemplate(entry);
+    if (!adapted) {
+      showToast(t("toast.cannot_post", { reason: "Template not found" }));
+      return;
+    }
+    const draft = normaliseInitialJE({
+      id: `NEW-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+      status: "draft",
+      source: "recurring",
+      date: new Date().toISOString(),
+      reference: adapted.defaultReference || adapted.name || "",
+      description: adapted.description || "",
+      templateId,
+      lines: adapted.lines.map((l, i) => ({
+        id: `L${i + 1}`,
+        accountCode: l.accountCode,
+        accountName: l.accountName,
+        debit: Number(l.debit) || 0,
+        credit: Number(l.credit) || 0,
+        memo: l.memo || "",
+      })),
+    });
+    setNewDraft(draft);
     setActiveTab("drafts");
-    setSelected({ kind: "je", id: j.id });
+    setSelected({ kind: "new" });
     refresh();
     showToast(t("toast.draft_from_template"));
+  };
+
+  // AUDIT-ACC-010: operator-initiated manual fire of a recurring
+  // template. Produces a DRAFT JE server-side (never POSTED) and emits
+  // an AminahAdvisorPending row that surfaces in the generic advisor
+  // queue. 409 on paused template / past end-date / already-fired.
+  const handleFireTemplateNow = async (templateId) => {
+    try {
+      const res = await fireRecurringEntryNow(templateId);
+      const jeId = res?.outcome?.journalEntryId || res?.instance?.id;
+      refresh();
+      showToast(t("toast.template_fired", { id: jeId || "" }));
+    } catch (err) {
+      showToast(
+        t("toast.cannot_post", {
+          reason: err?.message || "Cannot fire template",
+        })
+      );
+    }
+  };
+
+  // AUDIT-ACC-010: pause / resume a template via PATCH {isActive}.
+  // The list refreshes so the paused-badge re-renders on the card.
+  const handleToggleTemplateActive = async (templateId, nextActive) => {
+    try {
+      await updateRecurringEntry(templateId, { isActive: !!nextActive });
+      refresh();
+      showToast(
+        nextActive
+          ? t("toast.template_resumed")
+          : t("toast.template_paused")
+      );
+    } catch (err) {
+      showToast(
+        t("toast.cannot_post", {
+          reason: err?.message || "Toggle failed",
+        })
+      );
+    }
   };
 
   const listForTab = () => {
@@ -366,6 +552,9 @@ export default function ManualJEScreen({ onOpenAminah }) {
                   selected={isSelected}
                   onClick={() => setSelected({ kind: isTemplate ? "template" : "je", id: item.id })}
                   onRefresh={refresh}
+                  onFireNow={handleFireTemplateNow}
+                  onTogglePause={handleToggleTemplateActive}
+                  onShowInstances={(tpl) => setInstancesForTemplate(tpl)}
                 />
               );
             })
@@ -501,32 +690,82 @@ export default function ManualJEScreen({ onOpenAminah }) {
               showToast(t("toast.reversal_created"));
             }}
             onSchedule={async (date, recurring) => {
-              // Scheduling has no backend in Wave 3 — stays on mockEngine.
-              // Only works for client-only drafts or mock-backed entries;
-              // live server drafts will throw from WRITE_THROW.
+              // AUDIT-ACC-010 rewire: scheduling a JE is now "create a
+              // recurring-entry template with nextDate=<scheduled date>".
+              // If recurring=null the user wanted a one-time schedule —
+              // we still create a recurring template with a far-future
+              // endDate equal to the scheduled date itself so the cron
+              // fires once and then deactivates.
               try {
-                await scheduleManualJE(activeJE.id, date, recurring);
-                setActiveTab("scheduled");
+                const payload = buildRecurringPayload(activeJE, {
+                  name:
+                    activeJE.reference || activeJE.description || "Scheduled entry",
+                  description: activeJE.description || "",
+                  frequency: mapLegacyFrequency(recurring?.frequency || "MONTHLY"),
+                  nextDate: date,
+                  endDate: recurring ? null : date,
+                });
+                if (payload.templateLines.length < 2) {
+                  showToast(
+                    t("toast.cannot_post", {
+                      reason: "At least 2 balanced lines are required",
+                    })
+                  );
+                  return;
+                }
+                await createRecurringEntry(payload);
+                setActiveTab("templates");
                 refresh();
                 showToast(t("toast.scheduled", { date: fmtDate(date) }));
               } catch (err) {
-                showToast(t("toast.cannot_post", { reason: err?.message || "Scheduling not available" }));
+                showToast(
+                  t("toast.cannot_post", {
+                    reason: err?.message || "Scheduling not available",
+                  })
+                );
               }
             }}
             onPostNow={async () => {
+              // AUDIT-ACC-010 rewire: "Post now" on a scheduled JE maps
+              // to fire-next on the underlying recurring template. If
+              // the active entity is a JE (not a template), fall back to
+              // the legacy path — fire-next requires a recurring id.
               try {
-                const r = await postScheduledNow(activeJE.id, "cfo");
-                setActiveTab("recent");
-                setSelected({ kind: "je", id: r.id });
+                const id = activeJE.templateId || activeJE.id;
+                const res = await fireRecurringEntryNow(id);
+                const createdJeId = res?.outcome?.journalEntryId || res?.instance?.id;
+                setActiveTab("drafts");
+                if (createdJeId) setSelected({ kind: "je", id: createdJeId });
                 refresh();
-                showToast(t("toast.posted", { id: r.id }));
+                showToast(t("toast.template_fired", { id: createdJeId || "" }));
               } catch (err) {
-                showToast(t("toast.cannot_post", { reason: err?.message || "Post-now not available" }));
+                showToast(
+                  t("toast.cannot_post", {
+                    reason: err?.message || "Post-now not available",
+                  })
+                );
               }
             }}
             onSaveTemplate={async (name, desc) => {
-              if (!activeJE.id) return;
-              await saveAsTemplate(activeJE.id, name, desc);
+              // AUDIT-ACC-010 rewire: save-as-template now creates a
+              // recurring-entry template. Frequency defaults to MONTHLY;
+              // a follow-up HASEEB can expose a cadence picker in the
+              // save-template modal.
+              const payload = buildRecurringPayload(activeJE, {
+                name,
+                description: desc,
+                frequency: "MONTHLY",
+                nextDate: activeJE.date || new Date().toISOString(),
+              });
+              if (payload.templateLines.length < 2) {
+                showToast(
+                  t("toast.cannot_post", {
+                    reason: "At least 2 balanced lines are required",
+                  })
+                );
+                return;
+              }
+              await createRecurringEntry(payload);
               refresh();
               showToast(t("toast.template_saved"));
             }}
@@ -535,9 +774,22 @@ export default function ManualJEScreen({ onOpenAminah }) {
         )}
 
         {selected?.kind === "template" && activeTemplate && (
-          <TemplateDetail template={activeTemplate} onUse={() => handleUseTemplate(activeTemplate.id)} />
+          <TemplateDetail
+            template={activeTemplate}
+            onUse={() => handleUseTemplate(activeTemplate.id)}
+            onFireNow={() => handleFireTemplateNow(activeTemplate.id)}
+            onShowInstances={() => setInstancesForTemplate(activeTemplate)}
+          />
         )}
       </div>
+
+      {/* AUDIT-ACC-010: Instance history modal */}
+      {instancesForTemplate && (
+        <RecurringEntryInstancesModal
+          template={instancesForTemplate}
+          onClose={() => setInstancesForTemplate(null)}
+        />
+      )}
     </div>
   );
 }
@@ -578,10 +830,12 @@ function EmptyState({ onBlank, onTemplates, onRecent }) {
   );
 }
 
-function ListItem({ item, tab, selected, onClick, onRefresh }) {
+function ListItem({ item, tab, selected, onClick, onRefresh, onFireNow, onTogglePause, onShowInstances }) {
   const { t } = useTranslation("manual-je");
   const isJE = tab !== "templates";
   const total = isJE ? Math.max(item.totalDebits || 0, item.totalCredits || 0) : 0;
+  const isTemplate = tab === "templates";
+  const paused = isTemplate && item.isActive === false;
   return (
     <button
       onClick={onClick}
@@ -596,7 +850,7 @@ function ListItem({ item, tab, selected, onClick, onRefresh }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {tab === "templates" ? item.name : item.reference || t("list.untitled")}
+            {tab === "templates" ? (item.name || item.description || t("list.untitled")) : (item.reference || t("list.untitled"))}
           </div>
           <div style={{ fontSize: 11, color: COLORS.textDim, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {item.description}
@@ -610,7 +864,26 @@ function ListItem({ item, tab, selected, onClick, onRefresh }) {
             )}
             {tab === "recent" && <Lock size={9} style={{ verticalAlign: "middle" }} />}
             {tab === "scheduled" && <span>{fmtDate(item.scheduledFor)}</span>}
-            {tab === "templates" && <span>{t("list.lines_used", { count: item.lines.length, used: item.usageCount })}</span>}
+            {tab === "templates" && (
+              <>
+                <span style={{ textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                  {t(`frequencies.${(item.frequency || "MONTHLY").toLowerCase()}`, {
+                    defaultValue: item.frequency || "MONTHLY",
+                  })}
+                </span>
+                {item.nextDate && (
+                  <span>{t("list.next_fire", { date: fmtDate(item.nextDate) })}</span>
+                )}
+                {paused && (
+                  <span style={{
+                    color: COLORS.amber, fontWeight: 700, letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                  }}>
+                    {t("templates.paused_badge")}
+                  </span>
+                )}
+              </>
+            )}
           </div>
         </div>
         {isJE && total > 0 && (
@@ -619,7 +892,13 @@ function ListItem({ item, tab, selected, onClick, onRefresh }) {
           </div>
         )}
         {tab === "templates" && (
-          <TemplateKebab templateId={item.id} onRefresh={onRefresh} />
+          <TemplateKebab
+            template={item}
+            onRefresh={onRefresh}
+            onFireNow={onFireNow}
+            onTogglePause={onTogglePause}
+            onShowInstances={onShowInstances}
+          />
         )}
       </div>
     </button>
@@ -1183,18 +1462,44 @@ function CompactAccountPicker({ value, readOnly, onSelect, onClear }) {
   );
 }
 
-function TemplateDetail({ template, onUse }) {
+function TemplateDetail({ template, onUse, onFireNow, onShowInstances }) {
   const { t } = useTranslation("manual-je");
+  const paused = template?.isActive === false;
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: 24 }}>
       <div style={{ maxWidth: 720, margin: "0 auto", background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: "24px 28px" }}>
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: COLORS.textFaint }}>{t("template_detail.template_label")}</div>
-        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: COLORS.text, marginTop: 4, marginBottom: 8 }}>
-          {template.name.toUpperCase()}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4, marginBottom: 8, flexWrap: "wrap" }}>
+          <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: COLORS.text }}>
+            {(template.name || template.description || "").toUpperCase()}
+          </div>
+          <span style={{
+            fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: COLORS.blue,
+            background: `${COLORS.blue}1A`, border: `1px solid ${COLORS.blue}40`,
+            padding: "4px 8px", borderRadius: 4, textTransform: "uppercase",
+          }}>
+            {t(`frequencies.${(template.frequency || "MONTHLY").toLowerCase()}`, {
+              defaultValue: template.frequency || "MONTHLY",
+            })}
+          </span>
+          {paused && (
+            <span style={{
+              fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", color: COLORS.amber,
+              background: `${COLORS.amber}1A`, border: `1px solid ${COLORS.amber}40`,
+              padding: "4px 8px", borderRadius: 4, textTransform: "uppercase",
+            }}>
+              {t("templates.paused_badge")}
+            </span>
+          )}
         </div>
-        <div style={{ fontSize: 13, color: COLORS.textDim, marginBottom: 16, lineHeight: 1.55 }}>
+        <div style={{ fontSize: 13, color: COLORS.textDim, marginBottom: 8, lineHeight: 1.55 }}>
           {template.description}
         </div>
+        {template.nextDate && (
+          <div style={{ fontSize: 11, color: COLORS.textFaint, marginBottom: 16 }}>
+            {t("template_detail.next_fire", { date: fmtDate(template.nextDate) })}
+          </div>
+        )}
 
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: COLORS.textFaint, marginBottom: 8 }}>
           {t("template_detail.lines", { count: template.lines.length })}
@@ -1210,25 +1515,273 @@ function TemplateDetail({ template, onUse }) {
                 <span style={{ fontFamily: "'DM Mono', monospace", color: COLORS.textFaint, fontSize: 11 }}>{l.accountCode}</span>
                 <span style={{ color: COLORS.text, fontSize: 12, marginInlineStart: 8 }}>{l.accountName}</span>
               </div>
-              <div style={{ fontFamily: "'DM Mono', monospace", color: COLORS.textFaint, fontSize: 12 }}>—</div>
+              <div style={{ fontFamily: "'DM Mono', monospace", color: COLORS.textFaint, fontSize: 12 }}>
+                {Number(l.debit || 0) > 0 ? `DR ${fmtKWD(l.debit)}` : Number(l.credit || 0) > 0 ? `CR ${fmtKWD(l.credit)}` : "—"}
+              </div>
             </div>
           ))}
         </div>
 
         <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 18, fontSize: 11, color: COLORS.textDim }}>
-          <span dangerouslySetInnerHTML={{ __html: t("template_detail.used_times", { count: template.usageCount }).replace(/<strong>/g, `<strong style="color: ${COLORS.text}">`) }} />
+          <span dangerouslySetInnerHTML={{ __html: t("template_detail.used_times", { count: template.usageCount || 0 }).replace(/<strong>/g, `<strong style="color: ${COLORS.text}">`) }} />
           <span>·</span>
           <span>{t("template_detail.created", { time: fmtRelative(template.createdAt) })}</span>
         </div>
 
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onUse}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button
+            onClick={onUse}
             style={{ background: COLORS.teal, color: "#fff", border: "none", padding: "10px 18px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
             {t("template_detail.use_template")}
           </button>
+          {onFireNow && (
+            <button
+              onClick={onFireNow}
+              disabled={paused}
+              title={paused ? t("templates.cannot_fire_paused") : undefined}
+              style={{
+                background: paused ? "var(--border-subtle)" : "transparent",
+                color: paused ? COLORS.textFaint : COLORS.text,
+                border: `1px solid ${COLORS.border}`,
+                padding: "10px 18px",
+                borderRadius: 6,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: paused ? "not-allowed" : "pointer",
+                fontFamily: "inherit",
+              }}>
+              {t("template_detail.fire_now")}
+            </button>
+          )}
+          {onShowInstances && (
+            <button
+              onClick={onShowInstances}
+              style={{ background: "transparent", color: COLORS.text, border: `1px solid ${COLORS.border}`, padding: "10px 18px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+              {t("template_detail.instance_history")}
+            </button>
+          )}
         </div>
       </div>
     </div>
+  );
+}
+
+// AUDIT-ACC-010: instance-history modal. Shows the fire log for a
+// recurring template (DRAFT_CREATED / ADVISORY_ONLY / FIRE_FAILED per
+// instance), paginated with client-side Prev/Next. Status badges use
+// token-based colors: info-subtle for DRAFT_CREATED, warning for
+// ADVISORY_ONLY, danger-subtle for FIRE_FAILED.
+function RecurringEntryInstancesModal({ template, onClose }) {
+  const { t } = useTranslation("manual-je");
+  const [rows, setRows] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const limit = 20;
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    listRecurringEntryInstances(template.id, { page, limit })
+      .then((res) => {
+        if (cancelled) return;
+        setRows(res?.entries || []);
+        setTotal(res?.total || 0);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err?.message || String(err));
+      })
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [template.id, page]);
+
+  useEscapeKey(onClose);
+
+  const statusColor = (status) => {
+    if (status === "DRAFT_CREATED") return COLORS.blue;
+    if (status === "ADVISORY_ONLY") return COLORS.amber;
+    if (status === "FIRE_FAILED") return COLORS.red;
+    return COLORS.textDim;
+  };
+  const statusBg = (status) => {
+    if (status === "DRAFT_CREATED") return "var(--semantic-info-subtle)";
+    if (status === "ADVISORY_ONLY") return "var(--semantic-warning-subtle)";
+    if (status === "FIRE_FAILED") return "var(--semantic-danger-subtle)";
+    return "transparent";
+  };
+  const fmtKwdAmount = (v) => {
+    if (v == null) return "—";
+    const n = Number(v);
+    if (!Number.isFinite(n)) return String(v);
+    return n.toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+  };
+
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+
+  return (
+    <>
+      <div
+        onClick={onClose}
+        data-testid="instances-modal-backdrop"
+        style={{ position: "fixed", inset: 0, background: "var(--overlay-backdrop)", backdropFilter: "blur(4px)", zIndex: 300 }}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("instances_modal.title")}
+        data-testid="instances-modal"
+        style={{
+          position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
+          width: 720, maxWidth: "calc(100vw - 32px)", maxHeight: "85vh",
+          background: "var(--bg-surface-raised)",
+          border: `1px solid ${COLORS.border}`, borderRadius: 12, zIndex: 301,
+          boxShadow: "var(--shadow-xl)", display: "flex", flexDirection: "column",
+        }}>
+        <div style={{ padding: "16px 22px", borderBottom: `1px solid ${COLORS.border}`, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: COLORS.textFaint }}>
+              {t("instances_modal.sub")}
+            </div>
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: COLORS.text, marginTop: 4 }}>
+              {t("instances_modal.title")}
+            </div>
+            <div style={{ fontSize: 11, color: COLORS.textDim, marginTop: 4 }}>
+              {template.name || template.description}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label={t("instances_modal.close", { defaultValue: "Close" })}
+            style={{ background: "transparent", border: "none", color: COLORS.textFaint, cursor: "pointer", padding: 4 }}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <div style={{ flex: 1, overflowY: "auto", padding: "14px 22px" }}>
+          {loading && (
+            <div style={{ display: "flex", justifyContent: "center", padding: 32 }}>
+              <Spinner />
+            </div>
+          )}
+          {error && !loading && (
+            <div style={{ padding: "12px 14px", background: "var(--semantic-danger-subtle)", border: `1px solid ${COLORS.red}40`, borderRadius: 6, fontSize: 12, color: COLORS.red }}>
+              {error}
+            </div>
+          )}
+          {!loading && !error && rows.length === 0 && (
+            <SharedEmptyState
+              icon={Clock}
+              title={t("instances_modal.empty_title")}
+              description={t("instances_modal.empty_desc")}
+            />
+          )}
+          {!loading && !error && rows.length > 0 && (
+            <div style={{ background: "var(--bg-surface)", border: `1px solid ${COLORS.border}`, borderRadius: 6, overflow: "hidden" }}>
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "140px 120px 110px 1fr 110px",
+                gap: 10,
+                padding: "10px 14px",
+                borderBottom: `1px solid ${COLORS.border}`,
+                fontSize: 9,
+                fontWeight: 700,
+                letterSpacing: "0.15em",
+                color: COLORS.textFaint,
+              }}>
+                <div>{t("instances_modal.col_fired_at")}</div>
+                <div>{t("instances_modal.col_fired_by")}</div>
+                <div>{t("instances_modal.col_status")}</div>
+                <div>{t("instances_modal.col_journal")}</div>
+                <div style={{ textAlign: "end" }}>{t("instances_modal.col_amount")}</div>
+              </div>
+              {rows.map((row) => (
+                <div
+                  key={row.id}
+                  data-testid={`instance-row-${row.id}`}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "140px 120px 110px 1fr 110px",
+                    gap: 10,
+                    padding: "10px 14px",
+                    borderBottom: `1px solid var(--border-subtle)`,
+                    fontSize: 11,
+                    color: COLORS.text,
+                    alignItems: "center",
+                  }}>
+                  <div style={{ fontFamily: "'DM Mono', monospace", color: COLORS.textDim }}>
+                    {fmtDate(row.firedAt)}
+                  </div>
+                  <div style={{ color: COLORS.textDim }}>
+                    {t(`instances_modal.fired_by_${(row.firedBy || "SCHEDULER").toLowerCase()}`, {
+                      defaultValue: row.firedBy || "—",
+                    })}
+                  </div>
+                  <div>
+                    <span style={{
+                      fontSize: 9, fontWeight: 700, letterSpacing: "0.10em",
+                      color: statusColor(row.status),
+                      background: statusBg(row.status),
+                      border: `1px solid ${statusColor(row.status)}40`,
+                      padding: "3px 7px", borderRadius: 4,
+                      textTransform: "uppercase",
+                    }}>
+                      {t(`instances_modal.status_${(row.status || "").toLowerCase()}`, {
+                        defaultValue: row.status || "—",
+                      })}
+                    </span>
+                  </div>
+                  <div style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {row.journalEntry ? (
+                      <span>
+                        <LtrText>{row.journalEntryId || row.journalEntry.id}</LtrText>
+                        <span style={{ color: COLORS.textFaint, marginInlineStart: 6 }}>
+                          · {row.journalEntry.status}
+                        </span>
+                      </span>
+                    ) : row.advisoryReason ? (
+                      <span style={{ color: COLORS.textDim, fontStyle: "italic" }}>
+                        {row.advisoryReason}
+                      </span>
+                    ) : (
+                      <span style={{ color: COLORS.textFaint }}>—</span>
+                    )}
+                  </div>
+                  <div style={{ textAlign: "end", fontFamily: "'DM Mono', monospace", color: COLORS.textDim }}>
+                    {row.journalEntry?.totalAmount != null
+                      ? fmtKwdAmount(row.journalEntry.totalAmount)
+                      : "—"}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div style={{ padding: "12px 22px", borderTop: `1px solid ${COLORS.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontSize: 11, color: COLORS.textFaint }}>
+            {t("instances_modal.pagination_of", { page, total: totalPages, count: total })}
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1 || loading}
+              style={{ background: "transparent", color: page <= 1 ? COLORS.textFaint : COLORS.text, border: `1px solid ${COLORS.border}`, padding: "7px 14px", borderRadius: 6, fontSize: 12, cursor: page <= 1 ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
+              {t("instances_modal.prev")}
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages || loading}
+              style={{ background: "transparent", color: page >= totalPages ? COLORS.textFaint : COLORS.text, border: `1px solid ${COLORS.border}`, padding: "7px 14px", borderRadius: 6, fontSize: 12, cursor: page >= totalPages ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
+              {t("instances_modal.next")}
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -1367,39 +1920,59 @@ function SaveTemplateModal({ onCancel, onConfirm }) {
   );
 }
 
-function TemplateKebab({ templateId, onRefresh }) {
+function TemplateKebab({ template, onRefresh, onFireNow, onTogglePause, onShowInstances }) {
   const { t } = useTranslation("manual-je");
   const [open, setOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const handleDuplicate = async (e) => {
+  const templateId = template?.id;
+  const isActive = template?.isActive !== false;
+  const handleFireNow = async (e) => {
     e.stopPropagation();
-    // No dedicated duplicate function — use useJETemplate to create a copy
-    await useJETemplate(templateId);
     setOpen(false);
-    onRefresh && onRefresh();
+    if (onFireNow) await onFireNow(templateId);
+  };
+  const handleTogglePause = async (e) => {
+    e.stopPropagation();
+    setOpen(false);
+    if (onTogglePause) await onTogglePause(templateId, !isActive);
+  };
+  const handleInstances = (e) => {
+    e.stopPropagation();
+    setOpen(false);
+    if (onShowInstances) onShowInstances(template);
   };
   const handleDelete = async (e) => {
     e.stopPropagation();
-    await deleteJETemplateRecord(templateId);
+    // AUDIT-ACC-010: DELETE /api/recurring-entries/:id (OWNER only
+    // backend-side; 403 bubbles via client.js error normalisation).
+    await deleteRecurringEntry(templateId);
     setConfirmDelete(false);
     setOpen(false);
     onRefresh && onRefresh();
   };
   const handleShare = (e) => {
+    // PHASE-X-BLOCKED: no backend surface for template sharing —
+    // tracked as HASEEB-202. Kept as mock so the kebab action doesn't
+    // crash; the toggle is local-state-only and does not persist.
     e.stopPropagation();
     shareJETemplate(templateId, true);
     setOpen(false);
   };
   return (
     <div style={{ position: "relative" }} onClick={(e) => e.stopPropagation()}>
-      <button onClick={() => setOpen(!open)} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}>
+      <button
+        onClick={() => setOpen(!open)}
+        aria-label={t("templates.kebab.open", { defaultValue: "Open actions menu" })}
+        style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}>
         <MoreVertical size={14} />
       </button>
       {open && (
         <>
           <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 200 }} />
-          <div style={{ position: "absolute", top: "100%", insetInlineEnd: 0, marginTop: 4, width: 160, background: "var(--bg-surface-raised)", border: "1px solid var(--border-default)", borderRadius: 8, boxShadow: "var(--panel-shadow)", zIndex: 201, padding: "4px 0" }}>
-            <KebabItem label={t("templates.kebab.duplicate")} onClick={handleDuplicate} />
+          <div style={{ position: "absolute", top: "100%", insetInlineEnd: 0, marginTop: 4, width: 200, background: "var(--bg-surface-raised)", border: "1px solid var(--border-default)", borderRadius: 8, boxShadow: "var(--panel-shadow)", zIndex: 201, padding: "4px 0" }}>
+            <KebabItem label={t("templates.kebab.fire_now")} onClick={handleFireNow} />
+            <KebabItem label={t("templates.kebab.instances")} onClick={handleInstances} />
+            <KebabItem label={isActive ? t("templates.kebab.pause") : t("templates.kebab.resume")} onClick={handleTogglePause} />
             <KebabItem label={t("templates.kebab.share")} onClick={handleShare} />
             <KebabItem label={t("templates.kebab.delete")} onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); setOpen(false); }} danger />
           </div>

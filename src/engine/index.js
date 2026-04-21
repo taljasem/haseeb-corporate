@@ -95,6 +95,7 @@ import * as budgetsApi from '../api/budgets';
 import * as migrationImportApi from '../api/migration-import';
 import * as vendorsApi from '../api/vendors';
 import * as customersApi from '../api/customers';
+import * as recurringEntriesApi from '../api/recurring-entries';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -280,6 +281,31 @@ const FUNCTION_ROUTING = {
   updateSourceMap: 'wired',
   postStagedItem: 'wired',
   rejectStagedItem: 'wired',
+
+  // Recurring entries — AUDIT-ACC-010 (corporate-api 65ccaf6, 2026-04-22).
+  // Eight wrappers on /api/recurring-entries. All "extras" names NOT on
+  // mockEngine's namespace; wired via buildLiveSurface direct assignment
+  // + buildMockExtras MOCK stubs. Routing-table entries are documentation.
+  //
+  // Behavior change: fire-next + process produce DRAFT JEs (not POSTED)
+  // and emit AminahAdvisorPending rows with sourceType='RECURRING_ENTRY'.
+  // HASEEB-200 wall fix is shipped backend-side; the frontend's existing
+  // AdvisorPending queue picks these up generically.
+  //
+  // The old mockEngine template lifecycle (getManualJETemplates /
+  // createFromTemplate / saveAsTemplate / useJETemplate / getJETemplateMeta
+  // / deleteJETemplateRecord / scheduleManualJE / postScheduledNow) is
+  // superseded by this surface. See buildLiveSurface / buildMockExtras
+  // below for the thin adapters that map the legacy mock names onto
+  // the new LIVE surface so ManualJEScreen keeps working in both modes.
+  listRecurringEntries: 'wired',
+  getRecurringEntry: 'wired',
+  createRecurringEntry: 'wired',
+  updateRecurringEntry: 'wired',
+  deleteRecurringEntry: 'wired',
+  processRecurringEntries: 'wired',
+  fireRecurringEntryNow: 'wired',
+  listRecurringEntryInstances: 'wired',
 };
 
 /**
@@ -651,6 +677,16 @@ const REAL_IMPLS = {
   createCustomer: customersApi.createCustomer,
   updateCustomer: customersApi.updateCustomer,
   deactivateCustomer: customersApi.deactivateCustomer,
+
+  // Recurring entries — AUDIT-ACC-010 (corporate-api 65ccaf6, 2026-04-22).
+  listRecurringEntries: recurringEntriesApi.listRecurringEntries,
+  getRecurringEntry: recurringEntriesApi.getRecurringEntry,
+  createRecurringEntry: recurringEntriesApi.createRecurringEntry,
+  updateRecurringEntry: recurringEntriesApi.updateRecurringEntry,
+  deleteRecurringEntry: recurringEntriesApi.deleteRecurringEntry,
+  processRecurringEntries: recurringEntriesApi.processRecurringEntries,
+  fireRecurringEntryNow: recurringEntriesApi.fireRecurringEntryNow,
+  listRecurringEntryInstances: recurringEntriesApi.listRecurringEntryInstances,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -1140,6 +1176,21 @@ function buildLiveSurface() {
   surface.createCustomer = customersApi.createCustomer;
   surface.updateCustomer = customersApi.updateCustomer;
   surface.deactivateCustomer = customersApi.deactivateCustomer;
+
+  // Recurring entries — AUDIT-ACC-010 (corporate-api 65ccaf6, 2026-04-22).
+  // Eight wrappers. Names NOT on mockEngine's namespace, so they must
+  // be assigned explicitly. MOCK-mode adapters in buildMockExtras below
+  // map the legacy mockEngine template names (getManualJETemplates /
+  // createFromTemplate / etc.) onto these canonical LIVE names so
+  // ManualJEScreen calls the same engine surface in both modes.
+  surface.listRecurringEntries = recurringEntriesApi.listRecurringEntries;
+  surface.getRecurringEntry = recurringEntriesApi.getRecurringEntry;
+  surface.createRecurringEntry = recurringEntriesApi.createRecurringEntry;
+  surface.updateRecurringEntry = recurringEntriesApi.updateRecurringEntry;
+  surface.deleteRecurringEntry = recurringEntriesApi.deleteRecurringEntry;
+  surface.processRecurringEntries = recurringEntriesApi.processRecurringEntries;
+  surface.fireRecurringEntryNow = recurringEntriesApi.fireRecurringEntryNow;
+  surface.listRecurringEntryInstances = recurringEntriesApi.listRecurringEntryInstances;
 
   return surface;
 }
@@ -1920,6 +1971,125 @@ function buildMockExtras() {
     // sub-sections — keeps the two flows visually consistent.
     listVendorsForRelatedParty: mockListVendors,
     listCustomersForRelatedParty: mockListCustomers,
+
+    // Recurring entries — AUDIT-ACC-010 (2026-04-22). MOCK adapters map
+    // to the legacy mockEngine template surface so ManualJEScreen
+    // calls the same engine-level names (listRecurringEntries / etc.)
+    // in both modes. The adapters reshape the mock's legacy shape
+    // (name, usageCount, lines with DR/CR of zero) onto the LIVE
+    // contract (description, frequency, nextDate, templateLines, etc.)
+    // so the screen renders without branching.
+    //
+    // Shape translations:
+    //   mock template → LIVE RecurringEntry:
+    //     id              → id (unchanged)
+    //     name            → description (fallback to mock.description)
+    //     source          → frequency='MONTHLY' default (mock had no cadence)
+    //     createdAt       → nextDate='today', createdAt passthrough
+    //     lines           → templateLines
+    //     usageCount      → (preserved as _mockUsageCount; LIVE has no equivalent)
+    //
+    // Firing / instances have no mock backing; the MOCK stubs return
+    // plausible round-trip shapes so the templates-tab UI exercises its
+    // loading / success / error states in MOCK mode.
+    listRecurringEntries: async () => {
+      const rows = await mockEngine.getManualJETemplates();
+      return (rows || []).map((t) => ({
+        id: t.id,
+        description: t.name || t.description || '',
+        frequency: 'MONTHLY',
+        nextDate: new Date().toISOString(),
+        endDate: null,
+        templateLines: (t.lines || []).map((l) => ({
+          accountId: l.accountCode || null,
+          accountCode: l.accountCode || null,
+          accountName: l.accountName || '',
+          debit: Number(l.debit || 0),
+          credit: Number(l.credit || 0),
+          description: l.memo || '',
+        })),
+        isActive: true,
+        createdAt: t.createdAt || new Date().toISOString(),
+        updatedAt: t.createdAt || new Date().toISOString(),
+        _mockUsageCount: t.usageCount ?? 0,
+        _mockName: t.name || null,
+      }));
+    },
+    getRecurringEntry: async (id) => {
+      const tpl = await mockEngine.getManualJETemplateById(id);
+      if (!tpl) return null;
+      return {
+        id: tpl.id,
+        description: tpl.name || tpl.description || '',
+        frequency: 'MONTHLY',
+        nextDate: new Date().toISOString(),
+        endDate: null,
+        templateLines: (tpl.lines || []).map((l) => ({
+          accountId: l.accountCode || null,
+          accountCode: l.accountCode || null,
+          accountName: l.accountName || '',
+          debit: Number(l.debit || 0),
+          credit: Number(l.credit || 0),
+          description: l.memo || '',
+        })),
+        isActive: true,
+        createdAt: tpl.createdAt || new Date().toISOString(),
+        updatedAt: tpl.createdAt || new Date().toISOString(),
+        _mockUsageCount: tpl.usageCount ?? 0,
+        _mockName: tpl.name || null,
+      };
+    },
+    createRecurringEntry: async (input = {}) => {
+      await new Promise((r) => setTimeout(r, 120));
+      const id = `MOCK-REC-${Math.floor(Math.random() * 900 + 100)}`;
+      return {
+        id,
+        description: input.description || '',
+        frequency: input.frequency || 'MONTHLY',
+        nextDate: input.nextDate || new Date().toISOString(),
+        endDate: input.endDate || null,
+        templateLines: Array.isArray(input.templateLines) ? input.templateLines : [],
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        _mock: true,
+      };
+    },
+    updateRecurringEntry: async (id, patch = {}) => {
+      await new Promise((r) => setTimeout(r, 80));
+      return { id, ...patch, updatedAt: new Date().toISOString(), _mock: true };
+    },
+    deleteRecurringEntry: async (id) => {
+      // Delegate to legacy mock so the in-memory store stays consistent
+      // when tests exercise create → delete.
+      await mockEngine.deleteJETemplateRecord(id).catch(() => null);
+      return { message: 'Recurring entry deleted' };
+    },
+    processRecurringEntries: async () => {
+      await new Promise((r) => setTimeout(r, 120));
+      return { generated: 0, errors: [] };
+    },
+    fireRecurringEntryNow: async (id) => {
+      await new Promise((r) => setTimeout(r, 120));
+      const instanceId = `MOCK-INST-${Math.floor(Math.random() * 900 + 100)}`;
+      const jeId = `MOCK-JE-${Math.floor(Math.random() * 900 + 100)}`;
+      return {
+        recurring: { id, isActive: true, nextDate: new Date().toISOString() },
+        instance: { id: instanceId },
+        outcome: {
+          kind: 'DRAFT_CREATED',
+          instance: { id: instanceId },
+          journalEntryId: jeId,
+          advisorPendingId: `MOCK-ADV-${Math.floor(Math.random() * 900 + 100)}`,
+        },
+      };
+    },
+    listRecurringEntryInstances: async (_id, opts = {}) => {
+      await new Promise((r) => setTimeout(r, 80));
+      const limit = opts.limit != null ? Number(opts.limit) : 20;
+      const page = opts.page != null ? Number(opts.page) : 1;
+      return { entries: [], total: 0, page, limit };
+    },
   };
 }
 
@@ -4948,3 +5118,23 @@ export const getCustomer = surface.getCustomer;
 export const createCustomer = surface.createCustomer;
 export const updateCustomer = surface.updateCustomer;
 export const deactivateCustomer = surface.deactivateCustomer;
+
+// Recurring entries — AUDIT-ACC-010 (corporate-api 65ccaf6, 2026-04-22).
+// Eight wrappers on /api/recurring-entries. Supersedes the legacy
+// mockEngine template lifecycle (getManualJETemplates /
+// createFromTemplate / saveAsTemplate / useJETemplate /
+// getJETemplateMeta / deleteJETemplateRecord / scheduleManualJE /
+// postScheduledNow) on the active ManualJEScreen path. The legacy
+// mock names remain in mockEngine for test fixtures only — the
+// ManualJEScreen rewire imports from this surface in both modes.
+//
+// shareJETemplate is NOT included — no backend surface exists for
+// template sharing. Tracked as HASEEB-202 (P3, scope-locked follow-up).
+export const listRecurringEntries = surface.listRecurringEntries;
+export const getRecurringEntry = surface.getRecurringEntry;
+export const createRecurringEntry = surface.createRecurringEntry;
+export const updateRecurringEntry = surface.updateRecurringEntry;
+export const deleteRecurringEntry = surface.deleteRecurringEntry;
+export const processRecurringEntries = surface.processRecurringEntries;
+export const fireRecurringEntryNow = surface.fireRecurringEntryNow;
+export const listRecurringEntryInstances = surface.listRecurringEntryInstances;

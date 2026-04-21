@@ -6407,24 +6407,11 @@ export async function scheduleVendorPayment(invoiceId, amount, date, method, fro
   return _brandObj({ ...inv });
 }
 
-// PHASE-4-BLOCKED-ON-BACKEND: markInvoiceDisputed
-// Reason: no dispute status transition on invoices. The Invoice model
-//   has no DISPUTED status in the Prisma enum, and the invoice state
-//   machine does not expose a dispute-flag field or transition endpoint.
-// Unblocker: a DISPUTED status in the Invoice status enum plus either
-//   a dedicated transition (e.g. POST /api/invoices/:id/dispute with
-//   {reason, expectedResolutionDate}) or an updatable disputeMetadata
-//   field on the invoice resource.
-// Recon: 2026-04-19 architect — memory-bank/2026-04-19-phase4-breakdown.md §B-Tier 2.
-export async function markInvoiceDisputed(invoiceId, reason, expectedResolution, assignedTo) {
-  await delay();
-  const all = [..._getAgingInvoices("AR"), ..._getAgingInvoices("AP")];
-  const inv = all.find((x) => x.id === invoiceId);
-  if (!inv) return null;
-  inv.status = "disputed";
-  inv.dispute = { reason: reason || "", expectedResolution, assignedTo, at: new Date().toISOString() };
-  return _brandObj({ ...inv });
-}
+// markInvoiceDisputed: REMOVED 2026-04-22 (AUDIT-ACC-005, corporate-api
+// 3fdb92c). Superseded by invoicesApi.disputeInvoice which POSTs to the
+// new /api/invoices/:id/dispute endpoint. Engine surface re-exported as
+// `disputeInvoice` (not `markInvoiceDisputed`); MOCK parity stub lives
+// in src/engine/index.js buildMockExtras() so both modes round-trip.
 
 export async function resolveDispute(invoiceId, resolution) {
   await delay();
@@ -6436,48 +6423,13 @@ export async function resolveDispute(invoiceId, resolution) {
   return _brandObj({ ...inv });
 }
 
-// PHASE-4-BLOCKED-ON-BACKEND: createWriteOffJE
-// Reason: no GL-flexible write-off endpoint exists. The credit-note path
-// (POST /api/invoices/:id/credit-note) is Revenue-only by design, not
-// suitable for write-offs to Bad Debt Expense 8300, Goodwill, Legal
-// Settlement, etc. The mock contract allows debiting ANY user-picked GL
-// account; no current backend supports that.
-// Unblocker: GL-flexible write-off endpoint + Owner-approval task
-// emission + AR-specific reconciliation. Paired backend dispatch logged
-// in bug-tracker as HASEEB-068 + HASEEB-069 and in the ship-sequence
-// Future-additions log.
-// Recon: 2026-04-19 architect + QA-reviewer
-export async function createWriteOffJE(invoiceId, amount, reason, glAccount) {
-  await delay();
-  const inv = _getAgingInvoices("AR").find((x) => x.id === invoiceId);
-  if (!inv) return null;
-  const jeId = `JE-WO-${Math.floor(Math.random() * 900 + 100)}`;
-  inv.status = "written_off";
-  inv.outstanding = 0;
-  inv.writeOff = { amount: Number(amount), reason, glAccount, jeId, at: new Date().toISOString() };
-  // Create approval task for Owner
-  const taskId = `TSK-WO-${Math.floor(Math.random() * 900 + 100)}`;
-  const task = {
-    id: taskId,
-    senderId: "cfo",
-    recipient: P.owner,
-    sender: P.cfo,
-    type: "request-approval",
-    subject: `Write-off approval — ${inv.invoiceNumber}`,
-    body: `Writing off ${Number(amount).toLocaleString()} KWD against ${inv.partyName}.\n\nReason: ${reason}\nGL account: ${glAccount}`,
-    direction: "upward",
-    priority: "high",
-    status: "open",
-    unread: true,
-    linkedItem: { type: "write-off", invoiceId, jeId },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    dueDate: _daysFromNow(2),
-    messages: [_msgEvent(P.cfo, reason, 0)],
-  };
-  TASKBOX_DB.unshift(task);
-  return _brandObj({ jeId, taskId, requiresApproval: true });
-}
+// createWriteOffJE: REMOVED 2026-04-22 (AUDIT-ACC-005, corporate-api
+// 3fdb92c). Superseded by invoicesApi.writeOffInvoice which POSTs to the
+// new /api/invoices/:id/write-off endpoint (DR BAD_DEBT_EXPENSE / CR
+// AR_DEFAULT JE via journalEntryService.create). HASEEB-068 closed by
+// this backend dispatch. Engine surface re-exported as `writeOffInvoice`
+// (not `createWriteOffJE`); MOCK parity stub lives in src/engine/index.js
+// buildMockExtras(). GL-flexibility follow-up tracked as HASEEB-194.
 
 export async function logContactAttempt(invoiceId, type, notes) {
   await delay();

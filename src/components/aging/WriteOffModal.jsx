@@ -4,12 +4,14 @@ import { X, AlertTriangle } from "lucide-react";
 import useEscapeKey from "../../hooks/useEscapeKey";
 import Spinner from "../shared/Spinner";
 import { runValidators, required, minLength } from "../../utils/validation";
-// PHASE-4-BLOCKED-ON-BACKEND: createWriteOffJE
-// Falls through to mockEngine via engine's mock_fallback wrapper.
-// Unblocker: GL-flexible write-off endpoint + Owner-approval task
-// emission. See HASEEB-068/069 + ship-sequence Future-additions log.
-// getChartOfAccounts is LIVE-wired (aliased to getAccountsFlat).
-import { createWriteOffJE, getChartOfAccounts } from "../../engine";
+// AUDIT-ACC-005 (corporate-api 3fdb92c, 2026-04-22): rewired to the new
+// /api/invoices/:id/write-off endpoint. Body = {reason, effectiveDate?,
+// category?}. `category` is persisted as metadata but does NOT route JE
+// shape in v1 (resolution 2.1(c) per Tarek 2026-04-22; GL-flexibility
+// follow-up tracked as HASEEB-194 — drops the old glAccount dropdown).
+// Partial write-off deferred to HASEEB-196 — amount is shown read-only
+// as the full outstanding.
+import { writeOffInvoice } from "../../engine";
 import { emitTaskboxChange } from "../../utils/taskboxBus";
 
 const inputStyle = {
@@ -21,15 +23,19 @@ const inputStyle = {
 
 const CATEGORIES = ["bad_debt", "goodwill", "settlement", "other"];
 
+function fmtKwdAmount(n) {
+  const v = Number(n || 0);
+  if (!Number.isFinite(v)) return "0.000";
+  return v.toFixed(3);
+}
+
 export default function WriteOffModal({ open, invoice, onClose, onSubmitted }) {
   const { t } = useTranslation("aging");
   const { t: tc } = useTranslation("common");
   useEscapeKey(onClose, open);
-  const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("bad_debt");
   const [description, setDescription] = useState("");
-  const [glAccount, setGlAccount] = useState("");
-  const [accounts, setAccounts] = useState([]);
+  const [effectiveDate, setEffectiveDate] = useState("");
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   // Phase 4 Wave 1 B-03 fix: surface backend errors. See HASEEB-070.
@@ -37,32 +43,36 @@ export default function WriteOffModal({ open, invoice, onClose, onSubmitted }) {
 
   useEffect(() => {
     if (!open || !invoice) return;
-    setAmount(String(invoice.outstanding || invoice.amount || ""));
     setCategory("bad_debt");
     setDescription("");
-    setGlAccount("8300 Bad Debt Write-off");
+    setEffectiveDate(new Date().toISOString().slice(0, 10));
     setErrors({});
-    getChartOfAccounts().then(setAccounts);
+    setSubmitError(null);
   }, [open, invoice]);
 
   if (!open || !invoice) return null;
+
+  const outstanding = Number(invoice.outstanding || invoice.amount || 0);
 
   const handleSubmit = async () => {
     const e = runValidators({ description }, { description: [required(), minLength(10)] });
     setErrors(e);
     if (Object.keys(e).length) return;
+    if (submitting) return; // guard double-submit
     setSubmitting(true);
     setSubmitError(null);
     try {
-      await createWriteOffJE(invoice.id, Number(amount), `${category}: ${description}`, glAccount);
+      const result = await writeOffInvoice(invoice.id, {
+        reason: description,
+        effectiveDate,
+        category,
+      });
       emitTaskboxChange();
-      if (onSubmitted) onSubmitted();
+      if (onSubmitted) onSubmitted(result);
       if (onClose) onClose();
     } catch (err) {
       // HASEEB-070 fix: surface backend error + unstick submitting state.
-      // Previously this path had no catch, leaving submitting=true frozen
-      // and the modal open+unresponsive on any backend rejection.
-      const msg = err?.message || err?.error?.message || String(err) || "Failed to submit write-off";
+      const msg = err?.message || err?.error?.message || String(err) || t("writeoff_modal.toast_error");
       setSubmitError(msg);
     } finally {
       setSubmitting(false);
@@ -89,7 +99,15 @@ export default function WriteOffModal({ open, invoice, onClose, onSubmitted }) {
             <div>{t("writeoff_modal.warning")}</div>
           </div>
           <Field label={t("writeoff_modal.field_amount")}>
-            <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" style={{ ...inputStyle, fontFamily: "'DM Mono', monospace" }} />
+            <input
+              value={fmtKwdAmount(outstanding)}
+              readOnly
+              aria-readonly="true"
+              style={{ ...inputStyle, fontFamily: "'DM Mono', monospace", opacity: 0.85, cursor: "not-allowed" }}
+            />
+            <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 4 }}>
+              {t("writeoff_modal.amount_readonly_hint")}
+            </div>
           </Field>
           <Field label={t("writeoff_modal.field_category")}>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -103,16 +121,17 @@ export default function WriteOffModal({ open, invoice, onClose, onSubmitted }) {
               })}
             </div>
           </Field>
+          <Field label={t("writeoff_modal.field_effective_date")}>
+            <input
+              type="date"
+              value={effectiveDate}
+              onChange={(e) => setEffectiveDate(e.target.value)}
+              style={{ ...inputStyle, colorScheme: "dark" }}
+            />
+          </Field>
           <Field label={t("writeoff_modal.field_description")}>
             <textarea value={description} onChange={(e) => { setDescription(e.target.value); if (errors.description) setErrors({}); }} rows={3} style={{ ...inputStyle, resize: "vertical", ...(errors.description ? { borderColor: "var(--semantic-danger)" } : {}) }} />
             {errors.description && <div style={{ fontSize: 12, color: "var(--semantic-danger)", marginTop: 4 }}>{tc(errors.description.key, errors.description.values || {})}</div>}
-          </Field>
-          <Field label={t("writeoff_modal.field_gl")}>
-            <select value={glAccount} onChange={(e) => setGlAccount(e.target.value)} style={{ ...inputStyle, appearance: "none" }}>
-              {accounts.filter((a) => a.type === "Expenses").map((a) => (
-                <option key={a.code} value={`${a.code} ${a.name}`}>{a.code} — {a.name}</option>
-              ))}
-            </select>
           </Field>
         </div>
         {submitError && (

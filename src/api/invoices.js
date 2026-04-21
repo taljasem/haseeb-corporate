@@ -144,3 +144,74 @@ export async function recordInvoicePayment(id, body) {
   return unwrap(r);
 }
 
+/**
+ * POST /api/invoices/:id/write-off
+ *
+ * Backend (AUDIT-ACC-005, corporate-api 3fdb92c, 2026-04-22):
+ *   body  { reason: string 10..500, effectiveDate?: ISO-date,
+ *           category?: 'bad_debt'|'goodwill'|'settlement'|'other' }
+ *   ->    { invoice, writeOff, journalEntry }
+ *
+ * Posts DR BAD_DEBT_EXPENSE / CR AR_DEFAULT JE via journalEntryService.create.
+ * `category` is accepted + persisted as metadata but does NOT route JE shape
+ * in v1 (resolution 2.1(c) per Tarek 2026-04-22; GL-flexibility follow-up
+ * tracked as HASEEB-194).
+ *
+ * Role gate: OWNER, ACCOUNTANT. 409 on invalid state (PAID/VOID/WRITTEN_OFF).
+ */
+export async function writeOffInvoice(invoiceId, { reason, effectiveDate, category } = {}) {
+  if (!invoiceId) throw new Error('writeOffInvoice: invoiceId is required');
+  const body = { reason };
+  if (effectiveDate) body.effectiveDate = effectiveDate;
+  if (category) body.category = category;
+  const response = await client.post(
+    `/api/invoices/${encodeURIComponent(invoiceId)}/write-off`,
+    body,
+  );
+  return unwrap(response);
+}
+
+/**
+ * POST /api/invoices/:id/dispute
+ *
+ * Backend (AUDIT-ACC-005, corporate-api 3fdb92c, 2026-04-22):
+ *   body  { reason: string 10..500, disputedAmount?: KWD-string 3dp }
+ *   ->    { invoice, dispute }
+ *
+ * No JE. Status -> DISPUTED. Role gate: OWNER, ACCOUNTANT. 409 on invalid
+ * state (PAID/VOID/WRITTEN_OFF can't be disputed).
+ */
+export async function disputeInvoice(invoiceId, { reason, disputedAmount } = {}) {
+  if (!invoiceId) throw new Error('disputeInvoice: invoiceId is required');
+  const body = { reason };
+  if (disputedAmount !== undefined && disputedAmount !== null && disputedAmount !== '') {
+    body.disputedAmount = disputedAmount;
+  }
+  const response = await client.post(
+    `/api/invoices/${encodeURIComponent(invoiceId)}/dispute`,
+    body,
+  );
+  return unwrap(response);
+}
+
+/**
+ * POST /api/invoices/:id/schedule-payment
+ *
+ * Backend (AUDIT-ACC-005, corporate-api 3fdb92c, 2026-04-22):
+ *   body  { installments: [{dueDate: ISO-date, amount: KWD-string 3dp}] }
+ *           (min 2, max 12 installments; sum must equal invoice.outstanding
+ *            within 0.001 KWD tolerance)
+ *   ->    { invoice, paymentPlan }
+ *
+ * No JE at creation. Creates InvoicePaymentPlan + installments. Role gate:
+ * OWNER, ACCOUNTANT. 409 if invoice has an existing active plan.
+ */
+export async function scheduleInvoicePaymentPlan(invoiceId, { installments } = {}) {
+  if (!invoiceId) throw new Error('scheduleInvoicePaymentPlan: invoiceId is required');
+  const response = await client.post(
+    `/api/invoices/${encodeURIComponent(invoiceId)}/schedule-payment`,
+    { installments },
+  );
+  return unwrap(response);
+}
+

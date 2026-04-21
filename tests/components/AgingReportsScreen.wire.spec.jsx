@@ -135,11 +135,15 @@ vi.mock('../../src/engine', async () => {
     // screen + modals import so their ambient imports don't crash.
     getInvoiceDetail: async () => null,
     logPayment: async () => ({ ok: true }),
-    createWriteOffJE: async () => ({ ok: true }),
     getChartOfAccounts: async () => [],
     sendAgingReminder: async () => ({ ok: true }),
-    markInvoiceDisputed: async () => ({ ok: true }),
     scheduleVendorPayment: async () => ({ ok: true }),
+    // AUDIT-ACC-005 (corporate-api 3fdb92c, 2026-04-22): three new
+    // aging-action surfaces replace the old mock-only createWriteOffJE +
+    // markInvoiceDisputed. scheduleInvoicePaymentPlan is brand-new.
+    writeOffInvoice: async () => ({ invoice: {}, writeOff: {}, journalEntry: {} }),
+    disputeInvoice: async () => ({ invoice: {}, dispute: {} }),
+    scheduleInvoicePaymentPlan: async () => ({ invoice: {}, paymentPlan: {} }),
   };
 });
 
@@ -215,5 +219,42 @@ describe('AgingReportsScreen — Track B live wire (Phase 4 Wave 1)', () => {
 
     // AP total from stub = 9000.
     expect(screen.getByText('9,000')).toBeInTheDocument();
+  });
+
+  // AUDIT-ACC-005 (2026-04-22): the "Schedule payment" action resolves to
+  // two different modals depending on the active AR/AP tab. ScheduleAR
+  // (installment plan, LIVE-wired) on AR; ScheduleAP (vendor payment mock)
+  // on AP. Asserting the right modal renders per tab is the smoke-test.
+  it('renders ScheduleARInstallmentModal on AR tab when schedule action fires', async () => {
+    renderScreen();
+    await waitFor(() => expect(screen.getByText('Acme Holdings')).toBeInTheDocument(), { timeout: 2000 });
+
+    // Open the row kebab for the first AR invoice and click Schedule.
+    const kebabs = screen.getAllByLabelText(/Open menu/i);
+    fireEvent.click(kebabs[0]);
+    fireEvent.click(screen.getByText(/Schedule payment plan/i));
+
+    // AR installment modal title identifies itself; AP vendor modal
+    // title does not contain "customer payment plan".
+    await waitFor(() => {
+      expect(screen.getByText(/Schedule customer payment plan/i)).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/Schedule vendor payment/i)).not.toBeInTheDocument();
+  });
+
+  it('renders ScheduleAPPaymentModal on AP tab when schedule action fires', async () => {
+    renderScreen();
+    await waitFor(() => expect(screen.getByText('Acme Holdings')).toBeInTheDocument(), { timeout: 2000 });
+    fireEvent.click(screen.getByText('Payables'));
+    await waitFor(() => expect(screen.getByText('Office Supplies Co.')).toBeInTheDocument(), { timeout: 2000 });
+
+    const kebabs = screen.getAllByLabelText(/Open menu/i);
+    fireEvent.click(kebabs[0]);
+    fireEvent.click(screen.getByText(/^Schedule payment$/i));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Schedule vendor payment/i)).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/Schedule customer payment plan/i)).not.toBeInTheDocument();
   });
 });

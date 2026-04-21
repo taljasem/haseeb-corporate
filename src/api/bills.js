@@ -5,8 +5,9 @@
  * exercises on the AP side:
  *   POST /api/bills/:id/payment → recordBillPayment(id, body)
  *
- * Pay-now only — the backend has no future-dated scheduling surface,
- * so SchedulePaymentModal stays mock (see mockEngine.js comment block).
+ * Pay-now only — the backend has no future-dated AP scheduling surface,
+ * so ScheduleAPPaymentModal (formerly SchedulePaymentModal) stays mock.
+ * HASEEB-195 tracks the follow-up AP payment-schedule backend dispatch.
  */
 import client from './client';
 

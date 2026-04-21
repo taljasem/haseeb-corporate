@@ -1,7 +1,9 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { X, Plus, Send, Square, Sparkles, ChevronDown, ChevronRight, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { X, Plus, Send, Square, Sparkles, ChevronDown, ChevronRight, Loader2, CheckCircle2, AlertCircle, Ban } from "lucide-react";
 import ActionButton from "../ds/ActionButton";
+import SuspendRecurrenceModal from "./SuspendRecurrenceModal";
+import { canEditAdmin, ROLES, normalizeRole } from "../../utils/role";
 // Wave 3: runAminahSession comes from the engine router. MOCK mode
 // uses the scripted stubBackend generator; LIVE mode uses the
 // chat-adapter that wraps POST /api/ai/chat (agent='aminah', read-only)
@@ -255,7 +257,7 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
             </div>
           )}
           {messages.map((msg) => (
-            <MessageBubble key={msg.id} msg={msg} t={t} />
+            <MessageBubble key={msg.id} msg={msg} t={t} role={role} />
           ))}
         </div>
 
@@ -285,7 +287,7 @@ export default function AminahSlideOver({ open, onClose, context = null, role = 
   );
 }
 
-function MessageBubble({ msg, t }) {
+function MessageBubble({ msg, t, role }) {
   const isUser = msg.role === "user";
   return (
     <div style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", marginBottom: 10 }}>
@@ -297,7 +299,7 @@ function MessageBubble({ msg, t }) {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {(msg.blocks || []).map((block, i) => (
-              <BlockRenderer key={i} block={block} t={t} />
+              <BlockRenderer key={i} block={block} t={t} role={role} />
             ))}
             {!msg.complete && msg.blocks?.length === 0 && (
               <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--text-tertiary)" }}>
@@ -311,7 +313,7 @@ function MessageBubble({ msg, t }) {
   );
 }
 
-function BlockRenderer({ block, t }) {
+function BlockRenderer({ block, t, role }) {
   const [expanded, setExpanded] = useState(false);
 
   if (block.type === "text") {
@@ -332,6 +334,17 @@ function BlockRenderer({ block, t }) {
   }
 
   if (block.type === "tool_call") {
+    // Tier C-3 FOLLOW-UP (HASEEB-183): typed card for the
+    // `get_missing_recurrences` read tool. Operator-usable surface
+    // replaces the raw JSON blob for this specific tool — still falls
+    // through to the generic collapsible renderer for every other tool.
+    if (
+      block.toolName === "get_missing_recurrences" &&
+      block.status === "complete" &&
+      Array.isArray(block.result?.items)
+    ) {
+      return <MissedRecurrencesCard block={block} role={role} t={t} />;
+    }
     const isComplete = block.status === "complete";
     return (
       <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 8, padding: "8px 12px", fontSize: 11 }}>
@@ -370,4 +383,289 @@ function BlockRenderer({ block, t }) {
   }
 
   return null;
+}
+
+/**
+ * MissedRecurrencesCard — typed renderer for Aminah's
+ * `get_missing_recurrences` read tool (Tier C-3 FOLLOW-UP;
+ * backend HASEEB-183 at `aff0764`, 2026-04-21).
+ *
+ * Replaces the generic collapsible JSON-blob tool_call renderer for this
+ * one tool with an operator-usable card: per-row merchant + amount +
+ * overdue-days pill + severity + Suspend button. Suspending opens the
+ * SuspendRecurrenceModal; on success we mark the row Suspended locally
+ * without re-fetching (the tool is read-only; the suspend action does
+ * not re-run it).
+ *
+ * Role gate (midsize model): backend accepts OWNER or ACCOUNTANT, which
+ * maps to Owner / CFO / Senior on the frontend. Junior is hidden. The
+ * button therefore uses `canEditAdmin(role) || role === Owner`.
+ */
+function MissedRecurrencesCard({ block, role, t }) {
+  const items = block.result?.items || [];
+  const currencyNote = block.result?.currencyNote || "";
+  const [suspended, setSuspended] = useState({}); // { [patternId]: true }
+  const [modalOpen, setModalOpen] = useState(false);
+  const [activeItem, setActiveItem] = useState(null); // { patternId, merchantName }
+
+  const normalized = normalizeRole(role);
+  const canSuspend = canEditAdmin(role) || normalized === ROLES.OWNER;
+
+  const openModal = (item) => {
+    setActiveItem({
+      patternId: item.patternId,
+      merchantName: item.merchantNormalizedName,
+    });
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setActiveItem(null);
+  };
+
+  const handleConfirmed = (patternId) => {
+    setSuspended((prev) => ({ ...prev, [patternId]: true }));
+  };
+
+  // Severity → tokenised background + foreground color.
+  const severityStyle = (sev) => {
+    const s = String(sev || "").toUpperCase();
+    if (s === "HIGH") {
+      return {
+        background: "var(--semantic-danger-subtle)",
+        color: "var(--semantic-danger)",
+        label: t("missed_recurrences.severity.high"),
+      };
+    }
+    if (s === "MEDIUM") {
+      return {
+        background: "var(--semantic-warning-subtle)",
+        color: "var(--semantic-warning)",
+        label: t("missed_recurrences.severity.medium"),
+      };
+    }
+    return {
+      background: "transparent",
+      color: "var(--text-tertiary)",
+      label: t("missed_recurrences.severity.low"),
+    };
+  };
+
+  // Trim currencyNote to the first sentence for the footer.
+  const noteShort = currencyNote
+    ? currencyNote.split(/(?<=\.)\s/)[0]
+    : "";
+
+  return (
+    <>
+      <div
+        style={{
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border-default)",
+          borderRadius: 10,
+          padding: "10px 12px",
+          fontSize: 12,
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            marginBottom: 8,
+          }}
+        >
+          <Sparkles size={12} color="var(--accent-primary)" />
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: "0.04em",
+              color: "var(--text-primary)",
+            }}
+          >
+            {t("missed_recurrences.title")}
+          </span>
+          {items.length > 0 && (
+            <span
+              style={{
+                fontFamily: "'DM Mono', monospace",
+                fontSize: 10,
+                color: "var(--text-tertiary)",
+              }}
+            >
+              · {items.length}
+            </span>
+          )}
+        </div>
+
+        {/* Empty state — no items */}
+        {items.length === 0 && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 12,
+              color: "var(--text-tertiary)",
+              padding: "8px 0",
+            }}
+          >
+            <CheckCircle2 size={12} color="var(--accent-primary)" />
+            {t("missed_recurrences.empty")}
+          </div>
+        )}
+
+        {/* Item list */}
+        {items.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {items.map((item) => {
+              const sev = severityStyle(item.severity);
+              const isSuspended = !!suspended[item.patternId];
+              return (
+                <div
+                  key={item.patternId}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    background: "var(--bg-surface-sunken)",
+                    border: "1px solid var(--border-subtle)",
+                    opacity: isSuspended ? 0.6 : 1,
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: "var(--text-primary)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        textDecoration: isSuspended ? "line-through" : "none",
+                      }}
+                    >
+                      {item.merchantNormalizedName}
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        marginTop: 3,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontFamily: "'DM Mono', monospace",
+                          fontSize: 11,
+                          color: "var(--text-secondary)",
+                        }}
+                      >
+                        {item.expectedAmountKwd} KWD
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 600,
+                          padding: "2px 7px",
+                          borderRadius: 10,
+                          background: sev.background,
+                          color: sev.color,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {sev.label}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          color: "var(--text-tertiary)",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {t("missed_recurrences.overdue_days", { count: item.daysOverdue })}
+                      </span>
+                      {isSuspended && (
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 600,
+                            padding: "2px 7px",
+                            borderRadius: 10,
+                            background: "var(--bg-surface)",
+                            color: "var(--text-tertiary)",
+                            border: "1px solid var(--border-default)",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {t("missed_recurrences.suspended_badge")}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {canSuspend && (
+                    <button
+                      onClick={() => openModal(item)}
+                      disabled={isSuspended}
+                      aria-label={t("missed_recurrences.suspend_aria", {
+                        merchant: item.merchantNormalizedName,
+                      })}
+                      title={t("missed_recurrences.suspend_action")}
+                      style={{
+                        background: "transparent",
+                        border: "1px solid var(--border-default)",
+                        color: isSuspended
+                          ? "var(--text-tertiary)"
+                          : "var(--semantic-warning)",
+                        borderRadius: 6,
+                        padding: 6,
+                        cursor: isSuspended ? "not-allowed" : "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginInlineStart: "auto",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Ban size={13} />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Footer — short currency note */}
+        {noteShort && (
+          <div
+            style={{
+              fontSize: 10,
+              fontStyle: "italic",
+              color: "var(--text-tertiary)",
+              marginTop: 8,
+              lineHeight: 1.4,
+            }}
+          >
+            {noteShort}
+          </div>
+        )}
+      </div>
+
+      <SuspendRecurrenceModal
+        open={modalOpen}
+        patternId={activeItem?.patternId}
+        merchantName={activeItem?.merchantName}
+        onClose={closeModal}
+        onConfirmed={handleConfirmed}
+      />
+    </>
+  );
 }

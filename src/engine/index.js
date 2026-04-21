@@ -193,21 +193,24 @@ const FUNCTION_ROUTING = {
   getAgingReport: 'wired',
   getInvoiceDetail: 'wired',
   logPayment: 'wired',
-  // createWriteOffJE: PHASE-4-BLOCKED-ON-BACKEND — demoted from 'wired'
-  // per architect review 2026-04-19 (QA-reviewer surfaced the semantic
-  // regression). The mock contract allows debiting ANY user-picked GL
-  // account (Bad Debt Expense 8300, Goodwill, Legal Settlement, etc.);
-  // the credit-note backend path is Revenue-only by design and silently
-  // dropped the glAccount argument. No existing endpoint supports a
-  // GL-flexible AR write-off. See HASEEB-068/069 for the backend
-  // unblocker (GL-flexible write-off endpoint + Owner-approval task
-  // emission). Stays on the engine as 'mock_fallback' until that ships.
+  // Aging action writes — AUDIT-ACC-005 (corporate-api 3fdb92c,
+  // 2026-04-22). Three new invoice-lifecycle writes, all OWNER/ACCOUNTANT
+  // gated at the backend. writeOffInvoice supersedes the old mock-only
+  // createWriteOffJE (HASEEB-068 resolved by 3fdb92c; category is
+  // preserved as metadata only in v1 — GL-flexibility follow-up tracked
+  // as HASEEB-194). disputeInvoice supersedes the old mock-only
+  // markInvoiceDisputed. scheduleInvoicePaymentPlan is AR-only; the
+  // AP scheduleVendorPayment mock stays (HASEEB-195 follow-up).
+  writeOffInvoice: 'wired',
+  disputeInvoice: 'wired',
+  scheduleInvoicePaymentPlan: 'wired',
   // getChartOfAccounts — route to the existing getAccountsFlat wiring
-  // so the WriteOffModal's GL dropdown picks up real Expenses accounts
-  // in LIVE mode. MOCK mode falls back to mockEngine.getChartOfAccounts
-  // (which returns a different shape — category-vs-type — and the
-  // modal's `a.type === 'Expenses'` filter is broken in MOCK — see
-  // HASEEB-071 for the separate mock-shape fix).
+  // so modals' GL dropdowns pick up real Expenses accounts in LIVE mode.
+  // MOCK mode falls back to mockEngine.getChartOfAccounts (which returns
+  // a different shape — category-vs-type — and the old WriteOffModal's
+  // `a.type === 'Expenses'` filter was broken in MOCK — see HASEEB-071
+  // for the separate mock-shape fix). Retained here because logPayment's
+  // bank-account picker still uses this.
   getChartOfAccounts: 'wired',
 
   // CFO TodayScreen composite reads (Track B Dispatch 3a+3b, 2026-04-20).
@@ -397,9 +400,16 @@ const REAL_IMPLS = {
     }
     return invoicesApi.recordInvoicePayment(invoiceId, body);
   },
-  // createWriteOffJE: PHASE-4-BLOCKED-ON-BACKEND. See FUNCTION_ROUTING
-  // comment block above. Falls through to mockEngine.createWriteOffJE
-  // via the default mock_fallback wrapper until HASEEB-068/069 ship.
+  // Aging action writes (AUDIT-ACC-005, corporate-api 3fdb92c,
+  // 2026-04-22). The three new invoice-lifecycle writes replace the
+  // old mock-only createWriteOffJE + markInvoiceDisputed. HASEEB-068
+  // (backend write-off JE path) is closed by this backend dispatch;
+  // HASEEB-194 (GL-flexible category routing) is the v2 follow-up.
+  // scheduleInvoicePaymentPlan is AR-only installment plans; the AP
+  // scheduleVendorPayment mock remains (HASEEB-195 follow-up).
+  writeOffInvoice: invoicesApi.writeOffInvoice,
+  disputeInvoice: invoicesApi.disputeInvoice,
+  scheduleInvoicePaymentPlan: invoicesApi.scheduleInvoicePaymentPlan,
 
   // Disallowance rules (FN-222, Phase 4 Track A Wave 2 — 2026-04-19).
   // Backend 5/5 live; these are extras surfaced in both MOCK and LIVE
@@ -992,6 +1002,17 @@ function buildLiveSurface() {
   // `data` so no special axios response type is needed.
   surface.exportBankAccountStatement = bankAccountsApi.exportBankAccountStatement;
 
+  // Aging action writes — AUDIT-ACC-005 (corporate-api 3fdb92c,
+  // 2026-04-22). The three new invoice-lifecycle writes are NEW engine
+  // surface names NOT on mockEngine's namespace, so they must be
+  // assigned here (the Object.keys(mockEngine) loop above does not
+  // pick them up). See FUNCTION_ROUTING + REAL_IMPLS blocks above for
+  // the parallel routing-table entries and the buildMockExtras() block
+  // below for the MOCK parity stubs.
+  surface.writeOffInvoice = invoicesApi.writeOffInvoice;
+  surface.disputeInvoice = invoicesApi.disputeInvoice;
+  surface.scheduleInvoicePaymentPlan = invoicesApi.scheduleInvoicePaymentPlan;
+
   // Recurrence patterns — Tier C-3 FOLLOW-UP (HASEEB-183, aff0764,
   // 2026-04-21). Aminah surfaces missed-recurrence alerts via the
   // read-only `get_missing_recurrences` tool; suspending a pattern is an
@@ -1499,6 +1520,76 @@ function buildMockExtras() {
       suspended: true,
       patternId,
     }),
+
+    // Aging action writes — AUDIT-ACC-005 (corporate-api 3fdb92c,
+    // 2026-04-22). MOCK parity stubs mirror the LIVE response envelopes
+    // after unwrap so the WriteOffModal / DisputeInvoiceModal /
+    // ScheduleARInstallmentModal round-trip cleanly in MOCK mode
+    // without a backend. These supersede the old mock-only
+    // createWriteOffJE + markInvoiceDisputed exports on mockEngine
+    // (which have been deleted; see mockEngine.js blame).
+    writeOffInvoice: async (invoiceId, { reason, effectiveDate, category } = {}) => {
+      await new Promise((r) => setTimeout(r, 120));
+      const jeId = `JE-WO-${Math.floor(Math.random() * 900 + 100)}`;
+      return {
+        invoice: {
+          id: invoiceId,
+          status: 'WRITTEN_OFF',
+          outstanding: '0.000',
+        },
+        writeOff: {
+          id: `WO-${Math.floor(Math.random() * 900 + 100)}`,
+          invoiceId,
+          reason: reason || '',
+          effectiveDate: effectiveDate || new Date().toISOString().slice(0, 10),
+          category: category || 'bad_debt',
+          journalEntryId: jeId,
+          createdAt: new Date().toISOString(),
+          _mock: true,
+        },
+        journalEntry: { id: jeId, entryNumber: jeId, status: 'POSTED', _mock: true },
+      };
+    },
+    disputeInvoice: async (invoiceId, { reason, disputedAmount } = {}) => {
+      await new Promise((r) => setTimeout(r, 120));
+      return {
+        invoice: {
+          id: invoiceId,
+          status: 'DISPUTED',
+        },
+        dispute: {
+          id: `DSP-${Math.floor(Math.random() * 900 + 100)}`,
+          invoiceId,
+          reason: reason || '',
+          disputedAmount: disputedAmount || null,
+          createdAt: new Date().toISOString(),
+          _mock: true,
+        },
+      };
+    },
+    scheduleInvoicePaymentPlan: async (invoiceId, { installments } = {}) => {
+      await new Promise((r) => setTimeout(r, 120));
+      const planId = `PP-${Math.floor(Math.random() * 900 + 100)}`;
+      const normalized = Array.isArray(installments)
+        ? installments.map((inst, i) => ({
+            id: `${planId}-I${i + 1}`,
+            dueDate: inst?.dueDate || new Date().toISOString().slice(0, 10),
+            amount: String(inst?.amount || '0.000'),
+            status: 'SCHEDULED',
+          }))
+        : [];
+      return {
+        invoice: { id: invoiceId },
+        paymentPlan: {
+          id: planId,
+          invoiceId,
+          status: 'ACTIVE',
+          installments: normalized,
+          createdAt: new Date().toISOString(),
+          _mock: true,
+        },
+      };
+    },
 
     // Reconciliation — Track B Dispatch 5 + 5a/5b/5c wire 5 (2026-04-20).
     // The MOCK adapters below map the canonical `*Live` engine names back
@@ -4425,18 +4516,22 @@ export const getInvoiceDetail = surface.getInvoiceDetail;
 export const getChartOfAccounts = surface.getChartOfAccounts;
 export const logPayment = surface.logPayment;
 
-// Aging reports — still-mock surface (PHASE-4-BLOCKED-ON-BACKEND).
-// Re-exported from the engine namespace so the modals can uniformly
-// import from '../../engine' instead of mixing engine and mockEngine
-// imports. In LIVE mode these fall through to the mock-fallback
-// wrapper; in MOCK mode they behave identically to before.
+// Aging reports — sendAgingReminder stays mock-only (no backend email
+// delivery surface yet); scheduleVendorPayment stays mock-only per
+// HASEEB-195 follow-up (AP scheduling wire).
 export const sendAgingReminder = surface.sendAgingReminder;
-export const markInvoiceDisputed = surface.markInvoiceDisputed;
 export const scheduleVendorPayment = surface.scheduleVendorPayment;
-// createWriteOffJE — demoted from wired in favour of mock_fallback;
-// semantic mismatch with credit-note path (see FUNCTION_ROUTING block
-// above + HASEEB-068/069).
-export const createWriteOffJE = surface.createWriteOffJE;
+
+// Aging action writes — AUDIT-ACC-005 (corporate-api 3fdb92c, 2026-04-22).
+// Three new invoice-lifecycle writes, OWNER / ACCOUNTANT gated at the
+// backend. writeOffInvoice + disputeInvoice supersede the old mock-only
+// createWriteOffJE + markInvoiceDisputed exports (removed). See
+// src/api/invoices.js for per-function JSDoc + memory-bank/
+// 2026-04-22-audit-acc-005-checkpoint-a.md for resolutions 2.1(c) +
+// 2.2(a). HASEEB-194 tracks GL-flexibility follow-up for write-off.
+export const writeOffInvoice = surface.writeOffInvoice;
+export const disputeInvoice = surface.disputeInvoice;
+export const scheduleInvoicePaymentPlan = surface.scheduleInvoicePaymentPlan;
 
 // Disallowance rules (FN-222, Phase 4 Track A Wave 2 — 2026-04-19).
 // Kuwait CIT disallowance-rule register. OWNER-only mutations; reads

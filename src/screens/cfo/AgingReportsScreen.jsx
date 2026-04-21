@@ -13,7 +13,13 @@ import SendReminderModal from "../../components/aging/SendReminderModal";
 import LogPaymentModal from "../../components/aging/LogPaymentModal";
 import DisputeInvoiceModal from "../../components/aging/DisputeInvoiceModal";
 import WriteOffModal from "../../components/aging/WriteOffModal";
-import SchedulePaymentModal from "../../components/aging/SchedulePaymentModal";
+// AUDIT-ACC-005 (2026-04-22): "schedule payment" splits into two modals.
+// - AP tab: ScheduleAPPaymentModal (renamed from SchedulePaymentModal) —
+//   still mock-only (scheduleVendorPayment); HASEEB-195 follow-up.
+// - AR tab: ScheduleARInstallmentModal — LIVE-wired to the new
+//   /api/invoices/:id/schedule-payment endpoint (corporate-api 3fdb92c).
+import ScheduleAPPaymentModal from "../../components/aging/ScheduleAPPaymentModal";
+import ScheduleARInstallmentModal from "../../components/aging/ScheduleARInstallmentModal";
 import InvoiceDetailSlideOver from "../../components/aging/InvoiceDetailSlideOver";
 
 const BUCKETS = ["current", "b1_30", "b31_60", "b61_90", "b90_plus"];
@@ -312,7 +318,12 @@ export default function AgingReportsScreen({ onOpenAminah }) {
       <LogPaymentModal open={modal === "payment"} invoice={activeInvoice} onClose={closeModal} onSaved={reload} />
       <DisputeInvoiceModal open={modal === "dispute"} invoice={activeInvoice} onClose={closeModal} onSaved={reload} />
       <WriteOffModal open={modal === "writeoff"} invoice={activeInvoice} onClose={closeModal} onSubmitted={reload} />
-      <SchedulePaymentModal open={modal === "schedule"} invoice={activeInvoice} onClose={closeModal} onScheduled={reload} />
+      {/* AUDIT-ACC-005 (2026-04-22): AR tab -> installment-plan modal
+          (LIVE endpoint); AP tab -> vendor-payment mock (HASEEB-195). The
+          kebab item uses `schedule` for both tabs — the tab (`type`) picks
+          the right modal shape. */}
+      <ScheduleARInstallmentModal open={modal === "schedule" && type === "AR"} invoice={activeInvoice} onClose={closeModal} onScheduled={reload} />
+      <ScheduleAPPaymentModal open={modal === "schedule" && type === "AP"} invoice={activeInvoice} onClose={closeModal} onScheduled={reload} />
       <InvoiceDetailSlideOver open={modal === "detail"} invoiceId={activeInvoice?.id} onClose={closeModal} />
     </div>
   );
@@ -360,6 +371,7 @@ function Row({ inv, type, t, selected, onToggleSelect, menuOpen, setMenuOpen, on
               <>
                 <MenuItem label={t("kebab.send_reminder")} onClick={() => onOpenAction("reminder", inv)} />
                 <MenuItem label={t("kebab.log_payment")} onClick={() => onOpenAction("payment", inv)} />
+                <MenuItem label={t("kebab.schedule_payment_plan")} onClick={() => onOpenAction("schedule", inv)} />
                 <MenuItem label={t("kebab.mark_disputed")} onClick={() => onOpenAction("dispute", inv)} />
                 <MenuItem label={t("kebab.write_off")} onClick={() => onOpenAction("writeoff", inv)} />
                 <MenuItem label={t("kebab.view_invoice")} onClick={() => onOpenAction("detail", inv)} />

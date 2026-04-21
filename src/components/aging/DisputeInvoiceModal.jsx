@@ -4,11 +4,13 @@ import { X } from "lucide-react";
 import useEscapeKey from "../../hooks/useEscapeKey";
 import Spinner from "../shared/Spinner";
 import { runValidators, required, minLength } from "../../utils/validation";
-// PHASE-4-BLOCKED-ON-BACKEND: markInvoiceDisputed — no DISPUTED status
-// transition on Invoice. See src/engine/mockEngine.js for the full
-// block-reason comment. In LIVE mode this call falls back to the mock
-// with a one-shot console warning.
-import { markInvoiceDisputed } from "../../engine";
+// AUDIT-ACC-005 (corporate-api 3fdb92c, 2026-04-22): rewired to the new
+// /api/invoices/:id/dispute endpoint. Body = {reason, disputedAmount?}.
+// Resolution 2.2(a) per Tarek 2026-04-22: dropped `expectedResolution`
+// and `assignee` from the UI because the backend schema does not persist
+// them — keeping them on the form would be a misleading UX. Re-introduce
+// via a schema extension later if operators ask.
+import { disputeInvoice } from "../../engine";
 
 const inputStyle = {
   width: "100%", background: "var(--bg-surface-sunken)",
@@ -17,31 +19,57 @@ const inputStyle = {
   fontSize: 13, fontFamily: "inherit", outline: "none",
 };
 
+// KWD 3-decimal-place string or empty.
+const KWD_RE = /^\d+(\.\d{1,3})?$/;
+
 export default function DisputeInvoiceModal({ open, invoice, onClose, onSaved }) {
   const { t } = useTranslation("aging");
   const { t: tc } = useTranslation("common");
   useEscapeKey(onClose, open);
   const [reason, setReason] = useState("");
-  const [resolution, setResolution] = useState("");
-  const [assignee, setAssignee] = useState("cfo");
+  const [disputedAmount, setDisputedAmount] = useState("");
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
 
   useEffect(() => {
-    if (open) { setReason(""); setResolution(""); setAssignee("cfo"); setErrors({}); }
+    if (open) {
+      setReason("");
+      setDisputedAmount("");
+      setErrors({});
+      setSubmitError(null);
+    }
   }, [open]);
 
   if (!open || !invoice) return null;
 
   const handleSave = async () => {
-    const e = runValidators({ reason }, { reason: [required(), minLength(10)] });
+    const validators = { reason: [required(), minLength(10)] };
+    const e = runValidators({ reason }, validators);
+    // Local-only validation for disputedAmount: must be a KWD 3dp string
+    // or empty. If non-empty and invalid, block submit.
+    if (disputedAmount && !KWD_RE.test(String(disputedAmount).trim())) {
+      e.disputedAmount = { key: "validation.kwd_3dp_required" };
+    }
     setErrors(e);
     if (Object.keys(e).length) return;
+    if (saving) return; // guard double-submit
     setSaving(true);
-    await markInvoiceDisputed(invoice.id, reason, resolution, assignee);
-    setSaving(false);
-    if (onSaved) onSaved();
-    if (onClose) onClose();
+    setSubmitError(null);
+    try {
+      const trimmed = String(disputedAmount || "").trim();
+      const result = await disputeInvoice(invoice.id, {
+        reason,
+        disputedAmount: trimmed ? trimmed : undefined,
+      });
+      if (onSaved) onSaved(result);
+      if (onClose) onClose();
+    } catch (err) {
+      const msg = err?.message || err?.error?.message || String(err) || t("dispute_modal.toast_error");
+      setSubmitError(msg);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -63,7 +91,7 @@ export default function DisputeInvoiceModal({ open, invoice, onClose, onSaved })
             <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 6 }}>{t("dispute_modal.field_reason")}</div>
             <textarea
               value={reason}
-              onChange={(e) => { setReason(e.target.value); if (errors.reason) setErrors({}); }}
+              onChange={(e) => { setReason(e.target.value); if (errors.reason) setErrors({ ...errors, reason: undefined }); }}
               placeholder={t("dispute_modal.reason_placeholder")}
               rows={4}
               style={{ ...inputStyle, resize: "vertical", ...(errors.reason ? { borderColor: "var(--semantic-danger)" } : {}) }}
@@ -71,10 +99,38 @@ export default function DisputeInvoiceModal({ open, invoice, onClose, onSaved })
             {errors.reason && <div style={{ fontSize: 12, color: "var(--semantic-danger)", marginTop: 4 }}>{tc(errors.reason.key, errors.reason.values || {})}</div>}
           </div>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 6 }}>{t("dispute_modal.field_resolution")}</div>
-            <input type="date" value={resolution} onChange={(e) => setResolution(e.target.value)} style={{ ...inputStyle, colorScheme: "dark" }} />
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 6 }}>{t("dispute_modal.disputed_amount_label")}</div>
+            <input
+              value={disputedAmount}
+              onChange={(e) => { setDisputedAmount(e.target.value); if (errors.disputedAmount) setErrors({ ...errors, disputedAmount: undefined }); }}
+              inputMode="decimal"
+              placeholder={t("dispute_modal.disputed_amount_placeholder")}
+              style={{ ...inputStyle, fontFamily: "'DM Mono', monospace", ...(errors.disputedAmount ? { borderColor: "var(--semantic-danger)" } : {}) }}
+            />
+            {errors.disputedAmount && (
+              <div style={{ fontSize: 12, color: "var(--semantic-danger)", marginTop: 4 }}>
+                {t("dispute_modal.disputed_amount_invalid")}
+              </div>
+            )}
           </div>
         </div>
+        {submitError && (
+          <div
+            role="alert"
+            style={{
+              margin: "0 22px 12px",
+              padding: "10px 12px",
+              background: "var(--semantic-danger-subtle)",
+              border: "1px solid var(--semantic-danger)",
+              borderRadius: 6,
+              color: "var(--semantic-danger)",
+              fontSize: 12,
+              lineHeight: 1.4,
+            }}
+          >
+            {submitError}
+          </div>
+        )}
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 22px", borderTop: "1px solid var(--border-subtle)" }}>
           <button onClick={onClose} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-strong)", padding: "9px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>{t("dispute_modal.cancel")}</button>
           <button onClick={handleSave} disabled={saving} style={{ background: "var(--semantic-warning)", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 6, cursor: saving ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>

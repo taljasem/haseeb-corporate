@@ -3,10 +3,12 @@ import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import useEscapeKey from "../../hooks/useEscapeKey";
 import Spinner from "../shared/Spinner";
-// PHASE-4-BLOCKED-ON-BACKEND: scheduleVendorPayment — no future-dated
-// payment endpoint. See src/engine/mockEngine.js for the full block-reason
-// comment. In LIVE mode this call falls back to the mock with a one-shot
-// console warning.
+// HASEEB-195: AP payment scheduling is still mock-only. Backend follow-up
+// tracked; renamed from SchedulePaymentModal -> ScheduleAPPaymentModal
+// per AUDIT-ACC-005 resolution 2.2(a) (Tarek 2026-04-22) so that the new
+// AR-side installment modal (ScheduleARInstallmentModal, wired to the
+// live /api/invoices/:id/schedule-payment endpoint) does not collide.
+// AgingReportsScreen renders this modal from the AP tab only.
 import { scheduleVendorPayment } from "../../engine";
 
 const inputStyle = {
@@ -16,7 +18,7 @@ const inputStyle = {
   fontSize: 13, fontFamily: "inherit", outline: "none",
 };
 
-export default function SchedulePaymentModal({ open, invoice, onClose, onScheduled }) {
+export default function ScheduleAPPaymentModal({ open, invoice, onClose, onScheduled }) {
   const { t } = useTranslation("aging");
   useEscapeKey(onClose, open);
   const [amount, setAmount] = useState("");

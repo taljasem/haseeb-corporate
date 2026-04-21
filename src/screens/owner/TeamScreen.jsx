@@ -20,7 +20,7 @@ const ROLE_COLORS = {
   cfo: "var(--accent-primary)",
   senior: "#3b82f6",
   junior: "var(--text-secondary)",
-  auditor: "#a855f7",
+  auditor: "var(--tier-ai)",
 };
 
 export default function TeamScreen() {
@@ -148,7 +148,7 @@ export default function TeamScreen() {
             <RoleCard icon={Crown} title={t("permissions.owner_title")} bullets={t("permissions.owner_bullets")} color="var(--role-owner, #d4a84b)" />
             <RoleCard icon={TrendingUp} title={t("permissions.cfo_title")} bullets={t("permissions.cfo_bullets")} color="var(--accent-primary)" />
             <RoleCard icon={User} title={t("permissions.junior_title")} bullets={t("permissions.junior_bullets")} color="var(--text-secondary)" />
-            <RoleCard icon={Search} title={t("permissions.auditor_title")} bullets={t("permissions.auditor_bullets")} color="#a855f7" />
+            <RoleCard icon={Search} title={t("permissions.auditor_title")} bullets={t("permissions.auditor_bullets")} color="var(--tier-ai)" />
           </div>
         </div>
       </div>

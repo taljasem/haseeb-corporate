@@ -76,6 +76,30 @@
     "q3": "Draft a JE for me",
     "q4": "What's my accuracy this week?"
   },
+  "missed_recurrences": {
+    "title": "Missing recurrences",
+    "empty": "All recurrences are on time",
+    "overdue_days": "{{count}} days overdue",
+    "severity": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "suspend_action": "Suspend",
+    "suspend_aria": "Suspend recurrence pattern for {{merchant}}",
+    "suspended_badge": "Suspended"
+  },
+  "suspend_modal": {
+    "title": "Suspend recurrence pattern?",
+    "subtitle": "This will hide {{merchant}} from future detection until reactivated.",
+    "reason_label": "Reason",
+    "reason_placeholder": "Briefly describe why this pattern should stop emitting alerts (e.g. vendor change, lease ended, contract renegotiated)…",
+    "cancel": "Cancel",
+    "confirm": "Suspend",
+    "suspending": "Suspending…",
+    "suspend_failed": "Could not suspend this pattern. Please try again.",
+    "close": "Close"
+  },
   "pending": {
     "due_prefix": "Due {{date}}",
     "severity_info": "FYI",

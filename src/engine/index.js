@@ -89,6 +89,7 @@ import * as rulesApi from '../api/rules';
 import * as adminIntegrationsApi from '../api/admin-integrations';
 import * as adminAuditLogApi from '../api/admin-audit-log';
 import * as bankAccountsApi from '../api/bank-accounts';
+import * as recurrencePatternsApi from '../api/recurrence-patterns';
 import * as reconciliationApi from '../api/reconciliation';
 import * as budgetsApi from '../api/budgets';
 import * as migrationImportApi from '../api/migration-import';
@@ -248,6 +249,13 @@ const FUNCTION_ROUTING = {
   // 2026-04-21). "Extras" name (no mockEngine counterpart); wired via
   // buildLiveSurface direct assignment + buildMockExtras stub below.
   exportBankAccountStatement: 'wired',
+
+  // Recurrence patterns — Tier C-3 FOLLOW-UP (Aminah missed-recurrence
+  // surface, corporate-api HASEEB-183 at aff0764, 2026-04-21). Operator-
+  // only mutation (OWNER / ACCOUNTANT on the backend; midsize FE hides
+  // for Junior). "Extras" name NOT on mockEngine's namespace; wired via
+  // buildLiveSurface direct assignment + a minimal buildMockExtras stub.
+  suspendRecurrencePattern: 'wired',
 
   // Migration Import — Track 1 Migration Wizard (2026-04-20). Twelve
   // wrappers: 3 ingest + 3 staged reads + 5 source-account-map + 2
@@ -984,6 +992,12 @@ function buildLiveSurface() {
   // `data` so no special axios response type is needed.
   surface.exportBankAccountStatement = bankAccountsApi.exportBankAccountStatement;
 
+  // Recurrence patterns — Tier C-3 FOLLOW-UP (HASEEB-183, aff0764,
+  // 2026-04-21). Aminah surfaces missed-recurrence alerts via the
+  // read-only `get_missing_recurrences` tool; suspending a pattern is an
+  // operator-only mutation gated OWNER / ACCOUNTANT backend-side.
+  surface.suspendRecurrencePattern = recurrencePatternsApi.suspendRecurrencePattern;
+
   // Reconciliation — Track B Dispatch 5 + 5a/5b/5c wire 5 (2026-04-20).
   //
   // The mockEngine has same-named functions for most of these (e.g.
@@ -1476,6 +1490,15 @@ function buildMockExtras() {
         contentType: 'text/csv',
       };
     },
+
+    // Recurrence patterns — Tier C-3 FOLLOW-UP (HASEEB-183, 2026-04-21).
+    // MOCK stub returns the same contract as the live response envelope
+    // after unwrap. Lets the MissedRecurrencesCard demo the full suspend
+    // flow in MOCK mode without a live backend.
+    suspendRecurrencePattern: async (patternId /* , opts */) => ({
+      suspended: true,
+      patternId,
+    }),
 
     // Reconciliation — Track B Dispatch 5 + 5a/5b/5c wire 5 (2026-04-20).
     // The MOCK adapters below map the canonical `*Live` engine names back
@@ -4686,6 +4709,12 @@ export const getBankAccountSummary = surface.getBankAccountSummary;
 // HASEEB-180 (corporate-api 2ff14dc, 2026-04-21): CSV / PDF / XLSX export
 // of the account's statement. JSON-wrapped response (base64 for binary).
 export const exportBankAccountStatement = surface.exportBankAccountStatement;
+
+// Recurrence patterns — Tier C-3 FOLLOW-UP (HASEEB-183, aff0764,
+// 2026-04-21). Operator-only suspend action paired with Aminah's
+// `get_missing_recurrences` read tool. Role gate OWNER / ACCOUNTANT
+// backend-side; midsize FE additionally hides for Junior.
+export const suspendRecurrencePattern = surface.suspendRecurrencePattern;
 
 // Reconciliation — Track B Dispatch 5 + 5a/5b/5c wire 5 (2026-04-20).
 //

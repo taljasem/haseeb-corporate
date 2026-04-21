@@ -127,6 +127,78 @@ const SCENARIOS = [
     ],
   },
   {
+    // Tier C-3 FOLLOW-UP (HASEEB-183, 2026-04-21) — typed Aminah card
+    // for missed-recurrence alerts + operator Suspend action. Scenario
+    // keywords cover common phrasings: "missing bills", "recurrences",
+    // "overdue vendors", etc.
+    id: "missing_recurrences",
+    keywords: [
+      "missing bills",
+      "missed bills",
+      "what bills am i missing",
+      "missing recurrences",
+      "missed recurrences",
+      "overdue bills",
+      "overdue recurrences",
+      "skipped vendors",
+      "recurrence alerts",
+      "missed payments",
+    ],
+    build: () => [
+      { type: "status.update", label: "Analyzing...", icon: "search" },
+      { _delay: 400 },
+      { type: "tool.call_started", toolName: "get_missing_recurrences", toolInput: {} },
+      { _delay: 600 },
+      {
+        type: "tool.call_completed",
+        result: {
+          items: [
+            {
+              patternId: "rp-mock-001",
+              merchantNormalizedName: "Office rent — Sharq",
+              expectedIntervalDays: 30,
+              expectedAmountKwd: "4200.000",
+              lastSeenAt: "2026-02-01T08:00:00.000Z",
+              nextExpectedAt: "2026-04-01T08:00:00.000Z",
+              daysOverdue: 20,
+              severity: "HIGH",
+              severityScore: 95,
+            },
+            {
+              patternId: "rp-mock-002",
+              merchantNormalizedName: "Zain Kuwait",
+              expectedIntervalDays: 30,
+              expectedAmountKwd: "624.750",
+              lastSeenAt: "2026-03-05T08:00:00.000Z",
+              nextExpectedAt: "2026-04-05T08:00:00.000Z",
+              daysOverdue: 16,
+              severity: "MEDIUM",
+              severityScore: 60,
+            },
+            {
+              patternId: "rp-mock-003",
+              merchantNormalizedName: "Cleaning services LLC",
+              expectedIntervalDays: 14,
+              expectedAmountKwd: "185.000",
+              lastSeenAt: "2026-04-03T08:00:00.000Z",
+              nextExpectedAt: "2026-04-17T08:00:00.000Z",
+              daysOverdue: 4,
+              severity: "LOW",
+              severityScore: 25,
+            },
+          ],
+          total: 3,
+          interactionHint: "operator_suspend",
+          currencyNote: "Amounts are in KWD at the expected recurring cadence. FX from non-KWD payments is normalised to the tenant's booking currency.",
+        },
+      },
+      { _delay: 200 },
+      { type: "message.block_added", block: { type: "text", text: "" } },
+      ...textDeltas("You have **3 missed recurrences** worth watching. The biggest concern is **Office rent — Sharq** at 4,200.000 KWD, 20 days overdue. Zain Kuwait (telecom) and the fortnightly cleaning contract are also overdue but smaller. Use the Suspend button on any row if the vendor relationship has ended so Aminah stops flagging it."),
+      { type: "message.complete" },
+    ],
+  },
+  {
     id: "close_status",
     keywords: ["close", "month-end", "month end close", "close progress", "blocking the close"],
     build: () => [

@@ -23,6 +23,7 @@ import ForecastScreen from "./ForecastScreen";
 import VarianceAnalysisScreen from "./VarianceAnalysisScreen";
 import AgingReportsScreen from "./AgingReportsScreen";
 import SetupScreen from "./SetupScreen";
+import ContactsScreen from "../shared/ContactsScreen";
 import AuditBridgeScreen from "../owner/AuditBridgeScreen";
 import PettyCashScreen from "./PettyCashScreen";
 import BulkReclassScreen from "./BulkReclassScreen";
@@ -140,6 +141,8 @@ export default function CFOView({ registerNav }) {
         return <AgingReportsScreen onOpenAminah={openAminah} />;
       case "setup":
         return <SetupScreen role="CFO" />;
+      case "contacts":
+        return <ContactsScreen role="CFO" />;
       case "audit-bridge":
         return <AuditBridgeScreen onOpenAminah={openAminah} />;
       case "petty-cash":

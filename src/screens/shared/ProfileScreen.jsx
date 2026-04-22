@@ -9,6 +9,9 @@ import Spinner from "../../components/shared/Spinner";
 import { useTenant } from "../../components/shared/TenantContext";
 import { formatRelativeTime } from "../../utils/relativeTime";
 import { formatDate } from "../../utils/format";
+// HASEEB-280 — Wave 2 migration. getUserProfile is LIVE-wired (Track
+// B Dispatch 2 wire 3, /api/settings/profile). The other five are
+// mock-fallback via the engine router (no backend yet — HASEEB-279).
 import {
   getUserProfile,
   getUserStats,
@@ -16,7 +19,7 @@ import {
   getUserRecentActivity,
   getUserNotes,
   updateUserNotes,
-} from "../../engine/mockEngine";
+} from "../../engine";
 import EditProfileModal from "../../components/profile/EditProfileModal";
 import FullActivitySlideOver from "../../components/profile/FullActivitySlideOver";
 // HASEEB-178 — shared role normalizer from src/utils/role.js. The

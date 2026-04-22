@@ -39,7 +39,9 @@ import PaymentVoucherScreen from "./PaymentVoucherScreen";
 import PIFSSReconciliationScreen from "./PIFSSReconciliationScreen";
 import CITAssessmentScreen from "./CITAssessmentScreen";
 import YearEndCloseScreen from "./YearEndCloseScreen";
-import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
+// HASEEB-280 — Wave 2 migration. Both taskbox/approval counters are
+// mock-fallback via the engine router (no backend yet — HASEEB-279).
+import { getOpenTaskCount, getOpenApprovalCount } from "../../engine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
 
 export default function CFOView({ registerNav }) {

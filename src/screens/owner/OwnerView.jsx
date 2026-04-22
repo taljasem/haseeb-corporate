@@ -24,7 +24,9 @@ import BankMandateAdminScreen from "./BankMandateAdminScreen";
 import PIFSSReconciliationScreen from "../cfo/PIFSSReconciliationScreen";
 import CITAssessmentScreen from "../cfo/CITAssessmentScreen";
 import YearEndCloseScreen from "../cfo/YearEndCloseScreen";
-import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
+// HASEEB-280 — Wave 2 migration. Both taskbox/approval counters are
+// mock-fallback via the engine router (no backend yet — HASEEB-279).
+import { getOpenTaskCount, getOpenApprovalCount } from "../../engine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
 
 function Placeholder({ label }) {

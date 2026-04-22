@@ -6545,6 +6545,90 @@ export const addTeamMember = surface.addTeamMember;
 export const removeTeamMember = surface.removeTeamMember;
 export const getTeamActivityLog = surface.getTeamActivityLog;
 
+// ──────────────────────────────────────────────────────────────────
+// HASEEB-280 — Wave 2 migration named exports.
+//
+// Every symbol below already exists on `surface` (populated from
+// mockEngine by `buildLiveSurface` for mock_fallback routing). These
+// `export const` lines expose them as named ES imports so the eleven
+// Wave 2 screens (Forecast, Rules, VarianceAnalysis, MyResponsibilities,
+// AuditBridge, Profile, Setup residual, YearEndClose residual, CFOView,
+// JuniorView, OwnerView) can `import { fn } from '../../engine'`
+// instead of `from '../../engine/mockEngine'`. No backend endpoints
+// exist for these functions yet (HASEEB-279 follow-ups); LIVE mode
+// falls back to mockEngine with a one-shot warn, same as the Wave 1
+// fallback set.
+// ──────────────────────────────────────────────────────────────────
+
+// Forecast (ForecastScreen — mock-fallback)
+export const getForecast = surface.getForecast;
+export const recalculateForecast = surface.recalculateForecast;
+export const getSavedForecastScenarios = surface.getSavedForecastScenarios;
+export const getForecastNarration = surface.getForecastNarration;
+
+// Rules (RulesScreen). getSuggestedCategorizationRules /
+// getSuggestedRoutingRules are LIVE-wired already (exported earlier);
+// the rest are mock-fallback.
+export const getCategorizationRules = surface.getCategorizationRules;
+export const muteCategorizationRule = surface.muteCategorizationRule;
+export const unmuteCategorizationRule = surface.unmuteCategorizationRule;
+export const deleteCategorizationRule = surface.deleteCategorizationRule;
+export const muteRoutingRule = surface.muteRoutingRule;
+export const unmuteRoutingRule = surface.unmuteRoutingRule;
+export const deleteRoutingRule = surface.deleteRoutingRule;
+export const acceptSuggestedRule = surface.acceptSuggestedRule;
+export const dismissSuggestedRule = surface.dismissSuggestedRule;
+export const isSuggestionDismissed = surface.isSuggestionDismissed;
+
+// Variance analysis (VarianceAnalysisScreen — mock-fallback)
+export const getVarianceAnalysis = surface.getVarianceAnalysis;
+export const getVarianceNarration = surface.getVarianceNarration;
+export const exportVarianceReport = surface.exportVarianceReport;
+
+// My Responsibilities (Junior). getRoutingRules already exported
+// above for RulesScreen; getJuniorDomainStats is new.
+export const getJuniorDomainStats = surface.getJuniorDomainStats;
+
+// Audit Bridge (AuditBridgeScreen — all mock-fallback)
+export const listAuditEngagements = surface.listAuditEngagements;
+export const getAuditEngagement = surface.getAuditEngagement;
+export const createAuditEngagement = surface.createAuditEngagement;
+export const createSnapshot = surface.createSnapshot;
+export const runAuditCheck = surface.runAuditCheck;
+export const runAllAuditChecks = surface.runAllAuditChecks;
+export const generateAuditPackage = surface.generateAuditPackage;
+export const listClarifications = surface.listClarifications;
+export const addClarificationMessage = surface.addClarificationMessage;
+export const resolveClarification = surface.resolveClarification;
+
+// Profile (ProfileScreen). getUserProfile was already exported earlier
+// (LIVE-wired via settings API).
+export const getUserStats = surface.getUserStats;
+export const getUserResponsibilities = surface.getUserResponsibilities;
+export const getUserRecentActivity = surface.getUserRecentActivity;
+export const getUserNotes = surface.getUserNotes;
+export const updateUserNotes = surface.updateUserNotes;
+
+// Setup (residual config/integration helpers that SetupScreen still
+// imports — all mock-fallback; no backend wrappers yet)
+export const getFiscalYearConfig = surface.getFiscalYearConfig;
+export const getTaxConfiguration = surface.getTaxConfiguration;
+export const updateTaxConfiguration = surface.updateTaxConfiguration;
+export const getCurrencyConfig = surface.getCurrencyConfig;
+export const updateCurrencyConfig = surface.updateCurrencyConfig;
+export const updateExchangeRates = surface.updateExchangeRates;
+export const getIntegrationStatus = surface.getIntegrationStatus;
+export const forceSyncIntegration = surface.forceSyncIntegration;
+export const getIntegrationSyncLogs = surface.getIntegrationSyncLogs;
+export const getEngineConfiguration = surface.getEngineConfiguration;
+
+// Dispatcher screens (CFOView, OwnerView, JuniorView). Taskbox and
+// approval counters are mock-only today (no backend endpoint); mock-
+// fallback is the correct LIVE-mode behavior.
+export const getOpenTaskCount = surface.getOpenTaskCount;
+export const getSaraTaskStats = surface.getSaraTaskStats;
+// getOpenApprovalCount was already exported at the top of this block.
+
 // ══════════════════════════════════════════════════════════════════
 // Payment Voucher + Bank Mandate MOCK stubs — AUDIT-ACC-002
 // ══════════════════════════════════════════════════════════════════

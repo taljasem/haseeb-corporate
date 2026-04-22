@@ -7,12 +7,15 @@ import { useTenant } from "../../components/shared/TenantContext";
 import AminahNarrationCard from "../../components/financial/AminahNarrationCard";
 import SaveScenarioModal from "../../components/forecast/SaveScenarioModal";
 import CompareScenariosSlideOver from "../../components/forecast/CompareScenariosSlideOver";
+// HASEEB-280 — Wave 2 migration. Engine router selects MOCK vs LIVE
+// per function; all four of these are mock-fallback today (no backend
+// yet — tracked under HASEEB-279 follow-up list).
 import {
   getForecast,
   recalculateForecast,
   getSavedForecastScenarios,
   getForecastNarration,
-} from "../../engine/mockEngine";
+} from "../../engine";
 
 const SCENARIOS = ["conservative", "base", "aggressive"];
 const SCENARIO_COLOR = {

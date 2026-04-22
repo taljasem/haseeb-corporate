@@ -1,0 +1,121 @@
+{
+  "view_label": "الامتثال السنوي",
+  "title": "قضايا ضريبة دخل الشركات",
+  "subtitle": "المتابعة السنوية لقضايا الجهات الرسمية — وزارة التجارة والصناعة / الهيئة العامة للضريبة",
+  "distinction_note": "متابعة المبالغ المقدمة → التقدير الرسمي → النهائية مع الاعتراضات ومواعيد مدة التقادم. هذه شاشة المتابعة السنوية؛ التقييم الذاتي الربع سنوي في موجة منفصلة.",
+
+  "ownerOnly": {
+    "tooltip": "هذا الإجراء مقصور على المالك. دورك يملك صلاحية القراءة فقط لقضايا ضريبة دخل الشركات."
+  },
+
+  "year_list": {
+    "title": "القضايا حسب السنة المالية",
+    "action_new": "قضية جديدة",
+    "action_back": "العودة إلى القائمة",
+    "column_fiscal_year": "السنة المالية",
+    "column_filed": "المقدم (د.ك)",
+    "column_assessed": "التقدير (د.ك)",
+    "column_final": "النهائي (د.ك)",
+    "column_authority_case": "رقم القضية لدى الجهة",
+    "column_filed_on": "تاريخ التقديم",
+    "column_statute_expires": "انتهاء التقادم",
+    "column_status": "الحالة",
+    "days_remaining": "{{count}} يوم لانتهاء التقادم",
+    "statute_overdue": "{{count}} يوم تجاوز التقادم",
+    "empty_title": "لا توجد قضايا ضريبة دخل شركات متابعة بعد",
+    "empty_description": "ابدأ بإنشاء قضية جديدة لإقرار ضريبي مقدم. تتم متابعة القضايا لكل سنة مالية من التقديم → التقدير → النهائي مع مواعيد مدة التقادم.",
+    "filter_status_label": "الحالة",
+    "filter_status_ALL": "الكل",
+    "filter_open_only": "المفتوحة فقط",
+    "filter_fiscal_year_from": "من سنة مالية",
+    "filter_fiscal_year_to": "إلى سنة مالية",
+    "row_open_detail": "فتح القضية"
+  },
+
+  "detail": {
+    "back_to_list": "العودة إلى القائمة",
+    "header_fiscal_year": "السنة المالية {{fiscalYear}}",
+    "header_authority_case": "رقم القضية لدى الجهة",
+    "header_statute_countdown": "{{count}} يوم لانتهاء التقادم",
+    "header_statute_overdue": "تجاوزت مدة التقادم بـ {{count}} يوم",
+    "header_statute_warning": "اقتراب انقضاء مدة التقادم",
+    "figures_title": "مبالغ ضريبة دخل الشركات",
+    "figure_filed": "المبلغ المقدم",
+    "figure_assessed": "المبلغ المقدر رسمياً",
+    "figure_final": "المبلغ النهائي",
+    "figure_variance": "التقدير − المقدم",
+    "dates_title": "التواريخ الأساسية",
+    "date_filed_on": "تاريخ التقديم",
+    "date_assessed_on": "تاريخ التقدير الرسمي",
+    "date_objection_filed": "تاريخ تقديم الاعتراض",
+    "date_finalized_on": "تاريخ الإقرار النهائي",
+    "date_statute_expires": "تاريخ انتهاء مدة التقادم",
+    "notes_title": "الملاحظات",
+    "notes_empty": "لا توجد ملاحظات مسجلة.",
+    "audit_title": "سجل الأحداث",
+    "audit_created": "تم إنشاء القضية",
+    "audit_under_review": "فتح المراجعة",
+    "audit_assessed": "تسجيل التقدير الرسمي",
+    "audit_objected": "تسجيل الاعتراض",
+    "audit_final": "الإقرار النهائي",
+    "audit_closed": "إغلاق القضية",
+    "audit_statute_expired": "تم وضع علامة انقضاء مدة التقادم",
+    "audit_no_timestamp": "—",
+    "actions_title": "الإجراءات",
+    "action_open_review": "فتح المراجعة",
+    "action_record_assessment": "تسجيل التقدير الرسمي",
+    "action_record_objection": "تسجيل الاعتراض",
+    "action_finalize": "إقرار نهائي",
+    "action_close": "إغلاق القضية",
+    "action_mark_statute_expired": "وضع علامة انقضاء التقادم",
+    "action_terminal": "هذه القضية في حالة نهائية. لا توجد إجراءات إضافية متاحة.",
+    "action_statute_not_yet": "لم تنتهِ مدة التقادم بعد. يتم تفعيل إجراء انقضاء التقادم عند تجاوز تاريخ انتهاء التقادم.",
+    "confirm_close_title": "إغلاق قضية ضريبة دخل الشركات للسنة المالية {{fiscalYear}}؟",
+    "confirm_close_body": "إغلاق قضية منتهية يُدرجها في الأرشيف. لا يمكن التراجع إلا إذا أعادت الجهة فتح القضية.",
+    "confirm_close_confirm": "إغلاق القضية",
+    "confirm_close_cancel": "إلغاء",
+    "confirm_statute_title": "وضع علامة انقضاء التقادم — السنة المالية {{fiscalYear}}؟",
+    "confirm_statute_body": "يتم تمييز القضية بأنها سقطت بمرور الزمن لأن نافذة مراجعة الجهة انقضت. استخدم هذا فقط عند تجاوز تاريخ انتهاء مدة التقادم.",
+    "confirm_statute_confirm": "تأكيد انقضاء التقادم",
+    "confirm_statute_cancel": "إلغاء"
+  },
+
+  "status": {
+    "FILED": "مقدمة",
+    "UNDER_REVIEW": "قيد المراجعة",
+    "ASSESSED": "تم التقدير",
+    "OBJECTED": "قيد الاعتراض",
+    "FINAL": "نهائية",
+    "CLOSED": "مغلقة",
+    "STATUTE_EXPIRED": "انقضاء مدة التقادم"
+  },
+
+  "summary": {
+    "widget_title": "قضايا ضريبة دخل الشركات",
+    "widget_description": "الحالة المباشرة لجميع قضايا ضريبة دخل الشركات الكويتية لدى الجهة لهذه المنشأة.",
+    "open_count": "{{count}} مفتوحة",
+    "open_count_zero": "لا توجد قضايا مفتوحة",
+    "approaching_label": "{{count}} تقترب من انقضاء التقادم",
+    "approaching_label_zero": "لا توجد قضايا تقترب من انقضاء التقادم",
+    "most_recent_label": "الأحدث",
+    "most_recent_none": "لا توجد قضايا متابعة بعد",
+    "view_full_link": "فتح إدارة قضايا ضريبة دخل الشركات الكاملة",
+    "error_load": "فشل تحميل ملخص قضايا ضريبة دخل الشركات."
+  },
+
+  "toast": {
+    "created": "تم إنشاء القضية.",
+    "transitioned": "تم تحديث القضية.",
+    "closed": "تم إغلاق القضية.",
+    "statute_expired": "تم وضع علامة انقضاء التقادم على القضية.",
+    "error_load": "فشل تحميل قضايا ضريبة دخل الشركات.",
+    "error_transition": "فشل تحديث القضية.",
+    "error_close": "فشل إغلاق القضية.",
+    "error_statute_expired": "فشل وضع علامة انقضاء التقادم."
+  },
+
+  "approaching_banner": {
+    "title": "{{count}} قضية تقترب من انتهاء مدة التقادم",
+    "subtitle": "اتخذ إجراءً قبل إغلاق نافذة الجهة الرسمية."
+  }
+}

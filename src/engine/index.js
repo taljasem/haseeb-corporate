@@ -3310,12 +3310,167 @@ async function mockGetWhtCertificate(id) {
 }
 
 // ── CIT Assessment MOCK stubs (FN-249) ──
-let _mockCitCounter = 0;
-const _mockCitAssessments = [];
+// Seeded with 7 cases covering every CitAssessmentStatus enum value plus
+// one approaching-statute scenario (< 90 days), so AUDIT-ACC-057 can
+// demo the screen without touching the backend. Case IDs are stable
+// across reloads to let deep links / tests reference them by id.
 function _defaultStatute(fiscalYear) {
   const y = Number(fiscalYear) + 5;
   return `${y}-12-31`;
 }
+function _approachingStatuteDate(daysFromNow) {
+  const d = new Date();
+  d.setDate(d.getDate() + daysFromNow);
+  return d.toISOString().slice(0, 10);
+}
+const _citSeedNow = new Date().toISOString();
+const _mockCitAssessments = [
+  {
+    id: 'cit-seed-001',
+    fiscalYear: 2024,
+    filedAmountKwd: '185000.000',
+    filedOnDate: '2025-03-31',
+    authorityCaseNumber: 'MOF-CIT-2025-0441',
+    status: 'FILED',
+    computationId: null,
+    assessedAmountKwd: null,
+    assessedOnDate: null,
+    varianceKwd: null,
+    objectionFiledOn: null,
+    finalAmountKwd: null,
+    finalizedOnDate: null,
+    statuteExpiresOn: '2029-12-31',
+    notes: 'FY2024 CIT return filed via authority portal; awaiting review.',
+    createdAt: _citSeedNow,
+    updatedAt: _citSeedNow,
+    _mock: true,
+  },
+  {
+    id: 'cit-seed-002',
+    fiscalYear: 2023,
+    filedAmountKwd: '142000.000',
+    filedOnDate: '2024-03-28',
+    authorityCaseNumber: 'MOF-CIT-2024-0318',
+    status: 'UNDER_REVIEW',
+    computationId: null,
+    assessedAmountKwd: null,
+    assessedOnDate: null,
+    varianceKwd: null,
+    objectionFiledOn: null,
+    finalAmountKwd: null,
+    finalizedOnDate: null,
+    statuteExpiresOn: '2028-12-31',
+    notes: 'Authority requested additional documentation on transfer-pricing memo.',
+    createdAt: _citSeedNow,
+    updatedAt: _citSeedNow,
+    _mock: true,
+  },
+  {
+    id: 'cit-seed-003',
+    fiscalYear: 2022,
+    filedAmountKwd: '118500.000',
+    filedOnDate: '2023-03-30',
+    authorityCaseNumber: 'MOF-CIT-2023-0207',
+    status: 'ASSESSED',
+    computationId: null,
+    assessedAmountKwd: '134250.000',
+    assessedOnDate: '2025-09-15',
+    varianceKwd: '15750.000',
+    objectionFiledOn: null,
+    finalAmountKwd: null,
+    finalizedOnDate: null,
+    statuteExpiresOn: '2027-12-31',
+    notes: 'Authority disallowed KD 15,750 of inter-company management fees.',
+    createdAt: _citSeedNow,
+    updatedAt: _citSeedNow,
+    _mock: true,
+  },
+  {
+    id: 'cit-seed-004',
+    fiscalYear: 2021,
+    filedAmountKwd: '96000.000',
+    filedOnDate: '2022-03-29',
+    authorityCaseNumber: 'MOF-CIT-2022-0188',
+    status: 'OBJECTED',
+    computationId: null,
+    assessedAmountKwd: '112400.000',
+    assessedOnDate: '2024-11-10',
+    varianceKwd: '16400.000',
+    objectionFiledOn: '2024-12-08',
+    finalAmountKwd: null,
+    finalizedOnDate: null,
+    statuteExpiresOn: '2026-12-31',
+    notes:
+      'Formal objection filed re: transfer-pricing adjustment on royalty fees.',
+    createdAt: _citSeedNow,
+    updatedAt: _citSeedNow,
+    _mock: true,
+  },
+  {
+    id: 'cit-seed-005',
+    fiscalYear: 2020,
+    filedAmountKwd: '84500.000',
+    filedOnDate: '2021-03-30',
+    authorityCaseNumber: 'MOF-CIT-2021-0102',
+    status: 'FINAL',
+    computationId: null,
+    assessedAmountKwd: '91200.000',
+    assessedOnDate: '2023-06-18',
+    varianceKwd: '6700.000',
+    objectionFiledOn: null,
+    finalAmountKwd: '91200.000',
+    finalizedOnDate: '2024-02-14',
+    // Approaching-statute case: deliberately ~80 days from now.
+    statuteExpiresOn: _approachingStatuteDate(80),
+    notes:
+      'Final authority assessment accepted without objection; payment settled via JE-2024-0398.',
+    createdAt: _citSeedNow,
+    updatedAt: _citSeedNow,
+    _mock: true,
+  },
+  {
+    id: 'cit-seed-006',
+    fiscalYear: 2019,
+    filedAmountKwd: '72300.000',
+    filedOnDate: '2020-03-31',
+    authorityCaseNumber: 'MOF-CIT-2020-0057',
+    status: 'CLOSED',
+    computationId: null,
+    assessedAmountKwd: '74100.000',
+    assessedOnDate: '2022-05-12',
+    varianceKwd: '1800.000',
+    objectionFiledOn: null,
+    finalAmountKwd: '74100.000',
+    finalizedOnDate: '2023-01-09',
+    statuteExpiresOn: '2024-12-31',
+    notes: 'Paid and closed; archived for audit trail.',
+    createdAt: _citSeedNow,
+    updatedAt: _citSeedNow,
+    _mock: true,
+  },
+  {
+    id: 'cit-seed-007',
+    fiscalYear: 2018,
+    filedAmountKwd: '65800.000',
+    filedOnDate: '2019-03-28',
+    authorityCaseNumber: 'MOF-CIT-2019-0033',
+    status: 'STATUTE_EXPIRED',
+    computationId: null,
+    assessedAmountKwd: null,
+    assessedOnDate: null,
+    varianceKwd: null,
+    objectionFiledOn: null,
+    finalAmountKwd: null,
+    finalizedOnDate: null,
+    statuteExpiresOn: '2023-12-31',
+    notes:
+      'Authority missed the 5-year window; case flagged statute-expired per Kuwait CIT law.',
+    createdAt: _citSeedNow,
+    updatedAt: _citSeedNow,
+    _mock: true,
+  },
+];
+let _mockCitCounter = _mockCitAssessments.length;
 async function mockListCitAssessments(filters = {}) {
   await new Promise((r) => setTimeout(r, 40));
   return _mockCitAssessments

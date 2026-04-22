@@ -1,0 +1,121 @@
+{
+  "view_label": "ANNUAL COMPLIANCE",
+  "title": "CIT Assessment Cases",
+  "subtitle": "ANNUAL AUTHORITY-CASE TRACKING — MOC&I / KUWAIT TAX AUTHORITY",
+  "distinction_note": "Tracks filed → assessed → final CIT amounts plus objections and statute-of-limitations deadlines. This is the annual authority tracker; quarterly CIT self-assessment is a separate wave.",
+
+  "ownerOnly": {
+    "tooltip": "This action is restricted to Owner. Your role has read-only access to CIT cases."
+  },
+
+  "year_list": {
+    "title": "Fiscal-Year Cases",
+    "action_new": "New case",
+    "action_back": "Back to list",
+    "column_fiscal_year": "Fiscal Year",
+    "column_filed": "Filed (KWD)",
+    "column_assessed": "Assessed (KWD)",
+    "column_final": "Final (KWD)",
+    "column_authority_case": "Authority Case",
+    "column_filed_on": "Filed On",
+    "column_statute_expires": "Statute Expires",
+    "column_status": "Status",
+    "days_remaining": "{{count}}d to statute",
+    "statute_overdue": "{{count}}d overdue",
+    "empty_title": "No CIT cases tracked yet",
+    "empty_description": "Start by creating a new case for a filed CIT return. Cases are tracked per fiscal year through filed → assessed → final with statute-of-limitations deadlines.",
+    "filter_status_label": "Status",
+    "filter_status_ALL": "All",
+    "filter_open_only": "Open only",
+    "filter_fiscal_year_from": "From FY",
+    "filter_fiscal_year_to": "To FY",
+    "row_open_detail": "Open case"
+  },
+
+  "detail": {
+    "back_to_list": "Back to list",
+    "header_fiscal_year": "FY{{fiscalYear}}",
+    "header_authority_case": "Authority case",
+    "header_statute_countdown": "{{count}}d to statute",
+    "header_statute_overdue": "Statute {{count}}d overdue",
+    "header_statute_warning": "Approaching statute of limitations",
+    "figures_title": "CIT Amounts",
+    "figure_filed": "Filed amount",
+    "figure_assessed": "Assessed amount",
+    "figure_final": "Final amount",
+    "figure_variance": "Assessed − Filed",
+    "dates_title": "Key Dates",
+    "date_filed_on": "Filed on",
+    "date_assessed_on": "Assessed on",
+    "date_objection_filed": "Objection filed",
+    "date_finalized_on": "Finalized on",
+    "date_statute_expires": "Statute expires on",
+    "notes_title": "Notes",
+    "notes_empty": "No notes recorded.",
+    "audit_title": "Audit Trail",
+    "audit_created": "Case created",
+    "audit_under_review": "Opened for review",
+    "audit_assessed": "Authority assessment recorded",
+    "audit_objected": "Objection filed",
+    "audit_final": "Finalized",
+    "audit_closed": "Closed",
+    "audit_statute_expired": "Marked statute-expired",
+    "audit_no_timestamp": "—",
+    "actions_title": "Actions",
+    "action_open_review": "Open review",
+    "action_record_assessment": "Record assessment",
+    "action_record_objection": "Record objection",
+    "action_finalize": "Finalize",
+    "action_close": "Close case",
+    "action_mark_statute_expired": "Mark statute expired",
+    "action_terminal": "This case is in a terminal state. No further actions are available.",
+    "action_statute_not_yet": "Statute has not yet expired. The mark-statute-expired action unlocks once the statute date passes.",
+    "confirm_close_title": "Close CIT case FY{{fiscalYear}}?",
+    "confirm_close_body": "Closing a finalized case archives it. This is reversible only by the authority reopening the case.",
+    "confirm_close_confirm": "Close case",
+    "confirm_close_cancel": "Cancel",
+    "confirm_statute_title": "Mark statute expired — FY{{fiscalYear}}?",
+    "confirm_statute_body": "This flags the case as time-barred because the authority's review window has passed. Use only when the statute-expires-on date is in the past.",
+    "confirm_statute_confirm": "Mark expired",
+    "confirm_statute_cancel": "Cancel"
+  },
+
+  "status": {
+    "FILED": "FILED",
+    "UNDER_REVIEW": "UNDER REVIEW",
+    "ASSESSED": "ASSESSED",
+    "OBJECTED": "OBJECTED",
+    "FINAL": "FINAL",
+    "CLOSED": "CLOSED",
+    "STATUTE_EXPIRED": "STATUTE EXPIRED"
+  },
+
+  "summary": {
+    "widget_title": "CIT Cases",
+    "widget_description": "Live status across all Kuwait CIT authority cases for this tenant.",
+    "open_count": "{{count}} open",
+    "open_count_zero": "No open cases",
+    "approaching_label": "{{count}} approaching statute",
+    "approaching_label_zero": "No cases approaching statute",
+    "most_recent_label": "Most recent",
+    "most_recent_none": "No cases tracked yet",
+    "view_full_link": "Open full CIT case management",
+    "error_load": "Failed to load CIT summary."
+  },
+
+  "toast": {
+    "created": "Case created.",
+    "transitioned": "Case updated.",
+    "closed": "Case closed.",
+    "statute_expired": "Case marked statute-expired.",
+    "error_load": "Failed to load CIT cases.",
+    "error_transition": "Failed to update case.",
+    "error_close": "Failed to close case.",
+    "error_statute_expired": "Failed to mark statute expired."
+  },
+
+  "approaching_banner": {
+    "title": "{{count}} case(s) approaching statute of limitations",
+    "subtitle": "Act before the authority's window closes."
+  }
+}

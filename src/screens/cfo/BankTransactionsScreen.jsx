@@ -9,6 +9,13 @@ import FilterDropdown from "../../components/ds/FilterDropdown";
 import BankTransactionDetail from "../../components/cfo/BankTransactionDetail";
 import SuggestionBanner from "../../components/shared/SuggestionBanner";
 import NewCategorizationRuleModal from "../../components/rules/NewCategorizationRuleModal";
+// HASEEB-278 (2026-04-22): migrated to engine router. Wired functions
+// (`getSuggestedCategorizationRules`, `getChartOfAccounts`, `getTeamMembers`)
+// now route to the LIVE corporate-api. Bulk categorise/assign/mark-reviewed
+// writes are in the WRITE_THROW set in engine/index.js so any LIVE
+// invocation surfaces a visible error rather than silently lying about
+// persistence — dev-mode + MOCK builds still work via the mockEngine
+// fixture. Filter + sort reads mock-fallback with a one-shot warn.
 import {
   getBankTransactionsPending,
   getFilteredBankTransactions,
@@ -21,7 +28,7 @@ import {
   createRuleFromTransactions,
   getChartOfAccounts,
   getTeamMembers,
-} from "../../engine/mockEngine";
+} from "../../engine";
 
 const FILTERS = [
   { id: "All", key: "all" },

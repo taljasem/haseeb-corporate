@@ -19,6 +19,14 @@ import { formatDate } from "../../utils/format";
 // restructure) and no longer appear on this screen — the legacy
 // IntegrationsSection component remains in this file for historical
 // reference but is not rendered.
+// HASEEB-278 (2026-04-22): integrations sub-surface merged into the
+// primary engine import. The integrations triplet (getIntegrations /
+// addIntegration / removeIntegration) remains mock-fallback-routed
+// until a future dispatch consolidates onto the existing
+// /api/admin/integrations wrappers (listAdminIntegrations /
+// addAdminIntegration / removeAdminIntegration). This closes the
+// direct mockEngine import on this file — all of Settings's data
+// reads now flow through the engine router.
 import {
   getUserProfile,
   getNotificationPreferences,
@@ -29,12 +37,10 @@ import {
   getTwoFactorStatus,
   disableTwoFactor,
   getMyActivity,
-} from "../../engine";
-import {
   getIntegrations,
   removeIntegration,
   addIntegration,
-} from "../../engine/mockEngine";
+} from "../../engine";
 import { useAuth } from "../../contexts/AuthContext";
 import ChangePasswordModal from "../../components/settings/ChangePasswordModal";
 import EnableTwoFactorModal from "../../components/settings/EnableTwoFactorModal";

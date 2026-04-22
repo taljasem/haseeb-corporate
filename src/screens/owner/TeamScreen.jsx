@@ -7,12 +7,20 @@ import ActionButton from "../../components/ds/ActionButton";
 import SortHeader from "../../components/ds/SortHeader";
 import FilterDropdown from "../../components/ds/FilterDropdown";
 import EditMemberModal from "../../components/team/EditMemberModal";
+// HASEEB-278 (2026-04-22): migrated to engine router. The four
+// team-admin functions remain mock-fallback-routed — /api/team/members
+// (lightweight picker) and /api/auth/members (richer OWNER-only) both
+// exist on the backend but neither carries the per-member
+// responsibilities + KPIs the screen renders, and there is no backend
+// surface for add/remove/activity-log yet (tracked as HASEEB-NNN). The
+// mockEngine fixture is preserved for dev/demo; production gets the
+// same mock-fallback behaviour with a one-shot console warn.
 import {
   getTeamMembersWithResponsibilities,
   addTeamMember,
   removeTeamMember,
   getTeamActivityLog,
-} from "../../engine/mockEngine";
+} from "../../engine";
 import { formatRelativeTime } from "../../utils/relativeTime";
 
 const ROLE_COLORS = {

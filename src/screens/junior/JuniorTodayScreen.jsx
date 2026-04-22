@@ -5,13 +5,18 @@ import DirArrow from "../../components/shared/DirArrow";
 import EmptyState from "../../components/shared/EmptyState";
 import SectionHeader from "../../components/SectionHeader";
 import TaskRow from "../../components/taskbox/TaskRow";
+// HASEEB-278 (2026-04-22): migrated to engine router. None of these
+// five functions have a dedicated backend today — they mock-fallback
+// through the router with a one-shot warn, preserving the dev-mode
+// fixture. Future Wave 2 can wire them against /api/taskbox +
+// /api/cfo/team-activity + /api/rules once the shape contracts land.
 import {
   getTaskbox,
   getSaraWorkQueue,
   getSaraActivityLog,
   getSaraAminahNotes,
   getRoutingRules,
-} from "../../engine/mockEngine";
+} from "../../engine";
 import { formatRelativeTime } from "../../utils/relativeTime";
 // HASEEB-179 — "my today" filters by the authenticated Junior's id,
 // not the seed user "sara". The engine's getSara* helpers are seed-

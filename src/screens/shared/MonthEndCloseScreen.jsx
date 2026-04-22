@@ -13,6 +13,17 @@ import DropZone from "../../components/ds/DropZone";
 import SubmitCloseConfirmationModal from "../../components/month-end/SubmitCloseConfirmationModal";
 import RejectCloseModal from "../../components/month-end/RejectCloseModal";
 import ChecklistInstancePanel from "../../components/month-end/ChecklistInstancePanel";
+// HASEEB-278 (2026-04-22): routed through the engine instead of
+// directly via mockEngine. None of these 14 functions have a dedicated
+// LIVE backend yet — they mock-fallback through the router with a
+// one-shot warn. The underlying backend has two monthly-close surfaces
+// that overlap in purpose (/api/close/monthly + the structured
+// /api/monthly-close-checklist) but neither currently matches this
+// screen's DTO shape (14 domain-specific functions vs the backend's
+// 9-endpoint checklist API). A future dispatch can reshape the screen
+// onto the structured checklist APIs; until then mock-fallback
+// preserves the dev-mode fixture and the engine router becomes the
+// single seam for future wiring.
 import {
   getMonthEndCloseTasks,
   getCloseStatusDetail,
@@ -28,7 +39,7 @@ import {
   getCloseCheckNotes,
   attachCloseCheckFile,
   getCloseCheckAttachments,
-} from "../../engine/mockEngine";
+} from "../../engine";
 import { useAuth } from "../../contexts/AuthContext";
 import { emitTaskboxChange } from "../../utils/taskboxBus";
 import { formatRelativeTime } from "../../utils/relativeTime";

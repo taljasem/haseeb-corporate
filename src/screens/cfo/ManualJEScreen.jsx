@@ -53,6 +53,14 @@ import {
   fireRecurringEntryNow,
   listRecurringEntryInstances,
 } from "../../engine";
+// HASEEB-278 (2026-04-22): COA helpers + attachments + template-share
+// moved to the engine router. `getChartOfAccounts` + `searchChartOfAccounts`
+// are wired LIVE against /api/accounts; attachments (attachJEFile /
+// removeJEAttachment / getJEAttachments) + checkPeriodStatus + shareJETemplate
+// mock-fallback through the router until dedicated backend surfaces land
+// (attachments: HASEEB-183 follow-up; template-share: HASEEB-202; period-
+// status: routed via /api/fiscal-periods but not yet shape-adapted). No
+// call-site changes — this closes the ManualJE direct mockEngine import.
 import {
   getChartOfAccounts,
   searchChartOfAccounts,
@@ -60,12 +68,8 @@ import {
   attachJEFile,
   removeJEAttachment,
   getJEAttachments,
-  // shareJETemplate stays on mockEngine — no backend surface for
-  // template sharing exists. PHASE-X-BLOCKED: tracked as HASEEB-202
-  // (P3 follow-up). Kept as mock-only so the templates-tab kebab
-  // "Share" action doesn't crash.
   shareJETemplate,
-} from "../../engine/mockEngine";
+} from "../../engine";
 
 const COLORS = {
   bg: "var(--bg-base)",

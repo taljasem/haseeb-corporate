@@ -25,6 +25,12 @@ import { formatRelativeTime } from "../../utils/relativeTime";
 // YEAR-END-FS-TRIO: SOCIE + disclosure-notes fetch wrappers land here.
 // Both fall back to mockEngine inside the engine router's api/reports.js
 // wrapper until the dedicated HTTP routes land (HASEEB-223).
+// HASEEB-278 (2026-04-22): adjusting-entries / line-notes / export
+// wrappers moved off of the direct mockEngine import and onto the
+// engine router. They remain mock-fallback-routed (no backend surface
+// for any of the three today — tracked as HASEEB-NNN follow-up). This
+// closes the last direct mockEngine import on FinancialStatements;
+// every data read now flows through the router.
 import {
   getIncomeStatement,
   getBalanceSheet,
@@ -32,12 +38,10 @@ import {
   listReportVersions,
   getStatementOfChangesInEquity,
   getDisclosureNotes,
-} from "../../engine";
-import {
   getAdjustingEntries,
   getLineNotes,
   exportStatement,
-} from "../../engine/mockEngine";
+} from "../../engine";
 // HASEEB-178 — use the shared role normalizer from src/utils/role.js.
 // This file's inline used to collapse non-CFO → "Owner"; the canonical
 // util preserves the full ROLES set. The only call sites passing a

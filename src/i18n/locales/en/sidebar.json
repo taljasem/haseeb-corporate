@@ -38,6 +38,7 @@
     "trial_balance": "Trial Balance",
     "general_ledger": "General Ledger",
     "month_end_close": "Month-End Close",
+    "year_end_close": "Year-End Close",
     "audit_bridge": "Audit Bridge",
     "team": "Team",
     "settings": "Settings",

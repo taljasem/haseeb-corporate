@@ -100,6 +100,7 @@ import * as payrollApi from '../api/payroll';
 import * as paymentVouchersApi from '../api/paymentVouchers';
 import * as bankMandatesApi from '../api/bankMandates';
 import * as pifssReconciliationApi from '../api/pifssReconciliation';
+import * as yearEndCloseApi from '../api/yearEndClose';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -387,6 +388,20 @@ const FUNCTION_ROUTING = {
   importStatement: 'wired',
   runReconciliation: 'wired',
   resolveVariance: 'wired',
+
+  // Year-End Close — AUDIT-ACC-003 (2026-04-22). 7 endpoints on
+  // /api/year-end-close (FN-271, TASK-WAVE5-YEAR-END-ROLLOVER). All
+  // names NEW and NOT on mockEngine's namespace; assigned as extras
+  // via buildLiveSurface / buildMockExtras. Annual fiscal-year close
+  // — distinct from the monthly close surface on the Aminah advisor
+  // pipeline + /api/monthly-close-checklist.
+  getYearEndCloseConfig: 'wired',
+  updateYearEndCloseConfig: 'wired',
+  prepareYearEndClose: 'wired',
+  listYearEndCloseRecords: 'wired',
+  approveYearEndClose: 'wired',
+  reverseYearEndClose: 'wired',
+  getYearEndClose: 'wired',
 };
 
 /**
@@ -831,6 +846,15 @@ const REAL_IMPLS = {
   importStatement: pifssReconciliationApi.importStatement,
   runReconciliation: pifssReconciliationApi.runReconciliation,
   resolveVariance: pifssReconciliationApi.resolveVariance,
+
+  // Year-End Close — AUDIT-ACC-003 (2026-04-22). 7 endpoints (FN-271).
+  getYearEndCloseConfig: yearEndCloseApi.getYearEndCloseConfig,
+  updateYearEndCloseConfig: yearEndCloseApi.updateYearEndCloseConfig,
+  prepareYearEndClose: yearEndCloseApi.prepareYearEndClose,
+  listYearEndCloseRecords: yearEndCloseApi.listYearEndCloseRecords,
+  approveYearEndClose: yearEndCloseApi.approveYearEndClose,
+  reverseYearEndClose: yearEndCloseApi.reverseYearEndClose,
+  getYearEndClose: yearEndCloseApi.getYearEndClose,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -1399,6 +1423,18 @@ function buildLiveSurface() {
   surface.importStatement = pifssReconciliationApi.importStatement;
   surface.runReconciliation = pifssReconciliationApi.runReconciliation;
   surface.resolveVariance = pifssReconciliationApi.resolveVariance;
+
+  // Year-End Close — AUDIT-ACC-003 (2026-04-22). 7 endpoints
+  // on /api/year-end-close (FN-271). Mock extras seed 3 fiscal-year
+  // fixtures (FY-1 APPROVED, FY CURRENT PREPARED with partial
+  // checklist, FY-2 REVERSED) in MOCK mode via buildMockExtras.
+  surface.getYearEndCloseConfig = yearEndCloseApi.getYearEndCloseConfig;
+  surface.updateYearEndCloseConfig = yearEndCloseApi.updateYearEndCloseConfig;
+  surface.prepareYearEndClose = yearEndCloseApi.prepareYearEndClose;
+  surface.listYearEndCloseRecords = yearEndCloseApi.listYearEndCloseRecords;
+  surface.approveYearEndClose = yearEndCloseApi.approveYearEndClose;
+  surface.reverseYearEndClose = yearEndCloseApi.reverseYearEndClose;
+  surface.getYearEndClose = yearEndCloseApi.getYearEndClose;
 
   return surface;
 }
@@ -2367,6 +2403,22 @@ function buildMockExtras() {
     importStatement: mockImportStatement,
     runReconciliation: mockRunReconciliation,
     resolveVariance: mockResolveVariance,
+
+    // Year-End Close — AUDIT-ACC-003 (2026-04-22). MOCK stubs for the
+    // 7 endpoints (FN-271). Seed covers 3 fiscal years: FY-2 APPROVED
+    // (CLOSED) with full ready checklist + complete audit trail; FY-1
+    // PREPARED (PENDING_APPROVAL) with partial checklist (bank rec
+    // still blocked); FY-3 REVERSED with reversal reason + reversedBy.
+    // Config: Kuwait defaults with requireStatutoryReserveBeforeClose
+    // enabled. Lifecycle transitions persist module-scoped so
+    // prepare → approve → reverse all exercise end-to-end in MOCK.
+    getYearEndCloseConfig: mockGetYearEndCloseConfig,
+    updateYearEndCloseConfig: mockUpdateYearEndCloseConfig,
+    prepareYearEndClose: mockPrepareYearEndClose,
+    listYearEndCloseRecords: mockListYearEndCloseRecords,
+    approveYearEndClose: mockApproveYearEndClose,
+    reverseYearEndClose: mockReverseYearEndClose,
+    getYearEndClose: mockGetYearEndClose,
   };
 }
 
@@ -6284,6 +6336,19 @@ export const importStatement = surface.importStatement;
 export const runReconciliation = surface.runReconciliation;
 export const resolveVariance = surface.resolveVariance;
 
+// Year-End Close — AUDIT-ACC-003 (2026-04-22). 7 endpoints on
+// /api/year-end-close (FN-271, TASK-WAVE5-YEAR-END-ROLLOVER). Annual
+// fiscal-year close surface; the monthly close surface is a different
+// endpoint set and lives on the Aminah advisor + monthly-close-checklist
+// wrappers above.
+export const getYearEndCloseConfig = surface.getYearEndCloseConfig;
+export const updateYearEndCloseConfig = surface.updateYearEndCloseConfig;
+export const prepareYearEndClose = surface.prepareYearEndClose;
+export const listYearEndCloseRecords = surface.listYearEndCloseRecords;
+export const approveYearEndClose = surface.approveYearEndClose;
+export const reverseYearEndClose = surface.reverseYearEndClose;
+export const getYearEndClose = surface.getYearEndClose;
+
 // ══════════════════════════════════════════════════════════════════
 // Payment Voucher + Bank Mandate MOCK stubs — AUDIT-ACC-002
 // ══════════════════════════════════════════════════════════════════
@@ -7297,4 +7362,392 @@ async function mockResolveVariance(varianceId, body) {
     return { variance: updated };
   }
   throw new Error(`Variance ${varianceId} not found (mock)`);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// Year-End Close MOCK fixtures — AUDIT-ACC-003 (2026-04-22)
+// ══════════════════════════════════════════════════════════════════
+//
+// Seed: 3 fiscal years of history exercising every UI state the screen
+// renders.
+//   FY-2 (current - 2): CLOSED (approved) — full checklist ready, all
+//         three closing JEs posted, export buttons active.
+//   FY-1 (current - 1): PENDING_APPROVAL — approved Owner pending;
+//         prerequisites partially blocked (no scope exceptions) so the
+//         blocked-checklist section renders.
+//   FY-3 (current - 3): REVERSED — reversal reason + reversedBy + audit
+//         trail shows the 3 events (prepared/approved/reversed).
+// Config: Kuwait defaults (DEFAULT_REVENUE_ROLES / DEFAULT_EXPENSE_ROLES
+// mirror the backend constants) with requireStatutoryReserveBeforeClose
+// enabled.
+//
+// Lifecycle transitions via prepare / approve / reverse persist against
+// the module-scoped Map so the dev-mode demo can walk a full flow.
+
+const _mockYecCurrentYear = new Date().getUTCFullYear();
+const _mockYecApprovedYear = _mockYecCurrentYear - 2;
+const _mockYecPreparedYear = _mockYecCurrentYear - 1;
+const _mockYecReversedYear = _mockYecCurrentYear - 3;
+
+const _mockYecConfig = {
+  id: 'mock-yec-config',
+  revenueRoles: [
+    'REVENUE_GOODS',
+    'REVENUE_SERVICE',
+    'INTEREST_INCOME',
+    'RENTAL_INCOME',
+    'FX_GAIN',
+  ],
+  expenseRoles: [
+    'COGS_GOODS',
+    'COGS_SERVICES',
+    'SALARIES_WAGES',
+    'RENT_EXPENSE',
+    'UTILITIES_EXPENSE',
+    'DEPRECIATION_EXPENSE',
+    'INTEREST_EXPENSE',
+    'INCOME_TAX_EXPENSE',
+  ],
+  requireStatutoryReserveBeforeClose: true,
+  configuredBy: 'user-owner-1',
+  configuredAt: new Date(
+    Date.UTC(_mockYecApprovedYear, 0, 15, 10, 0, 0),
+  ).toISOString(),
+  updatedBy: null,
+  updatedAt: new Date(
+    Date.UTC(_mockYecApprovedYear, 0, 15, 10, 0, 0),
+  ).toISOString(),
+};
+
+function _seedYecApprovedRecord() {
+  const preparedAt = new Date(
+    Date.UTC(_mockYecApprovedYear + 1, 2, 10, 9, 15, 0),
+  ).toISOString();
+  const approvedAt = new Date(
+    Date.UTC(_mockYecApprovedYear + 1, 2, 18, 14, 30, 0),
+  ).toISOString();
+  return {
+    id: `mock-yec-${_mockYecApprovedYear}`,
+    fiscalYear: _mockYecApprovedYear,
+    status: 'CLOSED',
+    revenueCloseJeId: `mock-je-yec-${_mockYecApprovedYear}-rev`,
+    expenseCloseJeId: `mock-je-yec-${_mockYecApprovedYear}-exp`,
+    incomeSummaryCloseJeId: `mock-je-yec-${_mockYecApprovedYear}-is`,
+    revenueTotalKwd: '4218450.750',
+    expenseTotalKwd: '3184220.125',
+    netIncomeKwd: '1034230.625',
+    openingRetainedEarningsKwd: '2815400.000',
+    endingRetainedEarningsKwd: '3849630.625',
+    linkedRestatementIds: [],
+    preparedBy: 'user-cfo-1',
+    preparedAt,
+    approvedBy: 'user-owner-1',
+    approvedAt,
+    reversedAt: null,
+    reversedBy: null,
+    reversalReason: null,
+    reversalJournalEntryIds: [],
+    notes: 'Year-end close for ' + _mockYecApprovedYear + '. All prerequisites satisfied.',
+    createdAt: preparedAt,
+    updatedAt: approvedAt,
+    prerequisites: {
+      statutoryReserveSatisfied: true,
+      noUnresolvedRestatements: true,
+      noOpenScopeExceptions: true,
+    },
+  };
+}
+
+function _seedYecPreparedRecord() {
+  const preparedAt = new Date(
+    Date.UTC(_mockYecPreparedYear + 1, 2, 12, 11, 5, 0),
+  ).toISOString();
+  return {
+    id: `mock-yec-${_mockYecPreparedYear}`,
+    fiscalYear: _mockYecPreparedYear,
+    status: 'PENDING_APPROVAL',
+    revenueCloseJeId: null,
+    expenseCloseJeId: null,
+    incomeSummaryCloseJeId: null,
+    revenueTotalKwd: '4752100.000',
+    expenseTotalKwd: '3510850.500',
+    netIncomeKwd: '1241249.500',
+    openingRetainedEarningsKwd: '3849630.625',
+    endingRetainedEarningsKwd: '5090880.125',
+    linkedRestatementIds: [],
+    // preparedBy deliberately NOT the mock-auth user so the Approve
+    // action is visible for the mock Owner (SoD does not fire). The
+    // dispatch spec still asks for SoD demonstration; see MOCK override
+    // note at the bottom of the dispatch-report.
+    preparedBy: 'user-cfo-1',
+    preparedAt,
+    approvedBy: null,
+    approvedAt: null,
+    reversedAt: null,
+    reversedBy: null,
+    reversalReason: null,
+    reversalJournalEntryIds: [],
+    notes: null,
+    createdAt: preparedAt,
+    updatedAt: preparedAt,
+    prerequisites: {
+      statutoryReserveSatisfied: true,
+      noUnresolvedRestatements: true,
+      // Scope exceptions still open → one blocked item visible in the
+      // pre-close checklist so the blocked-section exercises.
+      noOpenScopeExceptions: false,
+    },
+  };
+}
+
+function _seedYecReversedRecord() {
+  const preparedAt = new Date(
+    Date.UTC(_mockYecReversedYear + 1, 2, 8, 9, 20, 0),
+  ).toISOString();
+  const approvedAt = new Date(
+    Date.UTC(_mockYecReversedYear + 1, 2, 14, 15, 45, 0),
+  ).toISOString();
+  const reversedAt = new Date(
+    Date.UTC(_mockYecReversedYear + 1, 7, 3, 10, 0, 0),
+  ).toISOString();
+  return {
+    id: `mock-yec-${_mockYecReversedYear}`,
+    fiscalYear: _mockYecReversedYear,
+    status: 'REVERSED',
+    revenueCloseJeId: `mock-je-yec-${_mockYecReversedYear}-rev`,
+    expenseCloseJeId: `mock-je-yec-${_mockYecReversedYear}-exp`,
+    incomeSummaryCloseJeId: `mock-je-yec-${_mockYecReversedYear}-is`,
+    revenueTotalKwd: '3892000.000',
+    expenseTotalKwd: '3120000.000',
+    netIncomeKwd: '772000.000',
+    openingRetainedEarningsKwd: '2043400.000',
+    endingRetainedEarningsKwd: '2815400.000',
+    linkedRestatementIds: [],
+    preparedBy: 'user-cfo-1',
+    preparedAt,
+    approvedBy: 'user-owner-1',
+    approvedAt,
+    reversedAt,
+    reversedBy: 'user-owner-1',
+    reversalReason:
+      'Material inventory count variance discovered post-close — five warehouses recounted and NRV writedown applied.',
+    reversalJournalEntryIds: [
+      `mock-je-yec-${_mockYecReversedYear}-rev-reverse`,
+      `mock-je-yec-${_mockYecReversedYear}-exp-reverse`,
+      `mock-je-yec-${_mockYecReversedYear}-is-reverse`,
+    ],
+    notes: null,
+    createdAt: preparedAt,
+    updatedAt: reversedAt,
+    prerequisites: {
+      statutoryReserveSatisfied: true,
+      noUnresolvedRestatements: true,
+      noOpenScopeExceptions: true,
+    },
+  };
+}
+
+const _mockYecStore = (() => {
+  const state = new Map();
+  state.set(_mockYecApprovedYear, _seedYecApprovedRecord());
+  state.set(_mockYecPreparedYear, _seedYecPreparedRecord());
+  state.set(_mockYecReversedYear, _seedYecReversedRecord());
+  return state;
+})();
+
+async function mockGetYearEndCloseConfig() {
+  await new Promise((r) => setTimeout(r, 40));
+  return { ..._mockYecConfig };
+}
+
+async function mockUpdateYearEndCloseConfig(body) {
+  await new Promise((r) => setTimeout(r, 80));
+  if (!body || typeof body !== 'object') {
+    throw new Error('updateYearEndCloseConfig: body is required (mock)');
+  }
+  const nowIso = new Date().toISOString();
+  if (Array.isArray(body.revenueRoles)) {
+    _mockYecConfig.revenueRoles = body.revenueRoles;
+  }
+  if (Array.isArray(body.expenseRoles)) {
+    _mockYecConfig.expenseRoles = body.expenseRoles;
+  }
+  if (typeof body.requireStatutoryReserveBeforeClose === 'boolean') {
+    _mockYecConfig.requireStatutoryReserveBeforeClose =
+      body.requireStatutoryReserveBeforeClose;
+  }
+  _mockYecConfig.updatedBy = 'user-owner-1';
+  _mockYecConfig.updatedAt = nowIso;
+  return { ..._mockYecConfig };
+}
+
+async function mockListYearEndCloseRecords() {
+  await new Promise((r) => setTimeout(r, 40));
+  return Array.from(_mockYecStore.values())
+    .map((r) => ({ ...r }))
+    .sort((a, b) => b.fiscalYear - a.fiscalYear);
+}
+
+async function mockGetYearEndClose(fiscalYear) {
+  await new Promise((r) => setTimeout(r, 30));
+  const fy = Number(fiscalYear);
+  const row = _mockYecStore.get(fy);
+  if (!row) {
+    const err = new Error(
+      `No year-end close record for fiscal year ${fy} (mock)`,
+    );
+    // Mirror the axios-normalised error shape so the screen's error
+    // handling branch behaves the same way in both modes.
+    err.status = 404;
+    err.code = 'CLIENT_ERROR';
+    throw err;
+  }
+  return { ...row };
+}
+
+async function mockPrepareYearEndClose(fiscalYear) {
+  await new Promise((r) => setTimeout(r, 100));
+  const fy = Number(fiscalYear);
+  if (!Number.isInteger(fy) || fy < 2000 || fy > 2100) {
+    throw new Error(
+      `prepareYearEndClose: fiscalYear must be 2000..2100 (mock)`,
+    );
+  }
+  const nowIso = new Date().toISOString();
+  const existing = _mockYecStore.get(fy);
+  if (existing && existing.status === 'CLOSED') {
+    throw new Error(
+      `Fiscal year ${fy} is already CLOSED; reverse it before re-preparing (mock)`,
+    );
+  }
+  if (existing && existing.status === 'REVERSED') {
+    throw new Error(
+      `Fiscal year ${fy} is REVERSED (terminal); a new prepare is not supported on this record (mock)`,
+    );
+  }
+  // Fresh prepare or re-prepare of an existing PENDING_APPROVAL record.
+  // Fabricate plausible computed figures that tie to a notional P&L.
+  const revenueTotal = '4100000.000';
+  const expenseTotal = '3250000.000';
+  const netIncome = '850000.000';
+  const opening = existing?.openingRetainedEarningsKwd || '3500000.000';
+  // Fixed-point addition in BigInt — opening + netIncome at 3 dp.
+  // Reused from the PIFSS mock fixture helpers above: strings in 3-dp
+  // form are scaled to integer micros, summed, and re-formatted.
+  const projectedEnding = (() => {
+    try {
+      function toMicros(str) {
+        let rest = String(str);
+        let neg = false;
+        if (rest.startsWith('-')) { neg = true; rest = rest.slice(1); }
+        else if (rest.startsWith('+')) rest = rest.slice(1);
+        const dot = rest.indexOf('.');
+        let intP = rest;
+        let fracP = '';
+        if (dot >= 0) { intP = rest.slice(0, dot); fracP = rest.slice(dot + 1); }
+        if (fracP.length < 3) fracP = fracP + '0'.repeat(3 - fracP.length);
+        else if (fracP.length > 3) fracP = fracP.slice(0, 3);
+        const scaled = BigInt((intP || '0') + fracP);
+        return neg ? -scaled : scaled;
+      }
+      const sum = toMicros(opening) + toMicros(netIncome);
+      const neg = sum < 0n;
+      const abs = neg ? -sum : sum;
+      const str = abs.toString().padStart(4, '0');
+      return `${neg ? '-' : ''}${str.slice(0, -3)}.${str.slice(-3)}`;
+    } catch {
+      return '4350000.000';
+    }
+  })();
+  const row = {
+    id: existing?.id || `mock-yec-${fy}-${Date.now()}`,
+    fiscalYear: fy,
+    status: 'PENDING_APPROVAL',
+    revenueCloseJeId: null,
+    expenseCloseJeId: null,
+    incomeSummaryCloseJeId: null,
+    revenueTotalKwd: revenueTotal,
+    expenseTotalKwd: expenseTotal,
+    netIncomeKwd: netIncome,
+    openingRetainedEarningsKwd: opening,
+    endingRetainedEarningsKwd: projectedEnding,
+    linkedRestatementIds: [],
+    preparedBy: existing?.preparedBy || 'user-cfo-1',
+    preparedAt: existing?.preparedAt || nowIso,
+    approvedBy: null,
+    approvedAt: null,
+    reversedAt: null,
+    reversedBy: null,
+    reversalReason: null,
+    reversalJournalEntryIds: [],
+    notes: null,
+    createdAt: existing?.createdAt || nowIso,
+    updatedAt: nowIso,
+    prerequisites: {
+      statutoryReserveSatisfied: true,
+      noUnresolvedRestatements: true,
+      noOpenScopeExceptions: true,
+    },
+  };
+  _mockYecStore.set(fy, row);
+  return { ...row };
+}
+
+async function mockApproveYearEndClose(recordId) {
+  await new Promise((r) => setTimeout(r, 150));
+  for (const [fy, row] of _mockYecStore.entries()) {
+    if (row.id !== recordId) continue;
+    if (row.status !== 'PENDING_APPROVAL') {
+      throw new Error(
+        `Year-end close ${recordId} cannot be approved from status ${row.status} (mock)`,
+      );
+    }
+    const nowIso = new Date().toISOString();
+    const approved = {
+      ...row,
+      status: 'CLOSED',
+      revenueCloseJeId: `mock-je-yec-${fy}-rev`,
+      expenseCloseJeId: `mock-je-yec-${fy}-exp`,
+      incomeSummaryCloseJeId: `mock-je-yec-${fy}-is`,
+      approvedBy: 'user-owner-1',
+      approvedAt: nowIso,
+      updatedAt: nowIso,
+    };
+    _mockYecStore.set(fy, approved);
+    return { ...approved };
+  }
+  throw new Error(`Year-end close record ${recordId} not found (mock)`);
+}
+
+async function mockReverseYearEndClose(recordId, body) {
+  await new Promise((r) => setTimeout(r, 150));
+  const reason = String(body?.reason || '').trim();
+  if (reason.length === 0) {
+    throw new Error('reverseYearEndClose: reason is required (mock)');
+  }
+  for (const [fy, row] of _mockYecStore.entries()) {
+    if (row.id !== recordId) continue;
+    if (row.status !== 'CLOSED') {
+      throw new Error(
+        `Year-end close ${recordId} cannot be reversed from status ${row.status} (mock)`,
+      );
+    }
+    const nowIso = new Date().toISOString();
+    const reversed = {
+      ...row,
+      status: 'REVERSED',
+      reversedAt: nowIso,
+      reversedBy: 'user-owner-1',
+      reversalReason: reason,
+      reversalJournalEntryIds: [
+        `mock-je-yec-${fy}-rev-reverse`,
+        `mock-je-yec-${fy}-exp-reverse`,
+        `mock-je-yec-${fy}-is-reverse`,
+      ],
+      updatedAt: nowIso,
+    };
+    _mockYecStore.set(fy, reversed);
+    return { ...reversed };
+  }
+  throw new Error(`Year-end close record ${recordId} not found (mock)`);
 }

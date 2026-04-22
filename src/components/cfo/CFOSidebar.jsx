@@ -156,6 +156,7 @@ export default function CFOSidebar({ active, setActive, pendingApprovals = 0, ta
 
       <SidebarGroup label={t("groups.operations")}>
         <NavItem icon={CalIcon}       label={t("items.month_end_close")} active={isActive("month-end-close")} onClick={() => setActive("month-end-close")} />
+        <NavItem icon={CalIcon}       label={t("items.year_end_close")}  active={isActive("year-end-close")}  onClick={() => setActive("year-end-close")} />
         <NavItem icon={ShieldIcon}    label={t("items.audit_bridge")}    active={isActive("audit-bridge")}    onClick={() => setActive("audit-bridge")} />
         <NavItem icon={GearIcon}      label={t("items.setup")}           active={isActive("setup")}           onClick={() => setActive("setup")} />
         <NavItem icon={ContactIcon}   label={t("items.contacts")}        active={isActive("contacts")}        onClick={() => setActive("contacts")} />

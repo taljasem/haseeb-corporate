@@ -99,6 +99,7 @@ import * as recurringEntriesApi from '../api/recurring-entries';
 import * as payrollApi from '../api/payroll';
 import * as paymentVouchersApi from '../api/paymentVouchers';
 import * as bankMandatesApi from '../api/bankMandates';
+import * as pifssReconciliationApi from '../api/pifssReconciliation';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -366,6 +367,19 @@ const FUNCTION_ROUTING = {
   listMandates: 'wired',
   getMandate: 'wired',
   listMandateSignatories: 'wired',
+
+  // Annual PIFSS Reconciliation — AUDIT-ACC-058 (2026-04-22). 5
+  // endpoints on /api/pifss-reconciliation (FN-251) + 1 client-side
+  // aggregation (listReconciliationYears) that probes current-year and
+  // two priors since backend has no list-years endpoint yet
+  // (HASEEB-215 follow-up). All names NEW and NOT on mockEngine's
+  // namespace; assigned as extras via buildLiveSurface / buildMockExtras.
+  listReconciliationYears: 'wired',
+  getReconciliation: 'wired',
+  getReconciliationReport: 'wired',
+  importStatement: 'wired',
+  runReconciliation: 'wired',
+  resolveVariance: 'wired',
 };
 
 /**
@@ -796,6 +810,14 @@ const REAL_IMPLS = {
   listMandates: bankMandatesApi.listMandates,
   getMandate: bankMandatesApi.getMandate,
   listMandateSignatories: bankMandatesApi.listMandateSignatories,
+
+  // Annual PIFSS Reconciliation — AUDIT-ACC-058 (2026-04-22).
+  listReconciliationYears: pifssReconciliationApi.listReconciliationYears,
+  getReconciliation: pifssReconciliationApi.getReconciliation,
+  getReconciliationReport: pifssReconciliationApi.getReconciliationReport,
+  importStatement: pifssReconciliationApi.importStatement,
+  runReconciliation: pifssReconciliationApi.runReconciliation,
+  resolveVariance: pifssReconciliationApi.resolveVariance,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -1353,6 +1375,17 @@ function buildLiveSurface() {
   surface.listMandates = bankMandatesApi.listMandates;
   surface.getMandate = bankMandatesApi.getMandate;
   surface.listMandateSignatories = bankMandatesApi.listMandateSignatories;
+
+  // Annual PIFSS Reconciliation — AUDIT-ACC-058 (2026-04-22). 5
+  // endpoints + 1 client-side aggregation. Mock extras provide a
+  // plausible fixture (2 years of history, 12+ variances across 3
+  // employees, 4 variance types) in MOCK mode via buildMockExtras.
+  surface.listReconciliationYears = pifssReconciliationApi.listReconciliationYears;
+  surface.getReconciliation = pifssReconciliationApi.getReconciliation;
+  surface.getReconciliationReport = pifssReconciliationApi.getReconciliationReport;
+  surface.importStatement = pifssReconciliationApi.importStatement;
+  surface.runReconciliation = pifssReconciliationApi.runReconciliation;
+  surface.resolveVariance = pifssReconciliationApi.resolveVariance;
 
   return surface;
 }
@@ -2309,6 +2342,18 @@ function buildMockExtras() {
     listMandates: mockListMandates,
     getMandate: mockGetMandate,
     listMandateSignatories: mockListMandateSignatories,
+
+    // Annual PIFSS Reconciliation — AUDIT-ACC-058 (2026-04-22). MOCK
+    // stubs for the 5 endpoints + 1 aggregation. Seed covers 2 years
+    // of reconciliation history; current year has 12 variances across
+    // 3 employees covering all 4 VarianceType values so the 4-tone
+    // type badges + 4-state status badges all exercise.
+    listReconciliationYears: mockListReconciliationYears,
+    getReconciliation: mockGetReconciliation,
+    getReconciliationReport: mockGetReconciliationReport,
+    importStatement: mockImportStatement,
+    runReconciliation: mockRunReconciliation,
+    resolveVariance: mockResolveVariance,
   };
 }
 
@@ -6054,6 +6099,18 @@ export const listMandates = surface.listMandates;
 export const getMandate = surface.getMandate;
 export const listMandateSignatories = surface.listMandateSignatories;
 
+// Annual PIFSS Reconciliation — AUDIT-ACC-058 (2026-04-22). 5 endpoints
+// on /api/pifss-reconciliation (FN-251) + 1 client-side aggregation
+// (listReconciliationYears). This is the ANNUAL reconciliation surface;
+// monthly SIF generation lives on the existing listPifssSubmissions /
+// generatePifssFile / getPifssSubmission wrappers above.
+export const listReconciliationYears = surface.listReconciliationYears;
+export const getReconciliation = surface.getReconciliation;
+export const getReconciliationReport = surface.getReconciliationReport;
+export const importStatement = surface.importStatement;
+export const runReconciliation = surface.runReconciliation;
+export const resolveVariance = surface.resolveVariance;
+
 // ══════════════════════════════════════════════════════════════════
 // Payment Voucher + Bank Mandate MOCK stubs — AUDIT-ACC-002
 // ══════════════════════════════════════════════════════════════════
@@ -6495,4 +6552,576 @@ async function mockListMandateSignatories(id) {
     },
   ];
   return { rowCount: rows.length, rows };
+}
+
+// ══════════════════════════════════════════════════════════════════
+// Annual PIFSS Reconciliation MOCK fixtures — AUDIT-ACC-058 (2026-04-22)
+// ══════════════════════════════════════════════════════════════════
+//
+// Seed: 2 fiscal years of history. The most recent year is fully-run
+// with 12 variances across 3 employees, covering all 4 VarianceType
+// enum values (COMPANY_ONLY, PORTAL_ONLY, CONTRIBUTION_AMOUNT_DIFFERS,
+// SALARY_BASE_DIFFERS) AND a mix of 4 VarianceStatus values. The older
+// year has the reconciliation marked all-resolved so the "All resolved"
+// header badge also exercises. Both years' statements are pre-imported.
+// A third empty-slot year returns `reconciliation: null` so the screen
+// can demonstrate the "New fiscal year" affordance without fighting a
+// populated fixture. Lifecycle transitions on resolveVariance persist
+// module-scoped.
+
+const _mockPifssReconRunYear = new Date().getUTCFullYear() - 1; // current prior year, fully populated
+const _mockPifssReconResolvedYear = _mockPifssReconRunYear - 1; // year before that, all resolved
+
+function _mockPifssSeedVariances() {
+  // 12 variances × 3 employees. Amounts in KWD 3dp strings.
+  const seed = [
+    // Ahmed Al-Sabah (civilId 286012345678) — 5 variances, all types
+    {
+      civilId: '286012345678',
+      employeeNameSnapshot: 'Ahmed Al-Sabah',
+      periodYear: _mockPifssReconRunYear,
+      periodMonth: 1,
+      varianceType: 'CONTRIBUTION_AMOUNT_DIFFERS',
+      companyEmployerKwd: '87.500',
+      portalEmployerKwd: '90.000',
+      companyEmployeeKwd: '42.000',
+      portalEmployeeKwd: '42.000',
+      deltaEmployerKwd: '2.500',
+      deltaEmployeeKwd: '0.000',
+      likelyCause: 'Employer-side contribution rounded down by 0.5 KWD; reform-era rate applied one month early.',
+      status: 'UNRESOLVED',
+    },
+    {
+      civilId: '286012345678',
+      employeeNameSnapshot: 'Ahmed Al-Sabah',
+      periodYear: _mockPifssReconRunYear,
+      periodMonth: 3,
+      varianceType: 'SALARY_BASE_DIFFERS',
+      companyEmployerKwd: '87.500',
+      portalEmployerKwd: '87.500',
+      companyEmployeeKwd: '42.000',
+      portalEmployeeKwd: '42.000',
+      deltaEmployerKwd: '0.000',
+      deltaEmployeeKwd: '0.000',
+      likelyCause: 'Company recorded basic salary 1500.000; portal has 1450.000 (possible raise mid-cycle).',
+      status: 'UNDER_INVESTIGATION',
+      resolutionNote: 'Payroll lead confirmed mid-cycle raise; waiting on PIFSS portal update.',
+    },
+    {
+      civilId: '286012345678',
+      employeeNameSnapshot: 'Ahmed Al-Sabah',
+      periodYear: _mockPifssReconRunYear,
+      periodMonth: 6,
+      varianceType: 'COMPANY_ONLY',
+      companyEmployerKwd: '87.500',
+      portalEmployerKwd: '0.000',
+      companyEmployeeKwd: '42.000',
+      portalEmployeeKwd: '0.000',
+      deltaEmployerKwd: '87.500',
+      deltaEmployeeKwd: '42.000',
+      likelyCause: 'Company submitted June contribution; PIFSS portal missing month entirely.',
+      status: 'IN_DISPUTE',
+      resolutionNote: 'Escalated to PIFSS liaison; portal posting appears dropped.',
+    },
+    {
+      civilId: '286012345678',
+      employeeNameSnapshot: 'Ahmed Al-Sabah',
+      periodYear: _mockPifssReconRunYear,
+      periodMonth: 9,
+      varianceType: 'CONTRIBUTION_AMOUNT_DIFFERS',
+      companyEmployerKwd: '87.500',
+      portalEmployerKwd: '87.500',
+      companyEmployeeKwd: '42.000',
+      portalEmployeeKwd: '48.000',
+      deltaEmployerKwd: '0.000',
+      deltaEmployeeKwd: '-6.000',
+      likelyCause: 'Portal shows higher employee deduction; employee-side salary ceiling applied differently.',
+      status: 'UNRESOLVED',
+    },
+    {
+      civilId: '286012345678',
+      employeeNameSnapshot: 'Ahmed Al-Sabah',
+      periodYear: _mockPifssReconRunYear,
+      periodMonth: 11,
+      varianceType: 'PORTAL_ONLY',
+      companyEmployerKwd: '0.000',
+      portalEmployerKwd: '87.500',
+      companyEmployeeKwd: '0.000',
+      portalEmployeeKwd: '42.000',
+      deltaEmployerKwd: '-87.500',
+      deltaEmployeeKwd: '-42.000',
+      likelyCause: 'Portal recorded November contribution; payroll system marked it as leave-without-pay month.',
+      status: 'RESOLVED',
+      resolutionNote: 'Reviewed timesheet — employee was present. Reconciled by crediting PIFSS side.',
+    },
+
+    // Fatima Al-Mutairi (civilId 287098765432) — 4 variances
+    {
+      civilId: '287098765432',
+      employeeNameSnapshot: 'Fatima Al-Mutairi',
+      periodYear: _mockPifssReconRunYear,
+      periodMonth: 2,
+      varianceType: 'SALARY_BASE_DIFFERS',
+      companyEmployerKwd: '52.500',
+      portalEmployerKwd: '52.500',
+      companyEmployeeKwd: '25.200',
+      portalEmployeeKwd: '25.200',
+      deltaEmployerKwd: '0.000',
+      deltaEmployeeKwd: '0.000',
+      likelyCause: 'Basic-salary snapshot mismatch: company 900.000 vs portal 875.000.',
+      status: 'UNDER_INVESTIGATION',
+    },
+    {
+      civilId: '287098765432',
+      employeeNameSnapshot: 'Fatima Al-Mutairi',
+      periodYear: _mockPifssReconRunYear,
+      periodMonth: 4,
+      varianceType: 'CONTRIBUTION_AMOUNT_DIFFERS',
+      companyEmployerKwd: '52.500',
+      portalEmployerKwd: '54.000',
+      companyEmployeeKwd: '25.200',
+      portalEmployeeKwd: '26.000',
+      deltaEmployerKwd: '-1.500',
+      deltaEmployeeKwd: '-0.800',
+      likelyCause: 'Portal contribution amounts higher by the leave-encashment component.',
+      status: 'UNRESOLVED',
+    },
+    {
+      civilId: '287098765432',
+      employeeNameSnapshot: 'Fatima Al-Mutairi',
+      periodYear: _mockPifssReconRunYear,
+      periodMonth: 7,
+      varianceType: 'COMPANY_ONLY',
+      companyEmployerKwd: '52.500',
+      portalEmployerKwd: '0.000',
+      companyEmployeeKwd: '25.200',
+      portalEmployeeKwd: '0.000',
+      deltaEmployerKwd: '52.500',
+      deltaEmployeeKwd: '25.200',
+      likelyCause: 'July contribution submitted by company; portal shows no entry for this civilId-month.',
+      status: 'UNRESOLVED',
+    },
+    {
+      civilId: '287098765432',
+      employeeNameSnapshot: 'Fatima Al-Mutairi',
+      periodYear: _mockPifssReconRunYear,
+      periodMonth: 12,
+      varianceType: 'CONTRIBUTION_AMOUNT_DIFFERS',
+      companyEmployerKwd: '52.500',
+      portalEmployerKwd: '52.500',
+      companyEmployeeKwd: '25.200',
+      portalEmployeeKwd: '25.200',
+      deltaEmployerKwd: '0.000',
+      deltaEmployeeKwd: '0.000',
+      likelyCause: 'Legacy variance carried from prior run; preserved via re-reconciliation matching.',
+      status: 'RESOLVED',
+      resolutionNote: 'Confirmed correct; duplicate classification resolved.',
+    },
+
+    // Mohammed Al-Rashidi (civilId 285000123456) — 3 variances
+    {
+      civilId: '285000123456',
+      employeeNameSnapshot: 'Mohammed Al-Rashidi',
+      periodYear: _mockPifssReconRunYear,
+      periodMonth: 5,
+      varianceType: 'PORTAL_ONLY',
+      companyEmployerKwd: '0.000',
+      portalEmployerKwd: '105.000',
+      companyEmployeeKwd: '0.000',
+      portalEmployeeKwd: '50.400',
+      deltaEmployerKwd: '-105.000',
+      deltaEmployeeKwd: '-50.400',
+      likelyCause: 'Portal recorded contribution for May; employee was on unpaid leave per payroll records.',
+      status: 'IN_DISPUTE',
+      resolutionNote: 'Leave approval in question; HR investigating.',
+    },
+    {
+      civilId: '285000123456',
+      employeeNameSnapshot: 'Mohammed Al-Rashidi',
+      periodYear: _mockPifssReconRunYear,
+      periodMonth: 8,
+      varianceType: 'SALARY_BASE_DIFFERS',
+      companyEmployerKwd: '105.000',
+      portalEmployerKwd: '105.000',
+      companyEmployeeKwd: '50.400',
+      portalEmployeeKwd: '50.400',
+      deltaEmployerKwd: '0.000',
+      deltaEmployeeKwd: '0.000',
+      likelyCause: 'Basic-salary snapshot differs: company 1800.000 vs portal 1750.000.',
+      status: 'UNRESOLVED',
+    },
+    {
+      civilId: '285000123456',
+      employeeNameSnapshot: 'Mohammed Al-Rashidi',
+      periodYear: _mockPifssReconRunYear,
+      periodMonth: 10,
+      varianceType: 'CONTRIBUTION_AMOUNT_DIFFERS',
+      companyEmployerKwd: '105.000',
+      portalEmployerKwd: '100.800',
+      companyEmployeeKwd: '50.400',
+      portalEmployeeKwd: '50.400',
+      deltaEmployerKwd: '4.200',
+      deltaEmployeeKwd: '0.000',
+      likelyCause: 'Employer-side contribution 4.200 KWD higher; possible rounding or rate-table version mismatch.',
+      status: 'RESOLVED',
+      resolutionNote: 'Confirmed rate-table version mismatch at portal side; no action required.',
+    },
+  ];
+  // Assign stable mock IDs + resolved actors/timestamps where applicable.
+  return seed.map((v, i) => ({
+    id: `mock-variance-${_mockPifssReconRunYear}-${String(i + 1).padStart(3, '0')}`,
+    reconciliationId: `mock-reconciliation-${_mockPifssReconRunYear}`,
+    ...v,
+    resolutionNote: v.resolutionNote ?? null,
+    resolvedBy: v.status === 'RESOLVED' || v.status === 'IN_DISPUTE' ? 'user-cfo-1' : null,
+    resolvedAt:
+      v.status === 'RESOLVED' || v.status === 'IN_DISPUTE'
+        ? new Date().toISOString()
+        : null,
+  }));
+}
+
+const _mockPifssStore = (() => {
+  const nowIso = new Date().toISOString();
+  const variances = _mockPifssSeedVariances();
+  const state = new Map();
+  // Run year: fully populated.
+  state.set(_mockPifssReconRunYear, {
+    reconciliation: {
+      id: `mock-reconciliation-${_mockPifssReconRunYear}`,
+      fiscalYear: _mockPifssReconRunYear,
+      statementId: `mock-statement-${_mockPifssReconRunYear}`,
+      statementImportedAt: nowIso,
+      statementImportedBy: 'user-cfo-1',
+      runBy: 'user-cfo-1',
+      runAt: nowIso,
+      totalVariances: variances.length,
+      unresolvedCount: variances.filter((v) => v.status === 'UNRESOLVED').length,
+      preservedResolutionCount: 1,
+      newVarianceCount: variances.length - 1,
+      byType: variances.reduce(
+        (acc, v) => {
+          acc[v.varianceType] = (acc[v.varianceType] || 0) + 1;
+          return acc;
+        },
+        { COMPANY_ONLY: 0, PORTAL_ONLY: 0, CONTRIBUTION_AMOUNT_DIFFERS: 0, SALARY_BASE_DIFFERS: 0 },
+      ),
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
+    variances,
+  });
+  // Resolved year: statement imported, run complete, all resolved (no variances seeded).
+  state.set(_mockPifssReconResolvedYear, {
+    reconciliation: {
+      id: `mock-reconciliation-${_mockPifssReconResolvedYear}`,
+      fiscalYear: _mockPifssReconResolvedYear,
+      statementId: `mock-statement-${_mockPifssReconResolvedYear}`,
+      statementImportedAt: nowIso,
+      statementImportedBy: 'user-owner-1',
+      runBy: 'user-owner-1',
+      runAt: nowIso,
+      totalVariances: 0,
+      unresolvedCount: 0,
+      preservedResolutionCount: 0,
+      newVarianceCount: 0,
+      byType: { COMPANY_ONLY: 0, PORTAL_ONLY: 0, CONTRIBUTION_AMOUNT_DIFFERS: 0, SALARY_BASE_DIFFERS: 0 },
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
+    variances: [],
+  });
+  return state;
+})();
+
+function _pifssProbeYears() {
+  const nowYear = new Date().getUTCFullYear();
+  return [nowYear, nowYear - 1, nowYear - 2];
+}
+
+async function mockListReconciliationYears() {
+  await new Promise((r) => setTimeout(r, 40));
+  const years = _pifssProbeYears().map((fy) => {
+    const entry = _mockPifssStore.get(fy);
+    if (!entry) return { fiscalYear: fy, reconciliation: null, variances: [] };
+    return {
+      fiscalYear: fy,
+      reconciliation: entry.reconciliation,
+      variances: entry.variances,
+    };
+  });
+  return { years };
+}
+
+async function mockGetReconciliation(fiscalYear) {
+  await new Promise((r) => setTimeout(r, 40));
+  const entry = _mockPifssStore.get(Number(fiscalYear));
+  if (!entry) return { reconciliation: null, variances: [] };
+  return {
+    reconciliation: entry.reconciliation,
+    variances: entry.variances,
+  };
+}
+
+async function mockGetReconciliationReport(fiscalYear) {
+  await new Promise((r) => setTimeout(r, 50));
+  const entry = _mockPifssStore.get(Number(fiscalYear));
+  if (!entry || !entry.reconciliation) {
+    throw new Error(`No reconciliation available for fiscal year ${fiscalYear} (mock)`);
+  }
+  const recon = entry.reconciliation;
+  const variances = entry.variances || [];
+  // Group by civilId.
+  const byCivil = new Map();
+  for (const v of variances) {
+    if (!byCivil.has(v.civilId)) {
+      byCivil.set(v.civilId, {
+        civilId: v.civilId,
+        employeeNameSnapshot: v.employeeNameSnapshot || '',
+        variances: [],
+      });
+    }
+    byCivil.get(v.civilId).variances.push({
+      id: v.id,
+      periodYear: v.periodYear,
+      periodMonth: v.periodMonth,
+      varianceType: v.varianceType,
+      companyEmployerKwd: v.companyEmployerKwd,
+      portalEmployerKwd: v.portalEmployerKwd,
+      companyEmployeeKwd: v.companyEmployeeKwd,
+      portalEmployeeKwd: v.portalEmployeeKwd,
+      deltaEmployerKwd: v.deltaEmployerKwd,
+      deltaEmployeeKwd: v.deltaEmployeeKwd,
+      likelyCause: v.likelyCause,
+      status: v.status,
+      resolutionNote: v.resolutionNote,
+      resolvedBy: v.resolvedBy,
+      resolvedAt: v.resolvedAt,
+    });
+  }
+  // Sum Σ|Δ| per employee using integer fixed-point.
+  function absSum3dp(values) {
+    let total = 0n;
+    for (const s of values) {
+      if (s == null) continue;
+      let rest = String(s);
+      let neg = false;
+      if (rest.startsWith('-')) { neg = true; rest = rest.slice(1); }
+      else if (rest.startsWith('+')) rest = rest.slice(1);
+      const dot = rest.indexOf('.');
+      let intP = rest;
+      let fracP = '';
+      if (dot >= 0) { intP = rest.slice(0, dot); fracP = rest.slice(dot + 1); }
+      if (fracP.length < 3) fracP = fracP + '0'.repeat(3 - fracP.length);
+      else if (fracP.length > 3) fracP = fracP.slice(0, 3);
+      if (!/^\d*$/.test(intP) || !/^\d{3}$/.test(fracP)) continue;
+      let scaled = BigInt((intP || '0') + fracP);
+      if (scaled < 0n) scaled = -scaled;
+      if (neg) { /* abs */ }
+      total += scaled;
+    }
+    const str = total.toString().padStart(4, '0');
+    return `${str.slice(0, -3)}.${str.slice(-3)}`;
+  }
+  const employees = Array.from(byCivil.values())
+    .map((g) => ({
+      civilId: g.civilId,
+      employeeNameSnapshot: g.employeeNameSnapshot,
+      totalDeltaEmployerKwd: absSum3dp(g.variances.map((v) => v.deltaEmployerKwd)),
+      totalDeltaEmployeeKwd: absSum3dp(g.variances.map((v) => v.deltaEmployeeKwd)),
+      varianceCount: g.variances.length,
+      unresolvedCount: g.variances.filter((v) => v.status === 'UNRESOLVED').length,
+      variances: g.variances,
+    }))
+    .sort((a, b) => {
+      const na = Number(a.totalDeltaEmployerKwd) + Number(a.totalDeltaEmployeeKwd);
+      const nb = Number(b.totalDeltaEmployerKwd) + Number(b.totalDeltaEmployeeKwd);
+      return nb - na;
+    });
+  return {
+    reconciliationId: recon.id,
+    fiscalYear: recon.fiscalYear,
+    statementId: recon.statementId,
+    runBy: recon.runBy,
+    runAt: recon.runAt,
+    totalVariances: recon.totalVariances,
+    unresolvedCount: recon.unresolvedCount,
+    byType: recon.byType,
+    totalDeltaEmployerKwd: absSum3dp(variances.map((v) => v.deltaEmployerKwd)),
+    totalDeltaEmployeeKwd: absSum3dp(variances.map((v) => v.deltaEmployeeKwd)),
+    employees,
+  };
+}
+
+async function mockImportStatement(fiscalYear, body) {
+  await new Promise((r) => setTimeout(r, 100));
+  const fy = Number(fiscalYear);
+  const nowIso = new Date().toISOString();
+  const statementId = `mock-statement-${fy}-${Date.now()}`;
+  const existing = _mockPifssStore.get(fy);
+  if (existing && existing.reconciliation) {
+    // Re-import updates the statement pointer + clears variances (run
+    // will need to be invoked again).
+    existing.reconciliation = {
+      ...existing.reconciliation,
+      statementId,
+      statementImportedAt: nowIso,
+      statementImportedBy: 'user-cfo-1',
+      runAt: null,
+      runBy: null,
+      totalVariances: 0,
+      unresolvedCount: 0,
+      preservedResolutionCount: 0,
+      newVarianceCount: 0,
+      updatedAt: nowIso,
+    };
+    existing.variances = [];
+  } else {
+    _mockPifssStore.set(fy, {
+      reconciliation: {
+        id: `mock-reconciliation-${fy}`,
+        fiscalYear: fy,
+        statementId,
+        statementImportedAt: nowIso,
+        statementImportedBy: 'user-cfo-1',
+        runBy: null,
+        runAt: null,
+        totalVariances: 0,
+        unresolvedCount: 0,
+        preservedResolutionCount: 0,
+        newVarianceCount: 0,
+        byType: { COMPANY_ONLY: 0, PORTAL_ONLY: 0, CONTRIBUTION_AMOUNT_DIFFERS: 0, SALARY_BASE_DIFFERS: 0 },
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      },
+      variances: [],
+    });
+  }
+  return { statementId, importedAt: nowIso };
+}
+
+async function mockRunReconciliation(fiscalYear) {
+  await new Promise((r) => setTimeout(r, 150));
+  const fy = Number(fiscalYear);
+  const entry = _mockPifssStore.get(fy);
+  if (!entry) {
+    throw new Error(`No statement imported for fiscal year ${fy} (mock)`);
+  }
+  const nowIso = new Date().toISOString();
+  // If the year already has seeded variances (most recent year fixture),
+  // preserve them. Otherwise fabricate a minimal 2-variance set so the
+  // reviewer has something to look at post-run.
+  if (!entry.variances || entry.variances.length === 0) {
+    const v1 = {
+      id: `mock-variance-${fy}-run-001`,
+      reconciliationId: `mock-reconciliation-${fy}`,
+      civilId: '286012345678',
+      employeeNameSnapshot: 'Ahmed Al-Sabah',
+      periodYear: fy,
+      periodMonth: 3,
+      varianceType: 'CONTRIBUTION_AMOUNT_DIFFERS',
+      companyEmployerKwd: '87.500',
+      portalEmployerKwd: '90.000',
+      companyEmployeeKwd: '42.000',
+      portalEmployeeKwd: '42.000',
+      deltaEmployerKwd: '2.500',
+      deltaEmployeeKwd: '0.000',
+      likelyCause: 'Employer-side rounding differs by 0.5 KWD.',
+      status: 'UNRESOLVED',
+      resolutionNote: null,
+      resolvedBy: null,
+      resolvedAt: null,
+    };
+    const v2 = {
+      id: `mock-variance-${fy}-run-002`,
+      reconciliationId: `mock-reconciliation-${fy}`,
+      civilId: '287098765432',
+      employeeNameSnapshot: 'Fatima Al-Mutairi',
+      periodYear: fy,
+      periodMonth: 7,
+      varianceType: 'COMPANY_ONLY',
+      companyEmployerKwd: '52.500',
+      portalEmployerKwd: '0.000',
+      companyEmployeeKwd: '25.200',
+      portalEmployeeKwd: '0.000',
+      deltaEmployerKwd: '52.500',
+      deltaEmployeeKwd: '25.200',
+      likelyCause: 'Portal missing July entry.',
+      status: 'UNRESOLVED',
+      resolutionNote: null,
+      resolvedBy: null,
+      resolvedAt: null,
+    };
+    entry.variances = [v1, v2];
+  }
+  const variances = entry.variances;
+  entry.reconciliation = {
+    ...entry.reconciliation,
+    runBy: entry.reconciliation?.runBy || 'user-cfo-1',
+    runAt: nowIso,
+    totalVariances: variances.length,
+    unresolvedCount: variances.filter((v) => v.status === 'UNRESOLVED').length,
+    preservedResolutionCount: variances.filter((v) => v.status !== 'UNRESOLVED').length,
+    newVarianceCount: variances.filter((v) => v.status === 'UNRESOLVED').length,
+    byType: variances.reduce(
+      (acc, v) => {
+        acc[v.varianceType] = (acc[v.varianceType] || 0) + 1;
+        return acc;
+      },
+      { COMPANY_ONLY: 0, PORTAL_ONLY: 0, CONTRIBUTION_AMOUNT_DIFFERS: 0, SALARY_BASE_DIFFERS: 0 },
+    ),
+    updatedAt: nowIso,
+  };
+  const r = entry.reconciliation;
+  return {
+    reconciliationId: r.id,
+    fiscalYear: r.fiscalYear,
+    statementId: r.statementId,
+    totalVariances: r.totalVariances,
+    unresolvedCount: r.unresolvedCount,
+    byType: r.byType,
+    preservedResolutionCount: r.preservedResolutionCount,
+    newVarianceCount: r.newVarianceCount,
+  };
+}
+
+async function mockResolveVariance(varianceId, body) {
+  await new Promise((r) => setTimeout(r, 60));
+  for (const entry of _mockPifssStore.values()) {
+    const idx = entry.variances.findIndex((v) => v.id === varianceId);
+    if (idx === -1) continue;
+    const variance = entry.variances[idx];
+    // Mirror backend's reopen gate at the mock boundary.
+    const wasClosed =
+      variance.status === 'RESOLVED' || variance.status === 'IN_DISPUTE';
+    const toUnresolved = body?.status === 'UNRESOLVED';
+    if (wasClosed && toUnresolved && !body?.reopenReason) {
+      throw new Error(
+        'reopenReason is required when transitioning RESOLVED/IN_DISPUTE → UNRESOLVED (mock)',
+      );
+    }
+    const nowIso = new Date().toISOString();
+    const updated = {
+      ...variance,
+      status: body.status,
+      resolutionNote:
+        body.resolutionNote !== undefined
+          ? body.resolutionNote
+          : variance.resolutionNote,
+      resolvedBy:
+        body.status === 'UNRESOLVED' ? null : 'user-cfo-1',
+      resolvedAt:
+        body.status === 'UNRESOLVED' ? null : nowIso,
+    };
+    entry.variances[idx] = updated;
+    // Recompute recon counts.
+    if (entry.reconciliation) {
+      entry.reconciliation.unresolvedCount = entry.variances.filter(
+        (v) => v.status === 'UNRESOLVED',
+      ).length;
+      entry.reconciliation.updatedAt = nowIso;
+    }
+    return { variance: updated };
+  }
+  throw new Error(`Variance ${varianceId} not found (mock)`);
 }

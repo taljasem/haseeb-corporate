@@ -1,0 +1,203 @@
+{
+  "view_label": "الامتثال السنوي",
+  "title": "التسوية السنوية للتأمينات الاجتماعية",
+  "subtitle": "تسوية سجل رواتب الشركة مع الكشف السنوي الصادر عن جهة التأمينات الاجتماعية",
+  "distinction_note": "هذه شاشة التسوية السنوية. توليد ملف SIF الشهري موجود ضمن الرواتب ← مرفوعات التأمينات.",
+
+  "tabs": {
+    "year_list": "قائمة السنوات",
+    "per_year": "تفاصيل السنة"
+  },
+
+  "year_list": {
+    "title": "السنوات المالية",
+    "action_new": "سنة مالية جديدة",
+    "column_fiscal_year": "السنة المالية",
+    "column_statement_imported": "الكشف مستورد",
+    "column_reconciliation_run": "تم تشغيل التسوية",
+    "column_total_variances": "إجمالي الفروق",
+    "column_unresolved": "غير المحلولة",
+    "column_total_delta_employer": "Σ|Δ| مساهمة صاحب العمل (د.ك)",
+    "column_total_delta_employee": "Σ|Δ| مساهمة الموظف (د.ك)",
+    "imported_yes": "نعم",
+    "imported_no": "لم يتم بعد",
+    "run_yes": "نعم",
+    "run_no": "لم يتم بعد",
+    "empty_title": "لا توجد تسويات بعد",
+    "empty_description": "ابدأ سنة مالية جديدة لاستيراد كشف التأمينات السنوي وتشغيل المقارنة.",
+    "new_year_prompt_title": "سنة مالية جديدة",
+    "new_year_prompt_description": "أدخل السنة المالية لبدء عملية التسوية السنوية.",
+    "new_year_input_label": "السنة المالية (سنة)",
+    "new_year_action_open": "فتح السنة",
+    "new_year_action_cancel": "إلغاء",
+    "new_year_error_invalid": "يجب أن تكون السنة المالية مكونة من 4 أرقام بين 2000 و 2100."
+  },
+
+  "detail": {
+    "back_to_list": "العودة إلى قائمة السنوات",
+    "header_fiscal_year": "السنة المالية",
+    "header_status_imported": "تم استيراد الكشف",
+    "header_status_run": "تم تشغيل التسوية",
+    "header_status_all_resolved": "تم حل الكل",
+    "header_status_unresolved": "{{count}} غير محلول",
+    "header_total_delta_employer": "Σ|Δ| مساهمة صاحب العمل",
+    "header_total_delta_employee": "Σ|Δ| مساهمة الموظف",
+    "header_action_view_report": "عرض تقرير المدقق",
+    "header_action_reimport": "إعادة استيراد الكشف",
+    "run_by": "تم التشغيل بواسطة",
+    "run_at": "وقت التشغيل"
+  },
+
+  "step1": {
+    "title": "الخطوة 1 — استيراد كشف الجهة",
+    "description": "قم برفع كشف نهاية السنة من بوابة التأمينات الاجتماعية (CSV). يقوم النظام بتحليل الملف وتخزينه قبل تشغيل المقارنة.",
+    "field_file": "ملف الكشف",
+    "field_file_hint": "ملف CSV مُصدَّر من بوابة التأمينات الاجتماعية.",
+    "field_parser_version": "إصدار المحلل",
+    "field_parser_version_hint": "اختر المحلل المطابق لتنسيق الملف.",
+    "field_portal_reference": "مرجع البوابة (اختياري)",
+    "field_portal_reference_hint": "رقم التأكيد أو المرجع من بوابة التأمينات، لسجل التدقيق.",
+    "field_file_url": "رابط الأرشيف (اختياري)",
+    "field_file_url_hint": "الرابط الذي تم أرشفة ملف الكشف الأصلي عليه.",
+    "action_import": "استيراد الكشف",
+    "importing": "جاري الاستيراد…",
+    "placeholder_awaiting": "في انتظار الاستيراد من قبل المدير المالي / المالك.",
+    "error_file_required": "ملف الكشف مطلوب.",
+    "error_parser_required": "إصدار المحلل مطلوب.",
+    "error_file_read": "تعذر قراءة محتويات الملف."
+  },
+
+  "step2": {
+    "title": "الخطوة 2 — تشغيل التسوية",
+    "description": "قارن الكشف المستورد بسجل رواتب الشركة وصنّف الفروق.",
+    "action_run": "تشغيل التسوية",
+    "running": "جاري التشغيل…",
+    "placeholder_awaiting": "قم باستيراد كشف لتمكين المقارنة.",
+    "summary_total_variances": "إجمالي الفروق",
+    "summary_unresolved": "غير محلول",
+    "summary_preserved": "حلول محفوظة",
+    "summary_new": "فروق جديدة"
+  },
+
+  "step3": {
+    "title": "الخطوة 3 — مراجعة الفروق",
+    "description": "راجع كل فرق مجمعاً حسب الموظف. استخدم نافذة الحل لتحديد الحالة مع ملاحظة تدقيق.",
+    "placeholder_awaiting": "شغّل التسوية لعرض قائمة الفروق.",
+    "empty_title": "لا توجد فروق",
+    "empty_description": "سجل رواتب الشركة يطابق كشف التأمينات لكل موظف ولكل فترة.",
+    "employee_header_civil_id": "الرقم المدني",
+    "employee_header_name": "الموظف",
+    "employee_header_variance_count": "الفروق",
+    "employee_header_unresolved": "غير محلولة",
+    "employee_header_delta_employer": "Σ|Δ| مساهمة صاحب العمل",
+    "employee_header_delta_employee": "Σ|Δ| مساهمة الموظف",
+    "variance_header_period": "الفترة",
+    "variance_header_type": "النوع",
+    "variance_header_company": "الشركة",
+    "variance_header_portal": "البوابة",
+    "variance_header_delta": "Δ",
+    "variance_header_status": "الحالة",
+    "variance_header_actions": "",
+    "variance_action_resolve": "حل",
+    "variance_action_view": "عرض",
+    "expand": "توسيع",
+    "collapse": "طي",
+    "side_employer": "صاحب العمل",
+    "side_employee": "الموظف",
+    "side_basic": "الراتب الأساسي"
+  },
+
+  "variance_type": {
+    "company_only": "الشركة فقط",
+    "portal_only": "البوابة فقط",
+    "contribution_amount_differs": "المبلغ مختلف",
+    "salary_base_differs": "الراتب الأساسي مختلف",
+    "company_only_description": "سجلت الشركة مساهمة لم تؤكدها جهة التأمينات.",
+    "portal_only_description": "سجلت جهة التأمينات مساهمة لم تقدمها الشركة.",
+    "contribution_amount_differs_description": "كلا الطرفين سجّل الفترة ولكن مبالغ المساهمة مختلفة.",
+    "salary_base_differs_description": "الراتب الأساسي المسجل مختلف بين الشركة والبوابة."
+  },
+
+  "variance_status": {
+    "unresolved": "غير محلول",
+    "under_investigation": "قيد التحقيق",
+    "resolved": "محلول",
+    "in_dispute": "محل نزاع"
+  },
+
+  "resolution_modal": {
+    "title": "حل الفرق",
+    "summary_period": "الفترة",
+    "summary_type": "النوع",
+    "summary_delta_employer": "Δ مساهمة صاحب العمل",
+    "summary_delta_employee": "Δ مساهمة الموظف",
+    "field_status": "الحالة",
+    "field_status_placeholder": "اختر الحالة",
+    "field_resolution_note": "ملاحظة الحل (اختياري)",
+    "field_resolution_note_hint": "حتى 2000 حرف. تظهر في تقرير المدقق.",
+    "field_reopen_reason": "سبب إعادة الفتح",
+    "field_reopen_reason_hint": "مطلوب عند إعادة فرق مغلق إلى غير محلول.",
+    "reopen_warning_owner": "إعادة فتح فرق مغلق يُسجَّل في سجل التدقيق.",
+    "reopen_warning_non_owner": "يمكن للمالك فقط إعادة فتح فرق مغلق.",
+    "action_save": "حفظ",
+    "action_cancel": "إلغاء",
+    "saving": "جاري الحفظ…",
+    "error_status_required": "الحالة مطلوبة.",
+    "error_reopen_reason_required": "السبب مطلوب عند إعادة فتح فرق مغلق.",
+    "error_resolution_note_too_long": "ملاحظة الحل تتجاوز 2000 حرف.",
+    "error_reopen_reason_too_long": "سبب إعادة الفتح يتجاوز 2000 حرف."
+  },
+
+  "report": {
+    "title": "تقرير المدقق — التسوية السنوية للتأمينات الاجتماعية",
+    "subtitle": "عرض مخصص للمدقق للقراءة فقط. معد للطباعة / التصدير.",
+    "action_print": "طباعة",
+    "action_back": "العودة إلى التفاصيل",
+    "summary_fiscal_year": "السنة المالية",
+    "summary_run_by": "تم التشغيل بواسطة",
+    "summary_run_at": "وقت التشغيل",
+    "summary_statement_id": "معرّف الكشف",
+    "summary_reconciliation_id": "معرّف التسوية",
+    "summary_total_variances": "إجمالي الفروق",
+    "summary_unresolved": "غير المحلولة",
+    "summary_total_delta_employer": "Σ|Δ| مساهمة صاحب العمل (د.ك)",
+    "summary_total_delta_employee": "Σ|Δ| مساهمة الموظف (د.ك)",
+    "by_type_heading": "الفروق حسب النوع",
+    "employee_section_heading": "الموظف",
+    "employee_civil_id": "الرقم المدني",
+    "employee_name": "الاسم",
+    "employee_total_delta": "Σ|Δ|",
+    "variance_period": "الفترة",
+    "variance_company_employer": "الشركة — صاحب العمل",
+    "variance_portal_employer": "البوابة — صاحب العمل",
+    "variance_company_employee": "الشركة — الموظف",
+    "variance_portal_employee": "البوابة — الموظف",
+    "variance_delta_employer": "Δ مساهمة صاحب العمل",
+    "variance_delta_employee": "Δ مساهمة الموظف",
+    "variance_likely_cause": "السبب المحتمل",
+    "variance_resolution_note": "ملاحظة الحل",
+    "variance_resolved_by": "تم الحل بواسطة",
+    "variance_resolved_at": "وقت الحل",
+    "empty_title": "لا يوجد تقرير تسوية بعد",
+    "empty_description": "شغّل التسوية لهذه السنة المالية لإنشاء تقرير المدقق."
+  },
+
+  "toast": {
+    "imported": "تم استيراد الكشف.",
+    "ran": "اكتملت التسوية.",
+    "resolved": "تم تحديث الفرق.",
+    "error_generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+    "error_load": "تعذر تحميل بيانات التسوية.",
+    "error_import": "فشل استيراد الكشف.",
+    "error_run": "فشل تشغيل التسوية.",
+    "error_resolve": "فشل تحديث الفرق."
+  },
+
+  "aria": {
+    "expand_employee": "توسيع {{name}}",
+    "collapse_employee": "طي {{name}}",
+    "resolve_variance": "حل الفرق للفترة {{period}}",
+    "close_modal": "إغلاق نافذة الحل",
+    "open_year": "فتح السنة المالية {{year}}"
+  }
+}

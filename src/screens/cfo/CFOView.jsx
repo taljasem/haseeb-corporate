@@ -36,6 +36,7 @@ import InventoryNrvScreen from "./InventoryNrvScreen";
 import MigrationWizardScreen from "./MigrationWizardScreen";
 import PayrollScreen from "./PayrollScreen";
 import PaymentVoucherScreen from "./PaymentVoucherScreen";
+import PIFSSReconciliationScreen from "./PIFSSReconciliationScreen";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
 
@@ -169,6 +170,8 @@ export default function CFOView({ registerNav }) {
         return <PayrollScreen role="CFO" />;
       case "payment-voucher":
         return <PaymentVoucherScreen role="CFO" />;
+      case "pifss-reconciliation":
+        return <PIFSSReconciliationScreen role="CFO" />;
       default:
         return (
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-tertiary)", fontSize: 13 }}>

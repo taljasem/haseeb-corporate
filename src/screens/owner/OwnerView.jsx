@@ -20,6 +20,7 @@ import ContactsScreen from "../shared/ContactsScreen";
 import MigrationWizardScreen from "../cfo/MigrationWizardScreen";
 import PayrollScreen from "../cfo/PayrollScreen";
 import PaymentVoucherScreen from "../cfo/PaymentVoucherScreen";
+import BankMandateAdminScreen from "./BankMandateAdminScreen";
 import PIFSSReconciliationScreen from "../cfo/PIFSSReconciliationScreen";
 import CITAssessmentScreen from "../cfo/CITAssessmentScreen";
 import YearEndCloseScreen from "../cfo/YearEndCloseScreen";
@@ -174,6 +175,8 @@ export default function OwnerView({ registerNav }) {
         return <PayrollScreen role="Owner" />;
       case "payment-voucher":
         return <PaymentVoucherScreen role="Owner" />;
+      case "bank-mandates":
+        return <BankMandateAdminScreen role="Owner" />;
       case "pifss-reconciliation":
         return <PIFSSReconciliationScreen role="Owner" />;
       case "cit-assessment":

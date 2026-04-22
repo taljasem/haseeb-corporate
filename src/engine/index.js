@@ -377,6 +377,21 @@ const FUNCTION_ROUTING = {
   getMandate: 'wired',
   listMandateSignatories: 'wired',
 
+  // Bank Mandate admin writes — HASEEB-211 (2026-04-22). 5 OWNER-only
+  // mutations on /api/bank-mandates: create + acknowledge + cancel +
+  // assign signatory + revoke signatory. Read wrappers were shipped
+  // under AUDIT-ACC-002 above; writes close the gap between the
+  // PaymentVoucher composer's mandate selector and the operator's
+  // ability to actually create mandates from the UI (previously
+  // required direct tenant-DB seeding). Supersession pattern: no
+  // PATCH endpoint on the backend — rule changes go through
+  // cancel + create (HASEEB-232 tracks a QoL wizard for this).
+  createMandate: 'wired',
+  acknowledgeMandate: 'wired',
+  cancelMandate: 'wired',
+  assignMandateSignatory: 'wired',
+  revokeMandateSignatory: 'wired',
+
   // Annual PIFSS Reconciliation — AUDIT-ACC-058 (2026-04-22). 5
   // endpoints on /api/pifss-reconciliation (FN-251) + 1 client-side
   // aggregation (listReconciliationYears) that probes current-year and
@@ -840,6 +855,16 @@ const REAL_IMPLS = {
   listMandates: bankMandatesApi.listMandates,
   getMandate: bankMandatesApi.getMandate,
   listMandateSignatories: bankMandatesApi.listMandateSignatories,
+  // Bank Mandate admin writes — HASEEB-211 (2026-04-22). OWNER-only
+  // mutations; see createMandate/acknowledgeMandate/cancelMandate/
+  // assignMandateSignatory/revokeMandateSignatory JSDoc in
+  // src/api/bankMandates.js for shapes. Supersession pattern: no
+  // PATCH endpoint — rule changes go through cancel + create.
+  createMandate: bankMandatesApi.createMandate,
+  acknowledgeMandate: bankMandatesApi.acknowledgeMandate,
+  cancelMandate: bankMandatesApi.cancelMandate,
+  assignMandateSignatory: bankMandatesApi.assignMandateSignatory,
+  revokeMandateSignatory: bankMandatesApi.revokeMandateSignatory,
 
   // Annual PIFSS Reconciliation — AUDIT-ACC-058 (2026-04-22).
   listReconciliationYears: pifssReconciliationApi.listReconciliationYears,
@@ -1415,6 +1440,14 @@ function buildLiveSurface() {
   surface.listMandates = bankMandatesApi.listMandates;
   surface.getMandate = bankMandatesApi.getMandate;
   surface.listMandateSignatories = bankMandatesApi.listMandateSignatories;
+  // Bank Mandate admin writes — HASEEB-211 (2026-04-22). 5 OWNER-only
+  // mutations closing the "mandate CRUD from UI" gap left by
+  // AUDIT-ACC-002. Supersession pattern (no PATCH) matches backend.
+  surface.createMandate = bankMandatesApi.createMandate;
+  surface.acknowledgeMandate = bankMandatesApi.acknowledgeMandate;
+  surface.cancelMandate = bankMandatesApi.cancelMandate;
+  surface.assignMandateSignatory = bankMandatesApi.assignMandateSignatory;
+  surface.revokeMandateSignatory = bankMandatesApi.revokeMandateSignatory;
 
   // Annual PIFSS Reconciliation — AUDIT-ACC-058 (2026-04-22). 5
   // endpoints + 1 client-side aggregation. Mock extras provide a
@@ -2395,6 +2428,16 @@ function buildMockExtras() {
     listMandates: mockListMandates,
     getMandate: mockGetMandate,
     listMandateSignatories: mockListMandateSignatories,
+    // Bank Mandate admin writes — HASEEB-211 (2026-04-22). MOCK stubs
+    // mutate the module-scoped `_mockMandatesStore` and
+    // `_mockMandateSignatoriesStore` so the whole Owner admin surface
+    // (create → acknowledge → assign → revoke → cancel) exercises
+    // without a live backend.
+    createMandate: mockCreateMandate,
+    acknowledgeMandate: mockAcknowledgeMandate,
+    cancelMandate: mockCancelMandate,
+    assignMandateSignatory: mockAssignMandateSignatory,
+    revokeMandateSignatory: mockRevokeMandateSignatory,
 
     // Annual PIFSS Reconciliation — AUDIT-ACC-058 (2026-04-22). MOCK
     // stubs for the 5 endpoints + 1 aggregation. Seed covers 2 years
@@ -6346,6 +6389,15 @@ export const getVoucherAminahStatus = surface.getVoucherAminahStatus;
 export const listMandates = surface.listMandates;
 export const getMandate = surface.getMandate;
 export const listMandateSignatories = surface.listMandateSignatories;
+// Bank Mandate admin writes — HASEEB-211 (2026-04-22). OWNER-only
+// mutations that closed the "mandate CRUD from UI" gap left by
+// AUDIT-ACC-002. Supersession pattern: no PATCH update endpoint —
+// rule changes go through cancel + create (HASEEB-232 future wizard).
+export const createMandate = surface.createMandate;
+export const acknowledgeMandate = surface.acknowledgeMandate;
+export const cancelMandate = surface.cancelMandate;
+export const assignMandateSignatory = surface.assignMandateSignatory;
+export const revokeMandateSignatory = surface.revokeMandateSignatory;
 
 // Annual PIFSS Reconciliation — AUDIT-ACC-058 (2026-04-22). 5 endpoints
 // on /api/pifss-reconciliation (FN-251) + 1 client-side aggregation
@@ -6531,10 +6583,22 @@ const _mockVouchersStore = (() => {
   ];
 })();
 
+// Mandate store covers all 4 status enum values + a tiered-threshold
+// example so the admin surface exercises every status badge + the
+// "tiered" chip indicator + supersession info banner (ACTIVE) +
+// supersession link (SUPERSEDED) + cancellation reason (CANCELLED) +
+// acknowledge action (PENDING). Extended from the AUDIT-ACC-002 seed
+// for HASEEB-211 (Owner admin surface).
 const _mockMandatesStore = (() => {
   const nowIso = new Date().toISOString();
   const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const lastWeek = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
   return [
+    // mandate-1: ACTIVE, base rule + tiered amount threshold. Used by
+    // the voucher fixture seeds; the admin-screen detail view also
+    // renders its tiered-rule breakdown + "Create replacement mandate"
+    // supersession shortcut.
     {
       id: 'mock-mandate-1',
       bankName: 'National Bank of Kuwait',
@@ -6542,37 +6606,175 @@ const _mockMandatesStore = (() => {
       mandateDocumentUrl: null,
       mandateRules: {
         requires: [
-          { signatoryClass: 'CLASS_A', count: 1 },
-          { signatoryClass: 'CLASS_B', count: 1 },
+          { signatoryClass: 'OWNER', count: 1 },
+          { signatoryClass: 'CFO', count: 1 },
+        ],
+        amountThresholds: [
+          {
+            minAmountKwd: '5000.000',
+            extraRequires: [{ signatoryClass: 'CHAIRMAN', count: 1 }],
+          },
         ],
       },
-      effectiveFrom: today,
+      effectiveFrom: lastWeek,
       effectiveUntil: null,
       status: 'ACTIVE',
       submittedToBankAt: nowIso,
       acknowledgedAt: nowIso,
       acknowledgedBy: 'user-owner-1',
+      supersededByMandateId: null,
+      cancellationReason: null,
       createdBy: 'user-owner-1',
       createdAt: nowIso,
       updatedAt: nowIso,
     },
+    // mandate-2: ACTIVE, simple base rule (no thresholds).
     {
       id: 'mock-mandate-2',
       bankName: 'Burgan Bank',
       accountReference: '****9813',
       mandateDocumentUrl: null,
       mandateRules: {
-        requires: [{ signatoryClass: 'CLASS_A', count: 1 }],
+        requires: [{ signatoryClass: 'OWNER', count: 1 }],
       },
-      effectiveFrom: today,
+      effectiveFrom: lastWeek,
       effectiveUntil: null,
       status: 'ACTIVE',
       submittedToBankAt: nowIso,
       acknowledgedAt: nowIso,
       acknowledgedBy: 'user-owner-1',
+      supersededByMandateId: null,
+      cancellationReason: null,
       createdBy: 'user-owner-1',
       createdAt: nowIso,
       updatedAt: nowIso,
+    },
+    // mandate-3: PENDING_BANK_ACKNOWLEDGMENT — exercises the Acknowledge
+    // modal + the Pending → Active transition.
+    {
+      id: 'mock-mandate-3',
+      bankName: 'Gulf Bank',
+      accountReference: '****7722',
+      mandateDocumentUrl: null,
+      mandateRules: {
+        requires: [
+          { signatoryClass: 'OWNER', count: 1 },
+          { signatoryClass: 'AUTHORIZED_SIGNATORY', count: 1 },
+        ],
+      },
+      effectiveFrom: today,
+      effectiveUntil: null,
+      status: 'PENDING_BANK_ACKNOWLEDGMENT',
+      submittedToBankAt: nowIso,
+      acknowledgedAt: null,
+      acknowledgedBy: null,
+      supersededByMandateId: null,
+      cancellationReason: null,
+      createdBy: 'user-owner-1',
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
+    // mandate-4: SUPERSEDED — exercises the read-only view + successor
+    // link. Successor points at mandate-1.
+    {
+      id: 'mock-mandate-4',
+      bankName: 'National Bank of Kuwait',
+      accountReference: '****4421',
+      mandateDocumentUrl: null,
+      mandateRules: {
+        requires: [{ signatoryClass: 'OWNER', count: 1 }],
+      },
+      effectiveFrom: '2025-01-01',
+      effectiveUntil: yesterday,
+      status: 'SUPERSEDED',
+      submittedToBankAt: '2025-01-02T00:00:00.000Z',
+      acknowledgedAt: '2025-01-05T00:00:00.000Z',
+      acknowledgedBy: 'user-owner-1',
+      supersededByMandateId: 'mock-mandate-1',
+      cancellationReason: null,
+      createdBy: 'user-owner-1',
+      createdAt: '2025-01-01T00:00:00.000Z',
+      updatedAt: nowIso,
+    },
+    // mandate-5: CANCELLED — exercises the read-only view + cancellation
+    // reason display.
+    {
+      id: 'mock-mandate-5',
+      bankName: 'Boubyan Bank',
+      accountReference: '****3344',
+      mandateDocumentUrl: null,
+      mandateRules: {
+        requires: [{ signatoryClass: 'CFO', count: 1 }],
+      },
+      effectiveFrom: '2025-06-01',
+      effectiveUntil: yesterday,
+      status: 'CANCELLED',
+      submittedToBankAt: '2025-06-01T00:00:00.000Z',
+      acknowledgedAt: '2025-06-03T00:00:00.000Z',
+      acknowledgedBy: 'user-owner-1',
+      supersededByMandateId: null,
+      cancellationReason: 'Account closed by bank.',
+      cancelledAt: nowIso,
+      cancelledBy: 'user-owner-1',
+      createdBy: 'user-owner-1',
+      createdAt: '2025-06-01T00:00:00.000Z',
+      updatedAt: nowIso,
+    },
+  ];
+})();
+
+// Signatory assignments store — keyed by id, not mandateId, because the
+// revoke endpoint takes an `assignmentId`. 2 current + 1 revoked on
+// mandate-1; 1 current on mandate-2. Reshaped from the AUDIT-ACC-002
+// read-only stub.
+const _mockMandateSignatoriesStore = (() => {
+  const nowIso = new Date().toISOString();
+  const lastWeek = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  return [
+    {
+      id: 'mock-sig-1',
+      mandateId: 'mock-mandate-1',
+      userId: 'user-owner-1',
+      signatoryClass: 'OWNER',
+      effectiveFrom: lastWeek,
+      effectiveUntil: null,
+      revokedReason: null,
+      revokedAt: null,
+      createdAt: nowIso,
+    },
+    {
+      id: 'mock-sig-2',
+      mandateId: 'mock-mandate-1',
+      userId: 'user-cfo-1',
+      signatoryClass: 'CFO',
+      effectiveFrom: lastWeek,
+      effectiveUntil: null,
+      revokedReason: null,
+      revokedAt: null,
+      createdAt: nowIso,
+    },
+    {
+      id: 'mock-sig-3',
+      mandateId: 'mock-mandate-1',
+      userId: 'user-ex-cfo',
+      signatoryClass: 'CFO',
+      effectiveFrom: '2025-01-01',
+      effectiveUntil: yesterday,
+      revokedReason: 'Former CFO; role transition.',
+      revokedAt: nowIso,
+      createdAt: '2025-01-01T00:00:00.000Z',
+    },
+    {
+      id: 'mock-sig-4',
+      mandateId: 'mock-mandate-2',
+      userId: 'user-owner-1',
+      signatoryClass: 'OWNER',
+      effectiveFrom: lastWeek,
+      effectiveUntil: null,
+      revokedReason: null,
+      revokedAt: null,
+      createdAt: nowIso,
     },
   ];
 })();
@@ -6786,33 +6988,113 @@ async function mockGetMandate(id) {
 
 async function mockListMandateSignatories(id) {
   await new Promise((r) => setTimeout(r, 30));
-  // Return two dummy class-A and class-B signatory assignments — the
-  // composer only reads the mandateRules count in this dispatch; the
-  // signatories list is only used for debug surface / future admin.
-  const nowIso = new Date().toISOString();
-  const rows = [
-    {
-      id: `${id}-assign-1`,
-      mandateId: id,
-      userId: 'user-owner-1',
-      signatoryClass: 'CLASS_A',
-      effectiveFrom: new Date().toISOString().slice(0, 10),
-      effectiveUntil: null,
-      revokedReason: null,
-      createdAt: nowIso,
-    },
-    {
-      id: `${id}-assign-2`,
-      mandateId: id,
-      userId: 'user-cfo-1',
-      signatoryClass: 'CLASS_B',
-      effectiveFrom: new Date().toISOString().slice(0, 10),
-      effectiveUntil: null,
-      revokedReason: null,
-      createdAt: nowIso,
-    },
-  ];
+  // HASEEB-211 — reads from the persistent
+  // `_mockMandateSignatoriesStore` so the admin surface's roster block
+  // (current + historical buckets) reflects assign / revoke actions.
+  const rows = _mockMandateSignatoriesStore.filter((s) => s.mandateId === id);
   return { rowCount: rows.length, rows };
+}
+
+// ── Mandate admin write MOCK stubs — HASEEB-211 (2026-04-22) ──
+
+async function mockCreateMandate(body = {}) {
+  await new Promise((r) => setTimeout(r, 90));
+  const nowIso = new Date().toISOString();
+  const id = `mock-mandate-${Math.floor(Math.random() * 9000 + 1000)}`;
+  const row = {
+    id,
+    bankName: String(body.bankName || '').trim() || 'Unnamed bank',
+    accountReference: String(body.accountReference || '').trim() || '****0000',
+    mandateDocumentUrl: body.mandateDocumentUrl ?? null,
+    mandateRules: body.mandateRules || { requires: [] },
+    effectiveFrom: body.effectiveFrom || new Date().toISOString().slice(0, 10),
+    effectiveUntil: body.effectiveUntil ?? null,
+    status: body.markActiveImmediately ? 'ACTIVE' : 'PENDING_BANK_ACKNOWLEDGMENT',
+    submittedToBankAt: nowIso,
+    acknowledgedAt: body.markActiveImmediately ? nowIso : null,
+    acknowledgedBy: body.markActiveImmediately ? 'user-owner-1' : null,
+    supersededByMandateId: null,
+    cancellationReason: null,
+    createdBy: 'user-owner-1',
+    createdAt: nowIso,
+    updatedAt: nowIso,
+  };
+  _mockMandatesStore.push(row);
+  return row;
+}
+
+async function mockAcknowledgeMandate(id, body = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  const m = _mockFindMandate(id);
+  if (!m) throw new Error(`Mandate ${id} not found (mock)`);
+  if (m.status !== 'PENDING_BANK_ACKNOWLEDGMENT') {
+    throw new Error(`Mandate ${id} is not pending bank acknowledgment (mock)`);
+  }
+  const nowIso = new Date().toISOString();
+  m.status = 'ACTIVE';
+  m.acknowledgedAt = body?.acknowledgedAt || nowIso;
+  m.acknowledgedBy = 'user-owner-1';
+  m.updatedAt = nowIso;
+  if (body?.note) m.acknowledgedNote = String(body.note);
+  return m;
+}
+
+async function mockCancelMandate(id, body = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  const m = _mockFindMandate(id);
+  if (!m) throw new Error(`Mandate ${id} not found (mock)`);
+  if (m.status === 'CANCELLED' || m.status === 'SUPERSEDED') {
+    throw new Error(`Mandate ${id} is already terminal (mock)`);
+  }
+  const nowIso = new Date().toISOString();
+  m.status = 'CANCELLED';
+  m.cancellationReason = body?.reason ? String(body.reason) : null;
+  m.cancelledAt = nowIso;
+  m.cancelledBy = 'user-owner-1';
+  m.effectiveUntil = nowIso.slice(0, 10);
+  m.updatedAt = nowIso;
+  return m;
+}
+
+async function mockAssignMandateSignatory(id, body = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  const m = _mockFindMandate(id);
+  if (!m) throw new Error(`Mandate ${id} not found (mock)`);
+  if (m.status !== 'ACTIVE' && m.status !== 'PENDING_BANK_ACKNOWLEDGMENT') {
+    throw new Error(`Cannot assign signatory on ${m.status} mandate (mock)`);
+  }
+  const nowIso = new Date().toISOString();
+  const row = {
+    id: `mock-sig-${Math.floor(Math.random() * 9000 + 1000)}`,
+    mandateId: id,
+    userId: String(body.userId || '').trim(),
+    signatoryClass: String(body.signatoryClass || '').trim() || 'OWNER',
+    effectiveFrom:
+      body.effectiveFrom || new Date().toISOString().slice(0, 10),
+    effectiveUntil: body.effectiveUntil ?? null,
+    revokedReason: null,
+    revokedAt: null,
+    createdAt: nowIso,
+  };
+  _mockMandateSignatoriesStore.push(row);
+  return row;
+}
+
+async function mockRevokeMandateSignatory(body = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  const assignmentId = body?.assignmentId;
+  const target = _mockMandateSignatoriesStore.find(
+    (s) => s.id === assignmentId,
+  );
+  if (!target) throw new Error(`Signatory assignment ${assignmentId} not found (mock)`);
+  if (target.revokedAt) {
+    throw new Error(`Signatory assignment ${assignmentId} already revoked (mock)`);
+  }
+  const nowIso = new Date().toISOString();
+  target.revokedReason = body?.revokedReason ? String(body.revokedReason) : null;
+  target.revokedAt = nowIso;
+  target.effectiveUntil = body?.effectiveUntil || nowIso.slice(0, 10);
+  return target;
 }
 
 // ══════════════════════════════════════════════════════════════════

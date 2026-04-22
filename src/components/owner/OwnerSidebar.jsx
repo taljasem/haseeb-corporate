@@ -1,4 +1,4 @@
-import { Home, Inbox, Activity, Building2, FileText, BarChart3, Calendar, Shield, Users, Settings, User, Upload, Contact, Wallet, Landmark } from "lucide-react";
+import { Home, Inbox, Activity, Building2, FileText, BarChart3, Calendar, Shield, Users, Settings, User, Upload, Contact, Wallet, Landmark, ScrollText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import SidebarGroup from "../shared/SidebarGroup";
 import LtrText from "../shared/LtrText";
@@ -103,6 +103,7 @@ export default function OwnerSidebar({ active, setActive, taskboxOpen = 0, pendi
         <NavItem icon={Upload}   label={t("items.migration")}       active={is("migration")}       onClick={() => setActive("migration")} />
         <NavItem icon={Wallet}   label={t("items.payroll")}         active={is("payroll")}         onClick={() => setActive("payroll")} />
         <NavItem icon={Wallet}   label={t("items.payment_vouchers")} active={is("payment-voucher")} onClick={() => setActive("payment-voucher")} />
+        <NavItem icon={ScrollText} label={t("items.bank_mandates")}  active={is("bank-mandates")}  onClick={() => setActive("bank-mandates")} />
         <NavItem icon={Shield}   label={t("items.pifss_reconciliation")} active={is("pifss-reconciliation")} onClick={() => setActive("pifss-reconciliation")} />
         <NavItem icon={Landmark} label={t("items.cit_assessment")}       active={is("cit-assessment")}       onClick={() => setActive("cit-assessment")} />
       </SidebarGroup>

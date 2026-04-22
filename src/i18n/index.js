@@ -42,6 +42,7 @@ import enInventoryNrv from "./locales/en/inventory-nrv.json";
 import enMigration from "./locales/en/migration.json";
 import enContacts from "./locales/en/contacts.json";
 import enPayroll from "./locales/en/payroll.json";
+import enPaymentVouchers from "./locales/en/paymentVouchers.json";
 
 import arCommon from "./locales/ar/common.json";
 import arHeader from "./locales/ar/header.json";
@@ -83,6 +84,7 @@ import arInventoryNrv from "./locales/ar/inventory-nrv.json";
 import arMigration from "./locales/ar/migration.json";
 import arContacts from "./locales/ar/contacts.json";
 import arPayroll from "./locales/ar/payroll.json";
+import arPaymentVouchers from "./locales/ar/paymentVouchers.json";
 
 const namespaces = [
   "common", "header", "sidebar", "hero", "taskbox",
@@ -94,6 +96,7 @@ const namespaces = [
   "petty-cash", "bulk-reclass", "ocr", "inventory-count",
   "spinoff", "islamic-finance", "purchase-orders", "administration",
   "inventory-nrv", "migration", "contacts", "payroll",
+  "paymentVouchers",
 ];
 
 i18n
@@ -142,6 +145,7 @@ i18n
         migration: enMigration,
         contacts: enContacts,
         payroll: enPayroll,
+        paymentVouchers: enPaymentVouchers,
       },
       ar: {
         common: arCommon,
@@ -184,6 +188,7 @@ i18n
         migration: arMigration,
         contacts: arContacts,
         payroll: arPayroll,
+        paymentVouchers: arPaymentVouchers,
       },
     },
     fallbackLng: "en",

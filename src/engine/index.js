@@ -155,6 +155,13 @@ const FUNCTION_ROUTING = {
   getBalanceSheet: 'wired',
   getCashFlowStatement: 'wired',
 
+  // YEAR-END-FS-TRIO (AUDIT-ACC-040 / HASEEB-213 / HASEEB-216).
+  // SOCIE + disclosure-notes fetch wrappers are mock-backed for now —
+  // see HASEEB-223. Wired here so callers import them from the same
+  // surface as the other FS readers.
+  getStatementOfChangesInEquity: 'wired',
+  getDisclosureNotes: 'wired',
+
   // Report versions (FN-244, Phase 4 Wave 1)
   publishReportVersion: 'wired',
   listReportVersions: 'wired',
@@ -450,6 +457,12 @@ const REAL_IMPLS = {
   getIncomeStatement: reportsApi.getIncomeStatement,
   getBalanceSheet: reportsApi.getBalanceSheet,
   getCashFlowStatement: reportsApi.getCashFlow,
+
+  // YEAR-END-FS-TRIO. Both reads fall back to mockEngine inside the
+  // api/reports.js wrapper until a dedicated HTTP route lands
+  // (HASEEB-223).
+  getStatementOfChangesInEquity: reportsApi.getStatementOfChangesInEquity,
+  getDisclosureNotes: reportsApi.getDisclosureNotes,
 
   // Report versions (FN-244)
   publishReportVersion: reportVersionsApi.publishReportVersion,
@@ -5543,6 +5556,11 @@ export const getTrialBalance = surface.getTrialBalance;
 export const getIncomeStatement = surface.getIncomeStatement;
 export const getBalanceSheet = surface.getBalanceSheet;
 export const getCashFlowStatement = surface.getCashFlowStatement;
+
+// YEAR-END-FS-TRIO (AUDIT-ACC-040 / HASEEB-213 / HASEEB-216)
+export const getStatementOfChangesInEquity =
+  surface.getStatementOfChangesInEquity;
+export const getDisclosureNotes = surface.getDisclosureNotes;
 
 // Settings
 export const getTenantInfo = surface.getTenantInfo;

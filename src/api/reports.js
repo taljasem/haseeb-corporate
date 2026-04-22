@@ -144,6 +144,10 @@ export async function getIncomeStatement(period = 'month') {
     period: data.period || periodLabelFromRange(from, to),
     aminahNarration: null, // not generated in LIVE mode
     sections,
+    // HASEEB-216: carry IAS 8 restatement watermark through the shape
+    // adapter so RestatementWatermark + per-line markers render on the
+    // Income Statement in LIVE mode.
+    restatementWatermark: data.restatementWatermark ?? null,
   };
 }
 
@@ -199,6 +203,8 @@ export async function getBalanceSheet(period = 'month') {
     period: data.period || `As of ${to}`,
     aminahNarration: null,
     sections,
+    // HASEEB-216: IAS 8 restatement watermark.
+    restatementWatermark: data.restatementWatermark ?? null,
   };
 }
 
@@ -234,6 +240,8 @@ export async function getCashFlow(period = 'month') {
     period: data.period || periodLabelFromRange(from, to),
     aminahNarration: null,
     sections,
+    // HASEEB-216: IAS 8 restatement watermark.
+    restatementWatermark: data.restatementWatermark ?? null,
   };
 }
 
@@ -247,4 +255,53 @@ export async function getTrialBalance(period = 'month') {
     params: { from, to },
   });
   return unwrap(r);
+}
+
+// ──────────────────────────────────────────────────────────────────
+// YEAR-END-FS-TRIO — SOCIE + Disclosure Notes
+// (AUDIT-ACC-040 / HASEEB-213 / HASEEB-216)
+// ──────────────────────────────────────────────────────────────────
+//
+// Both live wrappers fall back to the MOCK engine when the backend
+// does not expose a dedicated HTTP route — backend service functions
+// are shipped but HTTP-exposure is pending (HASEEB-223 follow-up).
+// The fallback is silent on first call, then deduped by the engine
+// router's mock-fallback warning machinery.
+
+/**
+ * Statement of Changes in Equity (IAS 1 paragraph 106). Backend service
+ * `statementOfChangesInEquity(db, from, to, priorFrom?, priorTo?)` is
+ * shipped at `src/modules/reports/report.service.ts` but no dedicated
+ * HTTP route is exposed yet — tracked as HASEEB-223 P2. When the route
+ * lands, swap the fallback for `client.get('/api/reports/socie', ...)`.
+ */
+export async function getStatementOfChangesInEquity(
+  fromDate,
+  toDate,
+  priorFromDate,
+  priorToDate,
+) {
+  // Intentionally dynamic import so bundlers can tree-shake mockEngine
+  // out of production when a real route lands.
+  const mock = await import('../engine/mockEngine');
+  return mock.getStatementOfChangesInEquity(
+    fromDate,
+    toDate,
+    priorFromDate,
+    priorToDate,
+  );
+}
+
+/**
+ * Disclosure notes fetch. Backend ships 19 IFRS + 6 AAOIFI builders in
+ * `src/modules/disclosure-notes/disclosure-notes.builder-registry.ts`
+ * but the fetch surface on the frontend is still mock-backed — the
+ * backend's run-based endpoint (`POST /api/disclosure-notes/runs`,
+ * `GET /api/disclosure-notes/runs/:id`) requires a run to be created
+ * server-side first. HASEEB-223 tracks wiring the read-only "latest
+ * run for fiscal year" surface.
+ */
+export async function getDisclosureNotes(period) {
+  const mock = await import('../engine/mockEngine');
+  return mock.getDisclosureNotes(period);
 }

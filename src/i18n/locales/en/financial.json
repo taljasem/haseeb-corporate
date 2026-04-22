@@ -4,7 +4,9 @@
   "tabs": {
     "income": "INCOME STATEMENT",
     "balance": "BALANCE SHEET",
-    "cash-flow": "CASH FLOW STATEMENT"
+    "cash-flow": "CASH FLOW STATEMENT",
+    "socie": "CHANGES IN EQUITY",
+    "disclosures": "DISCLOSURE NOTES"
   },
   "periods": {
     "month": "This Month",
@@ -163,6 +165,54 @@
       "BALANCE_SHEET": "Balance Sheet",
       "CASH_FLOW_STATEMENT": "Cash Flow Statement",
       "TRIAL_BALANCE": "Trial Balance"
+    }
+  },
+  "restatement": {
+    "banner": "Restated (IAS 8)",
+    "lineMarker": "This line has been restated per IAS 8 correction of prior-period error",
+    "lineMarkerBadge": "Restated",
+    "footnoteHeader": "Restatement reasons (IAS 8)"
+  },
+  "socie": {
+    "columns": {
+      "movement": "Movement",
+      "shareCapital": "Share Capital",
+      "sharePremium": "Share Premium",
+      "statutoryReserve": "Statutory Reserve",
+      "otherReserves": "Other Reserves",
+      "retainedEarnings": "Retained Earnings",
+      "ownerDrawings": "Owner Drawings",
+      "total": "Total",
+      "currentYear": "Current Year — {{from}} to {{to}}",
+      "priorYear": "Prior Year — {{from}} to {{to}}"
+    },
+    "rows": {
+      "opening": "Opening balance",
+      "profitForPeriod": "Profit or loss for the period",
+      "oci": "Other comprehensive income",
+      "transactionsWithOwners": "Transactions with owners",
+      "transfers": "Transfers between equity components",
+      "closing": "Closing balance"
+    },
+    "empty": "No equity components to display for this period."
+  },
+  "disclosureNotes": {
+    "title": "Disclosure Notes",
+    "subtitle": "IFRS and AAOIFI disclosure package for the fiscal year",
+    "noteLabel": "Note {{n}}",
+    "narrativePendingBadge": "Narrative required",
+    "editNarrativeButton": "Edit narrative",
+    "autoPopulatedFrom": "Auto-populated from {{source}}",
+    "emptyTitle": "No disclosure notes available",
+    "emptyDesc": "The disclosure-note orchestrator has not produced a run for this period yet.",
+    "aaoifi": {
+      "badge": "AAOIFI",
+      "ifrsCrossRef": "IFRS cross-reference"
+    },
+    "narrativeEditorStub": {
+      "title": "Narrative editor coming soon",
+      "body": "Rich-text narrative authoring with version history and Owner approval is shipping in a follow-up dispatch. See HASEEB-223 in the bug tracker.",
+      "close": "Close"
     }
   }
 }

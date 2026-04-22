@@ -2111,6 +2111,8 @@ export async function getIncomeStatement(period = "month") {
       { name: "TAX EXPENSE",         lines: [_line("Corporate tax (Kuwait 0%)", 0, 0)], subtotal: { label: "Total Tax", current: 0, prior: 0, negative: true } },
       { name: "NET INCOME",          highlight: netIncomeCurrent < 0 ? "red" : netIncomeCurrent >= netIncomePrior ? "teal" : "amber", final: true, current: netIncomeCurrent, prior: netIncomePrior },
     ],
+    // HASEEB-216 / AUDIT-ACC-038 — IAS 8 restatement watermark.
+    restatementWatermark: _restatementWatermarkForTenant(_currentTenantId),
   });
 }
 
@@ -2181,6 +2183,11 @@ export async function getBalanceSheet(period = "month") {
 
       { name: "TOTAL LIABILITIES + EQUITY", highlight: "teal", final: true, current: Number((totalLiab + totalEquity).toFixed(3)), prior: Number((totalLiabPrior + totalEquityPrior).toFixed(3)) },
     ],
+    // HASEEB-216 / AUDIT-ACC-038 — IAS 8 restatement watermark on the
+    // Balance Sheet envelope (backend shipped `restatementWatermark?` on
+    // `BalanceSheetReport`). Populated from the tenant-scoped helper so
+    // MOCK mode surfaces the watermark on the same tenants as SOCIE.
+    restatementWatermark: _restatementWatermarkForTenant(_currentTenantId),
   });
 }
 
@@ -2225,6 +2232,8 @@ export async function getCashFlowStatement(period = "month") {
       { name: "Beginning Cash",       lines: [_line("Beginning Cash", beginningCash, 0)], subtotal: { label: "Beginning Cash", current: beginningCash, prior: 0 } },
       { name: "ENDING CASH",          highlight: "teal", final: true, current: endingCash, prior: 0 },
     ],
+    // HASEEB-216 / AUDIT-ACC-038 — IAS 8 restatement watermark.
+    restatementWatermark: _restatementWatermarkForTenant(_currentTenantId),
   });
 }
 
@@ -5652,6 +5661,968 @@ export async function exportStatement(statementType, period, format) {
   await delay();
   const tn = (TENANTS[_currentTenantId]?.company?.shortName || "tenant").toLowerCase().replace(/\s+/g, "-");
   return { url: null, filename: `${tn}_${statementType}_${period}.${format}` };
+}
+
+// ──────────────────────────────────────────────────────────────────
+// YEAR-END-FS-TRIO — SOCIE + IAS 8 Restatement Watermark
+// + Disclosure Notes (AUDIT-ACC-040 / HASEEB-213 / HASEEB-216)
+// ──────────────────────────────────────────────────────────────────
+//
+// Mock fixtures for the three year-end FS surfaces. Shapes mirror the
+// backend types from `src/modules/reports/report.types.ts` +
+// `src/modules/disclosure-notes/disclosure-notes.types.ts`.
+//
+// Per-tenant seeding strategy:
+//   • `almanara`         — non-restated, no AAOIFI (classic IFRS tenant)
+//   • `almawred`         — restated (IAS 8) on Operating Expenses + RE
+//   • `demo-corporate`   — Islamic-finance tenant with AAOIFI notes
+//
+// Amounts are 3-dp KWD strings at the boundary — Decimal.js-safe.
+
+function _socieMovement({
+  category,
+  labelEn,
+  labelAr,
+  accountCodes,
+  openingBalance,
+  profitLoss = null,
+  otherComprehensiveIncome = 0,
+  transactionsWithOwners = 0,
+  transfersBetweenComponents = 0,
+  restatedMarker = null,
+}) {
+  const closing =
+    Number(openingBalance) +
+    Number(profitLoss || 0) +
+    Number(otherComprehensiveIncome || 0) +
+    Number(transactionsWithOwners || 0) +
+    Number(transfersBetweenComponents || 0);
+  return {
+    category,
+    labelEn,
+    labelAr,
+    accountCodes,
+    openingBalance: Number(openingBalance),
+    profitLoss: profitLoss == null ? null : Number(profitLoss),
+    otherComprehensiveIncome: Number(otherComprehensiveIncome),
+    transactionsWithOwners: Number(transactionsWithOwners),
+    transfersBetweenComponents: Number(transfersBetweenComponents),
+    closingBalance: Number(closing.toFixed(3)),
+    restatedMarker,
+  };
+}
+
+function _sumComponents(components, field) {
+  return Number(
+    components.reduce((s, c) => s + Number(c[field] || 0), 0).toFixed(3),
+  );
+}
+
+// YEAR-END-FS-TRIO note: the production tenant config (`src/config/tenants.js`)
+// exposes only `almanara` and `generic`. We map:
+//   • `almanara` → classic IFRS tenant, non-restated, no AAOIFI
+//   • `generic`  → Islamic-finance tenant (AAOIFI note block +
+//                  restated watermark active) — combines both demo
+//                  scenarios on one tenant so a screenshot harness
+//                  can exercise every surface with the two real IDs.
+// An optional module-level override (`__yearEndFsScenario`) lets the
+// screenshot script force a specific variant without adding a third
+// tenant to production config.
+let __yearEndFsScenario = null;
+export function __setYearEndFsScenario(variant) {
+  // Dev/test hook only — never called from production UI.
+  __yearEndFsScenario = variant;
+}
+// Expose on window so the Playwright screenshot script can force a
+// specific fixture variant without adding a third tenant to production
+// config. Guarded so the dev-tool never leaks into SSR / Node.
+if (typeof window !== "undefined") {
+  try {
+    window.__setYearEndFsScenario = __setYearEndFsScenario;
+  } catch {
+    /* no-op */
+  }
+}
+function _resolveSocieVariant(tenantId) {
+  if (__yearEndFsScenario) return __yearEndFsScenario;
+  if (tenantId === "almawred") return "almawred";
+  if (tenantId === "demo-corporate") return "demo-corporate";
+  if (tenantId === "generic") return "demo-corporate"; // AAOIFI + watermark
+  return "almanara";
+}
+
+function _socieCurrent(tenantId) {
+  const variant = _resolveSocieVariant(tenantId);
+  // IAS 1 para 106 — component rows in canonical presentation order.
+  if (variant === "almawred") {
+    // RESTATED scenario — OpEx accrual understated in prior year;
+    // restatement flips opening RE. Marker stamped on RE component.
+    const components = [
+      _socieMovement({
+        category: "SHARE_CAPITAL",
+        labelEn: "Share Capital",
+        labelAr: "رأس المال",
+        accountCodes: ["3100"],
+        openingBalance: 1500000,
+        transactionsWithOwners: 250000,
+      }),
+      _socieMovement({
+        category: "STATUTORY_RESERVE",
+        labelEn: "Statutory Reserve",
+        labelAr: "الاحتياطي القانوني",
+        accountCodes: ["3210"],
+        openingBalance: 320000,
+        transfersBetweenComponents: 45000,
+      }),
+      _socieMovement({
+        category: "RETAINED_EARNINGS",
+        labelEn: "Retained Earnings",
+        labelAr: "الأرباح المرحلة",
+        accountCodes: ["3300"],
+        openingBalance: 880000,
+        profitLoss: 450000,
+        transfersBetweenComponents: -45000,
+        transactionsWithOwners: -120000,
+        restatedMarker: "RESTATED_IAS8",
+      }),
+      _socieMovement({
+        category: "OWNER_DRAWINGS",
+        labelEn: "Owner Drawings",
+        labelAr: "مسحوبات المالك",
+        accountCodes: ["3400"],
+        openingBalance: 0,
+      }),
+    ];
+    return _socieFinalize("2025-01-01", "2025-12-31", components);
+  }
+  if (variant === "demo-corporate") {
+    // Islamic-finance tenant — clean non-restated with OCI present
+    const components = [
+      _socieMovement({
+        category: "SHARE_CAPITAL",
+        labelEn: "Share Capital",
+        labelAr: "رأس المال",
+        accountCodes: ["3100"],
+        openingBalance: 2000000,
+      }),
+      _socieMovement({
+        category: "SHARE_PREMIUM",
+        labelEn: "Share Premium",
+        labelAr: "علاوة إصدار",
+        accountCodes: ["3150"],
+        openingBalance: 300000,
+      }),
+      _socieMovement({
+        category: "STATUTORY_RESERVE",
+        labelEn: "Statutory Reserve",
+        labelAr: "الاحتياطي القانوني",
+        accountCodes: ["3210"],
+        openingBalance: 500000,
+        transfersBetweenComponents: 72500,
+      }),
+      _socieMovement({
+        category: "OTHER_RESERVES",
+        labelEn: "Other Reserves",
+        labelAr: "احتياطيات أخرى",
+        accountCodes: ["3250"],
+        openingBalance: 180000,
+        otherComprehensiveIncome: 22000,
+      }),
+      _socieMovement({
+        category: "RETAINED_EARNINGS",
+        labelEn: "Retained Earnings",
+        labelAr: "الأرباح المرحلة",
+        accountCodes: ["3300"],
+        openingBalance: 1120000,
+        profitLoss: 725000,
+        transfersBetweenComponents: -72500,
+        transactionsWithOwners: -200000,
+      }),
+    ];
+    return _socieFinalize("2025-01-01", "2025-12-31", components);
+  }
+  // Default (almanara) — classic IFRS tenant, non-restated
+  const components = [
+    _socieMovement({
+      category: "SHARE_CAPITAL",
+      labelEn: "Share Capital",
+      labelAr: "رأس المال",
+      accountCodes: ["3100"],
+      openingBalance: 1000000,
+    }),
+    _socieMovement({
+      category: "STATUTORY_RESERVE",
+      labelEn: "Statutory Reserve",
+      labelAr: "الاحتياطي القانوني",
+      accountCodes: ["3210"],
+      openingBalance: 250000,
+      transfersBetweenComponents: 38000,
+    }),
+    _socieMovement({
+      category: "RETAINED_EARNINGS",
+      labelEn: "Retained Earnings",
+      labelAr: "الأرباح المرحلة",
+      accountCodes: ["3300"],
+      openingBalance: 650000,
+      profitLoss: 380000,
+      transfersBetweenComponents: -38000,
+      transactionsWithOwners: -100000,
+    }),
+  ];
+  return _socieFinalize("2025-01-01", "2025-12-31", components);
+}
+
+function _sociePrior(tenantId) {
+  const variant = _resolveSocieVariant(tenantId);
+  // Prior-year comparative — simpler seed for presentation
+  if (variant === "almawred") {
+    const components = [
+      _socieMovement({
+        category: "SHARE_CAPITAL",
+        labelEn: "Share Capital",
+        labelAr: "رأس المال",
+        accountCodes: ["3100"],
+        openingBalance: 1500000,
+      }),
+      _socieMovement({
+        category: "STATUTORY_RESERVE",
+        labelEn: "Statutory Reserve",
+        labelAr: "الاحتياطي القانوني",
+        accountCodes: ["3210"],
+        openingBalance: 280000,
+        transfersBetweenComponents: 40000,
+      }),
+      _socieMovement({
+        category: "RETAINED_EARNINGS",
+        labelEn: "Retained Earnings",
+        labelAr: "الأرباح المرحلة",
+        accountCodes: ["3300"],
+        openingBalance: 700000,
+        profitLoss: 300000,
+        transfersBetweenComponents: -40000,
+        transactionsWithOwners: -80000,
+        restatedMarker: "RESTATED_IAS8",
+      }),
+      _socieMovement({
+        category: "OWNER_DRAWINGS",
+        labelEn: "Owner Drawings",
+        labelAr: "مسحوبات المالك",
+        accountCodes: ["3400"],
+        openingBalance: 0,
+      }),
+    ];
+    return _socieFinalize("2024-01-01", "2024-12-31", components);
+  }
+  if (variant === "demo-corporate") {
+    const components = [
+      _socieMovement({
+        category: "SHARE_CAPITAL",
+        labelEn: "Share Capital",
+        labelAr: "رأس المال",
+        accountCodes: ["3100"],
+        openingBalance: 2000000,
+      }),
+      _socieMovement({
+        category: "SHARE_PREMIUM",
+        labelEn: "Share Premium",
+        labelAr: "علاوة إصدار",
+        accountCodes: ["3150"],
+        openingBalance: 300000,
+      }),
+      _socieMovement({
+        category: "STATUTORY_RESERVE",
+        labelEn: "Statutory Reserve",
+        labelAr: "الاحتياطي القانوني",
+        accountCodes: ["3210"],
+        openingBalance: 430000,
+        transfersBetweenComponents: 70000,
+      }),
+      _socieMovement({
+        category: "OTHER_RESERVES",
+        labelEn: "Other Reserves",
+        labelAr: "احتياطيات أخرى",
+        accountCodes: ["3250"],
+        openingBalance: 165000,
+        otherComprehensiveIncome: 15000,
+      }),
+      _socieMovement({
+        category: "RETAINED_EARNINGS",
+        labelEn: "Retained Earnings",
+        labelAr: "الأرباح المرحلة",
+        accountCodes: ["3300"],
+        openingBalance: 890000,
+        profitLoss: 620000,
+        transfersBetweenComponents: -70000,
+        transactionsWithOwners: -180000,
+      }),
+    ];
+    return _socieFinalize("2024-01-01", "2024-12-31", components);
+  }
+  const components = [
+    _socieMovement({
+      category: "SHARE_CAPITAL",
+      labelEn: "Share Capital",
+      labelAr: "رأس المال",
+      accountCodes: ["3100"],
+      openingBalance: 1000000,
+    }),
+    _socieMovement({
+      category: "STATUTORY_RESERVE",
+      labelEn: "Statutory Reserve",
+      labelAr: "الاحتياطي القانوني",
+      accountCodes: ["3210"],
+      openingBalance: 218000,
+      transfersBetweenComponents: 32000,
+    }),
+    _socieMovement({
+      category: "RETAINED_EARNINGS",
+      labelEn: "Retained Earnings",
+      labelAr: "الأرباح المرحلة",
+      accountCodes: ["3300"],
+      openingBalance: 500000,
+      profitLoss: 290000,
+      transfersBetweenComponents: -32000,
+      transactionsWithOwners: -80000,
+    }),
+  ];
+  return _socieFinalize("2024-01-01", "2024-12-31", components);
+}
+
+function _socieFinalize(fromDate, toDate, components) {
+  return {
+    fromDate,
+    toDate,
+    components,
+    totalOpeningBalance: _sumComponents(components, "openingBalance"),
+    totalProfitLoss: _sumComponents(components, "profitLoss"),
+    totalOtherComprehensiveIncome: _sumComponents(
+      components,
+      "otherComprehensiveIncome",
+    ),
+    totalTransactionsWithOwners: _sumComponents(
+      components,
+      "transactionsWithOwners",
+    ),
+    totalTransfersBetweenComponents: _sumComponents(
+      components,
+      "transfersBetweenComponents",
+    ),
+    totalClosingBalance: _sumComponents(components, "closingBalance"),
+    isBalanced: true,
+  };
+}
+
+/**
+ * Mock SOCIE fetch. Mirrors the backend `statementOfChangesInEquity`
+ * envelope shape from `report.types.ts`. The frontend wrapper in
+ * `src/api/reports.js` falls back to this when the dedicated backend
+ * route is not yet wired — tracked as HASEEB-223 / AUDIT-ACC-040 note.
+ */
+export async function getStatementOfChangesInEquity(
+  fromDate,
+  toDate,
+  priorFromDate,
+  priorToDate,
+) {
+  await delay();
+  const tenantId = _currentTenantId;
+  const current = _socieCurrent(tenantId);
+  const prior =
+    priorFromDate && priorToDate ? _sociePrior(tenantId) : null;
+  const watermark = _restatementWatermarkForTenant(tenantId);
+  // Derive a top-level restatementNote when watermark active (bilingual
+  // concatenated body; matches backend shape).
+  const restatementNote = watermark.isRestated
+    ? `${watermark.labelEn}\n${watermark.restatementReasons.join("; ")}\n${watermark.labelAr}\n${watermark.restatementReasons.join("; ")}`
+    : null;
+  return _brandObj({
+    fromDate: current.fromDate,
+    toDate: current.toDate,
+    components: current.components,
+    totalOpeningBalance: current.totalOpeningBalance,
+    totalProfitLoss: current.totalProfitLoss,
+    totalOtherComprehensiveIncome: current.totalOtherComprehensiveIncome,
+    totalTransactionsWithOwners: current.totalTransactionsWithOwners,
+    totalTransfersBetweenComponents:
+      current.totalTransfersBetweenComponents,
+    totalClosingBalance: current.totalClosingBalance,
+    isBalanced: current.isBalanced,
+    priorPeriod: prior,
+    restatementNote,
+    restatementWatermark: watermark,
+  });
+}
+
+// ── IAS 8 restatement watermark fixtures ──────────────────────────
+function _restatementWatermarkForTenant(tenantId) {
+  const variant = _resolveSocieVariant(tenantId);
+  // Watermark active on almawred variant (dedicated restated scenario)
+  // and on the `generic` tenant (combined AAOIFI + watermark demo).
+  if (variant === "almawred" || tenantId === "generic" || __yearEndFsScenario === "almawred") {
+    return {
+      isRestated: true,
+      restatementReasons: [
+        "IAS 8 \u2014 Operating expenses accrual understated in prior year (utilities, telecom).",
+        "IAS 8 \u2014 Depreciation expense reclassified from SG&A to COGS per revised policy.",
+      ],
+      restatedComponents: ["3300", "5100", "6200", "5210"],
+      restatementEffectiveDate: "2025-03-15",
+      labelEn: "Restated (IAS 8)",
+      labelAr: "بعد التسوية (المعيار ٨)",
+      affectedRestatementIds: ["PPR-2025-001", "PPR-2025-002"],
+    };
+  }
+  return {
+    isRestated: false,
+    restatementReasons: [],
+    restatedComponents: [],
+    restatementEffectiveDate: null,
+    labelEn: "Restated (IAS 8)",
+    labelAr: "بعد التسوية (المعيار ٨)",
+    affectedRestatementIds: [],
+  };
+}
+
+// ── Disclosure Notes (AUDIT-ACC-040) ──────────────────────────────
+//
+// 19 IFRS + 6 AAOIFI = 25 slots. Islamic-finance tenant (demo-corporate)
+// seeds AAOIFI; others seed IFRS-only.
+
+function _ifrsNote({
+  noteType,
+  standardReference,
+  titleEn,
+  titleAr,
+  narrativeEn,
+  narrativeAr,
+  methodVersion,
+  table = null,
+  narrativePending = false,
+  autoPopulatedFrom = null,
+}) {
+  const tables = [];
+  if (table) tables.push(table);
+  return {
+    noteType,
+    kind: narrativePending ? "NARRATIVE_PENDING" : "READY",
+    standardReference,
+    titleEn,
+    titleAr,
+    methodVersion,
+    isAaoifi: false,
+    autoPopulatedFrom,
+    narratives: [
+      {
+        key: "disclosure-body",
+        titleEn: null,
+        titleAr: null,
+        paragraphsEn: [narrativeEn],
+        paragraphsAr: [narrativeAr],
+      },
+    ],
+    tables,
+    warnings: [],
+  };
+}
+
+function _aaoifiNote({
+  noteType,
+  standardReference,
+  titleEn,
+  titleAr,
+  narrativeEn,
+  narrativeAr,
+  methodVersion,
+  instrumentLabelEn,
+  instrumentLabelAr,
+  rows,
+}) {
+  return {
+    noteType,
+    kind: "READY",
+    standardReference,
+    titleEn,
+    titleAr,
+    methodVersion,
+    isAaoifi: true,
+    autoPopulatedFrom: "islamic_finance",
+    narratives: [
+      {
+        key: "disclosure-body",
+        titleEn: null,
+        titleAr: null,
+        paragraphsEn: [narrativeEn],
+        paragraphsAr: [narrativeAr],
+      },
+    ],
+    tables: [
+      {
+        key: "aaoifi-position",
+        titleEn: `${instrumentLabelEn} \u2014 Position Schedule (${standardReference}) \u2014 FY 2025`,
+        titleAr: `${instrumentLabelAr} \u2014 جدول المراكز (${standardReference}) \u2014 السنة المالية 2025`,
+        columns: [
+          {
+            key: "ifrsCrossReference",
+            labelEn: "IFRS Cross-Reference",
+            labelAr: "المرجع وفق المعايير الدولية",
+            isAmount: false,
+            align: "start",
+          },
+          {
+            key: "outstandingPrincipal",
+            labelEn: "Outstanding Principal (KWD)",
+            labelAr: "رأس المال القائم (د.ك)",
+            isAmount: true,
+            align: "end",
+          },
+          {
+            key: "profitAccrued",
+            labelEn: "Profit Accrued to Date (KWD)",
+            labelAr: "الربح المستحق للتاريخ (د.ك)",
+            isAmount: true,
+            align: "end",
+          },
+          {
+            key: "profitPaid",
+            labelEn: "Profit Paid to Date (KWD)",
+            labelAr: "الربح المدفوع للتاريخ (د.ك)",
+            isAmount: true,
+            align: "end",
+          },
+          {
+            key: "profitUnearned",
+            labelEn: "Profit Unearned (KWD)",
+            labelAr: "الربح غير المكتسب (د.ك)",
+            isAmount: true,
+            align: "end",
+          },
+          {
+            key: "overdueCount",
+            labelEn: "Overdue Installments",
+            labelAr: "الأقساط المتأخرة",
+            isAmount: false,
+            align: "end",
+          },
+        ],
+        rows,
+        footnoteEn:
+          "Amounts are in KWD 3-dp. Per-arrangement row labels preserve the source-term from the underlying contract. The IFRS Cross-Reference column carries the P&L label used in parallel IFRS-basis statements.",
+        footnoteAr:
+          "المبالغ بالدينار الكويتي بثلاث منازل عشرية. تحتفظ تسمية كل صف بالمصطلح الأصلي من العقد.",
+      },
+    ],
+    warnings: [],
+  };
+}
+
+function _disclosureNotesFor(tenantId) {
+  const base = [
+    _ifrsNote({
+      noteType: "ACCOUNTING_POLICIES",
+      standardReference: "IAS 1 \u00b6117\u2013124",
+      titleEn: "Significant Accounting Policies",
+      titleAr: "السياسات المحاسبية الهامة",
+      narrativeEn:
+        "The financial statements have been prepared in accordance with International Financial Reporting Standards (IFRS) as adopted for use in the State of Kuwait. The accounting policies set out below have been applied consistently to all periods presented.",
+      narrativeAr:
+        "تم إعداد القوائم المالية وفقاً للمعايير الدولية لإعداد التقارير المالية (IFRS) كما هي معتمدة للاستخدام في دولة الكويت. طُبقت السياسات المحاسبية المبينة أدناه بصورة متسقة على جميع الفترات المعروضة.",
+      methodVersion: "accounting-policies-v1",
+    }),
+    _ifrsNote({
+      noteType: "CRITICAL_JUDGEMENTS",
+      standardReference: "IAS 1 \u00b6122\u2013133",
+      titleEn: "Critical Judgements and Estimates",
+      titleAr: "الأحكام والتقديرات الجوهرية",
+      narrativeEn:
+        "The preparation of financial statements requires management to make judgements, estimates and assumptions that affect the reported amounts of assets, liabilities, income and expenses.",
+      narrativeAr:
+        "يتطلب إعداد القوائم المالية من الإدارة إجراء أحكام وتقديرات وافتراضات تؤثر على المبالغ المُعلَنة للأصول والالتزامات والإيرادات والمصروفات.",
+      methodVersion: "critical-judgements-v1",
+      narrativePending: true,
+    }),
+    _ifrsNote({
+      noteType: "REVENUE",
+      standardReference: "IFRS 15",
+      titleEn: "Revenue from Contracts with Customers",
+      titleAr: "الإيرادات من العقود مع العملاء",
+      narrativeEn:
+        "Revenue is recognised when control of goods or services passes to the customer. Contract liabilities reflect consideration received in advance of performance.",
+      narrativeAr:
+        "يُعترف بالإيرادات عند انتقال السيطرة على السلع أو الخدمات إلى العميل. تعكس التزامات العقود المبالغ المستلمة مقدماً قبل الأداء.",
+      methodVersion: "revenue-v1",
+      autoPopulatedFrom: "invoices",
+      table: {
+        key: "revenue-by-category",
+        titleEn: "Revenue by Category",
+        titleAr: "الإيرادات حسب الفئة",
+        columns: [
+          { key: "category", labelEn: "Category", labelAr: "الفئة", isAmount: false, align: "start" },
+          { key: "current", labelEn: "Current (KWD)", labelAr: "الحالي (د.ك)", isAmount: true, align: "end" },
+          { key: "prior", labelEn: "Prior (KWD)", labelAr: "السابق (د.ك)", isAmount: true, align: "end" },
+        ],
+        rows: [
+          { labelEn: "Product sales", labelAr: "مبيعات المنتجات", cells: ["Product", "1250000.000", "980000.000"] },
+          { labelEn: "Services", labelAr: "خدمات", cells: ["Services", "380000.000", "320000.000"] },
+          { labelEn: "Total", labelAr: "الإجمالي", cells: [null, "1630000.000", "1300000.000"], isTotal: true },
+        ],
+      },
+    }),
+    _ifrsNote({
+      noteType: "IFRS_9_ECL",
+      standardReference: "IFRS 9 \u00b65",
+      titleEn: "Expected Credit Losses (IFRS 9)",
+      titleAr: "الخسائر الائتمانية المتوقعة (المعيار ٩)",
+      narrativeEn:
+        "The Company applies the IFRS 9 simplified approach for trade receivables. A provision matrix is maintained based on days-past-due with forward-looking adjustments.",
+      narrativeAr:
+        "تطبق الشركة النهج المبسط للمعيار ٩ على الذمم المدينة التجارية. يُحتفظ بمصفوفة مخصصات بناءً على أيام التأخر مع تعديلات تطلعية.",
+      methodVersion: "ifrs9-ecl-v1",
+      narrativePending: true,
+    }),
+    _ifrsNote({
+      noteType: "IFRS_7_FINANCIAL_INSTRUMENTS",
+      standardReference: "IFRS 7",
+      titleEn: "Financial Instruments Risk Disclosures",
+      titleAr: "إفصاحات مخاطر الأدوات المالية",
+      narrativeEn:
+        "The Company is exposed to credit, liquidity and market risks. Risk management policies are reviewed by the Board annually.",
+      narrativeAr:
+        "الشركة معرضة لمخاطر الائتمان والسيولة والسوق. تُراجع سياسات إدارة المخاطر من قبل مجلس الإدارة سنوياً.",
+      methodVersion: "ifrs7-v1",
+      narrativePending: true,
+    }),
+    _ifrsNote({
+      noteType: "IFRS_16_LEASES",
+      standardReference: "IFRS 16",
+      titleEn: "Leases",
+      titleAr: "عقود الإيجار",
+      narrativeEn:
+        "Right-of-use assets and lease liabilities are measured at the present value of remaining lease payments.",
+      narrativeAr:
+        "تُقاس أصول حق الاستخدام والتزامات الإيجار بالقيمة الحالية لمدفوعات الإيجار المتبقية.",
+      methodVersion: "ifrs16-v1",
+      autoPopulatedFrom: "leases",
+    }),
+    _ifrsNote({
+      noteType: "IAS_7_CASH_EQUIVALENTS",
+      standardReference: "IAS 7 \u00b67",
+      titleEn: "Cash and Cash Equivalents",
+      titleAr: "النقد وما في حكمه",
+      narrativeEn:
+        "Cash equivalents comprise short-term, highly liquid investments maturing within three months of acquisition.",
+      narrativeAr:
+        "يشمل ما في حكم النقد الاستثمارات قصيرة الأجل شديدة السيولة التي تستحق خلال ثلاثة أشهر من الاقتناء.",
+      methodVersion: "ias7-v1",
+      autoPopulatedFrom: "bank_accounts",
+    }),
+    _ifrsNote({
+      noteType: "IAS_8_RESTATEMENT",
+      standardReference: "IAS 8 \u00b622",
+      titleEn: "Prior-Period Restatement",
+      titleAr: "إعادة إصدار الفترة السابقة",
+      narrativeEn:
+        "Comparative figures have been restated for the correction of prior-period errors identified during the year-end close.",
+      narrativeAr:
+        "أُعيد إصدار الأرقام المقارنة لتصحيح أخطاء فترة سابقة تم تحديدها خلال الإقفال السنوي.",
+      methodVersion: "ias8-v1",
+      autoPopulatedFrom: "prior_period_restatements",
+    }),
+    _ifrsNote({
+      noteType: "IAS_12_INCOME_TAXES",
+      standardReference: "IAS 12",
+      titleEn: "Income Taxes",
+      titleAr: "ضرائب الدخل",
+      narrativeEn:
+        "Current tax is calculated at rates enacted or substantively enacted at the reporting date. Deferred tax is recognised on timing differences.",
+      narrativeAr:
+        "تُحتسب الضريبة الحالية بالمعدلات السارية أو الصادرة فعلياً في تاريخ التقرير. يُعترف بالضريبة المؤجلة على الفروق الزمنية.",
+      methodVersion: "ias12-v1",
+      autoPopulatedFrom: "tax_lodgements",
+    }),
+    _ifrsNote({
+      noteType: "IAS_16_PROPERTY_PLANT_EQUIPMENT",
+      standardReference: "IAS 16",
+      titleEn: "Property, Plant and Equipment",
+      titleAr: "الممتلكات والآلات والمعدات",
+      narrativeEn:
+        "PP&E is stated at cost less accumulated depreciation. Depreciation is calculated on a straight-line basis over useful lives.",
+      narrativeAr:
+        "تُدرج الممتلكات والآلات والمعدات بالتكلفة ناقصاً الإهلاك المتراكم. يُحتسب الإهلاك بطريقة القسط الثابت على مدى الأعمار الإنتاجية.",
+      methodVersion: "ias16-v1",
+      autoPopulatedFrom: "fixed_assets",
+      table: {
+        key: "ppe-rollforward",
+        titleEn: "PP&E Roll-Forward",
+        titleAr: "حركة الممتلكات والآلات والمعدات",
+        columns: [
+          { key: "class", labelEn: "Asset Class", labelAr: "فئة الأصل", isAmount: false, align: "start" },
+          { key: "opening", labelEn: "Opening (KWD)", labelAr: "الافتتاحي (د.ك)", isAmount: true, align: "end" },
+          { key: "additions", labelEn: "Additions", labelAr: "الإضافات", isAmount: true, align: "end" },
+          { key: "disposals", labelEn: "Disposals", labelAr: "الاستبعادات", isAmount: true, align: "end" },
+          { key: "depreciation", labelEn: "Depreciation", labelAr: "الإهلاك", isAmount: true, align: "end" },
+          { key: "closing", labelEn: "Closing", labelAr: "الختامي", isAmount: true, align: "end" },
+        ],
+        rows: [
+          { labelEn: "Buildings", labelAr: "مبانٍ", cells: ["Buildings", "1800000.000", "0.000", "0.000", "-72000.000", "1728000.000"] },
+          { labelEn: "Machinery", labelAr: "آلات", cells: ["Machinery", "650000.000", "125000.000", "-18000.000", "-81000.000", "676000.000"] },
+          { labelEn: "Vehicles", labelAr: "مركبات", cells: ["Vehicles", "220000.000", "55000.000", "-30000.000", "-44000.000", "201000.000"] },
+          { labelEn: "Total", labelAr: "الإجمالي", cells: [null, "2670000.000", "180000.000", "-48000.000", "-197000.000", "2605000.000"], isTotal: true },
+        ],
+      },
+    }),
+    _ifrsNote({
+      noteType: "IAS_19_EMPLOYEE_BENEFITS",
+      standardReference: "IAS 19",
+      titleEn: "Employee Benefits",
+      titleAr: "مزايا الموظفين",
+      narrativeEn:
+        "The Company recognises end-of-service indemnity (EOSI) and leave provisions per Kuwaiti labour law.",
+      narrativeAr:
+        "تعترف الشركة بمخصصات مكافأة نهاية الخدمة والإجازات وفقاً لقانون العمل الكويتي.",
+      methodVersion: "ias19-v1",
+      autoPopulatedFrom: "payroll",
+    }),
+    _ifrsNote({
+      noteType: "IAS_24_RELATED_PARTY",
+      standardReference: "IAS 24",
+      titleEn: "Related-Party Disclosures",
+      titleAr: "إفصاحات الأطراف ذات العلاقة",
+      narrativeEn:
+        "Related-party transactions are disclosed below. Transactions are conducted on arm's-length terms unless otherwise stated.",
+      narrativeAr:
+        "تُفصح المعاملات مع الأطراف ذات العلاقة أدناه. تُجرى المعاملات بشروط السوق المعتادة ما لم يُذكر خلاف ذلك.",
+      methodVersion: "ias24-v1",
+      autoPopulatedFrom: "related_parties",
+    }),
+    _ifrsNote({
+      noteType: "IAS_37_PROVISIONS",
+      standardReference: "IAS 37",
+      titleEn: "Provisions, Contingent Liabilities and Contingent Assets",
+      titleAr: "المخصصات والالتزامات والأصول المحتملة",
+      narrativeEn:
+        "Provisions are recognised when a present obligation exists as a result of a past event and a reliable estimate can be made.",
+      narrativeAr:
+        "يُعترف بالمخصصات عند وجود التزام حالي نتيجة حدث سابق ويمكن تقدير المبلغ بصورة موثوقة.",
+      methodVersion: "ias37-v1",
+      autoPopulatedFrom: "provisions",
+    }),
+    _ifrsNote({
+      noteType: "RETENTION_BALANCES",
+      standardReference: "Contract-retention schedule",
+      titleEn: "Retention Balances",
+      titleAr: "المبالغ المحتجزة",
+      narrativeEn:
+        "Retention receivables and payables on construction contracts.",
+      narrativeAr:
+        "ذمم المبالغ المحتجزة المدينة والدائنة على عقود الإنشاءات.",
+      methodVersion: "retention-v1",
+      narrativePending: true,
+    }),
+    _ifrsNote({
+      noteType: "COMMITMENTS_CONTINGENCIES",
+      standardReference: "IAS 37 \u00b684\u201392",
+      titleEn: "Commitments and Contingencies",
+      titleAr: "الالتزامات والمطلوبات المحتملة",
+      narrativeEn:
+        "Capital commitments and letters of guarantee outstanding at the reporting date.",
+      narrativeAr:
+        "الالتزامات الرأسمالية وخطابات الضمان القائمة في تاريخ التقرير.",
+      methodVersion: "commitments-v1",
+    }),
+    _ifrsNote({
+      noteType: "STATUTORY_RESERVE",
+      standardReference: "Kuwait Companies Law \u00a7244",
+      titleEn: "Statutory Reserve",
+      titleAr: "الاحتياطي القانوني",
+      narrativeEn:
+        "10% of net profit is transferred to the statutory reserve until it reaches 50% of paid-up capital.",
+      narrativeAr:
+        "يُحول 10% من صافي الربح إلى الاحتياطي القانوني حتى يبلغ 50% من رأس المال المدفوع.",
+      methodVersion: "statutory-reserve-v1",
+      autoPopulatedFrom: "general_ledger",
+    }),
+    _ifrsNote({
+      noteType: "CONCENTRATION_RISK",
+      standardReference: "IFRS 7 \u00b634",
+      titleEn: "Concentration Risk",
+      titleAr: "مخاطر التركز",
+      narrativeEn:
+        "Top-10 customer concentration and sector exposure summary.",
+      narrativeAr:
+        "ملخص تركز أكبر ١٠ عملاء والتعرض القطاعي.",
+      methodVersion: "concentration-v1",
+      autoPopulatedFrom: "customers",
+    }),
+    _ifrsNote({
+      noteType: "SUBSEQUENT_EVENTS",
+      standardReference: "IAS 10",
+      titleEn: "Events After the Reporting Period",
+      titleAr: "الأحداث اللاحقة لفترة التقرير",
+      narrativeEn:
+        "No adjusting or non-adjusting events have occurred between the reporting date and the date of authorisation of these financial statements.",
+      narrativeAr:
+        "لم تقع أي أحداث معدلة أو غير معدلة بين تاريخ التقرير وتاريخ اعتماد هذه القوائم المالية.",
+      methodVersion: "subsequent-events-v1",
+      narrativePending: true,
+    }),
+    _ifrsNote({
+      noteType: "GOING_CONCERN",
+      standardReference: "IAS 1 \u00b625\u201326",
+      titleEn: "Going Concern",
+      titleAr: "الاستمرارية",
+      narrativeEn:
+        "Management has assessed the Company's ability to continue as a going concern and is satisfied that the Company has the resources to continue operations for the foreseeable future.",
+      narrativeAr:
+        "قيّمت الإدارة قدرة الشركة على الاستمرار وهي مقتنعة بأن لدى الشركة الموارد اللازمة لمواصلة عملياتها في المستقبل المنظور.",
+      methodVersion: "going-concern-v1",
+    }),
+  ];
+
+  const variant = _resolveSocieVariant(tenantId);
+  if (variant !== "demo-corporate") {
+    return base;
+  }
+
+  // Islamic-finance tenant — add the 6 AAOIFI notes
+  const aaoifi = [
+    _aaoifiNote({
+      noteType: "AAOIFI_FAS_4_MUDARABA",
+      standardReference: "AAOIFI FAS 4",
+      titleEn: "Mudaraba (AAOIFI FAS 4)",
+      titleAr: "المضاربة (معيار الهيئة رقم ٤)",
+      narrativeEn:
+        "Mudaraba arrangements treat the Company as rab-al-mal (capital provider) or mudarib (manager). Profit is distributed per the agreed ratio; losses are borne by rab-al-mal unless due to mudarib's negligence.",
+      narrativeAr:
+        "تتعامل ترتيبات المضاربة مع الشركة باعتبارها رب المال أو المضارب. يُوزَّع الربح وفق النسبة المتفق عليها؛ ويتحمل رب المال الخسائر ما لم تكن نتيجة تقصير المضارب.",
+      methodVersion: "aaoifi-fas-4-mudaraba-v1",
+      instrumentLabelEn: "Mudaraba",
+      instrumentLabelAr: "مضاربة",
+      rows: [
+        { labelEn: "MUD-001 \u2014 Warba Bank", labelAr: "مض-٠٠١ \u2014 بنك وربة", cells: ["Profit on Mudaraba", "800000.000", "48000.000", "36000.000", "12000.000", "0"] },
+        { labelEn: "Total", labelAr: "الإجمالي", cells: [null, "800000.000", "48000.000", "36000.000", "12000.000", "0"], isTotal: true },
+      ],
+    }),
+    _aaoifiNote({
+      noteType: "AAOIFI_FAS_4_MUSHARAKA",
+      standardReference: "AAOIFI FAS 4",
+      titleEn: "Musharaka (AAOIFI FAS 4)",
+      titleAr: "المشاركة (معيار الهيئة رقم ٤)",
+      narrativeEn:
+        "Musharaka is a joint-venture equity partnership in which all partners contribute capital and share profits and losses per contractual ratios.",
+      narrativeAr:
+        "المشاركة شراكة استثمارية يُسهم فيها جميع الشركاء برأس المال ويقتسمون الأرباح والخسائر وفق النسب التعاقدية.",
+      methodVersion: "aaoifi-fas-4-musharaka-v1",
+      instrumentLabelEn: "Musharaka",
+      instrumentLabelAr: "مشاركة",
+      rows: [
+        { labelEn: "MSH-001 \u2014 Boubyan Bank", labelAr: "مشـ-٠٠١ \u2014 بنك بوبيان", cells: ["Share of Partnership Profit", "500000.000", "32000.000", "20000.000", "12000.000", "1"] },
+        { labelEn: "Total", labelAr: "الإجمالي", cells: [null, "500000.000", "32000.000", "20000.000", "12000.000", "1"], isTotal: true },
+      ],
+    }),
+    _aaoifiNote({
+      noteType: "AAOIFI_FAS_28_MURABAHA",
+      standardReference: "AAOIFI FAS 28",
+      titleEn: "Murabaha and Deferred-Payment Sales (AAOIFI FAS 28)",
+      titleAr: "المرابحة والبيوع الآجلة (معيار الهيئة رقم ٢٨)",
+      narrativeEn:
+        "Murabaha is a cost-plus sale where the client is sold a commodity at cost plus a disclosed markup, payable on deferred terms. Profit is recognised time-apportioned over the deferral period.",
+      narrativeAr:
+        "المرابحة بيع بالتكلفة مع ربح معلوم حيث تُباع للعميل سلعة بسعر التكلفة زائداً هامش ربح معلن ويُدفع على دفعات مؤجلة. يُعترف بالربح بالتناسب الزمني على مدى فترة التأجيل.",
+      methodVersion: "aaoifi-fas-28-murabaha-v1",
+      instrumentLabelEn: "Murabaha",
+      instrumentLabelAr: "مرابحة",
+      rows: [
+        { labelEn: "MUR-001 \u2014 NBK Kuwait", labelAr: "مرا-٠٠١ \u2014 بنك الكويت الوطني", cells: ["Finance Cost", "1200000.000", "72000.000", "54000.000", "18000.000", "0"] },
+        { labelEn: "MUR-002 \u2014 KFH", labelAr: "مرا-٠٠٢ \u2014 بيت التمويل الكويتي", cells: ["Finance Cost", "850000.000", "51000.000", "38000.000", "13000.000", "2"] },
+        { labelEn: "Total", labelAr: "الإجمالي", cells: [null, "2050000.000", "123000.000", "92000.000", "31000.000", "2"], isTotal: true },
+      ],
+    }),
+    _aaoifiNote({
+      noteType: "AAOIFI_FAS_31_WAKALA",
+      standardReference: "AAOIFI FAS 31",
+      titleEn: "Wakala Investment Agency (AAOIFI FAS 31)",
+      titleAr: "الوكالة الاستثمارية (معيار الهيئة رقم ٣١)",
+      narrativeEn:
+        "Under Wakala arrangements, the Company acts as wakil (agent) or muwakkil (principal) for investment placements. Profit above the expected rate is retained by the wakil as an incentive fee.",
+      narrativeAr:
+        "بموجب ترتيبات الوكالة، تعمل الشركة وكيلاً أو موكلاً لتوظيفات استثمارية. يحتفظ الوكيل بأي ربح يزيد عن المعدل المتوقع كأتعاب حافزة.",
+      methodVersion: "aaoifi-fas-31-wakala-v1",
+      instrumentLabelEn: "Wakala",
+      instrumentLabelAr: "وكالة",
+      rows: [
+        { labelEn: "WKL-001 \u2014 CBK Islamic", labelAr: "وكـ-٠٠١ \u2014 CBK الإسلامي", cells: ["Finance Income", "400000.000", "20000.000", "14000.000", "6000.000", "0"] },
+        { labelEn: "Total", labelAr: "الإجمالي", cells: [null, "400000.000", "20000.000", "14000.000", "6000.000", "0"], isTotal: true },
+      ],
+    }),
+    _aaoifiNote({
+      noteType: "AAOIFI_FAS_32_IJARA",
+      standardReference: "AAOIFI FAS 32",
+      titleEn: "Ijara (AAOIFI FAS 32)",
+      titleAr: "الإجارة (معيار الهيئة رقم ٣٢)",
+      narrativeEn:
+        "Ijara arrangements are leases of assets. Ijara Muntahia Bittamleek couples the lease with a promise to transfer ownership at the end of the lease term.",
+      narrativeAr:
+        "ترتيبات الإجارة هي إجارة للأصول. تجمع الإجارة المنتهية بالتمليك بين الإجارة والوعد بنقل الملكية في نهاية مدة الإجارة.",
+      methodVersion: "aaoifi-fas-32-ijara-v1",
+      instrumentLabelEn: "Ijara",
+      instrumentLabelAr: "إجارة",
+      rows: [
+        { labelEn: "IJR-001 \u2014 Warba Bank", labelAr: "إجـ-٠٠١ \u2014 بنك وربة", cells: ["Lease Expense", "950000.000", "57000.000", "43000.000", "14000.000", "0"] },
+        { labelEn: "Total", labelAr: "الإجمالي", cells: [null, "950000.000", "57000.000", "43000.000", "14000.000", "0"], isTotal: true },
+      ],
+    }),
+    _aaoifiNote({
+      noteType: "AAOIFI_FAS_34_SUKUK",
+      standardReference: "AAOIFI FAS 34",
+      titleEn: "Sukuk (AAOIFI FAS 34)",
+      titleAr: "الصكوك (معيار الهيئة رقم ٣٤)",
+      narrativeEn:
+        "Sukuk are certificates representing proportional ownership in an underlying pool of assets. Periodic distributions derive from the pool's cash flows.",
+      narrativeAr:
+        "الصكوك شهادات تمثل ملكية جزئية في مجموعة أصول. تنشأ التوزيعات الدورية من التدفقات النقدية للمجموعة.",
+      methodVersion: "aaoifi-fas-34-sukuk-v1",
+      instrumentLabelEn: "Sukuk",
+      instrumentLabelAr: "صكوك",
+      rows: [
+        { labelEn: "SUK-001 \u2014 KFH Sukuk 2028", labelAr: "صـك-٠٠١ \u2014 صكوك بيت التمويل ٢٠٢٨", cells: ["Finance Cost (Bond Coupon)", "1500000.000", "90000.000", "67500.000", "22500.000", "0"] },
+        { labelEn: "Total", labelAr: "الإجمالي", cells: [null, "1500000.000", "90000.000", "67500.000", "22500.000", "0"], isTotal: true },
+      ],
+    }),
+  ];
+
+  // Insert AAOIFI block between CONCENTRATION_RISK and SUBSEQUENT_EVENTS
+  // to mirror the backend canonical-note-order.
+  const result = [];
+  for (const note of base) {
+    if (note.noteType === "SUBSEQUENT_EVENTS") {
+      for (const a of aaoifi) result.push(a);
+    }
+    result.push(note);
+  }
+  return result;
+}
+
+/**
+ * Mock disclosure-notes fetch. Returns one run-shaped envelope so the
+ * frontend renderer doesn't have to branch between mock + live.
+ */
+export async function getDisclosureNotes(period) {
+  await delay();
+  const tenantId = _currentTenantId;
+  const notes = _disclosureNotesFor(tenantId);
+  // Simulate one "run" of the disclosure-notes orchestrator.
+  return _brandObj({
+    runId: `DN-RUN-MOCK-${tenantId}`,
+    fiscalYear: 2025,
+    asOfDate: "2025-12-31",
+    language: "bilingual",
+    period: period || "FY 2025",
+    notes: notes.map((n, i) => ({
+      ...n,
+      id: `DN-NOTE-${tenantId}-${i + 1}`,
+      noteOrder: i + 1,
+    })),
+  });
 }
 
 // ── Month-End Close — CFO authority ─────────────────────────────

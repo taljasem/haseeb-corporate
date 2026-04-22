@@ -96,6 +96,7 @@ import * as migrationImportApi from '../api/migration-import';
 import * as vendorsApi from '../api/vendors';
 import * as customersApi from '../api/customers';
 import * as recurringEntriesApi from '../api/recurring-entries';
+import * as payrollApi from '../api/payroll';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -306,6 +307,38 @@ const FUNCTION_ROUTING = {
   processRecurringEntries: 'wired',
   fireRecurringEntryNow: 'wired',
   listRecurringEntryInstances: 'wired',
+
+  // Payroll — AUDIT-ACC-013 (2026-04-22). 23 wrappers across three
+  // sub-surfaces: Employees (10) + TenantPayrollConfig (2) + PIFSS
+  // submissions (4) + PayrollRuns (7). All "extras" names NOT on
+  // mockEngine's namespace; wired via buildLiveSurface direct
+  // assignment + buildMockExtras MOCK stubs. Role gates enforced by
+  // backend. downloadWpsFile returns {blob, filename} — raw SIF
+  // text/plain response from the backend (differs from HASEEB-180
+  // bank-account export which is JSON-wrapped base64).
+  listEmployees: 'wired',
+  getEmployee: 'wired',
+  createEmployee: 'wired',
+  updateEmployee: 'wired',
+  terminateEmployee: 'wired',
+  getEmployeeEos: 'wired',
+  registerEmployeeRehire: 'wired',
+  classifyServiceContinuity: 'wired',
+  getEmployeeEosHistory: 'wired',
+  getEmployeeAdvances: 'wired',
+  getTenantPayrollConfig: 'wired',
+  updateEosiReformDate: 'wired',
+  listPifssSubmissions: 'wired',
+  generatePifssFile: 'wired',
+  getPifssSubmission: 'wired',
+  updatePifssSubmissionStatus: 'wired',
+  getPayrollHistory: 'wired',
+  getPayrollRun: 'wired',
+  runPayroll: 'wired',
+  accrueEos: 'wired',
+  approvePayroll: 'wired',
+  payPayroll: 'wired',
+  downloadWpsFile: 'wired',
 };
 
 /**
@@ -687,6 +720,32 @@ const REAL_IMPLS = {
   processRecurringEntries: recurringEntriesApi.processRecurringEntries,
   fireRecurringEntryNow: recurringEntriesApi.fireRecurringEntryNow,
   listRecurringEntryInstances: recurringEntriesApi.listRecurringEntryInstances,
+
+  // Payroll — AUDIT-ACC-013 (2026-04-22). 23 wrappers (employees +
+  // tenant-payroll-config + PIFSS submissions + payroll runs + WPS).
+  listEmployees: payrollApi.listEmployees,
+  getEmployee: payrollApi.getEmployee,
+  createEmployee: payrollApi.createEmployee,
+  updateEmployee: payrollApi.updateEmployee,
+  terminateEmployee: payrollApi.terminateEmployee,
+  getEmployeeEos: payrollApi.getEmployeeEos,
+  registerEmployeeRehire: payrollApi.registerEmployeeRehire,
+  classifyServiceContinuity: payrollApi.classifyServiceContinuity,
+  getEmployeeEosHistory: payrollApi.getEmployeeEosHistory,
+  getEmployeeAdvances: payrollApi.getEmployeeAdvances,
+  getTenantPayrollConfig: payrollApi.getTenantPayrollConfig,
+  updateEosiReformDate: payrollApi.updateEosiReformDate,
+  listPifssSubmissions: payrollApi.listPifssSubmissions,
+  generatePifssFile: payrollApi.generatePifssFile,
+  getPifssSubmission: payrollApi.getPifssSubmission,
+  updatePifssSubmissionStatus: payrollApi.updatePifssSubmissionStatus,
+  getPayrollHistory: payrollApi.getPayrollHistory,
+  getPayrollRun: payrollApi.getPayrollRun,
+  runPayroll: payrollApi.runPayroll,
+  accrueEos: payrollApi.accrueEos,
+  approvePayroll: payrollApi.approvePayroll,
+  payPayroll: payrollApi.payPayroll,
+  downloadWpsFile: payrollApi.downloadWpsFile,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -1191,6 +1250,38 @@ function buildLiveSurface() {
   surface.processRecurringEntries = recurringEntriesApi.processRecurringEntries;
   surface.fireRecurringEntryNow = recurringEntriesApi.fireRecurringEntryNow;
   surface.listRecurringEntryInstances = recurringEntriesApi.listRecurringEntryInstances;
+
+  // Payroll — AUDIT-ACC-013 (2026-04-22). 23 wrappers exposed as engine
+  // extras under canonical backend-aligned names. Not on mockEngine's
+  // namespace; buildMockExtras below provides MOCK-mode stubs so the
+  // new PayrollScreen renders meaningful seed data without a live
+  // backend. WPS download uses a raw `fetch` path (not the axios JSON
+  // client) because the backend returns `text/plain` + Content-Disposition
+  // — the MOCK stub emits a tiny static SIF string so the download dance
+  // exercises anchor/revokeObjectURL in both modes.
+  surface.listEmployees = payrollApi.listEmployees;
+  surface.getEmployee = payrollApi.getEmployee;
+  surface.createEmployee = payrollApi.createEmployee;
+  surface.updateEmployee = payrollApi.updateEmployee;
+  surface.terminateEmployee = payrollApi.terminateEmployee;
+  surface.getEmployeeEos = payrollApi.getEmployeeEos;
+  surface.registerEmployeeRehire = payrollApi.registerEmployeeRehire;
+  surface.classifyServiceContinuity = payrollApi.classifyServiceContinuity;
+  surface.getEmployeeEosHistory = payrollApi.getEmployeeEosHistory;
+  surface.getEmployeeAdvances = payrollApi.getEmployeeAdvances;
+  surface.getTenantPayrollConfig = payrollApi.getTenantPayrollConfig;
+  surface.updateEosiReformDate = payrollApi.updateEosiReformDate;
+  surface.listPifssSubmissions = payrollApi.listPifssSubmissions;
+  surface.generatePifssFile = payrollApi.generatePifssFile;
+  surface.getPifssSubmission = payrollApi.getPifssSubmission;
+  surface.updatePifssSubmissionStatus = payrollApi.updatePifssSubmissionStatus;
+  surface.getPayrollHistory = payrollApi.getPayrollHistory;
+  surface.getPayrollRun = payrollApi.getPayrollRun;
+  surface.runPayroll = payrollApi.runPayroll;
+  surface.accrueEos = payrollApi.accrueEos;
+  surface.approvePayroll = payrollApi.approvePayroll;
+  surface.payPayroll = payrollApi.payPayroll;
+  surface.downloadWpsFile = payrollApi.downloadWpsFile;
 
   return surface;
 }
@@ -2090,6 +2181,38 @@ function buildMockExtras() {
       const page = opts.page != null ? Number(opts.page) : 1;
       return { entries: [], total: 0, page, limit };
     },
+
+    // Payroll — AUDIT-ACC-013 (2026-04-22). MOCK stubs for the 23
+    // wrappers. The seed data is deliberately rich enough for the
+    // PayrollScreen to exercise all three tabs + all role-gated
+    // actions without a live backend: 6 employees (3 Kuwaiti + 3
+    // non-Kuwaiti, one terminated), 3 payroll runs (DRAFT / APPROVED
+    // / PAID), 2 PIFSS submissions. The WPS download stub emits a
+    // tiny static SIF string so the browser-download path (anchor +
+    // URL.createObjectURL) exercises in MOCK.
+    listEmployees: mockListEmployees,
+    getEmployee: mockGetEmployee,
+    createEmployee: mockCreateEmployee,
+    updateEmployee: mockUpdateEmployee,
+    terminateEmployee: mockTerminateEmployee,
+    getEmployeeEos: mockGetEmployeeEos,
+    registerEmployeeRehire: mockRegisterEmployeeRehire,
+    classifyServiceContinuity: mockClassifyServiceContinuity,
+    getEmployeeEosHistory: mockGetEmployeeEosHistory,
+    getEmployeeAdvances: mockGetEmployeeAdvances,
+    getTenantPayrollConfig: mockGetTenantPayrollConfig,
+    updateEosiReformDate: mockUpdateEosiReformDate,
+    listPifssSubmissions: mockListPifssSubmissions,
+    generatePifssFile: mockGeneratePifssFile,
+    getPifssSubmission: mockGetPifssSubmission,
+    updatePifssSubmissionStatus: mockUpdatePifssSubmissionStatus,
+    getPayrollHistory: mockGetPayrollHistory,
+    getPayrollRun: mockGetPayrollRun,
+    runPayroll: mockRunPayroll,
+    accrueEos: mockAccrueEos,
+    approvePayroll: mockApprovePayroll,
+    payPayroll: mockPayPayroll,
+    downloadWpsFile: mockDownloadWpsFile,
   };
 }
 
@@ -4585,6 +4708,643 @@ async function mockDeactivateCustomer(id) {
   return { ..._mockCustomers[idx] };
 }
 
+// ── Payroll MOCK stubs (AUDIT-ACC-013) ──
+// In-memory seed deliberately covers Kuwaiti vs non-Kuwaiti (drives
+// statutory differences on payroll lines) + one TERMINATED employee
+// so the status filter + re-hire flow are exercisable in MOCK.
+const _mockEmployees = [
+  {
+    id: 'EMP-001',
+    employeeNumber: 'E-001',
+    nameEn: 'Fahad Al-Jasem',
+    nameAr: 'فهد الجاسم',
+    civilId: '••••1234',
+    nationality: 'Kuwaiti',
+    isKuwaiti: true,
+    basicSalary: '1800.000',
+    housingAllowance: '150.000',
+    transportAllowance: '50.000',
+    otherAllowances: '0.000',
+    hireDate: '2022-01-15',
+    bankAccountIban: 'KW81CBKU0000000000001234567890',
+    status: 'ACTIVE',
+    position: 'Accounting Manager',
+    createdAt: '2022-01-15T00:00:00.000Z',
+    updatedAt: '2026-03-01T00:00:00.000Z',
+  },
+  {
+    id: 'EMP-002',
+    employeeNumber: 'E-002',
+    nameEn: 'Layla Al-Mutairi',
+    nameAr: 'ليلى المطيري',
+    civilId: '••••5678',
+    nationality: 'Kuwaiti',
+    isKuwaiti: true,
+    basicSalary: '1200.000',
+    housingAllowance: '100.000',
+    transportAllowance: '50.000',
+    otherAllowances: '0.000',
+    hireDate: '2023-06-01',
+    bankAccountIban: 'KW81NBOK0000000000001234567891',
+    status: 'ACTIVE',
+    position: 'Senior Accountant',
+    createdAt: '2023-06-01T00:00:00.000Z',
+    updatedAt: '2026-03-01T00:00:00.000Z',
+  },
+  {
+    id: 'EMP-003',
+    employeeNumber: 'E-003',
+    nameEn: 'Salem Al-Rashid',
+    nameAr: 'سالم الراشد',
+    civilId: '••••9012',
+    nationality: 'Kuwaiti',
+    isKuwaiti: true,
+    basicSalary: '900.000',
+    housingAllowance: '80.000',
+    transportAllowance: '40.000',
+    otherAllowances: '0.000',
+    hireDate: '2024-03-10',
+    bankAccountIban: 'KW81CBKU0000000000001234567892',
+    status: 'ACTIVE',
+    position: 'Junior Accountant',
+    createdAt: '2024-03-10T00:00:00.000Z',
+    updatedAt: '2026-03-01T00:00:00.000Z',
+  },
+  {
+    id: 'EMP-004',
+    employeeNumber: 'E-004',
+    nameEn: 'Rajesh Kumar',
+    nameAr: 'راجيش كومار',
+    civilId: '••••3456',
+    nationality: 'Indian',
+    isKuwaiti: false,
+    basicSalary: '750.000',
+    housingAllowance: '75.000',
+    transportAllowance: '35.000',
+    otherAllowances: '0.000',
+    hireDate: '2023-09-15',
+    bankAccountIban: 'KW81NBOK0000000000001234567893',
+    status: 'ACTIVE',
+    position: 'IT Specialist',
+    createdAt: '2023-09-15T00:00:00.000Z',
+    updatedAt: '2026-03-01T00:00:00.000Z',
+  },
+  {
+    id: 'EMP-005',
+    employeeNumber: 'E-005',
+    nameEn: 'Maria Santos',
+    nameAr: 'ماريا سانتوس',
+    civilId: '••••7890',
+    nationality: 'Filipino',
+    isKuwaiti: false,
+    basicSalary: '400.000',
+    housingAllowance: '50.000',
+    transportAllowance: '25.000',
+    otherAllowances: '0.000',
+    hireDate: '2024-01-20',
+    bankAccountIban: 'KW81CBKU0000000000001234567894',
+    status: 'ACTIVE',
+    position: 'Administrative Assistant',
+    createdAt: '2024-01-20T00:00:00.000Z',
+    updatedAt: '2026-03-01T00:00:00.000Z',
+  },
+  {
+    id: 'EMP-006',
+    employeeNumber: 'E-006',
+    nameEn: 'Ahmed Hassan',
+    nameAr: 'أحمد حسن',
+    civilId: '••••2468',
+    nationality: 'Egyptian',
+    isKuwaiti: false,
+    basicSalary: '600.000',
+    housingAllowance: '60.000',
+    transportAllowance: '30.000',
+    otherAllowances: '0.000',
+    hireDate: '2021-04-01',
+    bankAccountIban: 'KW81NBOK0000000000001234567895',
+    status: 'TERMINATED',
+    position: 'Operations Analyst',
+    terminationDate: '2026-02-15',
+    createdAt: '2021-04-01T00:00:00.000Z',
+    updatedAt: '2026-02-15T00:00:00.000Z',
+  },
+];
+
+function _buildMockPayrollEntries() {
+  // Active employees only (5 of 6). PIFSS applies only to Kuwaitis
+  // (8% employee + 11.5% employer, capped at KD 2,750 basic).
+  return _mockEmployees
+    .filter((e) => e.status === 'ACTIVE')
+    .map((e) => {
+      const base = Number(e.basicSalary || 0);
+      const allowances =
+        Number(e.housingAllowance || 0) +
+        Number(e.transportAllowance || 0) +
+        Number(e.otherAllowances || 0);
+      const gross = base + allowances;
+      const pifssCap = Math.min(base, 2750);
+      const pifssEmployee = e.isKuwaiti ? +(pifssCap * 0.08).toFixed(3) : 0;
+      const pifssEmployer = e.isKuwaiti ? +(pifssCap * 0.115).toFixed(3) : 0;
+      const otherDeductions = 0;
+      const net = +(gross - pifssEmployee - otherDeductions).toFixed(3);
+      return {
+        id: `ENTRY-${e.id}`,
+        employeeId: e.id,
+        employee: {
+          id: e.id,
+          employeeNumber: e.employeeNumber,
+          nameEn: e.nameEn,
+          nameAr: e.nameAr,
+          isKuwaiti: e.isKuwaiti,
+          nationality: e.nationality,
+          position: e.position,
+        },
+        basicSalary: base.toFixed(3),
+        allowances: allowances.toFixed(3),
+        grossSalary: gross.toFixed(3),
+        pifssCappedSalary: pifssCap.toFixed(3),
+        pifssEmployee: pifssEmployee.toFixed(3),
+        pifssEmployer: pifssEmployer.toFixed(3),
+        otherDeductions: otherDeductions.toFixed(3),
+        netSalary: net.toFixed(3),
+      };
+    });
+}
+
+function _sumPayrollEntries(entries) {
+  const sum = (field) =>
+    entries
+      .reduce((acc, e) => acc + Number(e[field] || 0), 0)
+      .toFixed(3);
+  return {
+    totalGross: sum('grossSalary'),
+    totalDeductions: entries
+      .reduce(
+        (acc, e) =>
+          acc + Number(e.pifssEmployee || 0) + Number(e.otherDeductions || 0),
+        0,
+      )
+      .toFixed(3),
+    totalNet: sum('netSalary'),
+    totalPifssEmployer: sum('pifssEmployer'),
+    totalPifssEmployee: sum('pifssEmployee'),
+  };
+}
+
+function _seedMockPayrollRuns() {
+  const entries = _buildMockPayrollEntries();
+  const totals = _sumPayrollEntries(entries);
+  return [
+    {
+      id: 'RUN-2026-04',
+      periodYear: 2026,
+      periodMonth: 4,
+      status: 'DRAFT',
+      ...totals,
+      processedBy: 'mock-owner',
+      processedAt: '2026-04-20T10:00:00.000Z',
+      approvedBy: null,
+      approvedAt: null,
+      paidAt: null,
+      journalEntryId: null,
+      wpsFileUrl: null,
+      entries,
+    },
+    {
+      id: 'RUN-2026-03',
+      periodYear: 2026,
+      periodMonth: 3,
+      status: 'APPROVED',
+      ...totals,
+      processedBy: 'mock-owner',
+      processedAt: '2026-03-28T10:00:00.000Z',
+      approvedBy: 'mock-owner',
+      approvedAt: '2026-03-29T12:00:00.000Z',
+      paidAt: null,
+      journalEntryId: 'JE-PAYROLL-2026-03',
+      wpsFileUrl: null,
+      entries,
+    },
+    {
+      id: 'RUN-2026-02',
+      periodYear: 2026,
+      periodMonth: 2,
+      status: 'PAID',
+      ...totals,
+      processedBy: 'mock-owner',
+      processedAt: '2026-02-28T10:00:00.000Z',
+      approvedBy: 'mock-owner',
+      approvedAt: '2026-03-01T09:00:00.000Z',
+      paidAt: '2026-03-02T11:00:00.000Z',
+      journalEntryId: 'JE-PAYROLL-2026-02',
+      wpsFileUrl: 'mock://wps/RUN-2026-02.sif',
+      entries,
+    },
+  ];
+}
+
+const _mockPayrollRuns = _seedMockPayrollRuns();
+
+const _mockPifssSubmissions = [
+  {
+    id: 'PIFSS-2026-03',
+    year: 2026,
+    month: 3,
+    status: 'ACCEPTED',
+    fileName: 'PIFSS_2026_03.txt',
+    portalReference: 'KWT-PIFSS-2026-03-ABC123',
+    totalEmployees: 3,
+    totalPifssEmployee: '264.000',
+    totalPifssEmployer: '379.500',
+    submittedAt: '2026-04-05T10:00:00.000Z',
+    acceptedAt: '2026-04-06T11:00:00.000Z',
+    rejectedAt: null,
+    rejectionReason: null,
+    paidAt: null,
+    createdAt: '2026-04-01T09:00:00.000Z',
+  },
+  {
+    id: 'PIFSS-2026-02',
+    year: 2026,
+    month: 2,
+    status: 'PAID',
+    fileName: 'PIFSS_2026_02.txt',
+    portalReference: 'KWT-PIFSS-2026-02-XYZ456',
+    totalEmployees: 3,
+    totalPifssEmployee: '264.000',
+    totalPifssEmployer: '379.500',
+    submittedAt: '2026-03-05T10:00:00.000Z',
+    acceptedAt: '2026-03-06T11:00:00.000Z',
+    rejectedAt: null,
+    rejectionReason: null,
+    paidAt: '2026-03-10T12:00:00.000Z',
+    createdAt: '2026-03-01T09:00:00.000Z',
+  },
+];
+
+let _mockPayrollRunCounter = _mockPayrollRuns.length;
+let _mockEmployeeCounter = _mockEmployees.length;
+let _mockPifssCounter = _mockPifssSubmissions.length;
+
+async function mockListEmployees(filter = {}) {
+  await new Promise((r) => setTimeout(r, 60));
+  let rows = _mockEmployees.slice();
+  if (filter.search) {
+    const q = String(filter.search).toLowerCase();
+    rows = rows.filter(
+      (e) =>
+        e.nameEn.toLowerCase().includes(q) ||
+        (e.nameAr || '').toLowerCase().includes(q) ||
+        e.employeeNumber.toLowerCase().includes(q) ||
+        (e.civilId || '').toLowerCase().includes(q),
+    );
+  }
+  if (filter.status) rows = rows.filter((e) => e.status === filter.status);
+  if (filter.isKuwaiti != null) {
+    rows = rows.filter((e) => !!e.isKuwaiti === !!filter.isKuwaiti);
+  }
+  const page = filter.page || 1;
+  const limit = filter.limit || rows.length;
+  const start = (page - 1) * limit;
+  return {
+    data: rows.slice(start, start + limit).map((e) => ({ ...e })),
+    total: rows.length,
+    page,
+    limit,
+  };
+}
+
+async function mockGetEmployee(id) {
+  await new Promise((r) => setTimeout(r, 30));
+  const row = _mockEmployees.find((e) => e.id === id);
+  return row ? { ...row } : null;
+}
+
+async function mockCreateEmployee(input = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  _mockEmployeeCounter += 1;
+  const id = `EMP-${String(_mockEmployeeCounter).padStart(3, '0')}`;
+  const row = {
+    id,
+    employeeNumber: input.employeeNumber || `E-${_mockEmployeeCounter}`,
+    nameEn: input.nameEn || '',
+    nameAr: input.nameAr || '',
+    civilId: input.civilId || null,
+    nationality: input.nationality || null,
+    isKuwaiti: !!input.isKuwaiti,
+    basicSalary: String(input.basicSalary ?? '0.000'),
+    housingAllowance: String(input.housingAllowance ?? '0.000'),
+    transportAllowance: String(input.transportAllowance ?? '0.000'),
+    otherAllowances: String(input.otherAllowances ?? '0.000'),
+    hireDate: input.hireDate || new Date().toISOString().slice(0, 10),
+    bankAccountIban: input.bankAccountIban || null,
+    status: 'ACTIVE',
+    position: input.position || '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  _mockEmployees.push(row);
+  return { ...row };
+}
+
+async function mockUpdateEmployee(id, patch = {}) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockEmployees.findIndex((e) => e.id === id);
+  if (idx < 0) return null;
+  _mockEmployees[idx] = {
+    ..._mockEmployees[idx],
+    ...patch,
+    updatedAt: new Date().toISOString(),
+  };
+  return { ..._mockEmployees[idx] };
+}
+
+async function mockTerminateEmployee(id, input = {}) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockEmployees.findIndex((e) => e.id === id);
+  if (idx < 0) return null;
+  _mockEmployees[idx] = {
+    ..._mockEmployees[idx],
+    status: 'TERMINATED',
+    terminationDate:
+      input.terminationDate || new Date().toISOString().slice(0, 10),
+    updatedAt: new Date().toISOString(),
+  };
+  return { ..._mockEmployees[idx] };
+}
+
+async function mockGetEmployeeEos(id) {
+  await new Promise((r) => setTimeout(r, 40));
+  const emp = _mockEmployees.find((e) => e.id === id);
+  if (!emp) return null;
+  const base = Number(emp.basicSalary || 0);
+  const years = 2; // stub
+  return {
+    employeeId: emp.id,
+    employeeName: emp.nameEn,
+    hireDate: emp.hireDate,
+    yearsOfService: years,
+    basicSalary: base.toFixed(3),
+    dailyRate: (base / 30).toFixed(3),
+    first5YearsAmount: (base * 0.5 * years).toFixed(3),
+    after5YearsAmount: '0.000',
+    totalEos: (base * 0.5 * years).toFixed(3),
+    accruedToDate: (base * 0.5 * (years - 0.1)).toFixed(3),
+    accrualHistory: [],
+  };
+}
+
+async function mockRegisterEmployeeRehire(id, input = {}) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockEmployees.findIndex((e) => e.id === id);
+  if (idx < 0) return null;
+  _mockEmployees[idx] = {
+    ..._mockEmployees[idx],
+    status: 'ACTIVE',
+    rehireDate: input.rehireDate,
+    priorTerminationDate: input.priorTerminationDate,
+    updatedAt: new Date().toISOString(),
+  };
+  return { ..._mockEmployees[idx] };
+}
+
+async function mockClassifyServiceContinuity(id, input = {}) {
+  await new Promise((r) => setTimeout(r, 60));
+  const emp = _mockEmployees.find((e) => e.id === id);
+  return {
+    employeeId: id,
+    decision: input.decision,
+    legalBasisNote: input.legalBasisNote,
+    classifiedAt: new Date().toISOString(),
+    employee: emp ? { ...emp } : null,
+  };
+}
+
+async function mockGetEmployeeEosHistory(id) {
+  await new Promise((r) => setTimeout(r, 40));
+  return {
+    employeeId: id,
+    events: [],
+    accruals: [],
+  };
+}
+
+async function mockGetEmployeeAdvances(id) {
+  await new Promise((r) => setTimeout(r, 40));
+  return { employeeId: id, advances: [] };
+}
+
+async function mockGetTenantPayrollConfig() {
+  await new Promise((r) => setTimeout(r, 30));
+  return {
+    id: 'TENANT-PAYROLL-CONFIG',
+    eosiReformDate: '2024-01-01',
+    eosiReformLegalBasisNote: 'Kuwait EOSI reform law 123 of 2024.',
+    pifssSalaryCapKwd: '2750.000',
+    pifssEmployeeRate: '0.08',
+    pifssEmployerRate: '0.115',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  };
+}
+
+async function mockUpdateEosiReformDate(input = {}) {
+  await new Promise((r) => setTimeout(r, 60));
+  return {
+    id: 'TENANT-PAYROLL-CONFIG',
+    eosiReformDate: input.date,
+    eosiReformLegalBasisNote: input.legalBasisNote,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+async function mockListPifssSubmissions(filter = {}) {
+  await new Promise((r) => setTimeout(r, 50));
+  let rows = _mockPifssSubmissions.slice();
+  if (filter.year) rows = rows.filter((s) => s.year === filter.year);
+  if (filter.status) rows = rows.filter((s) => s.status === filter.status);
+  const page = filter.page || 1;
+  const limit = filter.limit || rows.length;
+  const start = (page - 1) * limit;
+  return {
+    data: rows.slice(start, start + limit).map((r) => ({ ...r })),
+    total: rows.length,
+    page,
+    limit,
+  };
+}
+
+async function mockGeneratePifssFile(year, month) {
+  await new Promise((r) => setTimeout(r, 100));
+  _mockPifssCounter += 1;
+  const row = {
+    id: `PIFSS-${year}-${String(month).padStart(2, '0')}`,
+    year,
+    month,
+    status: 'GENERATED',
+    fileName: `PIFSS_${year}_${String(month).padStart(2, '0')}.txt`,
+    portalReference: null,
+    totalEmployees: 3,
+    totalPifssEmployee: '264.000',
+    totalPifssEmployer: '379.500',
+    submittedAt: null,
+    acceptedAt: null,
+    rejectedAt: null,
+    rejectionReason: null,
+    paidAt: null,
+    createdAt: new Date().toISOString(),
+  };
+  _mockPifssSubmissions.unshift(row);
+  return { ...row };
+}
+
+async function mockGetPifssSubmission(id) {
+  await new Promise((r) => setTimeout(r, 30));
+  const row = _mockPifssSubmissions.find((s) => s.id === id);
+  return row ? { ...row } : null;
+}
+
+async function mockUpdatePifssSubmissionStatus(id, input = {}) {
+  await new Promise((r) => setTimeout(r, 60));
+  const idx = _mockPifssSubmissions.findIndex((s) => s.id === id);
+  if (idx < 0) return null;
+  const now = new Date().toISOString();
+  const patch = { status: input.status };
+  if (input.status === 'SUBMITTED') patch.submittedAt = input.submittedAt || now;
+  if (input.status === 'ACCEPTED') patch.acceptedAt = input.acceptedAt || now;
+  if (input.status === 'REJECTED') {
+    patch.rejectedAt = input.rejectedAt || now;
+    patch.rejectionReason = input.rejectionReason;
+  }
+  if (input.status === 'PAID') patch.paidAt = input.paidAt || now;
+  if (input.portalReference) patch.portalReference = input.portalReference;
+  _mockPifssSubmissions[idx] = { ..._mockPifssSubmissions[idx], ...patch };
+  return { ..._mockPifssSubmissions[idx] };
+}
+
+async function mockGetPayrollHistory(filter = {}) {
+  await new Promise((r) => setTimeout(r, 60));
+  let rows = _mockPayrollRuns.slice();
+  if (filter.year) rows = rows.filter((r) => r.periodYear === filter.year);
+  const page = filter.page || 1;
+  const limit = filter.limit || rows.length;
+  const start = (page - 1) * limit;
+  return {
+    data: rows.slice(start, start + limit).map((r) => ({ ...r })),
+    total: rows.length,
+    page,
+    limit,
+  };
+}
+
+async function mockGetPayrollRun(id) {
+  await new Promise((r) => setTimeout(r, 50));
+  const row = _mockPayrollRuns.find((r) => r.id === id);
+  return row ? { ...row } : null;
+}
+
+async function mockRunPayroll(input = {}) {
+  await new Promise((r) => setTimeout(r, 100));
+  _mockPayrollRunCounter += 1;
+  const year = input.year ?? input.periodYear;
+  const month = input.month ?? input.periodMonth;
+  const entries = _buildMockPayrollEntries();
+  const totals = _sumPayrollEntries(entries);
+  const row = {
+    id: `RUN-${year}-${String(month).padStart(2, '0')}`,
+    periodYear: year,
+    periodMonth: month,
+    status: 'DRAFT',
+    ...totals,
+    processedBy: 'mock-owner',
+    processedAt: new Date().toISOString(),
+    approvedBy: null,
+    approvedAt: null,
+    paidAt: null,
+    journalEntryId: null,
+    wpsFileUrl: null,
+    entries,
+  };
+  _mockPayrollRuns.unshift(row);
+  return { ...row };
+}
+
+async function mockAccrueEos(input = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  return {
+    year: input.year,
+    month: input.month,
+    accruedEmployees: _mockEmployees.filter((e) => e.status === 'ACTIVE').length,
+    journalEntryId: `JE-EOS-${input.year}-${String(input.month).padStart(2, '0')}`,
+  };
+}
+
+async function mockApprovePayroll(id) {
+  await new Promise((r) => setTimeout(r, 80));
+  const idx = _mockPayrollRuns.findIndex((r) => r.id === id);
+  if (idx < 0) return null;
+  _mockPayrollRuns[idx] = {
+    ..._mockPayrollRuns[idx],
+    status: 'APPROVED',
+    approvedBy: 'mock-owner',
+    approvedAt: new Date().toISOString(),
+    journalEntryId:
+      _mockPayrollRuns[idx].journalEntryId ||
+      `JE-PAYROLL-${_mockPayrollRuns[idx].periodYear}-${String(
+        _mockPayrollRuns[idx].periodMonth,
+      ).padStart(2, '0')}`,
+  };
+  return {
+    payrollRunId: _mockPayrollRuns[idx].id,
+    journalEntryId: _mockPayrollRuns[idx].journalEntryId,
+    status: 'APPROVED',
+  };
+}
+
+async function mockPayPayroll(id) {
+  await new Promise((r) => setTimeout(r, 100));
+  const idx = _mockPayrollRuns.findIndex((r) => r.id === id);
+  if (idx < 0) return null;
+  _mockPayrollRuns[idx] = {
+    ..._mockPayrollRuns[idx],
+    status: 'PAID',
+    paidAt: new Date().toISOString(),
+    wpsFileUrl: `mock://wps/${id}.sif`,
+  };
+  return { ..._mockPayrollRuns[idx] };
+}
+
+async function mockDownloadWpsFile(id) {
+  await new Promise((r) => setTimeout(r, 60));
+  const run = _mockPayrollRuns.find((r) => r.id === id);
+  const year = run?.periodYear || 2026;
+  const month = run?.periodMonth || 1;
+  // Minimal SIF-like text; real files are fixed-width records.
+  const sifText = [
+    `HEADER|${year}${String(month).padStart(2, '0')}|MOCK-TENANT|KWD`,
+    ...(_mockEmployees
+      .filter((e) => e.status === 'ACTIVE')
+      .map((e, i) => {
+        const base = Number(e.basicSalary || 0);
+        const allowances =
+          Number(e.housingAllowance || 0) +
+          Number(e.transportAllowance || 0) +
+          Number(e.otherAllowances || 0);
+        const gross = base + allowances;
+        const net = e.isKuwaiti
+          ? gross - Math.min(base, 2750) * 0.08
+          : gross;
+        return `DETAIL|${i + 1}|${e.civilId || ''}|${e.bankAccountIban || ''}|${net.toFixed(3)}`;
+      })),
+    `TRAILER|${_mockEmployees.filter((e) => e.status === 'ACTIVE').length}`,
+  ].join('\n');
+  const filename = `WPS_${year}_${String(month).padStart(2, '0')}.sif`;
+  const blob =
+    typeof Blob !== 'undefined'
+      ? new Blob([sifText], { type: 'text/plain' })
+      : { text: async () => sifText, type: 'text/plain', size: sifText.length };
+  return { blob, filename };
+}
+
 /**
  * Mock health fallback for when mockEngine itself does not export one.
  */
@@ -5138,3 +5898,37 @@ export const deleteRecurringEntry = surface.deleteRecurringEntry;
 export const processRecurringEntries = surface.processRecurringEntries;
 export const fireRecurringEntryNow = surface.fireRecurringEntryNow;
 export const listRecurringEntryInstances = surface.listRecurringEntryInstances;
+
+// Payroll — AUDIT-ACC-013 (2026-04-22). 23 wrappers. See src/api/payroll.js
+// for the file-level contract notes. WPS download skips the JSON envelope
+// and returns `{blob, filename}` directly so the PayrollScreen can trigger
+// a browser download via anchor + URL.createObjectURL without decoding
+// base64 — the backend emits raw `text/plain` SIF content.
+//
+// Scope carve-out: employee payslip viewer is explicitly out of scope
+// (AUDIT-ACC-014 dropped per Tarek 2026-04-22 → tracked as HASEEB-205
+// Wave follow-up). The WPS-download action on the approved payroll-run
+// row substitutes for the payslip as the v1 "proof of pay" artifact.
+export const listEmployees = surface.listEmployees;
+export const getEmployee = surface.getEmployee;
+export const createEmployee = surface.createEmployee;
+export const updateEmployee = surface.updateEmployee;
+export const terminateEmployee = surface.terminateEmployee;
+export const getEmployeeEos = surface.getEmployeeEos;
+export const registerEmployeeRehire = surface.registerEmployeeRehire;
+export const classifyServiceContinuity = surface.classifyServiceContinuity;
+export const getEmployeeEosHistory = surface.getEmployeeEosHistory;
+export const getEmployeeAdvances = surface.getEmployeeAdvances;
+export const getTenantPayrollConfig = surface.getTenantPayrollConfig;
+export const updateEosiReformDate = surface.updateEosiReformDate;
+export const listPifssSubmissions = surface.listPifssSubmissions;
+export const generatePifssFile = surface.generatePifssFile;
+export const getPifssSubmission = surface.getPifssSubmission;
+export const updatePifssSubmissionStatus = surface.updatePifssSubmissionStatus;
+export const getPayrollHistory = surface.getPayrollHistory;
+export const getPayrollRun = surface.getPayrollRun;
+export const runPayroll = surface.runPayroll;
+export const accrueEos = surface.accrueEos;
+export const approvePayroll = surface.approvePayroll;
+export const payPayroll = surface.payPayroll;
+export const downloadWpsFile = surface.downloadWpsFile;

@@ -151,13 +151,22 @@
     "load_runs": "تعذّر تحميل مشغلات الرواتب.",
     "load_pifss": "تعذّر تحميل إقرارات التأمينات.",
     "load_run_detail": "تعذّر تحميل تفاصيل المشغل.",
-    "load_employee_detail": "تعذّر تحميل تفاصيل الموظف."
+    "load_employee_detail": "تعذّر تحميل تفاصيل الموظف.",
+    "downloadPayslipFailed": "تعذر تحميل كشف الراتب.",
+    "payslipNotFound": "كشف الراتب غير متاح — تحقق من أن الدورة معتمدة والموظف ضمن هذه الدورة."
+  },
+  "actions": {
+    "downloadPayslip": "تحميل كشف الراتب"
+  },
+  "toasts": {
+    "payslipDownloaded": "تم تحميل كشف الراتب."
   },
   "aria": {
     "close_panel": "إغلاق اللوحة",
     "open_employee_detail": "فتح تفاصيل الموظف {{name}}",
     "open_run_detail": "فتح مشغل الرواتب للفترة {{period}}",
     "download_wps": "تنزيل ملف حماية الأجور للفترة {{period}}",
+    "download_payslip": "تحميل كشف الراتب للموظف {{name}}",
     "run_payroll": "تشغيل الرواتب لفترة",
     "approve_run": "اعتماد مشغل الرواتب",
     "pay_run": "دفع مشغل الرواتب",

@@ -17,11 +17,13 @@
  * Senior, who need to submit the SIF to the bank) follow the dispatch
  * spec; Junior sees read-only view always.
  *
- * Scope carve-out: AUDIT-ACC-014 payslip viewer is explicitly out of
- * scope — the backend payslip endpoint does not exist (tracked as
- * HASEEB-205 Wave follow-up). The "Download WPS" action on APPROVED /
- * PAID payroll-run rows substitutes for the payslip as the v1 "proof
- * of pay" artifact per Tarek 2026-04-22.
+ * HASEEB-221 (2026-04-22): per-employee payslip PDF download now wired
+ * (backend HASEEB-205 merge `109d377`). APPROVED / PAID runs render a
+ * "Download Payslip" action on each employee line item; visible to
+ * Owner / CFO / Senior, hidden for Junior. Bulk-ZIP download and the
+ * employee-self-download path remain as HASEEB-221 Wave follow-up items;
+ * not shipped here. The "Download WPS" run-level action continues to
+ * exist alongside the new per-employee action.
  *
  * WPS download mechanics: the backend returns raw `text/plain` SIF
  * content (NOT the HASEEB-180 base64-envelope pattern). The engine
@@ -58,6 +60,7 @@ import {
   approvePayroll,
   payPayroll,
   downloadWpsFile,
+  downloadPayslip,
   listPifssSubmissions,
   generatePifssFile,
 } from '../../engine';
@@ -630,12 +633,48 @@ function PayrollRunDetailDrawer({
     }
   };
 
+  // HASEEB-221 (2026-04-22): per-employee payslip PDF download. Same
+  // browser-download dance as doDownloadWps above. Row-level busy state
+  // keeps one button at a time disabled without blocking the rest of
+  // the drawer. 404 is the common "not approved" / "employee not in
+  // run" case and surfaces a distinct i18n message.
+  const [payslipBusyEmpId, setPayslipBusyEmpId] = useState(null);
+  const doDownloadPayslip = async (empId) => {
+    setPayslipBusyEmpId(empId);
+    try {
+      const { blob, filename } = await downloadPayslip(runId, empId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename || `payslip_${empId}_${runId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+      showToast(t('toasts.payslipDownloaded'));
+    } catch (err) {
+      const msg =
+        err?.status === 404
+          ? t('errors.payslipNotFound')
+          : err?.message || t('errors.downloadPayslipFailed');
+      showToast(msg, 'error');
+    } finally {
+      setPayslipBusyEmpId(null);
+    }
+  };
+
   const canApprove = isOwner && run?.status === 'DRAFT';
   const canPay = isOwner && run?.status === 'APPROVED';
   // WPS is written at pay-time; both APPROVED and PAID are downloadable
   // per dispatch §4 (backend allows either). OWNER + ACCOUNTANT-level
   // roles can download to submit to the bank.
   const canDownload =
+    canEdit && run && (run.status === 'APPROVED' || run.status === 'PAID');
+  // HASEEB-221: per-employee payslip download is available once the run
+  // is APPROVED (backend enforces the same guard). Visible to Owner /
+  // CFO / Senior (`canEdit`); hidden for Junior per dispatch spec even
+  // though the backend admits AUDITOR role.
+  const canDownloadPayslip =
     canEdit && run && (run.status === 'APPROVED' || run.status === 'PAID');
 
   return (
@@ -825,8 +864,9 @@ function PayrollRunDetailDrawer({
               role="row"
               style={{
                 display: 'grid',
-                gridTemplateColumns:
-                  '1.6fr 0.8fr 0.8fr 0.8fr 1fr 1fr 0.8fr 1fr 0.8fr',
+                gridTemplateColumns: canDownloadPayslip
+                  ? '1.6fr 0.8fr 0.8fr 0.8fr 1fr 1fr 0.8fr 1fr 0.8fr 1fr'
+                  : '1.6fr 0.8fr 0.8fr 0.8fr 1fr 1fr 0.8fr 1fr 0.8fr',
                 gap: 10,
                 padding: '10px 14px',
                 background: 'var(--bg-surface-sunken)',
@@ -846,10 +886,14 @@ function PayrollRunDetailDrawer({
               <div style={{ textAlign: 'end' }}>{t('runs.detail.column_deductions')}</div>
               <div style={{ textAlign: 'end' }}>{t('runs.detail.column_net')}</div>
               <div>{t('runs.detail.column_flags')}</div>
+              {canDownloadPayslip && <div />}
             </div>
             {entries.map((e) => {
               const nonKuwaiti = !e.employee?.isKuwaiti;
               const warnings = Array.isArray(e.warnings) ? e.warnings : [];
+              const empName =
+                e.employee?.nameEn || e.employee?.nameAr || e.employeeId;
+              const isPayslipBusy = payslipBusyEmpId === e.employeeId;
               return (
                 <div
                   key={e.id || e.employeeId}
@@ -857,8 +901,9 @@ function PayrollRunDetailDrawer({
                   data-testid={`payroll-entry-row-${e.employeeId}`}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns:
-                      '1.6fr 0.8fr 0.8fr 0.8fr 1fr 1fr 0.8fr 1fr 0.8fr',
+                    gridTemplateColumns: canDownloadPayslip
+                      ? '1.6fr 0.8fr 0.8fr 0.8fr 1fr 1fr 0.8fr 1fr 0.8fr 1fr'
+                      : '1.6fr 0.8fr 0.8fr 0.8fr 1fr 1fr 0.8fr 1fr 0.8fr',
                     gap: 10,
                     padding: '10px 14px',
                     borderBottom: '1px solid var(--border-subtle)',
@@ -983,6 +1028,27 @@ function PayrollRunDetailDrawer({
                       </span>
                     )}
                   </div>
+                  {canDownloadPayslip && (
+                    <div style={{ textAlign: 'end' }}>
+                      <button
+                        type="button"
+                        onClick={() => doDownloadPayslip(e.employeeId)}
+                        disabled={isPayslipBusy}
+                        aria-label={t('aria.download_payslip', { name: empName })}
+                        data-testid={`download-payslip-${e.employeeId}`}
+                        style={{
+                          ...btnMini,
+                          opacity: isPayslipBusy ? 0.6 : 1,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                      >
+                        <Download size={11} aria-hidden="true" />
+                        {t('actions.downloadPayslip')}
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}

@@ -36,6 +36,8 @@
  *     POST   /api/payroll/:id/approve                    → approvePayroll(id) [OWNER]
  *     POST   /api/payroll/:id/pay                        → payPayroll(id, input) [OWNER]
  *     GET    /api/payroll/:id/wps                        → downloadWpsFile(id)
+ *     GET    /api/payroll/:runId/employees/:empId/payslip → downloadPayslip(runId, empId)
+ *                                                           [OWNER/ACCOUNTANT/AUDITOR — HASEEB-205]
  *
  * PayrollRunStatus enum (prisma/tenant/schema.prisma): DRAFT → APPROVED → PAID.
  * No intermediate statuses; approval is direct OWNER-only action and
@@ -427,6 +429,76 @@ export async function downloadWpsFile(id) {
   const blob = await res.blob();
   const disposition = res.headers.get('content-disposition') || '';
   const filename = parseContentDispositionFilename(disposition) || `WPS_${id}.sif`;
+  return { blob, filename };
+}
+
+/**
+ * Download a per-employee payslip PDF for an APPROVED / PAID payroll run.
+ *
+ * HASEEB-221 frontend wiring (2026-04-22) on top of the HASEEB-205 backend
+ * generator (`src/modules/payroll/payslip-generator.ts`, merged to main
+ * as `109d377`). The backend responds with `application/pdf` + a
+ * `Content-Disposition` attachment header — same download-envelope shape
+ * as `downloadWpsFile` above, so we reuse the same fetch-direct pattern
+ * (bypass axios's JSON interceptor, parse filename from the header).
+ *
+ * Returns `{ blob, filename }`; caller triggers the browser download via
+ * anchor + URL.createObjectURL.
+ *
+ * Backend role gate: OWNER / ACCOUNTANT / AUDITOR. The frontend enforces
+ * a tighter dispatch rule (Junior HIDDEN at the UI even though the backend
+ * admits AUDITOR), so callers should additionally gate the render via
+ * `canEdit` / `canEditAdmin(role) || isOwner`.
+ *
+ * Error codes follow client.js conventions: 404 is CLIENT_ERROR with the
+ * backend's "run not approved" / "employee not in run" message.
+ *
+ * @param {string} runId Payroll run id
+ * @param {string} empId Employee id
+ * @returns {Promise<{blob: Blob, filename: string}>}
+ */
+export async function downloadPayslip(runId, empId) {
+  if (!runId) throw new Error('downloadPayslip: runId is required');
+  if (!empId) throw new Error('downloadPayslip: empId is required');
+  const baseURL =
+    (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) ||
+    'http://localhost:3000';
+  const url = `${baseURL}/api/payroll/${encodeURIComponent(runId)}/employees/${encodeURIComponent(empId)}/payslip`;
+  const token = getAuthToken();
+  let res;
+  try {
+    res = await fetch(url, {
+      method: 'GET',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+  } catch (err) {
+    return Promise.reject({
+      ok: false,
+      status: 0,
+      code: 'NETWORK_ERROR',
+      message: err?.message || `Network error: cannot reach ${baseURL}.`,
+    });
+  }
+  if (!res.ok) {
+    let message = `Request failed (${res.status})`;
+    try {
+      const body = await res.json();
+      message = body?.error?.message || body?.message || message;
+    } catch {
+      // Body wasn't JSON; keep the default message.
+    }
+    let code = 'UNKNOWN';
+    if (res.status === 401) code = 'UNAUTHORIZED';
+    else if (res.status === 404) code = 'NOT_FOUND';
+    else if (res.status >= 500) code = 'SERVER_ERROR';
+    else if (res.status >= 400) code = 'CLIENT_ERROR';
+    return Promise.reject({ ok: false, status: res.status, code, message });
+  }
+  const blob = await res.blob();
+  const disposition = res.headers.get('content-disposition') || '';
+  const filename =
+    parseContentDispositionFilename(disposition) ||
+    `payslip_${empId}_${runId}.pdf`;
   return { blob, filename };
 }
 

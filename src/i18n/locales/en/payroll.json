@@ -151,13 +151,22 @@
     "load_runs": "Could not load payroll runs.",
     "load_pifss": "Could not load PIFSS submissions.",
     "load_run_detail": "Could not load run detail.",
-    "load_employee_detail": "Could not load employee detail."
+    "load_employee_detail": "Could not load employee detail.",
+    "downloadPayslipFailed": "Failed to download payslip.",
+    "payslipNotFound": "Payslip not available — verify the run is approved and the employee is in this run."
+  },
+  "actions": {
+    "downloadPayslip": "Download Payslip"
+  },
+  "toasts": {
+    "payslipDownloaded": "Payslip downloaded."
   },
   "aria": {
     "close_panel": "Close panel",
     "open_employee_detail": "Open employee detail for {{name}}",
     "open_run_detail": "Open payroll run for {{period}}",
     "download_wps": "Download WPS file for {{period}}",
+    "download_payslip": "Download payslip for {{name}}",
     "run_payroll": "Run payroll for a period",
     "approve_run": "Approve payroll run",
     "pay_run": "Pay payroll run",

@@ -6424,6 +6424,127 @@ export const approveYearEndClose = surface.approveYearEndClose;
 export const reverseYearEndClose = surface.reverseYearEndClose;
 export const getYearEndClose = surface.getYearEndClose;
 
+// ──────────────────────────────────────────────────────────────────────
+// HASEEB-278 — mockEngine migration Wave 1 (2026-04-22).
+//
+// The 8 highest-traffic screens flagged by memo A.1 (Vercel reality
+// check) had direct `import { ... } from '../../engine/mockEngine'`
+// statements. That bypassed the engine router so those screens
+// rendered mock data even with VITE_USE_MOCKS=false on production.
+//
+// Wave 1 swaps those imports to `../../engine`. Wired functions (such
+// as `getChartOfAccounts`, `getCloseStatus`, `getBudgetVarianceByDepartment`)
+// now route to the LIVE backend when configured; the rest emit a
+// one-shot `[engine] mock fallback` warning and return mockEngine
+// data (same as before, but now through the router so future wiring
+// auto-activates without touching the screens).
+//
+// Names re-exported here are the union of the 8 screens' previously-
+// direct mockEngine imports that did NOT already have a named export
+// on this surface. Each one is backed by `surface.<name>` — the router
+// (buildLiveSurface / buildMockSurface above) picks LIVE vs mock-
+// fallback per function. Shape is unchanged.
+//
+// Screens moved in this wave:
+//   • src/screens/owner/OwnerTodayScreen.jsx
+//   • src/screens/junior/JuniorTodayScreen.jsx
+//   • src/screens/cfo/BankTransactionsScreen.jsx
+//   • src/screens/shared/SettingsScreen.jsx
+//   • src/screens/cfo/ManualJEScreen.jsx
+//   • src/screens/shared/MonthEndCloseScreen.jsx
+//   • src/screens/shared/FinancialStatementsScreen.jsx
+//   • src/screens/owner/TeamScreen.jsx
+//
+// A future Wave 2 dispatch will tackle the remaining 11 of 19 mock-
+// importing screens identified in the memo.
+
+// OwnerTodayScreen
+export const getBusinessPulse = surface.getBusinessPulse;
+export const getOpenApprovalCount = surface.getOpenApprovalCount;
+export const getAuditChecks = surface.getAuditChecks;
+export const getOwnerTopInsightDynamic = surface.getOwnerTopInsightDynamic;
+
+// JuniorTodayScreen
+export const getTaskbox = surface.getTaskbox;
+export const getSaraWorkQueue = surface.getSaraWorkQueue;
+export const getSaraActivityLog = surface.getSaraActivityLog;
+export const getSaraAminahNotes = surface.getSaraAminahNotes;
+export const getRoutingRules = surface.getRoutingRules;
+
+// BankTransactionsScreen
+export const getBankTransactionsPending = surface.getBankTransactionsPending;
+export const getFilteredBankTransactions = surface.getFilteredBankTransactions;
+export const getBankTransactionsSorted = surface.getBankTransactionsSorted;
+export const bulkCategorizeTransactions = surface.bulkCategorizeTransactions;
+export const bulkAssignTransactions = surface.bulkAssignTransactions;
+export const bulkMarkTransactionsReviewed = surface.bulkMarkTransactionsReviewed;
+export const exportBankTransactionsCSV = surface.exportBankTransactionsCSV;
+export const createRuleFromTransactions = surface.createRuleFromTransactions;
+
+// SettingsScreen — integrations sub-surface.
+// The three legacy mockEngine names (getIntegrations / addIntegration /
+// removeIntegration) are mock-fallback-routed for now; the LIVE
+// endpoint `/api/admin/integrations` is already wrapped under the
+// `listAdminIntegrations / addAdminIntegration / removeAdminIntegration`
+// names (Track B Dispatch 1). A future dispatch can consolidate onto
+// the admin-integrations path and drop these legacy names. For this
+// wave, we preserve the screen's call shape so the dev-mode render
+// exercises the full Settings surface against mock data while the
+// LIVE wiring (getNotificationPreferences / getActiveSessions / 2FA /
+// getMyActivity — already imported from engine) stays untouched.
+export const getIntegrations = surface.getIntegrations;
+export const addIntegration = surface.addIntegration;
+export const removeIntegration = surface.removeIntegration;
+
+// ManualJEScreen
+export const searchChartOfAccounts = surface.searchChartOfAccounts;
+export const checkPeriodStatus = surface.checkPeriodStatus;
+export const attachJEFile = surface.attachJEFile;
+export const removeJEAttachment = surface.removeJEAttachment;
+export const getJEAttachments = surface.getJEAttachments;
+export const shareJETemplate = surface.shareJETemplate;
+
+// MonthEndCloseScreen
+export const getMonthEndCloseTasks = surface.getMonthEndCloseTasks;
+export const getCloseStatusDetail = surface.getCloseStatusDetail;
+export const markCloseItemComplete = surface.markCloseItemComplete;
+export const runPreCloseValidations = surface.runPreCloseValidations;
+export const approveCloseAndSyncTask = surface.approveCloseAndSyncTask;
+export const getCloseSummary = surface.getCloseSummary;
+export const exportClosePackage = surface.exportClosePackage;
+export const reopenPeriodClose = surface.reopenPeriodClose;
+export const recalculateCloseChecks = surface.recalculateCloseChecks;
+export const overrideCloseCheck = surface.overrideCloseCheck;
+export const addCloseCheckNote = surface.addCloseCheckNote;
+export const getCloseCheckNotes = surface.getCloseCheckNotes;
+export const attachCloseCheckFile = surface.attachCloseCheckFile;
+export const getCloseCheckAttachments = surface.getCloseCheckAttachments;
+
+// FinancialStatementsScreen — residual mock surface (HASEEB-278).
+// getAdjustingEntries / getLineNotes / exportStatement have no backend
+// yet; they mock-fallback through the router. Earlier passes moved the
+// statement readers (IS/BS/CF/SOCIE/disclosures) + listReportVersions
+// to LIVE already; this closes the last three imports so the file no
+// longer pulls from mockEngine directly.
+export const getAdjustingEntries = surface.getAdjustingEntries;
+export const getLineNotes = surface.getLineNotes;
+export const exportStatement = surface.exportStatement;
+
+// TeamScreen — team-roster admin surface.
+// `getTeamMembersWithResponsibilities` is mock-only today; the closest
+// backend surfaces are `/api/team/members` (light roster, OWNER+ACCOUNTANT)
+// and `/api/auth/members` (richer, OWNER-only). Neither currently
+// includes the per-member responsibilities + KPIs the screen renders
+// (HASEEB-NNN follow-up). Mock-fallback preserves the dev-mode
+// fixture while the backend gap is tracked. addTeamMember /
+// removeTeamMember / getTeamActivityLog are similarly mock-only and
+// stay mock-fallback via the router.
+export const getTeamMembersWithResponsibilities =
+  surface.getTeamMembersWithResponsibilities;
+export const addTeamMember = surface.addTeamMember;
+export const removeTeamMember = surface.removeTeamMember;
+export const getTeamActivityLog = surface.getTeamActivityLog;
+
 // ══════════════════════════════════════════════════════════════════
 // Payment Voucher + Bank Mandate MOCK stubs — AUDIT-ACC-002
 // ══════════════════════════════════════════════════════════════════

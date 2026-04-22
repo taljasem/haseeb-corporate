@@ -6,6 +6,11 @@ import { useTenant } from "../../components/shared/TenantContext";
 import DirArrow from "../../components/shared/DirArrow";
 import EmptyState from "../../components/shared/EmptyState";
 import TaskboxSummaryCard from "../../components/taskbox/TaskboxSummaryCard";
+// HASEEB-278 (2026-04-22): migrated from direct mockEngine import to the
+// engine router. Wired functions (getCloseStatus, getBudgetVarianceByDepartment)
+// now route to the LIVE corporate-api; the rest mock-fallback through the
+// router with a one-shot warn until dedicated backends land. No call-site
+// changes — shape preserved.
 import {
   getBusinessPulse,
   getOpenApprovalCount,
@@ -13,7 +18,7 @@ import {
   getCloseStatus,
   getOwnerTopInsightDynamic as getOwnerTopInsight,
   getBudgetVarianceByDepartment,
-} from "../../engine/mockEngine";
+} from "../../engine";
 
 function fmtN(n) {
   return Number(n || 0).toLocaleString("en-US", {

@@ -37,9 +37,22 @@ export function getAuthToken() {
   return _authToken || devJwt || '';
 }
 
+/**
+ * Default per-request timeout for the shared axios client (ms).
+ *
+ * Kept tight (15s) so DB-read endpoints fail fast when the API is down.
+ * AI-path endpoints — `/api/ai/chat` and `/api/ai/confirm` — need much
+ * longer headroom because Aminah turns involve 1–N LLM round-trips plus
+ * tool calls and can legitimately take 18–30s (see
+ * `memory-bank/2026-04-22-aminah-latency-post-trim.md`). Those call sites
+ * override this default via axios per-request `config.timeout`; see
+ * `AI_CHAT_TIMEOUT_MS` in `src/api/chat.js`.
+ */
+export const DEFAULT_TIMEOUT_MS = 15000;
+
 const client = axios.create({
   baseURL,
-  timeout: 15000,
+  timeout: DEFAULT_TIMEOUT_MS,
   headers: {
     'Content-Type': 'application/json',
   },

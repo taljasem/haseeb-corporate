@@ -25,6 +25,28 @@
  */
 import client from './client';
 
+/**
+ * Per-request timeout for the Aminah LLM endpoints (ms).
+ *
+ * Rationale: post-token-trim latency measurements (2026-04-22,
+ * `memory-bank/2026-04-22-aminah-latency-post-trim.md`) show median 18s
+ * and a worst-case 31s for a 10-step tool loop on a live demo-tenant.
+ * The shared axios client's default `DEFAULT_TIMEOUT_MS` (15s in
+ * `src/api/client.js`) would abort the request mid-flight while the
+ * backend is still delivering a correct response — the user sees a
+ * NETWORK_ERROR despite Aminah answering.
+ *
+ * 120s gives headroom above the observed worst-case with room for a
+ * cold-start or a 2× tail event without false-aborting. This only
+ * applies to `/api/ai/chat` and `/api/ai/confirm`; every other endpoint
+ * — `/api/conversations/*` included — retains the 15s default so
+ * database-read slowness still surfaces quickly.
+ *
+ * Not a retry controller. This is a single-attempt ceiling. Retry logic
+ * is a separate concern handled by the backend cascade.
+ */
+export const AI_CHAT_TIMEOUT_MS = 120000;
+
 function unwrap(response) {
   // /api/ai/chat returns a bare envelope (not { success, data, ... }).
   // We still tolerate the wrapped form defensively so the same unwrap
@@ -87,13 +109,18 @@ export async function sendChatMessage(messageOrOptions, legacyConversationId) {
     form.append('file', file);
     r = await client.post('/api/ai/chat', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: AI_CHAT_TIMEOUT_MS,
     });
   } else {
-    r = await client.post('/api/ai/chat', {
-      message,
-      agent,
-      ...(conversationId ? { conversation_id: conversationId } : {}),
-    });
+    r = await client.post(
+      '/api/ai/chat',
+      {
+        message,
+        agent,
+        ...(conversationId ? { conversation_id: conversationId } : {}),
+      },
+      { timeout: AI_CHAT_TIMEOUT_MS },
+    );
   }
 
   const data = unwrap(r);
@@ -145,7 +172,9 @@ export async function confirmPendingAction(optionsOrConversationId, legacyAction
     payload = { action, confirmationId, agent };
   }
 
-  const r = await client.post('/api/ai/confirm', payload);
+  const r = await client.post('/api/ai/confirm', payload, {
+    timeout: AI_CHAT_TIMEOUT_MS,
+  });
   const data = unwrap(r);
   return {
     message: data?.message || '',

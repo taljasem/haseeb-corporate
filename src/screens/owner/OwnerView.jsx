@@ -22,6 +22,7 @@ import PayrollScreen from "../cfo/PayrollScreen";
 import PaymentVoucherScreen from "../cfo/PaymentVoucherScreen";
 import PIFSSReconciliationScreen from "../cfo/PIFSSReconciliationScreen";
 import CITAssessmentScreen from "../cfo/CITAssessmentScreen";
+import YearEndCloseScreen from "../cfo/YearEndCloseScreen";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
 
@@ -177,6 +178,8 @@ export default function OwnerView({ registerNav }) {
         return <PIFSSReconciliationScreen role="Owner" />;
       case "cit-assessment":
         return <CITAssessmentScreen role="Owner" />;
+      case "year-end-close":
+        return <YearEndCloseScreen role="Owner" />;
       default:
         return <Placeholder label={activeScreen.toUpperCase()} />;
     }

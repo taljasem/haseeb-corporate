@@ -41,6 +41,7 @@ const runPayrollSpy = vi.fn();
 const approvePayrollSpy = vi.fn();
 const payPayrollSpy = vi.fn();
 const downloadWpsFileSpy = vi.fn();
+const downloadPayslipSpy = vi.fn();
 const listPifssSubmissionsSpy = vi.fn();
 const generatePifssFileSpy = vi.fn();
 
@@ -57,6 +58,7 @@ vi.mock('../../src/engine', () => ({
   approvePayroll: (...args) => approvePayrollSpy(...args),
   payPayroll: (...args) => payPayrollSpy(...args),
   downloadWpsFile: (...args) => downloadWpsFileSpy(...args),
+  downloadPayslip: (...args) => downloadPayslipSpy(...args),
   listPifssSubmissions: (...args) => listPifssSubmissionsSpy(...args),
   generatePifssFile: (...args) => generatePifssFileSpy(...args),
 }));
@@ -234,6 +236,7 @@ describe('PayrollScreen — AUDIT-ACC-013', () => {
     approvePayrollSpy.mockReset();
     payPayrollSpy.mockReset();
     downloadWpsFileSpy.mockReset();
+    downloadPayslipSpy.mockReset();
     listPifssSubmissionsSpy.mockReset();
     generatePifssFileSpy.mockReset();
 
@@ -528,5 +531,181 @@ describe('PayrollScreen — AUDIT-ACC-013', () => {
       expect(screen.getAllByText('الرواتب').length).toBeGreaterThan(0);
     });
     await setLang('en');
+  });
+
+  // ── HASEEB-221: per-employee payslip download ─────────────────────
+  //
+  // Backend endpoint: GET /api/payroll/:runId/employees/:empId/payslip
+  // (HASEEB-205, merged `109d377` 2026-04-22). Frontend visibility rule
+  // per dispatch: Owner / CFO / Senior visible; Junior HIDDEN (not
+  // disabled — absent from DOM) even though the backend admits AUDITOR.
+  // APPROVED + PAID runs only (DRAFT runs never render the button).
+
+  it('HASEEB-221 payslip: Download Payslip button renders for each employee row on an APPROVED run (Owner)', async () => {
+    render(<PayrollScreen role="Owner" />);
+    const approvedRow = await screen.findByRole('button', {
+      name: /Open payroll run for 2026-03/i,
+    });
+    fireEvent.click(approvedRow);
+    // Wait for the run detail to load.
+    await waitFor(() => {
+      expect(getPayrollRunSpy).toHaveBeenCalledWith('RUN-2026-03');
+    });
+    // Both employee rows render a Download Payslip button.
+    const kwRow = await screen.findByTestId('payroll-entry-row-EMP-001');
+    const nonKwRow = await screen.findByTestId('payroll-entry-row-EMP-004');
+    expect(
+      within(kwRow).getByTestId('download-payslip-EMP-001'),
+    ).toBeInTheDocument();
+    expect(
+      within(nonKwRow).getByTestId('download-payslip-EMP-004'),
+    ).toBeInTheDocument();
+  });
+
+  it('HASEEB-221 payslip: button also renders on a PAID run for CFO + Senior', async () => {
+    render(<PayrollScreen role="CFO" />);
+    const paidRow = await screen.findByRole('button', {
+      name: /Open payroll run for 2026-02/i,
+    });
+    fireEvent.click(paidRow);
+    await waitFor(() => {
+      expect(getPayrollRunSpy).toHaveBeenCalledWith('RUN-2026-02');
+    });
+    expect(
+      await screen.findByTestId('download-payslip-EMP-001'),
+    ).toBeInTheDocument();
+    cleanup();
+
+    render(<PayrollScreen role="Senior" />);
+    const paidRow2 = await screen.findByRole('button', {
+      name: /Open payroll run for 2026-02/i,
+    });
+    fireEvent.click(paidRow2);
+    expect(
+      await screen.findByTestId('download-payslip-EMP-001'),
+    ).toBeInTheDocument();
+  });
+
+  it('HASEEB-221 payslip: button is NOT rendered for Junior (viewer/auditor) on an APPROVED run', async () => {
+    render(<PayrollScreen role="Junior" />);
+    const approvedRow = await screen.findByRole('button', {
+      name: /Open payroll run for 2026-03/i,
+    });
+    fireEvent.click(approvedRow);
+    await waitFor(() => {
+      expect(getPayrollRunSpy).toHaveBeenCalledWith('RUN-2026-03');
+    });
+    // Employee row itself must render (Junior can view the detail).
+    await screen.findByTestId('payroll-entry-row-EMP-001');
+    // But the download button is absent.
+    expect(
+      screen.queryByTestId('download-payslip-EMP-001'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('download-payslip-EMP-004'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('HASEEB-221 payslip: button is NOT rendered on a DRAFT run (not yet approved)', async () => {
+    render(<PayrollScreen role="Owner" />);
+    const draftRow = await screen.findByRole('button', {
+      name: /Open payroll run for 2026-04/i,
+    });
+    fireEvent.click(draftRow);
+    await waitFor(() => {
+      expect(getPayrollRunSpy).toHaveBeenCalledWith('RUN-2026-04');
+    });
+    await screen.findByTestId('payroll-entry-row-EMP-001');
+    expect(
+      screen.queryByTestId('download-payslip-EMP-001'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('HASEEB-221 payslip: click triggers downloadPayslip(runId, empId) + browser download', async () => {
+    const pdfBlob = new Blob(['%PDF-1.4 mock'], { type: 'application/pdf' });
+    downloadPayslipSpy.mockResolvedValue({
+      blob: pdfBlob,
+      filename: 'payslip_EMP-001_RUN-2026-03.pdf',
+    });
+    const createObjectURL = vi.fn(() => 'blob:mock-payslip-url');
+    const revokeObjectURL = vi.fn();
+    const origCreate = URL.createObjectURL;
+    const origRevoke = URL.revokeObjectURL;
+    URL.createObjectURL = createObjectURL;
+    URL.revokeObjectURL = revokeObjectURL;
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => {});
+
+    try {
+      render(<PayrollScreen role="CFO" />);
+      const approvedRow = await screen.findByRole('button', {
+        name: /Open payroll run for 2026-03/i,
+      });
+      fireEvent.click(approvedRow);
+      const dlBtn = await screen.findByTestId('download-payslip-EMP-001');
+      fireEvent.click(dlBtn);
+      await waitFor(() => {
+        expect(downloadPayslipSpy).toHaveBeenCalledWith(
+          'RUN-2026-03',
+          'EMP-001',
+        );
+      });
+      await waitFor(() => {
+        expect(createObjectURL).toHaveBeenCalledWith(pdfBlob);
+        expect(clickSpy).toHaveBeenCalled();
+      });
+      // Success toast surfaces.
+      expect(
+        await screen.findByText(/Payslip downloaded/i),
+      ).toBeInTheDocument();
+    } finally {
+      URL.createObjectURL = origCreate;
+      URL.revokeObjectURL = origRevoke;
+      clickSpy.mockRestore();
+    }
+  });
+
+  it('HASEEB-221 payslip: 404 response surfaces the payslipNotFound toast', async () => {
+    downloadPayslipSpy.mockRejectedValue({
+      ok: false,
+      status: 404,
+      code: 'NOT_FOUND',
+      message: 'Payroll run not approved',
+    });
+    render(<PayrollScreen role="Owner" />);
+    const approvedRow = await screen.findByRole('button', {
+      name: /Open payroll run for 2026-03/i,
+    });
+    fireEvent.click(approvedRow);
+    const dlBtn = await screen.findByTestId('download-payslip-EMP-001');
+    fireEvent.click(dlBtn);
+    await waitFor(() => {
+      expect(downloadPayslipSpy).toHaveBeenCalledTimes(1);
+    });
+    expect(
+      await screen.findByText(/Payslip not available/i),
+    ).toBeInTheDocument();
+  });
+
+  it('HASEEB-221 payslip: 500 response surfaces the downloadPayslipFailed toast', async () => {
+    downloadPayslipSpy.mockRejectedValue({
+      ok: false,
+      status: 500,
+      code: 'SERVER_ERROR',
+      message: 'Internal error',
+    });
+    render(<PayrollScreen role="Owner" />);
+    const approvedRow = await screen.findByRole('button', {
+      name: /Open payroll run for 2026-03/i,
+    });
+    fireEvent.click(approvedRow);
+    const dlBtn = await screen.findByTestId('download-payslip-EMP-001');
+    fireEvent.click(dlBtn);
+    await waitFor(() => {
+      expect(downloadPayslipSpy).toHaveBeenCalledTimes(1);
+    });
+    // The message comes straight from the backend error envelope.
+    expect(await screen.findByText(/Internal error/i)).toBeInTheDocument();
   });
 });

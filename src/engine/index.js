@@ -350,6 +350,7 @@ const FUNCTION_ROUTING = {
   approvePayroll: 'wired',
   payPayroll: 'wired',
   downloadWpsFile: 'wired',
+  downloadPayslip: 'wired',
 
   // Payment Vouchers — AUDIT-ACC-002 (2026-04-22). 13 voucher endpoints
   // + 3 mandate read endpoints on /api/payment-vouchers and
@@ -815,6 +816,7 @@ const REAL_IMPLS = {
   approvePayroll: payrollApi.approvePayroll,
   payPayroll: payrollApi.payPayroll,
   downloadWpsFile: payrollApi.downloadWpsFile,
+  downloadPayslip: payrollApi.downloadPayslip,
 
   // Payment Vouchers + Bank Mandates — AUDIT-ACC-002 (2026-04-22).
   // Full 13/3 wrappers against the FN-274 backend. Mandate CRUD
@@ -1391,6 +1393,7 @@ function buildLiveSurface() {
   surface.approvePayroll = payrollApi.approvePayroll;
   surface.payPayroll = payrollApi.payPayroll;
   surface.downloadWpsFile = payrollApi.downloadWpsFile;
+  surface.downloadPayslip = payrollApi.downloadPayslip;
 
   // Payment Vouchers + Bank Mandates — AUDIT-ACC-002 (2026-04-22). 13
   // voucher wrappers + 3 read-only mandate wrappers. All names new;
@@ -2366,6 +2369,7 @@ function buildMockExtras() {
     approvePayroll: mockApprovePayroll,
     payPayroll: mockPayPayroll,
     downloadWpsFile: mockDownloadWpsFile,
+    downloadPayslip: mockDownloadPayslip,
 
     // Payment Vouchers + Bank Mandates — AUDIT-ACC-002 (2026-04-22). MOCK
     // stubs for the 13 voucher wrappers + 3 mandate read wrappers. Seed
@@ -5707,6 +5711,24 @@ async function mockDownloadWpsFile(id) {
 }
 
 /**
+ * HASEEB-221 (2026-04-22) — MOCK stub for the per-employee payslip PDF
+ * download. Real backend (HASEEB-205, merged `109d377` 2026-04-22) emits
+ * `application/pdf` via `src/modules/payroll/payslip-generator.ts`; the
+ * MOCK here returns a 1-line PDF-magic blob + deterministic filename so
+ * dev-mode + tests can exercise the download dance without a live API.
+ */
+async function mockDownloadPayslip(runId, empId) {
+  await new Promise((r) => setTimeout(r, 60));
+  const pdfText = `%PDF-1.4 mock payslip run=${runId} emp=${empId}`;
+  const filename = `payslip_${empId}_${runId}.pdf`;
+  const blob =
+    typeof Blob !== 'undefined'
+      ? new Blob([pdfText], { type: 'application/pdf' })
+      : { text: async () => pdfText, type: 'application/pdf', size: pdfText.length };
+  return { blob, filename };
+}
+
+/**
  * Mock health fallback for when mockEngine itself does not export one.
  */
 async function mockHealth() {
@@ -6298,6 +6320,7 @@ export const accrueEos = surface.accrueEos;
 export const approvePayroll = surface.approvePayroll;
 export const payPayroll = surface.payPayroll;
 export const downloadWpsFile = surface.downloadWpsFile;
+export const downloadPayslip = surface.downloadPayslip;
 
 // Payment Vouchers + Bank Mandates — AUDIT-ACC-002 (2026-04-22). 13
 // voucher wrappers + 3 read-only mandate wrappers. See

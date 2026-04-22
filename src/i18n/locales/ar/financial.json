@@ -4,7 +4,9 @@
   "tabs": {
     "income": "قائمة الدخل",
     "balance": "قائمة المركز المالي",
-    "cash-flow": "قائمة التدفقات النقدية"
+    "cash-flow": "قائمة التدفقات النقدية",
+    "socie": "التغيرات في حقوق الملكية",
+    "disclosures": "الإيضاحات"
   },
   "periods": {
     "month": "هذا الشهر",
@@ -163,6 +165,54 @@
       "BALANCE_SHEET": "قائمة المركز المالي",
       "CASH_FLOW_STATEMENT": "قائمة التدفقات النقدية",
       "TRIAL_BALANCE": "ميزان المراجعة"
+    }
+  },
+  "restatement": {
+    "banner": "بعد التسوية (المعيار ٨)",
+    "lineMarker": "تم إعادة إصدار هذا السطر وفق المعيار ٨ لتصحيح خطأ فترة سابقة",
+    "lineMarkerBadge": "مُعاد إصدارها",
+    "footnoteHeader": "أسباب إعادة الإصدار (المعيار ٨)"
+  },
+  "socie": {
+    "columns": {
+      "movement": "الحركة",
+      "shareCapital": "رأس المال",
+      "sharePremium": "علاوة إصدار",
+      "statutoryReserve": "الاحتياطي القانوني",
+      "otherReserves": "احتياطيات أخرى",
+      "retainedEarnings": "الأرباح المرحلة",
+      "ownerDrawings": "مسحوبات المالك",
+      "total": "الإجمالي",
+      "currentYear": "السنة الحالية — من {{from}} إلى {{to}}",
+      "priorYear": "السنة السابقة — من {{from}} إلى {{to}}"
+    },
+    "rows": {
+      "opening": "الرصيد الافتتاحي",
+      "profitForPeriod": "أرباح أو خسائر الفترة",
+      "oci": "الدخل الشامل الآخر",
+      "transactionsWithOwners": "المعاملات مع المالكين",
+      "transfers": "التحويلات بين مكونات حقوق الملكية",
+      "closing": "الرصيد الختامي"
+    },
+    "empty": "لا توجد مكونات حقوق ملكية للعرض في هذه الفترة."
+  },
+  "disclosureNotes": {
+    "title": "الإيضاحات",
+    "subtitle": "حزمة إيضاحات وفق المعايير الدولية IFRS ومعايير الهيئة AAOIFI للسنة المالية",
+    "noteLabel": "الإيضاح {{n}}",
+    "narrativePendingBadge": "يتطلب وصفاً",
+    "editNarrativeButton": "تحرير الوصف",
+    "autoPopulatedFrom": "مُعبأ تلقائياً من {{source}}",
+    "emptyTitle": "لا توجد إيضاحات متاحة",
+    "emptyDesc": "لم يُنتج مُنسّق الإيضاحات عملية تشغيل لهذه الفترة بعد.",
+    "aaoifi": {
+      "badge": "AAOIFI",
+      "ifrsCrossRef": "المرجع وفق المعايير الدولية"
+    },
+    "narrativeEditorStub": {
+      "title": "محرّر الوصف قريباً",
+      "body": "سيتم تسليم تحرير الوصف بنص منسّق مع سجل إصدارات واعتماد من المالك في دفعة لاحقة. انظر HASEEB-223 في متتبّع الأخطاء.",
+      "close": "إغلاق"
     }
   }
 }

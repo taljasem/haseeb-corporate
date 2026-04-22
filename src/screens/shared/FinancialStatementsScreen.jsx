@@ -11,6 +11,9 @@ import ReclassifyLineModal from "../../components/financial/ReclassifyLineModal"
 import LineNoteModal from "../../components/financial/LineNoteModal";
 import PublishVersionModal from "../../components/financial/PublishVersionModal";
 import VersionHistoryDrawer from "../../components/financial/VersionHistoryDrawer";
+import SocieTable from "../../components/financial/SocieTable";
+import RestatementWatermark from "../../components/financial/RestatementWatermark";
+import DisclosureNotesSection from "../../components/financial/DisclosureNotesSection";
 import { useTenant } from "../../components/shared/TenantContext";
 import { formatRelativeTime } from "../../utils/relativeTime";
 // Wave 2: IS/BS/CF come from the engine router (real API in LIVE mode,
@@ -19,11 +22,16 @@ import { formatRelativeTime } from "../../utils/relativeTime";
 // and stay on mockEngine (mock_fallback in LIVE mode, with a one-shot warn).
 // Phase 4 Wave 1: report versions are LIVE in both modes (mock stubs in
 // engine/index.js for MOCK).
+// YEAR-END-FS-TRIO: SOCIE + disclosure-notes fetch wrappers land here.
+// Both fall back to mockEngine inside the engine router's api/reports.js
+// wrapper until the dedicated HTTP routes land (HASEEB-223).
 import {
   getIncomeStatement,
   getBalanceSheet,
   getCashFlowStatement,
   listReportVersions,
+  getStatementOfChangesInEquity,
+  getDisclosureNotes,
 } from "../../engine";
 import {
   getAdjustingEntries,
@@ -37,10 +45,19 @@ import {
 // the active behaviour is identical.
 import { normalizeRole } from "../../utils/role";
 
-const TAB_IDS = ["income", "balance", "cash-flow"];
+// YEAR-END-FS-TRIO (AUDIT-ACC-040 / HASEEB-213 / HASEEB-216):
+//   • Added `socie` (4th tab) rendering StatementOfChangesInEquityReport
+//   • Added `disclosures` (5th tab) rendering DisclosureNotesSection
+// Both tabs share the same period selector but route through their
+// own fetchers — neither is version-publishable (no report-type enum
+// on the backend yet; publish + history buttons hide on those tabs).
+const TAB_IDS = ["income", "balance", "cash-flow", "socie", "disclosures"];
 const PERIOD_IDS = ["month", "quarter", "ytd", "custom"];
 
 // FN-244: map UI tab ids to server-side ReportType enum values.
+// SOCIE + disclosures currently have no versioning enum value — left
+// out of the map intentionally; version-publish UI is gated on the
+// map lookup returning a defined enum.
 const TAB_TO_REPORT_TYPE = {
   income: "PROFIT_AND_LOSS",
   balance: "BALANCE_SHEET",
@@ -173,6 +190,11 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
   const [income, setIncome] = useState(null);
   const [balance, setBalance] = useState(null);
   const [cashFlow, setCashFlow] = useState(null);
+  // YEAR-END-FS-TRIO: SOCIE + disclosure-notes envelopes kept alongside
+  // the three primary statements so the render path below can branch
+  // on `tab`.
+  const [socie, setSocie] = useState(null);
+  const [disclosuresRun, setDisclosuresRun] = useState(null);
   const [materialityId, setMaterialityId] = useState("all");
   const [adjustingOpen, setAdjustingOpen] = useState(false);
   const [adjusting, setAdjusting] = useState([]);
@@ -204,16 +226,29 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
     let cancelled = false;
     setLoading(true);
     setLoadError(null);
+    // YEAR-END-FS-TRIO: derive a period range for SOCIE + prior
+    // comparative. Backend accepts fromDate/toDate strings; we pass the
+    // current FY + prior FY so the comparative column renders.
+    const now = new Date();
+    const y = now.getFullYear();
+    const fromDate = `${y - 1}-01-01`;
+    const toDate = `${y - 1}-12-31`;
+    const priorFrom = `${y - 2}-01-01`;
+    const priorTo = `${y - 2}-12-31`;
     Promise.all([
       getIncomeStatement(period),
       getBalanceSheet(period),
       getCashFlowStatement(period),
+      getStatementOfChangesInEquity(fromDate, toDate, priorFrom, priorTo),
+      getDisclosureNotes(period),
     ])
-      .then(([is, bs, cf]) => {
+      .then(([is, bs, cf, so, dn]) => {
         if (cancelled) return;
         setIncome(is);
         setBalance(bs);
         setCashFlow(cf);
+        setSocie(so);
+        setDisclosuresRun(dn);
         setLoading(false);
       })
       .catch((err) => {
@@ -289,19 +324,52 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
   // data for the snapshot. The snapshotData POSTed at publish time is
   // the same shape the screen reads from IS/BS/CF, so this is a direct
   // substitution without any adapter.
-  const liveCurrent = tab === "income" ? income : tab === "balance" ? balance : cashFlow;
+  //
+  // YEAR-END-FS-TRIO: SOCIE + disclosures routes through their own
+  // envelopes (liveCurrent falls back to the closest legacy-shaped data
+  // so the hero/period-label code below keeps working; the dedicated
+  // render blocks below consume `socie` / `disclosuresRun` directly).
+  const liveCurrent =
+    tab === "income"
+      ? income
+      : tab === "balance"
+        ? balance
+        : tab === "cash-flow"
+          ? cashFlow
+          : tab === "socie"
+            ? socie
+            : disclosuresRun;
   const current = viewingVersion ? viewingVersion.snapshotData : liveCurrent;
   const isHistoricalView = !!viewingVersion;
+  const isSocieTab = tab === "socie";
+  const isDisclosuresTab = tab === "disclosures";
+  const isPrimaryStatementTab = !isSocieTab && !isDisclosuresTab;
+  // IAS 8 restatement watermark is surfaced on BS / IS / CF / SOCIE
+  // envelopes. Pull whichever is active.
+  const activeWatermark =
+    (isPrimaryStatementTab
+      ? liveCurrent?.restatementWatermark
+      : isSocieTab
+        ? socie?.restatementWatermark
+        : null) || null;
+  const restatedAccountCodes =
+    (activeWatermark && activeWatermark.restatedComponents) || [];
   const materialityValue = MATERIALITY_OPTIONS.find((m) => m.id === materialityId)?.value || 0;
+  // YEAR-END-FS-TRIO: materiality filter is only meaningful on the 3
+  // section-shaped statements; SOCIE + disclosures bypass it.
   const filteredSections = useMemo(
-    () => filterByMateriality(current?.sections, materialityValue),
-    [current, materialityValue]
+    () =>
+      isPrimaryStatementTab
+        ? filterByMateriality(current?.sections, materialityValue)
+        : null,
+    [current, materialityValue, isPrimaryStatementTab]
   );
   const lineCounts = useMemo(() => {
+    if (!isPrimaryStatementTab) return { total: 0, shown: 0 };
     const total = countLines(current?.sections).total;
     const shown = countLines(filteredSections).total;
     return { total, shown };
-  }, [current, filteredSections]);
+  }, [current, filteredSections, isPrimaryStatementTab]);
 
   const showToast = (text) => {
     setToast(text);
@@ -335,7 +403,13 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
   // current role surface. The backend is the real enforcement layer —
   // a 403 comes back if a non-OWNER/ACCOUNTANT token somehow reaches
   // publishReportVersion, and the modal surfaces the error.
-  const canPublishVersion = role === "Owner" || role === "CFO";
+  //
+  // YEAR-END-FS-TRIO: SOCIE + disclosures tabs have no ReportType enum
+  // yet — version-publish + history UI is hidden on those tabs via
+  // `isPrimaryStatementTab` so the hero band doesn't render a broken
+  // Publish button.
+  const canPublishVersion =
+    (role === "Owner" || role === "CFO") && isPrimaryStatementTab;
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -562,8 +636,10 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
               })}
             </div>
 
-            {/* CFO tool bar: materiality only (per-line kebabs handle reclassify + notes now) */}
-            {role === "CFO" && (
+            {/* CFO tool bar: materiality only (per-line kebabs handle reclassify + notes now).
+                YEAR-END-FS-TRIO: hidden on SOCIE / disclosures tabs — materiality
+                filter is not meaningful on those surfaces. */}
+            {role === "CFO" && isPrimaryStatementTab && (
               <div
                 style={{
                   display: "flex",
@@ -749,7 +825,15 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
               </div>
             )}
 
-            {(isHistoricalView || (!loading && !loadError)) && current && (
+            {/* YEAR-END-FS-TRIO: IAS 8 restatement watermark — rendered
+                above the statement body on BS / IS / CF / SOCIE when active.
+                RestatementWatermark returns null when isRestated=false,
+                so this is safe to keep in the tree unconditionally. */}
+            {(isPrimaryStatementTab || isSocieTab) && (
+              <RestatementWatermark watermark={activeWatermark} />
+            )}
+
+            {(isHistoricalView || (!loading && !loadError)) && current && isPrimaryStatementTab && (
               <>
                 <AminahNarrationCard
                   text={current.aminahNarration}
@@ -761,6 +845,7 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
                   sections={filteredSections}
                   mode={(role === "CFO" && !isHistoricalView) ? "cfo" : "readonly"}
                   notesByCode={notesByCode}
+                  restatedAccountCodes={restatedAccountCodes}
                   onOpenNote={(note, line) =>
                     setNoteTarget({ accountCode: note.accountCode, accountLabel: line?.account || note.accountCode, existing: note })
                   }
@@ -843,6 +928,55 @@ export default function FinancialStatementsScreen({ role: roleRaw = "Owner", onO
                     style={exportBtn}
                   >
                     {t("export", { format: "CSV" })}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* YEAR-END-FS-TRIO — SOCIE tab (HASEEB-213).
+                Closes AUDIT-ACC-039 FE socket. Comparative prior-year
+                renders when envelope carries `priorPeriod`; watermark
+                (if active) already rendered above via RestatementWatermark. */}
+            {!loading && !loadError && isSocieTab && socie && (
+              <>
+                <SocieTable
+                  report={socie}
+                  restatedAccountCodes={restatedAccountCodes}
+                />
+                <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+                  <button
+                    onClick={() => handleExport("pdf")}
+                    style={exportBtn}
+                  >
+                    {t("export", { format: "PDF" })}
+                  </button>
+                  <button
+                    onClick={() => handleExport("csv")}
+                    style={exportBtn}
+                  >
+                    {t("export", { format: "CSV" })}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* YEAR-END-FS-TRIO — Disclosure Notes tab (AUDIT-ACC-040).
+                Closes the disclosure-notes frontend socket. 19 IFRS + 6
+                AAOIFI (Islamic-finance tenants only) per backend
+                `disclosure-notes.builder-registry.ts`. Role gating
+                handled inside DisclosureNotesSection. */}
+            {!loading && !loadError && isDisclosuresTab && disclosuresRun && (
+              <>
+                <DisclosureNotesSection
+                  run={disclosuresRun}
+                  role={role}
+                />
+                <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+                  <button
+                    onClick={() => handleExport("pdf")}
+                    style={exportBtn}
+                  >
+                    {t("export", { format: "PDF" })}
                   </button>
                 </div>
               </>

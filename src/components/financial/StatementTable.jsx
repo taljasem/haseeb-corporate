@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MoreVertical, StickyNote } from "lucide-react";
 import LtrText from "../shared/LtrText";
+// YEAR-END-FS-TRIO / HASEEB-216: per-line IAS 8 marker.
+import { RestatedLineMarker } from "./RestatementWatermark";
 
 function fmtN(n) {
   if (n == null) return "—";
@@ -144,6 +146,7 @@ function Row({
   cols, label, current, prior, change, percent,
   indent = 0, bold = false, size = 13, hl = null, border = true, final = false,
   line = null, mode = "readonly", onLineAction, note = null, onOpenNote,
+  restatedAccountCodes = null,
 }) {
   const bg = hl ? HL_BG[hl] : "transparent";
   const labelColor = hl ? HL_FG[hl] : bold ? "var(--text-primary)" : "var(--text-secondary)";
@@ -180,6 +183,12 @@ function Row({
         }}
       >
         <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
+        {restatedAccountCodes && restatedAccountCodes.length > 0 && (
+          <RestatedLineMarker
+            code={code}
+            restatedAccountCodes={restatedAccountCodes}
+          />
+        )}
         {isCfo && note && (
           <button
             onClick={(e) => { e.stopPropagation(); onOpenNote && onOpenNote(note, line, code); }}
@@ -258,6 +267,10 @@ export default function StatementTable({
   onLineAction,
   notesByCode,
   onOpenNote,
+  // YEAR-END-FS-TRIO / HASEEB-216: per-line IAS 8 markers. Account
+  // codes in this list render an inline "Restated" badge next to the
+  // row label. Pass the backend watermark's `restatedComponents` array.
+  restatedAccountCodes = null,
 }) {
   const { t } = useTranslation("financial");
   const cols = mode === "cfo" ? "1fr 150px 140px 140px 80px 40px" : "1fr 150px 140px 140px 80px";
@@ -369,6 +382,7 @@ export default function StatementTable({
               onLineAction={onLineAction}
               note={note}
               onOpenNote={onOpenNote}
+              restatedAccountCodes={restatedAccountCodes}
             />
           );
         });

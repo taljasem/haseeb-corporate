@@ -97,6 +97,8 @@ import * as vendorsApi from '../api/vendors';
 import * as customersApi from '../api/customers';
 import * as recurringEntriesApi from '../api/recurring-entries';
 import * as payrollApi from '../api/payroll';
+import * as paymentVouchersApi from '../api/paymentVouchers';
+import * as bankMandatesApi from '../api/bankMandates';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -339,6 +341,31 @@ const FUNCTION_ROUTING = {
   approvePayroll: 'wired',
   payPayroll: 'wired',
   downloadWpsFile: 'wired',
+
+  // Payment Vouchers — AUDIT-ACC-002 (2026-04-22). 13 voucher endpoints
+  // + 3 mandate read endpoints on /api/payment-vouchers and
+  // /api/bank-mandates (FN-274). All names NEW and NOT on mockEngine's
+  // namespace; both MOCK and LIVE are assigned as extras via
+  // buildLiveSurface / buildMockExtras. Only the action-write toasts
+  // surface in the screen — list + detail run in both modes against a
+  // small in-memory mock fixture so the composer + lifecycle exercise
+  // without a live backend.
+  listVouchers: 'wired',
+  getVoucher: 'wired',
+  createVoucher: 'wired',
+  patchVoucher: 'wired',
+  submitVoucher: 'wired',
+  reviewVoucher: 'wired',
+  approveVoucher: 'wired',
+  assignSignatories: 'wired',
+  signVoucher: 'wired',
+  markVoucherPaid: 'wired',
+  rejectVoucher: 'wired',
+  cancelVoucher: 'wired',
+  getVoucherAminahStatus: 'wired',
+  listMandates: 'wired',
+  getMandate: 'wired',
+  listMandateSignatories: 'wired',
 };
 
 /**
@@ -746,6 +773,29 @@ const REAL_IMPLS = {
   approvePayroll: payrollApi.approvePayroll,
   payPayroll: payrollApi.payPayroll,
   downloadWpsFile: payrollApi.downloadWpsFile,
+
+  // Payment Vouchers + Bank Mandates — AUDIT-ACC-002 (2026-04-22).
+  // Full 13/3 wrappers against the FN-274 backend. Mandate CRUD
+  // (create/acknowledge/cancel/assign/revoke) is NOT wired this wave —
+  // tracked as HASEEB-210 for a dedicated Owner-side mandate admin
+  // surface. The composer + detail views only need the 3 read wrappers
+  // in this list.
+  listVouchers: paymentVouchersApi.listVouchers,
+  getVoucher: paymentVouchersApi.getVoucher,
+  createVoucher: paymentVouchersApi.createVoucher,
+  patchVoucher: paymentVouchersApi.patchVoucher,
+  submitVoucher: paymentVouchersApi.submitVoucher,
+  reviewVoucher: paymentVouchersApi.reviewVoucher,
+  approveVoucher: paymentVouchersApi.approveVoucher,
+  assignSignatories: paymentVouchersApi.assignSignatories,
+  signVoucher: paymentVouchersApi.signVoucher,
+  markVoucherPaid: paymentVouchersApi.markVoucherPaid,
+  rejectVoucher: paymentVouchersApi.rejectVoucher,
+  cancelVoucher: paymentVouchersApi.cancelVoucher,
+  getVoucherAminahStatus: paymentVouchersApi.getVoucherAminahStatus,
+  listMandates: bankMandatesApi.listMandates,
+  getMandate: bankMandatesApi.getMandate,
+  listMandateSignatories: bankMandatesApi.listMandateSignatories,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -1282,6 +1332,27 @@ function buildLiveSurface() {
   surface.approvePayroll = payrollApi.approvePayroll;
   surface.payPayroll = payrollApi.payPayroll;
   surface.downloadWpsFile = payrollApi.downloadWpsFile;
+
+  // Payment Vouchers + Bank Mandates — AUDIT-ACC-002 (2026-04-22). 13
+  // voucher wrappers + 3 read-only mandate wrappers. All names new;
+  // assigned as extras parallel to the payroll block above. Mandate
+  // CRUD is NOT shipped this wave (HASEEB-210 follow-up).
+  surface.listVouchers = paymentVouchersApi.listVouchers;
+  surface.getVoucher = paymentVouchersApi.getVoucher;
+  surface.createVoucher = paymentVouchersApi.createVoucher;
+  surface.patchVoucher = paymentVouchersApi.patchVoucher;
+  surface.submitVoucher = paymentVouchersApi.submitVoucher;
+  surface.reviewVoucher = paymentVouchersApi.reviewVoucher;
+  surface.approveVoucher = paymentVouchersApi.approveVoucher;
+  surface.assignSignatories = paymentVouchersApi.assignSignatories;
+  surface.signVoucher = paymentVouchersApi.signVoucher;
+  surface.markVoucherPaid = paymentVouchersApi.markVoucherPaid;
+  surface.rejectVoucher = paymentVouchersApi.rejectVoucher;
+  surface.cancelVoucher = paymentVouchersApi.cancelVoucher;
+  surface.getVoucherAminahStatus = paymentVouchersApi.getVoucherAminahStatus;
+  surface.listMandates = bankMandatesApi.listMandates;
+  surface.getMandate = bankMandatesApi.getMandate;
+  surface.listMandateSignatories = bankMandatesApi.listMandateSignatories;
 
   return surface;
 }
@@ -2213,6 +2284,31 @@ function buildMockExtras() {
     approvePayroll: mockApprovePayroll,
     payPayroll: mockPayPayroll,
     downloadWpsFile: mockDownloadWpsFile,
+
+    // Payment Vouchers + Bank Mandates — AUDIT-ACC-002 (2026-04-22). MOCK
+    // stubs for the 13 voucher wrappers + 3 mandate read wrappers. Seed
+    // data covers the four filter tabs (DRAFT + PENDING_* + APPROVED +
+    // PAID/REJECTED/CANCELLED) and two mandate shapes — one compliant
+    // (Σcount=2) and one non-compliant (Σcount=1) so the HASEEB-274
+    // warning banner can be exercised in MOCK. The mock state is
+    // module-scoped so lifecycle transitions persist for the tab
+    // lifetime.
+    listVouchers: mockListVouchers,
+    getVoucher: mockGetVoucher,
+    createVoucher: mockCreateVoucher,
+    patchVoucher: mockPatchVoucher,
+    submitVoucher: mockSubmitVoucher,
+    reviewVoucher: mockReviewVoucher,
+    approveVoucher: mockApproveVoucher,
+    assignSignatories: mockAssignSignatories,
+    signVoucher: mockSignVoucher,
+    markVoucherPaid: mockMarkVoucherPaid,
+    rejectVoucher: mockRejectVoucher,
+    cancelVoucher: mockCancelVoucher,
+    getVoucherAminahStatus: mockGetVoucherAminahStatus,
+    listMandates: mockListMandates,
+    getMandate: mockGetMandate,
+    listMandateSignatories: mockListMandateSignatories,
   };
 }
 
@@ -5932,3 +6028,471 @@ export const accrueEos = surface.accrueEos;
 export const approvePayroll = surface.approvePayroll;
 export const payPayroll = surface.payPayroll;
 export const downloadWpsFile = surface.downloadWpsFile;
+
+// Payment Vouchers + Bank Mandates — AUDIT-ACC-002 (2026-04-22). 13
+// voucher wrappers + 3 read-only mandate wrappers. See
+// src/api/paymentVouchers.js + src/api/bankMandates.js for the
+// file-level contract notes. Lifecycle: DRAFT → PENDING_REVIEW →
+// PENDING_APPROVAL → PENDING_SIGNATORIES (cheque) | APPROVED →
+// PAID. SoD enforced backend-side; HASEEB-274 two-signatory surface
+// lives on the composer + detail. Mandate CRUD is a follow-up
+// (HASEEB-210 — P3 Owner-side admin surface).
+export const listVouchers = surface.listVouchers;
+export const getVoucher = surface.getVoucher;
+export const createVoucher = surface.createVoucher;
+export const patchVoucher = surface.patchVoucher;
+export const submitVoucher = surface.submitVoucher;
+export const reviewVoucher = surface.reviewVoucher;
+export const approveVoucher = surface.approveVoucher;
+export const assignSignatories = surface.assignSignatories;
+export const signVoucher = surface.signVoucher;
+export const markVoucherPaid = surface.markVoucherPaid;
+export const rejectVoucher = surface.rejectVoucher;
+export const cancelVoucher = surface.cancelVoucher;
+export const getVoucherAminahStatus = surface.getVoucherAminahStatus;
+export const listMandates = surface.listMandates;
+export const getMandate = surface.getMandate;
+export const listMandateSignatories = surface.listMandateSignatories;
+
+// ══════════════════════════════════════════════════════════════════
+// Payment Voucher + Bank Mandate MOCK stubs — AUDIT-ACC-002
+// ══════════════════════════════════════════════════════════════════
+//
+// Seed fixtures deliberately cover every status for the four filter
+// tabs on the screen, plus two mandate shapes (one compliant — 2-of-2
+// class-A + class-B; one deliberately sub-2 so the HASEEB-274 banner
+// can be exercised in MOCK). The in-memory stores are module-scoped
+// so lifecycle transitions persist for the tab's lifetime.
+
+const _mockVouchersStore = (() => {
+  const nowIso = new Date().toISOString();
+  const today = new Date().toISOString().slice(0, 10);
+  return [
+    {
+      id: 'mock-voucher-draft-1',
+      voucherNumber: 'PV-2026-0001',
+      beneficiaryType: 'Vendor',
+      beneficiaryId: 'mock-vendor-1',
+      beneficiaryNameSnapshot: 'Al-Khaleej Supplies LLC',
+      amountKwd: '4250.500',
+      paymentMethod: 'CHEQUE_IMMEDIATE',
+      chequeId: null,
+      issueDate: today,
+      description: 'April office supplies',
+      status: 'DRAFT',
+      preparedBy: 'user-cfo-1',
+      preparedAt: nowIso,
+      reviewedBy: null,
+      reviewedAt: null,
+      approvedBy: null,
+      approvedAt: null,
+      rejectedBy: null,
+      rejectedAt: null,
+      rejectionReason: null,
+      cancelledBy: null,
+      cancelledAt: null,
+      cancellationReason: null,
+      paidAt: null,
+      linkedJournalEntryId: null,
+      linkedApprovalEventId: null,
+      bankAccountMandateId: 'mock-mandate-1',
+      signatories: null,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
+    {
+      id: 'mock-voucher-review-1',
+      voucherNumber: 'PV-2026-0002',
+      beneficiaryType: 'Vendor',
+      beneficiaryId: 'mock-vendor-2',
+      beneficiaryNameSnapshot: 'Gulf Logistics Kuwait',
+      amountKwd: '1200.000',
+      paymentMethod: 'BANK_TRANSFER_KNET',
+      chequeId: null,
+      issueDate: today,
+      description: 'Customs clearance March',
+      status: 'PENDING_REVIEW',
+      preparedBy: 'user-cfo-1',
+      preparedAt: nowIso,
+      reviewedBy: null,
+      reviewedAt: null,
+      approvedBy: null,
+      approvedAt: null,
+      rejectedBy: null,
+      rejectedAt: null,
+      rejectionReason: null,
+      cancelledBy: null,
+      cancelledAt: null,
+      cancellationReason: null,
+      paidAt: null,
+      linkedJournalEntryId: null,
+      linkedApprovalEventId: null,
+      bankAccountMandateId: 'mock-mandate-1',
+      signatories: null,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
+    {
+      id: 'mock-voucher-signatories-1',
+      voucherNumber: 'PV-2026-0003',
+      beneficiaryType: 'Vendor',
+      beneficiaryId: 'mock-vendor-3',
+      beneficiaryNameSnapshot: 'Burgan Electric Works',
+      amountKwd: '8750.000',
+      paymentMethod: 'CHEQUE_POST_DATED',
+      chequeId: 'mock-cheque-1',
+      issueDate: today,
+      description: 'Milestone 2 payment, contract CN-118',
+      status: 'PENDING_SIGNATORIES',
+      preparedBy: 'user-cfo-1',
+      preparedAt: nowIso,
+      reviewedBy: 'user-senior-1',
+      reviewedAt: nowIso,
+      approvedBy: 'user-owner-1',
+      approvedAt: nowIso,
+      rejectedBy: null,
+      rejectedAt: null,
+      rejectionReason: null,
+      cancelledBy: null,
+      cancelledAt: null,
+      cancellationReason: null,
+      paidAt: null,
+      linkedJournalEntryId: null,
+      linkedApprovalEventId: 'mock-approval-1',
+      bankAccountMandateId: 'mock-mandate-1',
+      signatories: [
+        {
+          userId: 'user-owner-1',
+          signatoryClass: 'CLASS_A',
+          assignedAt: nowIso,
+          signedAt: nowIso,
+          signedBy: 'user-owner-1',
+        },
+        {
+          userId: 'user-cfo-1',
+          signatoryClass: 'CLASS_B',
+          assignedAt: nowIso,
+          signedAt: undefined,
+        },
+      ],
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
+    {
+      id: 'mock-voucher-paid-1',
+      voucherNumber: 'PV-2026-0004',
+      beneficiaryType: 'Employee',
+      beneficiaryId: 'mock-emp-1',
+      beneficiaryNameSnapshot: 'Fahad Al-Jasem',
+      amountKwd: '350.000',
+      paymentMethod: 'CASH',
+      chequeId: null,
+      issueDate: today,
+      description: 'Petty-cash reimbursement March',
+      status: 'PAID',
+      preparedBy: 'user-cfo-1',
+      preparedAt: nowIso,
+      reviewedBy: 'user-senior-1',
+      reviewedAt: nowIso,
+      approvedBy: 'user-owner-1',
+      approvedAt: nowIso,
+      rejectedBy: null,
+      rejectedAt: null,
+      rejectionReason: null,
+      cancelledBy: null,
+      cancelledAt: null,
+      cancellationReason: null,
+      paidAt: nowIso,
+      linkedJournalEntryId: 'mock-je-pv-0004',
+      linkedApprovalEventId: null,
+      bankAccountMandateId: null,
+      signatories: null,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
+  ];
+})();
+
+const _mockMandatesStore = (() => {
+  const nowIso = new Date().toISOString();
+  const today = new Date().toISOString().slice(0, 10);
+  return [
+    {
+      id: 'mock-mandate-1',
+      bankName: 'National Bank of Kuwait',
+      accountReference: '****4421',
+      mandateDocumentUrl: null,
+      mandateRules: {
+        requires: [
+          { signatoryClass: 'CLASS_A', count: 1 },
+          { signatoryClass: 'CLASS_B', count: 1 },
+        ],
+      },
+      effectiveFrom: today,
+      effectiveUntil: null,
+      status: 'ACTIVE',
+      submittedToBankAt: nowIso,
+      acknowledgedAt: nowIso,
+      acknowledgedBy: 'user-owner-1',
+      createdBy: 'user-owner-1',
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
+    {
+      id: 'mock-mandate-2',
+      bankName: 'Burgan Bank',
+      accountReference: '****9813',
+      mandateDocumentUrl: null,
+      mandateRules: {
+        requires: [{ signatoryClass: 'CLASS_A', count: 1 }],
+      },
+      effectiveFrom: today,
+      effectiveUntil: null,
+      status: 'ACTIVE',
+      submittedToBankAt: nowIso,
+      acknowledgedAt: nowIso,
+      acknowledgedBy: 'user-owner-1',
+      createdBy: 'user-owner-1',
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    },
+  ];
+})();
+
+function _mockFindVoucher(id) {
+  return _mockVouchersStore.find((v) => v.id === id) || null;
+}
+function _mockFindMandate(id) {
+  return _mockMandatesStore.find((m) => m.id === id) || null;
+}
+
+async function mockListVouchers(filter = {}) {
+  await new Promise((r) => setTimeout(r, 40));
+  let rows = _mockVouchersStore.slice();
+  if (filter.status) rows = rows.filter((r) => r.status === filter.status);
+  if (filter.beneficiaryType) rows = rows.filter((r) => r.beneficiaryType === filter.beneficiaryType);
+  if (filter.beneficiaryId) rows = rows.filter((r) => r.beneficiaryId === filter.beneficiaryId);
+  if (filter.paymentMethod) rows = rows.filter((r) => r.paymentMethod === filter.paymentMethod);
+  if (filter.preparedBy) rows = rows.filter((r) => r.preparedBy === filter.preparedBy);
+  if (filter.approvedBy) rows = rows.filter((r) => r.approvedBy === filter.approvedBy);
+  if (filter.mandateId) rows = rows.filter((r) => r.bankAccountMandateId === filter.mandateId);
+  if (filter.limit != null) rows = rows.slice(0, Number(filter.limit));
+  return { rowCount: rows.length, rows };
+}
+
+async function mockGetVoucher(id) {
+  await new Promise((r) => setTimeout(r, 30));
+  const v = _mockFindVoucher(id);
+  if (!v) throw new Error(`Voucher ${id} not found (mock)`);
+  return v;
+}
+
+async function mockCreateVoucher(body = {}) {
+  await new Promise((r) => setTimeout(r, 120));
+  const nowIso = new Date().toISOString();
+  const nextSeq = 5000 + _mockVouchersStore.length;
+  const id = `mock-voucher-${Math.floor(Math.random() * 9000 + 1000)}`;
+  const row = {
+    id,
+    voucherNumber: `PV-2026-${String(nextSeq).padStart(4, '0')}`,
+    beneficiaryType: body.beneficiaryType || 'Vendor',
+    beneficiaryId: body.beneficiaryId || 'mock-bene-x',
+    beneficiaryNameSnapshot: body.beneficiaryNameSnapshot || 'New Beneficiary',
+    amountKwd: String(body.amountKwd || '0.000'),
+    paymentMethod: body.paymentMethod || 'CASH',
+    chequeId: null,
+    issueDate: body.issueDate || new Date().toISOString().slice(0, 10),
+    description: body.description ?? null,
+    status: 'DRAFT',
+    preparedBy: 'user-cfo-1',
+    preparedAt: nowIso,
+    reviewedBy: null,
+    reviewedAt: null,
+    approvedBy: null,
+    approvedAt: null,
+    rejectedBy: null,
+    rejectedAt: null,
+    rejectionReason: null,
+    cancelledBy: null,
+    cancelledAt: null,
+    cancellationReason: null,
+    paidAt: null,
+    linkedJournalEntryId: null,
+    linkedApprovalEventId: null,
+    bankAccountMandateId: body.bankAccountMandateId ?? null,
+    signatories: null,
+    createdAt: nowIso,
+    updatedAt: nowIso,
+  };
+  _mockVouchersStore.push(row);
+  return row;
+}
+
+async function mockPatchVoucher(id, patch = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  const v = _mockFindVoucher(id);
+  if (!v) throw new Error(`Voucher ${id} not found (mock)`);
+  if (v.status !== 'DRAFT') throw new Error('Voucher must be DRAFT to patch (mock)');
+  Object.assign(v, patch, { updatedAt: new Date().toISOString() });
+  if (patch.amountKwd != null) v.amountKwd = String(patch.amountKwd);
+  return v;
+}
+
+async function mockSubmitVoucher(id) {
+  await new Promise((r) => setTimeout(r, 80));
+  const v = _mockFindVoucher(id);
+  if (!v) throw new Error(`Voucher ${id} not found (mock)`);
+  v.status = 'PENDING_REVIEW';
+  v.updatedAt = new Date().toISOString();
+  return v;
+}
+
+async function mockReviewVoucher(id) {
+  await new Promise((r) => setTimeout(r, 80));
+  const v = _mockFindVoucher(id);
+  if (!v) throw new Error(`Voucher ${id} not found (mock)`);
+  v.status = 'PENDING_APPROVAL';
+  v.reviewedBy = 'user-senior-1';
+  v.reviewedAt = new Date().toISOString();
+  v.updatedAt = v.reviewedAt;
+  return v;
+}
+
+async function mockApproveVoucher(id) {
+  await new Promise((r) => setTimeout(r, 80));
+  const v = _mockFindVoucher(id);
+  if (!v) throw new Error(`Voucher ${id} not found (mock)`);
+  const chequeMethods = new Set(['CHEQUE_IMMEDIATE', 'CHEQUE_POST_DATED']);
+  v.status = chequeMethods.has(v.paymentMethod) ? 'PENDING_SIGNATORIES' : 'APPROVED';
+  v.approvedBy = 'user-owner-1';
+  v.approvedAt = new Date().toISOString();
+  v.updatedAt = v.approvedAt;
+  if (chequeMethods.has(v.paymentMethod) && !v.chequeId) {
+    v.chequeId = `mock-cheque-${Math.floor(Math.random() * 9000 + 1000)}`;
+  }
+  return v;
+}
+
+async function mockAssignSignatories(id, userIds) {
+  await new Promise((r) => setTimeout(r, 80));
+  const v = _mockFindVoucher(id);
+  if (!v) throw new Error(`Voucher ${id} not found (mock)`);
+  const nowIso = new Date().toISOString();
+  v.signatories = (userIds || []).map((uid, i) => ({
+    userId: uid,
+    signatoryClass: i % 2 === 0 ? 'CLASS_A' : 'CLASS_B',
+    assignedAt: nowIso,
+    signedAt: undefined,
+  }));
+  v.updatedAt = nowIso;
+  return v;
+}
+
+async function mockSignVoucher(id, signatoryUserId) {
+  await new Promise((r) => setTimeout(r, 80));
+  const v = _mockFindVoucher(id);
+  if (!v) throw new Error(`Voucher ${id} not found (mock)`);
+  const sigs = Array.isArray(v.signatories) ? v.signatories : [];
+  const target = sigs.find((s) => s.userId === signatoryUserId);
+  if (!target) throw new Error('Signatory not assigned (mock)');
+  if (target.signedAt) throw new Error('Already signed (mock)');
+  target.signedAt = new Date().toISOString();
+  target.signedBy = signatoryUserId;
+  if (sigs.every((s) => s.signedAt)) {
+    v.status = 'APPROVED';
+  }
+  v.updatedAt = new Date().toISOString();
+  return v;
+}
+
+async function mockMarkVoucherPaid(id) {
+  await new Promise((r) => setTimeout(r, 80));
+  const v = _mockFindVoucher(id);
+  if (!v) throw new Error(`Voucher ${id} not found (mock)`);
+  v.status = 'PAID';
+  v.paidAt = new Date().toISOString();
+  v.linkedJournalEntryId = `mock-je-${v.voucherNumber}`;
+  v.updatedAt = v.paidAt;
+  return v;
+}
+
+async function mockRejectVoucher(id, reason) {
+  await new Promise((r) => setTimeout(r, 80));
+  const v = _mockFindVoucher(id);
+  if (!v) throw new Error(`Voucher ${id} not found (mock)`);
+  v.status = 'REJECTED';
+  v.rejectedBy = 'user-owner-1';
+  v.rejectedAt = new Date().toISOString();
+  v.rejectionReason = String(reason || '');
+  v.updatedAt = v.rejectedAt;
+  return v;
+}
+
+async function mockCancelVoucher(id, reason) {
+  await new Promise((r) => setTimeout(r, 80));
+  const v = _mockFindVoucher(id);
+  if (!v) throw new Error(`Voucher ${id} not found (mock)`);
+  v.status = 'CANCELLED';
+  v.cancelledBy = 'user-owner-1';
+  v.cancelledAt = new Date().toISOString();
+  v.cancellationReason = String(reason || '');
+  v.updatedAt = v.cancelledAt;
+  return v;
+}
+
+async function mockGetVoucherAminahStatus() {
+  await new Promise((r) => setTimeout(r, 40));
+  return {
+    generatedAt: new Date().toISOString(),
+    vouchers: { total: _mockVouchersStore.length },
+    mandates: { total: _mockMandatesStore.length },
+  };
+}
+
+async function mockListMandates(filter = {}) {
+  await new Promise((r) => setTimeout(r, 30));
+  let rows = _mockMandatesStore.slice();
+  if (filter.status) rows = rows.filter((r) => r.status === filter.status);
+  if (filter.bankName) rows = rows.filter((r) => r.bankName === filter.bankName);
+  if (filter.accountReference) rows = rows.filter((r) => r.accountReference === filter.accountReference);
+  if (filter.limit != null) rows = rows.slice(0, Number(filter.limit));
+  return { rowCount: rows.length, rows };
+}
+
+async function mockGetMandate(id) {
+  await new Promise((r) => setTimeout(r, 30));
+  const m = _mockFindMandate(id);
+  if (!m) throw new Error(`Mandate ${id} not found (mock)`);
+  return m;
+}
+
+async function mockListMandateSignatories(id) {
+  await new Promise((r) => setTimeout(r, 30));
+  // Return two dummy class-A and class-B signatory assignments — the
+  // composer only reads the mandateRules count in this dispatch; the
+  // signatories list is only used for debug surface / future admin.
+  const nowIso = new Date().toISOString();
+  const rows = [
+    {
+      id: `${id}-assign-1`,
+      mandateId: id,
+      userId: 'user-owner-1',
+      signatoryClass: 'CLASS_A',
+      effectiveFrom: new Date().toISOString().slice(0, 10),
+      effectiveUntil: null,
+      revokedReason: null,
+      createdAt: nowIso,
+    },
+    {
+      id: `${id}-assign-2`,
+      mandateId: id,
+      userId: 'user-cfo-1',
+      signatoryClass: 'CLASS_B',
+      effectiveFrom: new Date().toISOString().slice(0, 10),
+      effectiveUntil: null,
+      revokedReason: null,
+      createdAt: nowIso,
+    },
+  ];
+  return { rowCount: rows.length, rows };
+}

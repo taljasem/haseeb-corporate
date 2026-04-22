@@ -101,6 +101,7 @@ export default function OwnerSidebar({ active, setActive, taskboxOpen = 0, pendi
         <NavItem icon={Contact}  label={t("items.contacts")}        active={is("contacts")}        onClick={() => setActive("contacts")} />
         <NavItem icon={Upload}   label={t("items.migration")}       active={is("migration")}       onClick={() => setActive("migration")} />
         <NavItem icon={Wallet}   label={t("items.payroll")}         active={is("payroll")}         onClick={() => setActive("payroll")} />
+        <NavItem icon={Wallet}   label={t("items.payment_vouchers")} active={is("payment-voucher")} onClick={() => setActive("payment-voucher")} />
       </SidebarGroup>
 
       <SidebarGroup label={t("groups.management")}>

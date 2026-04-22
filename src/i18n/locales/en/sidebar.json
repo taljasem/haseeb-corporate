@@ -49,6 +49,7 @@
     "profile": "Profile",
     "administration": "Administration",
     "payroll": "Payroll",
-    "payment_vouchers": "Payment Vouchers"
+    "payment_vouchers": "Payment Vouchers",
+    "pifss_reconciliation": "PIFSS Reconciliation (Annual)"
   }
 }

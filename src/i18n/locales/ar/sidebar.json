@@ -49,6 +49,7 @@
     "profile": "الملف الشخصي",
     "administration": "الإدارة",
     "payroll": "الرواتب",
-    "payment_vouchers": "سندات الصرف"
+    "payment_vouchers": "سندات الصرف",
+    "pifss_reconciliation": "تسوية التأمينات (سنوية)"
   }
 }

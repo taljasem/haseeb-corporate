@@ -1,0 +1,203 @@
+{
+  "view_label": "ANNUAL COMPLIANCE",
+  "title": "Annual PIFSS Reconciliation",
+  "subtitle": "RECONCILE COMPANY PAYROLL HISTORY AGAINST THE PIFSS AUTHORITY'S YEAR-END STATEMENT",
+  "distinction_note": "This is the ANNUAL reconciliation surface. Monthly SIF generation lives under Payroll → PIFSS Submissions.",
+
+  "tabs": {
+    "year_list": "Year List",
+    "per_year": "Year Detail"
+  },
+
+  "year_list": {
+    "title": "Fiscal Years",
+    "action_new": "New fiscal year",
+    "column_fiscal_year": "Fiscal Year",
+    "column_statement_imported": "Statement Imported",
+    "column_reconciliation_run": "Reconciliation Run",
+    "column_total_variances": "Total Variances",
+    "column_unresolved": "Unresolved",
+    "column_total_delta_employer": "Σ|Δ| Employer (KWD)",
+    "column_total_delta_employee": "Σ|Δ| Employee (KWD)",
+    "imported_yes": "Yes",
+    "imported_no": "Not yet",
+    "run_yes": "Yes",
+    "run_no": "Not yet",
+    "empty_title": "No reconciliations yet",
+    "empty_description": "Start a new fiscal year to import the PIFSS annual statement and run the compare.",
+    "new_year_prompt_title": "New fiscal year",
+    "new_year_prompt_description": "Enter the fiscal year to begin the annual reconciliation workflow.",
+    "new_year_input_label": "Fiscal year (YYYY)",
+    "new_year_action_open": "Open year",
+    "new_year_action_cancel": "Cancel",
+    "new_year_error_invalid": "Fiscal year must be a 4-digit year between 2000 and 2100."
+  },
+
+  "detail": {
+    "back_to_list": "Back to year list",
+    "header_fiscal_year": "Fiscal Year",
+    "header_status_imported": "Statement imported",
+    "header_status_run": "Reconciliation run",
+    "header_status_all_resolved": "All resolved",
+    "header_status_unresolved": "{{count}} unresolved",
+    "header_total_delta_employer": "Σ|Δ| Employer",
+    "header_total_delta_employee": "Σ|Δ| Employee",
+    "header_action_view_report": "View auditor report",
+    "header_action_reimport": "Re-import statement",
+    "run_by": "Run by",
+    "run_at": "Run at"
+  },
+
+  "step1": {
+    "title": "Step 1 — Import authority statement",
+    "description": "Upload the PIFSS portal's year-end statement (CSV). The backend parses and stores it before the reconciliation compare runs.",
+    "field_file": "Statement file",
+    "field_file_hint": "CSV exported from the PIFSS authority portal.",
+    "field_parser_version": "Parser version",
+    "field_parser_version_hint": "Select the parser matching the file format.",
+    "field_portal_reference": "Portal reference (optional)",
+    "field_portal_reference_hint": "Confirmation or reference number from the PIFSS portal, for audit trail.",
+    "field_file_url": "Archive URL (optional)",
+    "field_file_url_hint": "URL where the raw statement file is archived.",
+    "action_import": "Import statement",
+    "importing": "Importing…",
+    "placeholder_awaiting": "Awaiting import by the CFO / Owner.",
+    "error_file_required": "A statement file is required.",
+    "error_parser_required": "A parser version is required.",
+    "error_file_read": "Could not read the file contents."
+  },
+
+  "step2": {
+    "title": "Step 2 — Run reconciliation",
+    "description": "Compare the imported PIFSS statement against the tenant's payroll history and classify variances.",
+    "action_run": "Run reconciliation",
+    "running": "Running…",
+    "placeholder_awaiting": "Import a statement to enable the reconciliation compare.",
+    "summary_total_variances": "Total variances",
+    "summary_unresolved": "Unresolved",
+    "summary_preserved": "Preserved resolutions",
+    "summary_new": "New variances"
+  },
+
+  "step3": {
+    "title": "Step 3 — Variance review",
+    "description": "Review each variance grouped by employee. Use the resolution modal to mark status with an audit note.",
+    "placeholder_awaiting": "Run the reconciliation to populate the variance list.",
+    "empty_title": "No variances",
+    "empty_description": "Company payroll history matches the PIFSS statement for every employee-period pair.",
+    "employee_header_civil_id": "Civil ID",
+    "employee_header_name": "Employee",
+    "employee_header_variance_count": "Variances",
+    "employee_header_unresolved": "Unresolved",
+    "employee_header_delta_employer": "Σ|Δ| Employer",
+    "employee_header_delta_employee": "Σ|Δ| Employee",
+    "variance_header_period": "Period",
+    "variance_header_type": "Type",
+    "variance_header_company": "Company",
+    "variance_header_portal": "Portal",
+    "variance_header_delta": "Δ",
+    "variance_header_status": "Status",
+    "variance_header_actions": "",
+    "variance_action_resolve": "Resolve",
+    "variance_action_view": "View",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "side_employer": "Employer",
+    "side_employee": "Employee",
+    "side_basic": "Basic salary"
+  },
+
+  "variance_type": {
+    "company_only": "Company only",
+    "portal_only": "Portal only",
+    "contribution_amount_differs": "Amount differs",
+    "salary_base_differs": "Salary base differs",
+    "company_only_description": "Company recorded a contribution the PIFSS authority did not confirm.",
+    "portal_only_description": "PIFSS recorded a contribution the company did not submit.",
+    "contribution_amount_differs_description": "Both sides recorded the period but the contribution amounts differ.",
+    "salary_base_differs_description": "The basic-salary snapshot differs between company and portal."
+  },
+
+  "variance_status": {
+    "unresolved": "Unresolved",
+    "under_investigation": "Under investigation",
+    "resolved": "Resolved",
+    "in_dispute": "In dispute"
+  },
+
+  "resolution_modal": {
+    "title": "Resolve variance",
+    "summary_period": "Period",
+    "summary_type": "Type",
+    "summary_delta_employer": "Δ Employer",
+    "summary_delta_employee": "Δ Employee",
+    "field_status": "Status",
+    "field_status_placeholder": "Select status",
+    "field_resolution_note": "Resolution note (optional)",
+    "field_resolution_note_hint": "Up to 2000 characters. Surfaced in the auditor report.",
+    "field_reopen_reason": "Reason for reopening",
+    "field_reopen_reason_hint": "Required when transitioning a closed variance back to unresolved.",
+    "reopen_warning_owner": "Reopening a closed variance is logged in the audit trail.",
+    "reopen_warning_non_owner": "Only the Owner can reopen a closed variance.",
+    "action_save": "Save",
+    "action_cancel": "Cancel",
+    "saving": "Saving…",
+    "error_status_required": "A status is required.",
+    "error_reopen_reason_required": "A reason is required when reopening a closed variance.",
+    "error_resolution_note_too_long": "Resolution note exceeds 2000 characters.",
+    "error_reopen_reason_too_long": "Reopen reason exceeds 2000 characters."
+  },
+
+  "report": {
+    "title": "Auditor Report — PIFSS Annual Reconciliation",
+    "subtitle": "Read-only auditor-formatted view. Intended for print / export.",
+    "action_print": "Print",
+    "action_back": "Back to detail",
+    "summary_fiscal_year": "Fiscal year",
+    "summary_run_by": "Run by",
+    "summary_run_at": "Run at",
+    "summary_statement_id": "Statement ID",
+    "summary_reconciliation_id": "Reconciliation ID",
+    "summary_total_variances": "Total variances",
+    "summary_unresolved": "Unresolved",
+    "summary_total_delta_employer": "Σ|Δ| Employer (KWD)",
+    "summary_total_delta_employee": "Σ|Δ| Employee (KWD)",
+    "by_type_heading": "Variances by type",
+    "employee_section_heading": "Employee",
+    "employee_civil_id": "Civil ID",
+    "employee_name": "Name",
+    "employee_total_delta": "Σ|Δ|",
+    "variance_period": "Period",
+    "variance_company_employer": "Company — Employer",
+    "variance_portal_employer": "Portal — Employer",
+    "variance_company_employee": "Company — Employee",
+    "variance_portal_employee": "Portal — Employee",
+    "variance_delta_employer": "Δ Employer",
+    "variance_delta_employee": "Δ Employee",
+    "variance_likely_cause": "Likely cause",
+    "variance_resolution_note": "Resolution note",
+    "variance_resolved_by": "Resolved by",
+    "variance_resolved_at": "Resolved at",
+    "empty_title": "No reconciliation report yet",
+    "empty_description": "Run the reconciliation for this fiscal year to generate the auditor report."
+  },
+
+  "toast": {
+    "imported": "Statement imported.",
+    "ran": "Reconciliation complete.",
+    "resolved": "Variance updated.",
+    "error_generic": "Something went wrong. Please try again.",
+    "error_load": "Could not load reconciliation data.",
+    "error_import": "Statement import failed.",
+    "error_run": "Reconciliation run failed.",
+    "error_resolve": "Variance update failed."
+  },
+
+  "aria": {
+    "expand_employee": "Expand {{name}}",
+    "collapse_employee": "Collapse {{name}}",
+    "resolve_variance": "Resolve variance for period {{period}}",
+    "close_modal": "Close resolution modal",
+    "open_year": "Open fiscal year {{year}}"
+  }
+}

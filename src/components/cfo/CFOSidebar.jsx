@@ -137,6 +137,7 @@ export default function CFOSidebar({ active, setActive, pendingApprovals = 0, ta
         <NavItem icon={GitBranchIcon} label={t("items.spinoff")}         active={isActive("spinoff")}             onClick={() => setActive("spinoff")} />
         <NavItem icon={LandmarkIcon} label={t("items.islamic_finance")}  active={isActive("islamic-finance")}     onClick={() => setActive("islamic-finance")} />
         <NavItem icon={ClipboardListIcon} label={t("items.purchase_orders")} active={isActive("purchase-orders")}   onClick={() => setActive("purchase-orders")} />
+        <NavItem icon={UserIcon}    label={t("items.payroll")}          active={isActive("payroll")}             onClick={() => setActive("payroll")} />
       </SidebarGroup>
 
       <SidebarGroup label={t("groups.planning")}>

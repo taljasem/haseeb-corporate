@@ -18,6 +18,7 @@ import AdministrationScreen from "../shared/AdministrationScreen";
 import ProfileScreen from "../shared/ProfileScreen";
 import ContactsScreen from "../shared/ContactsScreen";
 import MigrationWizardScreen from "../cfo/MigrationWizardScreen";
+import PayrollScreen from "../cfo/PayrollScreen";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
 
@@ -165,6 +166,8 @@ export default function OwnerView({ registerNav }) {
         return <ContactsScreen role="Owner" />;
       case "migration":
         return <MigrationWizardScreen role="Owner" />;
+      case "payroll":
+        return <PayrollScreen role="Owner" />;
       default:
         return <Placeholder label={activeScreen.toUpperCase()} />;
     }

@@ -46,6 +46,7 @@ import enPaymentVouchers from "./locales/en/paymentVouchers.json";
 import enPifssReconciliation from "./locales/en/pifssReconciliation.json";
 import enCitAssessment from "./locales/en/citAssessment.json";
 import enYearEndClose from "./locales/en/yearEndClose.json";
+import enBankMandates from "./locales/en/bankMandates.json";
 
 import arCommon from "./locales/ar/common.json";
 import arHeader from "./locales/ar/header.json";
@@ -91,6 +92,7 @@ import arPaymentVouchers from "./locales/ar/paymentVouchers.json";
 import arPifssReconciliation from "./locales/ar/pifssReconciliation.json";
 import arCitAssessment from "./locales/ar/citAssessment.json";
 import arYearEndClose from "./locales/ar/yearEndClose.json";
+import arBankMandates from "./locales/ar/bankMandates.json";
 
 const namespaces = [
   "common", "header", "sidebar", "hero", "taskbox",
@@ -103,7 +105,7 @@ const namespaces = [
   "spinoff", "islamic-finance", "purchase-orders", "administration",
   "inventory-nrv", "migration", "contacts", "payroll",
   "paymentVouchers", "pifssReconciliation", "citAssessment",
-  "yearEndClose",
+  "yearEndClose", "bankMandates",
 ];
 
 i18n
@@ -156,6 +158,7 @@ i18n
         pifssReconciliation: enPifssReconciliation,
         citAssessment: enCitAssessment,
         yearEndClose: enYearEndClose,
+        bankMandates: enBankMandates,
       },
       ar: {
         common: arCommon,
@@ -202,6 +205,7 @@ i18n
         pifssReconciliation: arPifssReconciliation,
         citAssessment: arCitAssessment,
         yearEndClose: arYearEndClose,
+        bankMandates: arBankMandates,
       },
     },
     fallbackLng: "en",

@@ -1,0 +1,34 @@
+<!doctype html>
+<!--
+  HASEEB-211 screenshot harness for BankMandateAdminScreen.
+  Dev-only; not part of the production build surface.
+
+  Query params:
+    ?role=Owner | CFO | Junior          — role prop
+    ?lang=en | ar                        — initial language
+    ?theme=dark | light                  — initial theme
+    ?view=list | detail | composer       — which view to land on
+    ?status=ACTIVE|PENDING...           — list filter preset
+    ?mandate=mandate-active-1 | ...      — detail target
+    ?modal=acknowledge | cancel | ...    — pop a modal open on mount
+    ?composer_step=1|2|3|4               — composer start step
+
+  Visit at /dev/bank-mandates-harness.html when `npm run dev`
+  or `npm run preview` is serving the app.
+-->
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bank Mandates harness (HASEEB-211)</title>
+    <link rel="icon" href="data:," />
+    <style>
+      html, body, #root { height: 100%; margin: 0; padding: 0; }
+      body { font-family: 'DM Sans', sans-serif; }
+      #root { display: flex; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/dev/bank-mandates-harness.jsx"></script>
+  </body>
+</html>

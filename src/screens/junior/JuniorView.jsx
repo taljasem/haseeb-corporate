@@ -15,7 +15,10 @@ import ReconciliationScreen from "../../components/reconciliation/Reconciliation
 import NewTaskModal from "../../components/taskbox/NewTaskModal";
 import SettingsScreen from "../shared/SettingsScreen";
 import ProfileScreen from "../shared/ProfileScreen";
-import { getSaraTaskStats } from "../../engine/mockEngine";
+// HASEEB-280 — Wave 2 migration. getSaraTaskStats is mock-fallback
+// via the engine router (no backend yet — HASEEB-279). Name retained
+// for wiring-change-only parity with Wave 1; rename is out of scope.
+import { getSaraTaskStats } from "../../engine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
 // HASEEB-179 — filterByAssignee and juniorOnlyId now come from the
 // authenticated user's id, not the seed Junior ("sara"). Downstream

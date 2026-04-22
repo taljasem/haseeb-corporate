@@ -5,7 +5,9 @@ import LtrText from "../../components/shared/LtrText";
 import AminahNarrationCard from "../../components/financial/AminahNarrationCard";
 import VarianceDetailSlideOver from "../../components/variance/VarianceDetailSlideOver";
 import { useTenant } from "../../components/shared/TenantContext";
-import { getVarianceAnalysis, getVarianceNarration, exportVarianceReport } from "../../engine/mockEngine";
+// HASEEB-280 — Wave 2 migration. All three functions are mock-
+// fallback via the engine router (no backend yet — HASEEB-279).
+import { getVarianceAnalysis, getVarianceNarration, exportVarianceReport } from "../../engine";
 
 const STATUS_COLOR = {
   on_track:    "var(--accent-primary)",

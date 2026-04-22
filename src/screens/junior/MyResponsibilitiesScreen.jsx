@@ -4,7 +4,9 @@ import { ClipboardList } from "lucide-react";
 import AminahNarrationCard from "../../components/financial/AminahNarrationCard";
 import EmptyState from "../../components/shared/EmptyState";
 import RoutingRuleReadOnlyCard from "../../components/junior/RoutingRuleReadOnlyCard";
-import { getRoutingRules, getJuniorDomainStats } from "../../engine/mockEngine";
+// HASEEB-280 — Wave 2 migration. Both functions are mock-fallback
+// via the engine router (no backend yet — HASEEB-279).
+import { getRoutingRules, getJuniorDomainStats } from "../../engine";
 // HASEEB-179 — "my responsibilities" filters by the authenticated
 // Junior's id, not the seed user "sara".
 import { useAuth } from "../../contexts/AuthContext";

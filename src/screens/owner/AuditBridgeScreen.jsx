@@ -8,11 +8,16 @@ import PersistentBanner from "../../components/ds/PersistentBanner";
 import InalterabilityPanel from "../../components/audit-bridge/InalterabilityPanel";
 import MigrationAuditPanel from "../../components/audit-bridge/MigrationAuditPanel";
 import BoardPackPanel from "../../components/audit-bridge/BoardPackPanel";
+// HASEEB-280 — Wave 2 migration. All ten audit-engagement /
+// clarification functions are mock-fallback via the engine router
+// (no backend yet — HASEEB-279). The three InalterabilityPanel /
+// MigrationAuditPanel / BoardPackPanel composites already consume
+// LIVE-wired endpoints (FN-226 / FN-245 / FN-258).
 import {
   listAuditEngagements, getAuditEngagement, createAuditEngagement, createSnapshot,
   runAuditCheck, runAllAuditChecks, generateAuditPackage,
   listClarifications, addClarificationMessage, resolveClarification,
-} from "../../engine/mockEngine";
+} from "../../engine";
 import { formatDate } from "../../utils/format";
 
 const STATUS_COLORS = {

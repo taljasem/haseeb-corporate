@@ -74,14 +74,13 @@ import {
   reverseYearEndClose,
   getYearEndClose,
 } from '../../engine';
-// FinancialStatementsScreen sources exportStatement from mockEngine
-// directly (the engine router doesn't re-export it; it's a mock-only
-// metadata helper today — filename+timestamp stub until the real
-// server-side export lands). We mirror that import so the FS-package
-// button group on the APPROVED detail view doesn't need duplicate
-// export logic. HASEEB-229 follow-up tracks wiring the server-side
-// export; until then both screens use the same metadata stub.
-import { exportStatement } from '../../engine/mockEngine';
+// HASEEB-280 — Wave 2 migration. exportStatement is a mock-fallback
+// metadata helper (filename+timestamp stub) until the real server-
+// side export lands (HASEEB-229 follow-up). FinancialStatementsScreen
+// already consumes it via the engine router; YearEndCloseScreen now
+// mirrors that shape so the FS-package button group on the APPROVED
+// detail view doesn't need duplicate export logic.
+import { exportStatement } from '../../engine';
 
 // ── Constants ─────────────────────────────────────────────────────
 

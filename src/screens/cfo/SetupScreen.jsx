@@ -48,6 +48,11 @@ import {
   deleteCbkRate,
   getCbkRateStaleness,
 } from "../../engine";
+// HASEEB-280 — Wave 2 migration (residual). The rest of SetupScreen's
+// imports already route via ../../engine; this block of ten
+// fiscal/tax/currency/integration/engine-config helpers are mock-
+// fallback until the corresponding backend wrappers land (tracked
+// under HASEEB-279 follow-ups).
 import {
   getFiscalYearConfig,
   getTaxConfiguration,
@@ -59,7 +64,7 @@ import {
   forceSyncIntegration,
   getIntegrationSyncLogs,
   getEngineConfiguration,
-} from "../../engine/mockEngine";
+} from "../../engine";
 import AccountModal from "../../components/setup/AccountModal";
 import DeactivateAccountModal from "../../components/setup/DeactivateAccountModal";
 import PeriodActionModal from "../../components/setup/PeriodActionModal";

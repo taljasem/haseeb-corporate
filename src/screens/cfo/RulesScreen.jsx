@@ -2,6 +2,10 @@ import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Search, FileText, UserPlus, Sparkles } from "lucide-react";
 import EmptyState from "../../components/shared/EmptyState";
+// HASEEB-280 — Wave 2 migration. getSuggestedCategorizationRules +
+// getSuggestedRoutingRules are already LIVE-wired (Track B Dispatch
+// 3b, /api/rules/suggestions). The 11 other functions are mock-
+// fallback via the engine router (no backend yet — HASEEB-279).
 import {
   getCategorizationRules,
   getRoutingRules,
@@ -16,7 +20,7 @@ import {
   acceptSuggestedRule,
   dismissSuggestedRule,
   isSuggestionDismissed,
-} from "../../engine/mockEngine";
+} from "../../engine";
 import CategorizationRuleRow from "../../components/rules/CategorizationRuleRow";
 import RoutingRuleRow from "../../components/rules/RoutingRuleRow";
 import SuggestedRuleRow from "../../components/rules/SuggestedRuleRow";

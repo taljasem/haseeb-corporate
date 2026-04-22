@@ -140,6 +140,7 @@ export default function CFOSidebar({ active, setActive, pendingApprovals = 0, ta
         <NavItem icon={UserIcon}    label={t("items.payroll")}          active={isActive("payroll")}             onClick={() => setActive("payroll")} />
         <NavItem icon={WalletIcon}  label={t("items.payment_vouchers")} active={isActive("payment-voucher")}     onClick={() => setActive("payment-voucher")} />
         <NavItem icon={ShieldIcon}  label={t("items.pifss_reconciliation")} active={isActive("pifss-reconciliation")} onClick={() => setActive("pifss-reconciliation")} />
+        <NavItem icon={LandmarkIcon} label={t("items.cit_assessment")}    active={isActive("cit-assessment")}      onClick={() => setActive("cit-assessment")} />
       </SidebarGroup>
 
       <SidebarGroup label={t("groups.planning")}>

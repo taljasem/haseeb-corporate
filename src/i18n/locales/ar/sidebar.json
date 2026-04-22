@@ -50,6 +50,7 @@
     "administration": "الإدارة",
     "payroll": "الرواتب",
     "payment_vouchers": "سندات الصرف",
-    "pifss_reconciliation": "تسوية التأمينات (سنوية)"
+    "pifss_reconciliation": "تسوية التأمينات (سنوية)",
+    "cit_assessment": "قضايا ضريبة دخل الشركات (سنوية)"
   }
 }

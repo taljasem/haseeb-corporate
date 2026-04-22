@@ -21,6 +21,7 @@ import MigrationWizardScreen from "../cfo/MigrationWizardScreen";
 import PayrollScreen from "../cfo/PayrollScreen";
 import PaymentVoucherScreen from "../cfo/PaymentVoucherScreen";
 import PIFSSReconciliationScreen from "../cfo/PIFSSReconciliationScreen";
+import CITAssessmentScreen from "../cfo/CITAssessmentScreen";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
 
@@ -174,6 +175,8 @@ export default function OwnerView({ registerNav }) {
         return <PaymentVoucherScreen role="Owner" />;
       case "pifss-reconciliation":
         return <PIFSSReconciliationScreen role="Owner" />;
+      case "cit-assessment":
+        return <CITAssessmentScreen role="Owner" />;
       default:
         return <Placeholder label={activeScreen.toUpperCase()} />;
     }

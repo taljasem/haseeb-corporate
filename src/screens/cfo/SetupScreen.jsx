@@ -26,10 +26,6 @@ import {
   listTaxLodgements,
   updateTaxLodgementStatus,
   getTaxLodgementTieOut,
-  listCitAssessments,
-  listApproachingStatute,
-  closeCitAssessment,
-  markCitAssessmentStatuteExpired,
   listWhtConfigs,
   deactivateWhtConfig,
   listWhtCertificates,
@@ -70,8 +66,7 @@ import PeriodActionModal from "../../components/setup/PeriodActionModal";
 import ChangeEngineRuleModal from "../../components/setup/ChangeEngineRuleModal";
 import DisallowanceRuleModal from "../../components/setup/DisallowanceRuleModal";
 import TaxLodgementModal from "../../components/setup/TaxLodgementModal";
-import CitAssessmentCreateModal from "../../components/setup/CitAssessmentCreateModal";
-import CitAssessmentTransitionModal from "../../components/setup/CitAssessmentTransitionModal";
+import CitAssessmentSummaryWidget from "../../components/cfo/CitAssessmentSummaryWidget";
 import WhtConfigModal from "../../components/setup/WhtConfigModal";
 import CostAllocationRuleModal from "../../components/setup/CostAllocationRuleModal";
 import RelatedPartyModal from "../../components/setup/RelatedPartyModal";
@@ -108,7 +103,7 @@ const ALL_SECTIONS = [
   { id: "engine_rules",    icon: Cpu,            foreignOnly: false },
 ];
 
-export default function SetupScreen({ role: roleRaw = "CFO" }) {
+export default function SetupScreen({ role: roleRaw = "CFO", onNavigate }) {
   const { t } = useTranslation("setup");
   const { tenant } = useTenant();
   const [active, setActive] = useState("chart");
@@ -224,7 +219,7 @@ export default function SetupScreen({ role: roleRaw = "CFO" }) {
             {active === "tax"           && <TaxSection readOnly={readOnly} />}
             {active === "disallowance"  && <DisallowanceSection readOnly={readOnly} />}
             {active === "tax_lodgement" && <TaxLodgementSection readOnly={readOnly} />}
-            {active === "cit_assessment" && <CitAssessmentSection readOnly={readOnly} />}
+            {active === "cit_assessment" && <CitAssessmentSection readOnly={readOnly} onNavigate={onNavigate} />}
             {active === "wht"           && <WhtSection readOnly={readOnly} />}
             {active === "cost_allocation" && <CostAllocationSection readOnly={readOnly} />}
             {active === "related_party" && <RelatedPartySection readOnly={readOnly} />}
@@ -1748,535 +1743,36 @@ function DrawerField({ label, value }) {
   );
 }
 
-// ── CIT Assessment (FN-249, 2026-04-19) ─────────────────────────
-// Per-fiscal-year Kuwait CIT case tracker. State machine FILED →
-// UNDER_REVIEW → ASSESSED → (OBJECTED →) FINAL → CLOSED, with
-// STATUTE_EXPIRED terminal from any non-terminal state. OWNER-only
-// mutations. Approaching-statute sweep surfaces cases within 180 days
-// of their statuteExpiresOn so the operator can act before the
-// authority's window closes.
-const CIT_STATUS_FILTERS = [
-  "ALL",
-  "OPEN",
-  "FILED",
-  "UNDER_REVIEW",
-  "ASSESSED",
-  "OBJECTED",
-  "FINAL",
-  "CLOSED",
-  "STATUTE_EXPIRED",
-];
-
-const CIT_STATUS_COLORS = {
-  FILED: { color: "var(--text-secondary)", bg: "var(--bg-surface)" },
-  UNDER_REVIEW: { color: "var(--semantic-warning)", bg: "var(--semantic-warning-subtle)" },
-  ASSESSED: { color: "var(--accent-primary)", bg: "var(--accent-primary-subtle)" },
-  OBJECTED: { color: "var(--semantic-warning)", bg: "var(--semantic-warning-subtle)" },
-  FINAL: { color: "var(--accent-primary)", bg: "var(--accent-primary-subtle)" },
-  CLOSED: { color: "var(--text-tertiary)", bg: "var(--bg-surface)" },
-  STATUTE_EXPIRED: { color: "var(--semantic-danger)", bg: "var(--semantic-danger-subtle)" },
-};
-
-function daysUntil(isoDate) {
-  if (!isoDate) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(isoDate);
-  const diff = Math.round((target - today) / 86400000);
-  return diff;
-}
-
-function CitAssessmentSection({ readOnly = false }) {
-  const { t } = useTranslation("setup");
-  const [rows, setRows] = useState(null);
-  const [approaching, setApproaching] = useState([]);
-  const [statusFilter, setStatusFilter] = useState("ALL");
-  const [createOpen, setCreateOpen] = useState(false);
-  const [transitionState, setTransitionState] = useState({
-    open: false,
-    transition: null,
-    assessment: null,
-  });
-  const [toast, setToast] = useState(null);
-  const [loadError, setLoadError] = useState(null);
-
-  const reload = async () => {
-    setLoadError(null);
-    try {
-      const filters =
-        statusFilter === "ALL"
-          ? {}
-          : statusFilter === "OPEN"
-          ? { openOnly: true }
-          : { status: statusFilter };
-      const [list, sweep] = await Promise.all([
-        listCitAssessments(filters),
-        listApproachingStatute({ withinDays: 180 }).catch(() => []),
-      ]);
-      setRows(list || []);
-      setApproaching(sweep || []);
-    } catch (err) {
-      setRows([]);
-      setLoadError(err?.message || t("cit_assessment.error_load"));
-    }
-  };
-
-  useEffect(() => {
-    reload();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter]);
-
-  const openTransition = (transition, assessment) => {
-    setTransitionState({ open: true, transition, assessment });
-  };
-
-  const handleClose = async (rule) => {
-    try {
-      await closeCitAssessment(rule.id);
-      setToast(t("cit_assessment.closed_toast"));
-      reload();
-    } catch (err) {
-      setToast(err?.message || t("cit_assessment.error_close"));
-    }
-  };
-
-  const handleMarkStatuteExpired = async (rule) => {
-    try {
-      await markCitAssessmentStatuteExpired(rule.id);
-      setToast(t("cit_assessment.statute_expired_toast"));
-      reload();
-    } catch (err) {
-      setToast(err?.message || t("cit_assessment.error_statute_expired"));
-    }
-  };
-
+// ── CIT Assessment (FN-249, 2026-04-19; AUDIT-ACC-057 2026-04-22) ─
+// Per-fiscal-year Kuwait CIT authority-case tracker. Full case
+// management (year list, per-case detail, all 6 transitions + close +
+// mark-statute-expired) lives in the standalone CITAssessmentScreen
+// reachable from the Compliance sidebar entry. Setup preserves this
+// section as a summary widget (most-recent + approaching-statute
+// warning count + link to the full screen) so operators landing in
+// Setup still see CIT status at a glance. The `cit_assessment`
+// settings-category ID, Gavel icon, and `foreignOnly: true` gate are
+// preserved intact per Tarek's Resolution (b).
+function CitAssessmentSection({ readOnly: _readOnly = false, onNavigate }) {
+  // readOnly was the legacy edit-gate when the full table lived here;
+  // OWNER-only writes are now enforced inside CITAssessmentScreen via
+  // the OwnerButton disabled-with-tooltip pattern, so this shell has
+  // nothing to gate and reads the prop only for compatibility.
+  const { t } = useTranslation("citAssessment");
   return (
     <Card
-      title={t("cit_assessment.title")}
-      description={t("cit_assessment.description")}
-      extra={
-        <button
-          onClick={() => setCreateOpen(true)}
-          disabled={readOnly}
-          style={{ ...btnPrimary(false), opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnPrimary(false).cursor }}
-        >
-          <Plus
-            size={13}
-            style={{ verticalAlign: "middle", marginInlineEnd: 6 }}
-          />
-          {t("cit_assessment.create_case")}
-        </button>
-      }
+      title={t("summary.widget_title")}
+      description={t("distinction_note")}
     >
-      <Toast text={toast} onClear={() => setToast(null)} />
-
-      {approaching.length > 0 && (
-        <div
-          role="status"
-          style={{
-            display: "flex",
-            gap: 10,
-            padding: "12px 14px",
-            background: "var(--semantic-warning-subtle)",
-            border: "1px solid var(--semantic-warning)",
-            borderRadius: 8,
-            color: "var(--semantic-warning)",
-            fontSize: 12,
-            marginBottom: 12,
-            alignItems: "flex-start",
-          }}
-        >
-          <Clock size={14} style={{ marginTop: 2 }} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, marginBottom: 4 }}>
-              {t("cit_assessment.approaching_banner_title", {
-                count: approaching.length,
-              })}
-            </div>
-            <div
-              style={{
-                fontSize: 11,
-                color: "var(--text-secondary)",
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 10,
-              }}
-            >
-              {approaching.slice(0, 5).map((a) => (
-                <LtrText key={a.id}>
-                  <span style={{ fontFamily: "'DM Mono', monospace" }}>
-                    FY{a.fiscalYear} · {a.statuteExpiresOn}
-                  </span>
-                </LtrText>
-              ))}
-              {approaching.length > 5 && (
-                <span>
-                  {t("cit_assessment.approaching_more", {
-                    count: approaching.length - 5,
-                  })}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          marginBottom: 12,
-          flexWrap: "wrap",
-        }}
-      >
-        {CIT_STATUS_FILTERS.map((s) => {
-          const on = statusFilter === s;
-          return (
-            <button
-              key={s}
-              onClick={() => setStatusFilter(s)}
-              style={{
-                ...btnMini,
-                background: on ? "var(--accent-primary-subtle)" : "transparent",
-                borderColor: on
-                  ? "var(--accent-primary-border)"
-                  : "var(--border-strong)",
-                color: on ? "var(--accent-primary)" : "var(--text-secondary)",
-              }}
-            >
-              {t(`cit_assessment.filter_${s}`)}
-            </button>
-          );
-        })}
-      </div>
-
-      {loadError && (
-        <div
-          role="alert"
-          style={{
-            display: "flex",
-            gap: 8,
-            padding: "10px 12px",
-            background: "var(--semantic-danger-subtle)",
-            border: "1px solid var(--semantic-danger)",
-            borderRadius: 8,
-            color: "var(--semantic-danger)",
-            fontSize: 12,
-            marginBottom: 12,
-          }}
-        >
-          <AlertTriangle size={14} /> {loadError}
-        </div>
-      )}
-
-      {rows === null && (
-        <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>…</div>
-      )}
-
-      {rows && rows.length === 0 && !loadError && (
-        <EmptyState
-          icon={Gavel}
-          title={t("cit_assessment.empty_title")}
-          description={t("cit_assessment.empty_description")}
-        />
-      )}
-
-      {rows && rows.length > 0 && (
-        <div
-          style={{
-            border: "1px solid var(--border-default)",
-            borderRadius: 8,
-            overflow: "hidden",
-          }}
-        >
-          {rows.map((rule, idx) => {
-            const colors = CIT_STATUS_COLORS[rule.status] || {
-              color: "var(--text-secondary)",
-              bg: "var(--bg-surface)",
-            };
-            const statuteDays = daysUntil(rule.statuteExpiresOn);
-            const statuteWarning =
-              rule.status !== "CLOSED" &&
-              rule.status !== "STATUTE_EXPIRED" &&
-              statuteDays != null &&
-              statuteDays <= 180;
-            const varianceNum = rule.varianceKwd
-              ? Number(rule.varianceKwd)
-              : null;
-            const varianceColor =
-              varianceNum == null
-                ? "var(--text-tertiary)"
-                : varianceNum > 0
-                ? "var(--semantic-danger)"
-                : varianceNum < 0
-                ? "var(--accent-primary)"
-                : "var(--text-secondary)";
-
-            return (
-              <div
-                key={rule.id}
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  justifyContent: "space-between",
-                  gap: 14,
-                  padding: "14px 18px",
-                  borderBottom:
-                    idx === rows.length - 1
-                      ? "none"
-                      : "1px solid var(--border-subtle)",
-                }}
-              >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 14,
-                        fontWeight: 700,
-                        color: "var(--text-primary)",
-                        fontFamily: "'DM Mono', monospace",
-                      }}
-                    >
-                      <LtrText>FY{rule.fiscalYear}</LtrText>
-                    </div>
-                    <span
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 700,
-                        letterSpacing: "0.1em",
-                        padding: "2px 8px",
-                        borderRadius: 10,
-                        background: colors.bg,
-                        color: colors.color,
-                        border: "1px solid",
-                      }}
-                    >
-                      {t(`cit_assessment.status_${rule.status}`)}
-                    </span>
-                    {rule.authorityCaseNumber && (
-                      <span
-                        style={{
-                          fontSize: 11,
-                          color: "var(--text-tertiary)",
-                          fontFamily: "'DM Mono', monospace",
-                        }}
-                      >
-                        <LtrText>{rule.authorityCaseNumber}</LtrText>
-                      </span>
-                    )}
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: 14,
-                      marginTop: 6,
-                      fontSize: 11,
-                      color: "var(--text-tertiary)",
-                    }}
-                  >
-                    <div>
-                      {t("cit_assessment.label_filed")}:{" "}
-                      <LtrText>
-                        <span
-                          style={{
-                            color: "var(--text-secondary)",
-                            fontFamily: "'DM Mono', monospace",
-                          }}
-                        >
-                          {rule.filedAmountKwd} KWD · {rule.filedOnDate}
-                        </span>
-                      </LtrText>
-                    </div>
-                    {rule.assessedAmountKwd && (
-                      <div>
-                        {t("cit_assessment.label_assessed")}:{" "}
-                        <LtrText>
-                          <span
-                            style={{
-                              color: "var(--text-secondary)",
-                              fontFamily: "'DM Mono', monospace",
-                            }}
-                          >
-                            {rule.assessedAmountKwd} KWD · {rule.assessedOnDate}
-                          </span>
-                        </LtrText>
-                      </div>
-                    )}
-                    {rule.varianceKwd && (
-                      <div>
-                        {t("cit_assessment.label_variance")}:{" "}
-                        <LtrText>
-                          <span
-                            style={{
-                              color: varianceColor,
-                              fontFamily: "'DM Mono', monospace",
-                              fontWeight: 600,
-                            }}
-                          >
-                            {rule.varianceKwd} KWD
-                          </span>
-                        </LtrText>
-                      </div>
-                    )}
-                    {rule.finalAmountKwd && (
-                      <div>
-                        {t("cit_assessment.label_final")}:{" "}
-                        <LtrText>
-                          <span
-                            style={{
-                              color: "var(--text-secondary)",
-                              fontFamily: "'DM Mono', monospace",
-                            }}
-                          >
-                            {rule.finalAmountKwd} KWD · {rule.finalizedOnDate}
-                          </span>
-                        </LtrText>
-                      </div>
-                    )}
-                    <div
-                      style={{
-                        color: statuteWarning
-                          ? "var(--semantic-warning)"
-                          : "var(--text-tertiary)",
-                      }}
-                    >
-                      {t("cit_assessment.label_statute")}:{" "}
-                      <LtrText>
-                        <span
-                          style={{
-                            fontFamily: "'DM Mono', monospace",
-                            color: statuteWarning
-                              ? "var(--semantic-warning)"
-                              : "var(--text-secondary)",
-                            fontWeight: statuteWarning ? 600 : 400,
-                          }}
-                        >
-                          {rule.statuteExpiresOn}
-                        </span>
-                      </LtrText>
-                    </div>
-                  </div>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 6,
-                    minWidth: 150,
-                  }}
-                >
-                  {rule.status === "FILED" && (
-                    <button
-                      onClick={() => openTransition("open_review", rule)}
-                      disabled={readOnly}
-                      style={{ ...btnMini, opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnMini.cursor }}
-                    >
-                      {t("cit_assessment.action_open_review")}
-                    </button>
-                  )}
-                  {(rule.status === "FILED" ||
-                    rule.status === "UNDER_REVIEW") && (
-                    <button
-                      onClick={() =>
-                        openTransition("record_assessment", rule)
-                      }
-                      disabled={readOnly}
-                      style={{ ...btnMini, opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnMini.cursor }}
-                    >
-                      {t("cit_assessment.action_record_assessment")}
-                    </button>
-                  )}
-                  {rule.status === "ASSESSED" && (
-                    <button
-                      onClick={() =>
-                        openTransition("record_objection", rule)
-                      }
-                      disabled={readOnly}
-                      style={{ ...btnMini, opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnMini.cursor }}
-                    >
-                      {t("cit_assessment.action_record_objection")}
-                    </button>
-                  )}
-                  {(rule.status === "ASSESSED" ||
-                    rule.status === "OBJECTED") && (
-                    <button
-                      onClick={() => openTransition("finalize", rule)}
-                      disabled={readOnly}
-                      style={{ ...btnMini, opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnMini.cursor }}
-                    >
-                      {t("cit_assessment.action_finalize")}
-                    </button>
-                  )}
-                  {rule.status === "FINAL" && (
-                    <button
-                      onClick={() => handleClose(rule)}
-                      disabled={readOnly}
-                      style={{ ...btnMini, opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnMini.cursor }}
-                    >
-                      {t("cit_assessment.action_close")}
-                    </button>
-                  )}
-                  {rule.status !== "CLOSED" &&
-                    rule.status !== "STATUTE_EXPIRED" &&
-                    statuteDays != null &&
-                    statuteDays <= 0 && (
-                      <button
-                        onClick={() => handleMarkStatuteExpired(rule)}
-                        disabled={readOnly}
-                        style={{
-                          ...btnMini,
-                          color: "var(--semantic-danger)",
-                          borderColor: "var(--semantic-danger-border)",
-                          opacity: readOnly ? 0.5 : 1,
-                          cursor: readOnly ? "not-allowed" : btnMini.cursor,
-                        }}
-                      >
-                        {t("cit_assessment.action_mark_statute_expired")}
-                      </button>
-                    )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      <CitAssessmentCreateModal
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onSaved={() => {
-          reload();
-          setToast(t("cit_assessment.created_toast"));
-        }}
-      />
-      <CitAssessmentTransitionModal
-        open={transitionState.open}
-        transition={transitionState.transition}
-        assessment={transitionState.assessment}
-        onClose={() =>
-          setTransitionState({
-            open: false,
-            transition: null,
-            assessment: null,
-          })
+      <CitAssessmentSummaryWidget
+        onOpenScreen={
+          onNavigate ? () => onNavigate("cit-assessment") : undefined
         }
-        onSaved={() => {
-          reload();
-          setToast(t("cit_assessment.transitioned_toast"));
-        }}
       />
     </Card>
   );
 }
+
 
 // ── WHT — Withholding Tax (FN-250, 2026-04-19) ───────────────────
 // Per-tenant WHT policy (effective-dated per-category basis-point

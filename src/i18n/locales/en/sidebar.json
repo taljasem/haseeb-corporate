@@ -50,6 +50,7 @@
     "administration": "Administration",
     "payroll": "Payroll",
     "payment_vouchers": "Payment Vouchers",
-    "pifss_reconciliation": "PIFSS Reconciliation (Annual)"
+    "pifss_reconciliation": "PIFSS Reconciliation (Annual)",
+    "cit_assessment": "CIT Assessments (Annual)"
   }
 }

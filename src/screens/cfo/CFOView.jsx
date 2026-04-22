@@ -37,6 +37,7 @@ import MigrationWizardScreen from "./MigrationWizardScreen";
 import PayrollScreen from "./PayrollScreen";
 import PaymentVoucherScreen from "./PaymentVoucherScreen";
 import PIFSSReconciliationScreen from "./PIFSSReconciliationScreen";
+import CITAssessmentScreen from "./CITAssessmentScreen";
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine/mockEngine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
 
@@ -143,7 +144,7 @@ export default function CFOView({ registerNav }) {
       case "aging-reports":
         return <AgingReportsScreen onOpenAminah={openAminah} />;
       case "setup":
-        return <SetupScreen role="CFO" />;
+        return <SetupScreen role="CFO" onNavigate={setActive} />;
       case "contacts":
         return <ContactsScreen role="CFO" />;
       case "audit-bridge":
@@ -172,6 +173,8 @@ export default function CFOView({ registerNav }) {
         return <PaymentVoucherScreen role="CFO" />;
       case "pifss-reconciliation":
         return <PIFSSReconciliationScreen role="CFO" />;
+      case "cit-assessment":
+        return <CITAssessmentScreen role="CFO" />;
       default:
         return (
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-tertiary)", fontSize: 13 }}>

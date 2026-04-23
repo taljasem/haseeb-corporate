@@ -59,6 +59,23 @@ const STATE_STYLES = {
     opacity: 0.85,
     postedWithId: true,
   },
+  // HASEEB-282 (2026-04-22, ConversationalJE hallucination stopgap):
+  // the LLM produced lines against account codes that don't exist on
+  // this tenant's chart of accounts. The card renders the proposed
+  // entry so the user can see what was rejected, but the pill is red
+  // and the Confirm button is suppressed. Paired with the backend
+  // `buildError` field on OrchestratorResponse.
+  "build-failed": {
+    accent: "var(--semantic-danger)",
+    pillFg: "var(--semantic-danger)",
+    pillBg: "rgba(255,90,95,0.10)",
+    pillBorder: "rgba(255,90,95,0.40)",
+    pillKey: "state_build_failed_pill",
+    headerKey: "header_build_failed",
+    hashKey: "hash_build_failed",
+    cardBg: "var(--bg-surface-sunken)",
+    opacity: 0.92,
+  },
 };
 
 function fmtCreated(iso) {
@@ -95,7 +112,9 @@ export default function JournalEntryCard({
   const s = STATE_STYLES[state] || STATE_STYLES["draft-validated"];
   const isPosted = state === "posted";
   const isSuggested = state === "suggested";
-  const isLocked = state === "posted" || state === "pending-approval";
+  // HASEEB-282: build-failed is locked (no Confirm/Edit/Discard action bar) —
+  // the user must rephrase; the proposed entry is shown for context only.
+  const isLocked = state === "posted" || state === "pending-approval" || state === "build-failed";
   const balanced = live.lines.every((l) => l.account != null) && live.balanced !== false;
 
   const pillLabel = s.postedWithId ? t("je_card.state_posted_pill", { id: live.id }) : t(`je_card.${s.pillKey}`);

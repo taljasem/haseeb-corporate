@@ -200,6 +200,13 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
   const [activePendingAction, setActivePendingAction] = useState(null);
   const [activeConfirmationId, setActiveConfirmationId] = useState(null);
   const [isConfirming, setIsConfirming] = useState(false);
+  // HASEEB-282 (2026-04-22, hallucination stopgap): carries the server's
+  // `buildError` envelope when the backend refused to surface a
+  // confirmable entry because the LLM emitted account codes not on the
+  // tenant's COA. Drives the red BUILD FAILED pill on the card and
+  // suppresses the Confirm button. Cleared the next time a successful
+  // pending action arrives or the user discards.
+  const [activeBuildError, setActiveBuildError] = useState(null);
 
   const scrollRef = useRef(null);
 
@@ -277,16 +284,32 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
         },
       ]);
 
-      // If the response carries a confirmation payload, lift it out as
-      // the active pending action. Multi-turn edits return a new
-      // confirmationId + updated pendingJournalEntry which replaces the
-      // previous draft.
-      const pending =
-        response.pendingJournalEntry ||
-        (response.action && response.action.type === "confirm_transaction" ? response.action.data : null);
-      if (pending) {
-        setActivePendingAction(pending);
-        setActiveConfirmationId(response.confirmationId || null);
+      // HASEEB-282: BUILD FAILED path. Backend refused to issue a
+      // confirmationId because the LLM proposed account codes not on
+      // the tenant's COA. The response DOES include the rejected
+      // `pendingJournalEntry` so the card can render with a red
+      // BUILD FAILED pill — the activeConfirmationId stays null so
+      // Confirm never fires. The build-error flag drives the pill.
+      if (response.buildError) {
+        const rejected =
+          response.pendingJournalEntry ||
+          (response.action && response.action.type === "confirm_transaction" ? response.action.data : null);
+        setActiveBuildError(response.buildError);
+        setActivePendingAction(rejected || null);
+        setActiveConfirmationId(null);
+      } else {
+        // If the response carries a confirmation payload, lift it out as
+        // the active pending action. Multi-turn edits return a new
+        // confirmationId + updated pendingJournalEntry which replaces the
+        // previous draft.
+        const pending =
+          response.pendingJournalEntry ||
+          (response.action && response.action.type === "confirm_transaction" ? response.action.data : null);
+        if (pending) {
+          setActivePendingAction(pending);
+          setActiveConfirmationId(response.confirmationId || null);
+          setActiveBuildError(null);
+        }
       }
     } catch (err) {
       setMessages((prev) => [
@@ -339,6 +362,7 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
       ]);
       setActivePendingAction(null);
       setActiveConfirmationId(null);
+      setActiveBuildError(null);
 
       // Fire a global event so JE lists can refresh. ManualJEScreen
       // and any other wired surfaces can listen for this.
@@ -418,6 +442,7 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
     }
     setActivePendingAction(null);
     setActiveConfirmationId(null);
+    setActiveBuildError(null);
     setMessages((prev) => [
       ...prev,
       {
@@ -537,14 +562,19 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
 
           {cardEntry && (
             <div style={{ maxWidth: "100%" }}>
+              {/* HASEEB-282: server-driven card state. `draft-validated`
+                  remains the success-path default (Phase-1 will replace
+                  with the full 6-state enum from the unified learning
+                  design memo §F); `build-failed` renders on the
+                  hallucination stopgap path. */}
               <JournalEntryCard
                 entry={cardEntry}
-                state="draft-validated"
+                state={activeBuildError ? "build-failed" : "draft-validated"}
                 onConfirm={handleConfirm}
                 onEdit={handleEdit}
                 onDiscard={handleDiscard}
               />
-              <AminahBubble>{t("live.review_and_confirm")}</AminahBubble>
+              {!activeBuildError && <AminahBubble>{t("live.review_and_confirm")}</AminahBubble>}
               {isConfirming && <ThinkingBubble label={t("live.thinking")} />}
             </div>
           )}

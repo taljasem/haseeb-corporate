@@ -405,7 +405,71 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
     }
   };
 
-  // ─── Edit the draft in the Manual JE composer ─────────────────────
+  // ─── HASEEB-307 (V2 bugfix Failure 2a, 2026-04-23) — inline-edit save.
+  // JournalEntryCard toggles to edit mode locally and calls this on save.
+  // POST /api/ai/confirm with action='amend' + newData → backend
+  // validates (balance + CoA existence) + updates pendingAction in
+  // place, returns a fresh confirmationId + the updated draft. We
+  // rehydrate the on-screen pending state from the response. On
+  // validation failure the backend surfaces buildStatus.state =
+  // 'validation_failed' — frontend shows a chat message and keeps
+  // the draft unchanged; user can try again.
+  const handleSaveEdit = async (newData) => {
+    if (!activeConfirmationId) return;
+    try {
+      const response = await confirmPendingAction({
+        conversationId,
+        confirmationId: activeConfirmationId,
+        action: "amend",
+        agent: "haseeb",
+        newData,
+      });
+      // Amend-failure path: backend returned buildStatus validation_failed.
+      if (response.buildStatus?.state === "validation_failed") {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `err-${Date.now()}`,
+            role: "error",
+            text: response.message || t("live.error_generic"),
+            ts: new Date().toISOString(),
+          },
+        ]);
+        // Keep the prior pending state as-is; edit didn't save.
+        return;
+      }
+      // Amend-success path: replace pending state with the new draft.
+      if (response.pendingJournalEntry) {
+        setActivePendingAction(response.pendingJournalEntry);
+        setActiveConfirmationId(response.confirmationId || null);
+        setActiveBuildStatus(response.buildStatus || null);
+        setActiveBuildError(null);
+      }
+      if (response.message) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `sys-${Date.now()}`,
+            role: "system",
+            text: response.message,
+            ts: new Date().toISOString(),
+          },
+        ]);
+      }
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `err-${Date.now()}`,
+          role: "error",
+          text: err?.message || t("live.error_generic"),
+          ts: new Date().toISOString(),
+        },
+      ]);
+    }
+  };
+
+  // ─── Edit the draft in the Manual JE composer (legacy V1 flow) ─────
   const handleEdit = () => {
     if (!activePendingAction || typeof window === "undefined") return;
     try {
@@ -592,6 +656,7 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
                 onConfirm={handleConfirm}
                 onEdit={handleEdit}
                 onDiscard={handleDiscard}
+                onSaveEdit={handleSaveEdit}
               />
               {!activeBuildError &&
                 (!activeBuildStatus || activeBuildStatus.requiresConfirmation) && (

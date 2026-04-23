@@ -307,6 +307,8 @@
     "choose_different": "اختيار حساب آخر",
     "ask_aminah_btn": "اسأل أمينة",
     "edit_btn": "تعديل",
+    "save_edit_btn": "حفظ التعديل",
+    "cancel_edit_btn": "إلغاء",
     "discard_btn": "تجاهل",
     "cancel_picker": "← إلغاء",
     "posted_by_cfo": "أنت (المدير المالي)"

@@ -307,6 +307,8 @@
     "choose_different": "Choose different account",
     "ask_aminah_btn": "Ask Aminah",
     "edit_btn": "Edit",
+    "save_edit_btn": "Save changes",
+    "cancel_edit_btn": "Cancel",
     "discard_btn": "Discard",
     "cancel_picker": "← Cancel",
     "posted_by_cfo": "You (CFO)"

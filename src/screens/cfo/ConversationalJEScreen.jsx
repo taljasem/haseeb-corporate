@@ -163,6 +163,15 @@ function pendingToCardEntry(pending, fallbackId = "DRAFT") {
   });
   const totalDebit = mapped.reduce((s, l) => s + (l.debit || 0), 0);
   const totalCredit = mapped.reduce((s, l) => s + (l.credit || 0), 0);
+  // HASEEB-309 (V2 lower-pri L3, 2026-04-23) — suppress empty-card
+  // render during clarification turns where the backend sent a
+  // partial pendingJournalEntry whose lines all resolved to null
+  // debit/credit. Rendering the card with "KWD 0.000" totals on
+  // both sides was confusing users mid-clarification; the chat
+  // bubble carries the question they actually need to answer.
+  if (totalDebit === 0 && totalCredit === 0 && mapped.every((l) => !l.account)) {
+    return null;
+  }
   return {
     id: fallbackId,
     description: pending.description || "",
@@ -245,11 +254,22 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
   }, []);
 
   // ─── Auto-scroll on new messages ─────────────────────────────────
+  // HASEEB-309 (V2 lower-pri L5, 2026-04-23) — wrap in rAF so the
+  // scroll read happens AFTER the DOM has flushed the new card /
+  // bubble height. Prior version read scrollHeight synchronously
+  // and sometimes missed buildStatus-only updates that lay beneath
+  // the fold. Also depend on activeBuildStatus / isConfirming so
+  // status-only transitions (e.g. requires_clarification → awaiting
+  // answer) re-fire the effect.
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, activePendingAction, isThinking]);
+    if (!scrollRef.current) return;
+    const id = window.requestAnimationFrame(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [messages, activePendingAction, isThinking, activeBuildStatus, isConfirming]);
 
   // ─── Send a user message ─────────────────────────────────────────
   const handleSubmit = async (forcedText) => {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Circle, Clock, AlertTriangle, CheckCircle2, Paperclip, PlayCircle, X, RefreshCw, RotateCcw, Download, ChevronDown, ChevronRight, Shield, Eye } from "lucide-react";
+import { Check, Circle, Clock, AlertTriangle, CheckCircle2, Paperclip, PlayCircle, X, RefreshCw, RotateCcw, Download, ChevronDown, ChevronRight, Shield, Eye, Lock, Unlock } from "lucide-react";
 import EmptyState from "../../components/shared/EmptyState";
 import Spinner from "../../components/shared/Spinner";
 import AminahNarrationCard from "../../components/financial/AminahNarrationCard";
@@ -63,6 +63,79 @@ const CLOSE_STATUS_PILL = {
   pending_approval: { key: "status_pending_approval", color: "var(--semantic-warning)" },
   approved:         { key: "status_approved",         color: "var(--accent-primary)" },
 };
+
+// AUDIT-ACC-073: explicit period-lock strength indicator. Before this
+// the distinction between "no lock" / "soft lock (CFO submitted, owner
+// deciding)" / "hard lock (approved, reversal-only)" was implicit in
+// button visibility and an info banner. Accountants had to learn the
+// distinction by trial; auditors had no at-a-glance assurance that a
+// locked period was REALLY locked.
+//
+// Semantics derived from existing closeStatus.status (no backend
+// change). Three buckets map to three badges:
+//   - not_started / in_progress  → OPEN          (neutral pill, Unlock)
+//   - pending_approval           → SOFT LOCK     (amber pill, Lock)
+//     CFO submitted; checklist items frozen pending owner decision;
+//     owner can reject to unlock. No JEs in the period can be edited
+//     by the CFO, but period is not yet permanently closed.
+//   - approved                   → HARD LOCK     (red/danger pill, Lock)
+//     Period is closed. All entries locked. Changes require reopen-
+//     request → owner approval; auditor-visible reopen reason trail.
+const LOCK_STRENGTH = {
+  open:       { key: "open",       color: "var(--text-tertiary)",     Icon: Unlock, borderColor: "var(--border-default)" },
+  soft_lock:  { key: "soft_lock",  color: "var(--semantic-warning)",  Icon: Lock,   borderColor: "var(--semantic-warning)" },
+  hard_lock:  { key: "hard_lock",  color: "var(--semantic-danger)",   Icon: Lock,   borderColor: "var(--semantic-danger)" },
+};
+
+function deriveLockStrength(status) {
+  if (status === "approved") return "hard_lock";
+  if (status === "pending_approval") return "soft_lock";
+  return "open";
+}
+
+/**
+ * AUDIT-ACC-073: period-lock strength indicator.
+ *
+ * Renders a small pill with an icon + label reflecting the current
+ * period-lock semantics. Tooltip (via `title` attr) explains what the
+ * lock strength means so a first-time accountant or auditor can learn
+ * the distinction without trial.
+ *
+ * a11y: `role="status"` + `aria-label` carry the full lock-strength
+ * label + description for screen readers. Icon is aria-hidden since
+ * the label carries the full semantic.
+ */
+function LockStrengthBadge({ lockMeta, t }) {
+  if (!lockMeta) return null;
+  const { Icon, color, borderColor, key } = lockMeta;
+  const label = t(`lock_strength.${key}`);
+  const description = t(`lock_strength.${key}_desc`);
+  return (
+    <span
+      data-testid={`lock-strength-badge-${key}`}
+      role="status"
+      aria-label={`${label} — ${description}`}
+      title={description}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: "0.12em",
+        color,
+        background: `${color}14`,
+        border: `1px solid ${borderColor}55`,
+        padding: "6px 10px",
+        borderRadius: 4,
+        whiteSpace: "nowrap",
+      }}
+    >
+      <Icon size={11} aria-hidden="true" />
+      {label}
+    </span>
+  );
+}
 
 export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigate, onOpenAminah }) {
   const role = normalizeRole(roleRaw);
@@ -142,6 +215,10 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
   const isLocked = closeStatus?.status === "approved";
   const isPending = closeStatus?.status === "pending_approval";
   const editable = role === "CFO" && !isLocked && !isPending;
+  // AUDIT-ACC-073: derived at render time from status so the indicator
+  // stays in sync with any status change from reloadStatus().
+  const lockStrength = deriveLockStrength(closeStatus?.status);
+  const lockMeta = LOCK_STRENGTH[lockStrength];
 
   const handleMarkComplete = async (itemId, notes, attachments) => {
     const r = await markCloseItemComplete(itemId, notes, attachments);
@@ -270,16 +347,20 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
               {t("cfo.hero_subtitle", { period, day, total: totalDays })}
             </div>
           </div>
-          <div
-            style={{
-              fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
-              color: closePillMeta.color,
-              background: `${closePillMeta.color}14`,
-              border: `1px solid ${closePillMeta.color}55`,
-              padding: "6px 12px", borderRadius: 4,
-            }}
-          >
-            {t(`cfo.close_status_label`)} · {t(`cfo.${closePillMeta.key}`)}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <div
+              data-testid="close-status-pill"
+              style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
+                color: closePillMeta.color,
+                background: `${closePillMeta.color}14`,
+                border: `1px solid ${closePillMeta.color}55`,
+                padding: "6px 12px", borderRadius: 4,
+              }}
+            >
+              {t(`cfo.close_status_label`)} · {t(`cfo.${closePillMeta.key}`)}
+            </div>
+            <LockStrengthBadge lockMeta={lockMeta} t={t} />
           </div>
           {/* 20D-5: Action buttons */}
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -313,17 +394,20 @@ export default function MonthEndCloseScreen({ role: roleRaw = "Owner", onNavigat
                   {(data.period || period).toUpperCase()}
                 </div>
               </div>
-              <span
-                style={{
-                  fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
-                  color: statusPillLegacy.color,
-                  background: `${statusPillLegacy.color}14`,
-                  border: `1px solid ${statusPillLegacy.color}55`,
-                  padding: "5px 10px", borderRadius: 4,
-                }}
-              >
-                {t(`status_pill.${statusPillLegacy.key}`)}
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span
+                  style={{
+                    fontSize: 10, fontWeight: 700, letterSpacing: "0.12em",
+                    color: statusPillLegacy.color,
+                    background: `${statusPillLegacy.color}14`,
+                    border: `1px solid ${statusPillLegacy.color}55`,
+                    padding: "5px 10px", borderRadius: 4,
+                  }}
+                >
+                  {t(`status_pill.${statusPillLegacy.key}`)}
+                </span>
+                <LockStrengthBadge lockMeta={lockMeta} t={t} />
+              </div>
             </div>
           )}
 

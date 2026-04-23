@@ -39,6 +39,7 @@ import PaymentVoucherScreen from "./PaymentVoucherScreen";
 import PIFSSReconciliationScreen from "./PIFSSReconciliationScreen";
 import CITAssessmentScreen from "./CITAssessmentScreen";
 import YearEndCloseScreen from "./YearEndCloseScreen";
+import QuarterlyKPIScreen from "./QuarterlyKPIScreen";
 // HASEEB-280 — Wave 2 migration. Both taskbox/approval counters are
 // mock-fallback via the engine router (no backend yet — HASEEB-279).
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine";
@@ -180,6 +181,8 @@ export default function CFOView({ registerNav }) {
         return <CITAssessmentScreen role="CFO" />;
       case "year-end-close":
         return <YearEndCloseScreen role="CFO" />;
+      case "quarterly-kpi":
+        return <QuarterlyKPIScreen role="CFO" />;
       default:
         return (
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-tertiary)", fontSize: 13 }}>

@@ -1,0 +1,53 @@
+{
+  "title": "Quarterly KPI Dashboard",
+  "description": "Business-health KPIs on a quarterly rhythm: revenue growth, margin, cash cycle, burn, and runway. Composed from published income-statement totals, bank balances, AR/AP aging, and the latest forecast snapshot.",
+  "reload": "Reload",
+  "loading": "Loading KPIs…",
+  "period_selector_label": "Quarter selector",
+  "current_quarter_aria": "Current quarter",
+  "period_caveat": "Showing the latest available snapshot. Per-quarter filtering for {{quarter}} is pending backend parameterization.",
+  "role_gate": {
+    "title": "Access restricted",
+    "description": "The Quarterly KPI dashboard is available to Owner, CFO, and Senior roles. Ask your Owner or CFO if you need access."
+  },
+  "empty": {
+    "title": "No KPI data yet",
+    "description": "Once income statements and aging reports have been generated for this tenant, KPIs will populate here."
+  },
+  "errors": {
+    "load_failed": "Could not load KPI data: {{message}}"
+  },
+  "kpi": {
+    "revenue_growth": {
+      "label": "Revenue",
+      "vs_prior": "vs prior period",
+      "prior_label": "PRIOR",
+      "tooltip": "Revenue in the current closed period compared with the prior period. Percent change is signed: positive = growth, negative = contraction."
+    },
+    "margin": {
+      "label": "Margin",
+      "gross_label": "GROSS",
+      "operating_label": "OPERATING",
+      "tooltip": "Gross margin = (Revenue − COGS) ÷ Revenue. Operating margin = (Revenue − COGS − Operating Expenses) ÷ Revenue. Figures from the latest income statement."
+    },
+    "cash_cycle": {
+      "label": "Cash Cycle",
+      "unit": "days",
+      "dso_label": "DSO",
+      "dpo_label": "DPO",
+      "tooltip": "Simplified cash conversion cycle = DSO − DPO. DSO = average days sales outstanding (AR aging). DPO = average days payable outstanding (AP aging). Days inventory outstanding (DIO) is not currently tracked on the aging module, so this is the two-component approximation of the classical IAS 2 CCC formula."
+    },
+    "burn": {
+      "label": "Burn Rate",
+      "projected_label": "NEXT 3 MONTHS",
+      "tooltip": "Average monthly expense run-rate from the latest income statement (COGS + Operating Expenses). Projected burn is the average monthly expense over the next three forecast months."
+    },
+    "runway": {
+      "label": "Runway",
+      "unit": "months",
+      "cash_label": "CASH",
+      "profitable": "Profitable",
+      "tooltip": "Months of runway = total cash balance ÷ monthly burn. Capped at 99 months for display. When expenses are below revenue (profitable), runway is shown as 'Profitable' rather than a finite number."
+    }
+  }
+}

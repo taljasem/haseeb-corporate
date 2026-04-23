@@ -6597,6 +6597,14 @@ export const getOpenApprovalCount = surface.getOpenApprovalCount;
 export const getAuditChecks = surface.getAuditChecks;
 export const getOwnerTopInsightDynamic = surface.getOwnerTopInsightDynamic;
 
+// QuarterlyKPIScreen (AUDIT-ACC-055) — composes getBusinessPulse /
+// getCashPosition / getAgingReport / getForecast. getBusinessPulse /
+// getIncomeStatement / getAgingReport / getForecast are already
+// exported above in the Wave 1/2 tables. getCashPosition is added
+// here — mock-fallback via `buildLiveSurface`, since no dedicated
+// `/api/cash-position` endpoint exists yet.
+export const getCashPosition = surface.getCashPosition;
+
 // JuniorTodayScreen
 export const getTaskbox = surface.getTaskbox;
 export const getSaraWorkQueue = surface.getSaraWorkQueue;

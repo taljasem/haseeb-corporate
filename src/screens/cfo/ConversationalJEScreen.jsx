@@ -207,6 +207,11 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
   // suppresses the Confirm button. Cleared the next time a successful
   // pending action arrives or the user discards.
   const [activeBuildError, setActiveBuildError] = useState(null);
+  // HASEEB-292 Phase 1 task 1.10: PendingJournalEntryStatus from the
+  // backend (task 1.9). Drives the 6-state pill variant on the card.
+  // Preferred over activeBuildError when both are present (buildStatus
+  // is the unified shape; buildError is the legacy V1 stopgap).
+  const [activeBuildStatus, setActiveBuildStatus] = useState(null);
 
   const scrollRef = useRef(null);
 
@@ -284,32 +289,38 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
         },
       ]);
 
-      // HASEEB-282: BUILD FAILED path. Backend refused to issue a
-      // confirmationId because the LLM proposed account codes not on
-      // the tenant's COA. The response DOES include the rejected
-      // `pendingJournalEntry` so the card can render with a red
-      // BUILD FAILED pill — the activeConfirmationId stays null so
-      // Confirm never fires. The build-error flag drives the pill.
-      if (response.buildError) {
-        const rejected =
-          response.pendingJournalEntry ||
-          (response.action && response.action.type === "confirm_transaction" ? response.action.data : null);
+      // HASEEB-292 Phase 1 task 1.10 — buildStatus is now the
+      // authoritative state signal (task 1.9 backend emission).
+      // When present, replace the legacy HASEEB-282 buildError
+      // stopgap. Server guarantees requiresConfirmation=false on
+      // any state where Confirm should be disabled, so we mirror
+      // that into activeConfirmationId handling.
+      const rejected =
+        response.pendingJournalEntry ||
+        (response.action && response.action.type === "confirm_transaction"
+          ? response.action.data
+          : null);
+
+      if (response.buildStatus) {
+        setActiveBuildStatus(response.buildStatus);
+        setActivePendingAction(rejected || null);
+        setActiveConfirmationId(
+          response.buildStatus.requiresConfirmation ? response.confirmationId || null : null,
+        );
+        // Keep legacy buildError cleared — server drives the state.
+        setActiveBuildError(null);
+      } else if (response.buildError) {
+        // Legacy V1 stopgap path — no buildStatus emitted.
         setActiveBuildError(response.buildError);
         setActivePendingAction(rejected || null);
         setActiveConfirmationId(null);
-      } else {
-        // If the response carries a confirmation payload, lift it out as
-        // the active pending action. Multi-turn edits return a new
-        // confirmationId + updated pendingJournalEntry which replaces the
-        // previous draft.
-        const pending =
-          response.pendingJournalEntry ||
-          (response.action && response.action.type === "confirm_transaction" ? response.action.data : null);
-        if (pending) {
-          setActivePendingAction(pending);
-          setActiveConfirmationId(response.confirmationId || null);
-          setActiveBuildError(null);
-        }
+        setActiveBuildStatus(null);
+      } else if (rejected) {
+        // Legacy success path without buildStatus (older backend).
+        setActivePendingAction(rejected);
+        setActiveConfirmationId(response.confirmationId || null);
+        setActiveBuildError(null);
+        setActiveBuildStatus(null);
       }
     } catch (err) {
       setMessages((prev) => [
@@ -363,6 +374,7 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
       setActivePendingAction(null);
       setActiveConfirmationId(null);
       setActiveBuildError(null);
+      setActiveBuildStatus(null);
 
       // Fire a global event so JE lists can refresh. ManualJEScreen
       // and any other wired surfaces can listen for this.
@@ -443,6 +455,7 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
     setActivePendingAction(null);
     setActiveConfirmationId(null);
     setActiveBuildError(null);
+    setActiveBuildStatus(null);
     setMessages((prev) => [
       ...prev,
       {
@@ -562,19 +575,28 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
 
           {cardEntry && (
             <div style={{ maxWidth: "100%" }}>
-              {/* HASEEB-282: server-driven card state. `draft-validated`
-                  remains the success-path default (Phase-1 will replace
-                  with the full 6-state enum from the unified learning
-                  design memo §F); `build-failed` renders on the
-                  hallucination stopgap path. */}
+              {/* HASEEB-292 Phase 1 task 1.10 — server-driven 6-state
+                  card per PendingJournalEntryStatus. Precedence:
+                  activeBuildStatus (V2 wire shape) →
+                  activeBuildError (V1 stopgap, renders build-failed) →
+                  legacy default (draft-validated). */}
               <JournalEntryCard
                 entry={cardEntry}
-                state={activeBuildError ? "build-failed" : "draft-validated"}
+                state={
+                  activeBuildStatus?.state
+                    ? activeBuildStatus.state
+                    : activeBuildError
+                    ? "build-failed"
+                    : "draft-validated"
+                }
                 onConfirm={handleConfirm}
                 onEdit={handleEdit}
                 onDiscard={handleDiscard}
               />
-              {!activeBuildError && <AminahBubble>{t("live.review_and_confirm")}</AminahBubble>}
+              {!activeBuildError &&
+                (!activeBuildStatus || activeBuildStatus.requiresConfirmation) && (
+                  <AminahBubble>{t("live.review_and_confirm")}</AminahBubble>
+                )}
               {isConfirming && <ThinkingBubble label={t("live.thinking")} />}
             </div>
           )}

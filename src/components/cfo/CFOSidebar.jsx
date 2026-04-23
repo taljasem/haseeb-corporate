@@ -152,6 +152,7 @@ export default function CFOSidebar({ active, setActive, pendingApprovals = 0, ta
         <NavItem icon={DocIcon}   label={t("items.financial_statements")} active={isActive("financial-statements")} onClick={() => setActive("financial-statements")} />
         <NavItem icon={ClockIcon} label={t("items.aging_reports")}        active={isActive("aging-reports")}        onClick={() => setActive("aging-reports")} />
         <NavItem icon={ChartIcon} label={t("items.variance_analysis")}    active={isActive("variance-analysis")}    onClick={() => setActive("variance-analysis")} />
+        <NavItem icon={ChartIcon} label={t("items.quarterly_kpi")}        active={isActive("quarterly-kpi")}        onClick={() => setActive("quarterly-kpi")} />
       </SidebarGroup>
 
       <SidebarGroup label={t("groups.operations")}>

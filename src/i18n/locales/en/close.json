@@ -49,6 +49,14 @@
     "status_pending_approval": "PENDING APPROVAL",
     "status_approved": "APPROVED"
   },
+  "lock_strength": {
+    "open": "OPEN",
+    "open_desc": "The period is open. Entries may be posted and edited.",
+    "soft_lock": "SOFT LOCK",
+    "soft_lock_desc": "The close is submitted and awaiting Owner approval. Checklist items are frozen; the Owner may reject to unlock.",
+    "hard_lock": "HARD LOCK",
+    "hard_lock_desc": "The period is closed and permanently locked. Corrections require a re-open request approved by the Owner, with an auditable reason."
+  },
   "validations_panel": {
     "title": "Pre-close validations",
     "subtitle": "Run before submitting the close for Owner approval.",

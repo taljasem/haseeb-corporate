@@ -76,6 +76,79 @@ const STATE_STYLES = {
     cardBg: "var(--bg-surface-sunken)",
     opacity: 0.92,
   },
+  // HASEEB-292 Phase 1 task 1.10 (2026-04-23) — six-state enum from
+  // the server's PendingJournalEntryStatus shape (design memo §F.3).
+  // Replaces the hardcoded "draft-validated" success-path literal with
+  // a state driven by buildStatus.state. Color conventions per
+  // design-memo table: green for known-pattern, teal for clarification,
+  // amber for scratch, neutral for waiting, red for role-binding /
+  // validation-failed.
+  built_from_known_pattern: {
+    accent: "var(--accent-primary)",
+    pillFg: "var(--accent-primary)",
+    pillBg: "var(--accent-primary-subtle)",
+    pillBorder: "var(--accent-primary-border)",
+    pillKey: "state_built_from_known_pattern_pill",
+    headerKey: "header_draft",
+    hashKey: "hash_draft",
+    cardBg: "var(--bg-surface-sunken)",
+    opacity: 1,
+  },
+  built_from_clarification: {
+    accent: "#0DB8B8", // teal — design memo §F.3
+    pillFg: "#0DB8B8",
+    pillBg: "rgba(13,184,184,0.12)",
+    pillBorder: "rgba(13,184,184,0.40)",
+    pillKey: "state_built_from_clarification_pill",
+    headerKey: "header_draft",
+    hashKey: "hash_draft",
+    cardBg: "var(--bg-surface-sunken)",
+    opacity: 1,
+  },
+  built_from_scratch: {
+    accent: "var(--semantic-warning)",
+    pillFg: "var(--semantic-warning)",
+    pillBg: "var(--semantic-warning-subtle)",
+    pillBorder: "var(--semantic-warning-subtle)",
+    pillKey: "state_built_from_scratch_pill",
+    headerKey: "header_draft",
+    hashKey: "hash_draft",
+    cardBg: "var(--bg-surface-sunken)",
+    opacity: 1,
+  },
+  requires_clarification: {
+    accent: "var(--text-tertiary)",
+    pillFg: "var(--text-secondary)",
+    pillBg: "rgba(91,101,112,0.14)",
+    pillBorder: "rgba(91,101,112,0.30)",
+    pillKey: "state_requires_clarification_pill",
+    headerKey: "header_draft",
+    hashKey: "hash_draft",
+    cardBg: "var(--bg-surface-sunken)",
+    opacity: 0.95,
+  },
+  requires_role_binding: {
+    accent: "var(--semantic-danger)",
+    pillFg: "var(--semantic-danger)",
+    pillBg: "rgba(255,90,95,0.10)",
+    pillBorder: "rgba(255,90,95,0.40)",
+    pillKey: "state_requires_role_binding_pill",
+    headerKey: "header_build_failed",
+    hashKey: "hash_build_failed",
+    cardBg: "var(--bg-surface-sunken)",
+    opacity: 0.92,
+  },
+  validation_failed: {
+    accent: "var(--semantic-danger)",
+    pillFg: "var(--semantic-danger)",
+    pillBg: "rgba(255,90,95,0.10)",
+    pillBorder: "rgba(255,90,95,0.40)",
+    pillKey: "state_validation_failed_pill",
+    headerKey: "header_build_failed",
+    hashKey: "hash_build_failed",
+    cardBg: "var(--bg-surface-sunken)",
+    opacity: 0.92,
+  },
 };
 
 function fmtCreated(iso) {
@@ -112,9 +185,20 @@ export default function JournalEntryCard({
   const s = STATE_STYLES[state] || STATE_STYLES["draft-validated"];
   const isPosted = state === "posted";
   const isSuggested = state === "suggested";
-  // HASEEB-282: build-failed is locked (no Confirm/Edit/Discard action bar) —
-  // the user must rephrase; the proposed entry is shown for context only.
-  const isLocked = state === "posted" || state === "pending-approval" || state === "build-failed";
+  // HASEEB-282 / HASEEB-292 Phase 1 task 1.10: locked states show
+  // the entry for context but suppress the Confirm/Edit/Discard
+  // action bar. Per design §F.3, requires_clarification +
+  // requires_role_binding + validation_failed all disable Confirm;
+  // the user must respond via the chat input (clarification) or
+  // change COA settings (role-binding) or rephrase
+  // (validation-failed) before the entry becomes postable.
+  const isLocked =
+    state === "posted" ||
+    state === "pending-approval" ||
+    state === "build-failed" ||
+    state === "requires_clarification" ||
+    state === "requires_role_binding" ||
+    state === "validation_failed";
   const balanced = live.lines.every((l) => l.account != null) && live.balanced !== false;
 
   const pillLabel = s.postedWithId ? t("je_card.state_posted_pill", { id: live.id }) : t(`je_card.${s.pillKey}`);

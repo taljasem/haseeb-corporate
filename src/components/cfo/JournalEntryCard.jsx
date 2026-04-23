@@ -170,6 +170,7 @@ export default function JournalEntryCard({
   onDiscard,
   onAskAminah,
   onChooseDifferentAccount,
+  onSaveEdit,
   postedBy,
   showAssign = false,
   assignItemType = "journal-entry",
@@ -178,6 +179,13 @@ export default function JournalEntryCard({
   const { t } = useTranslation("common");
   const [pickerLineIdx, setPickerLineIdx] = useState(null); // which line is being edited
   const [workingEntry, setWorkingEntry] = useState(null);
+  // HASEEB-307 (V2 bugfix Failure 2a, 2026-04-23) — inline edit mode.
+  // When Edit is clicked (and `onSaveEdit` is provided by the parent),
+  // this toggles on. Each line's amount cell becomes an editable input;
+  // the action bar swaps Confirm/Edit/Discard for Save/Cancel. Save
+  // calls `onSaveEdit(workingEntry)` which posts to the backend amend
+  // endpoint. Cancel reverts + exits edit mode.
+  const [isEditing, setIsEditing] = useState(false);
   const postedByLabel = postedBy || t("je_card.posted_by_cfo");
 
   if (!entry) return null;
@@ -365,29 +373,105 @@ export default function JournalEntryCard({
                     </>
                   )}
                 </div>
-                <div
-                  style={{
-                    textAlign: "end",
-                    fontFamily: "'DM Mono', monospace",
-                    fontSize: 13,
-                    color: line.debit != null ? "var(--semantic-danger)" : "var(--text-tertiary)",
-                    opacity: line.debit != null ? 0.85 : 1,
-                    fontVariantNumeric: "tabular-nums",
-                  }}
-                >
-                  {line.debit != null ? Number(line.debit).toFixed(3) : "—"}
-                </div>
-                <div
-                  style={{
-                    textAlign: "end",
-                    fontFamily: "'DM Mono', monospace",
-                    fontSize: 13,
-                    color: line.credit != null ? "var(--accent-primary)" : "var(--text-tertiary)",
-                    fontVariantNumeric: "tabular-nums",
-                  }}
-                >
-                  {line.credit != null ? Number(line.credit).toFixed(3) : "—"}
-                </div>
+                {isEditing ? (
+                  // HASEEB-307 — editable amount inputs in edit mode.
+                  // Preserves the current debit/credit side (whichever
+                  // was non-null stays editable; the other stays "—").
+                  <>
+                    <div style={{ textAlign: "end" }}>
+                      {line.debit != null ? (
+                        <input
+                          type="number"
+                          step="0.001"
+                          min="0"
+                          value={line.debit}
+                          onChange={(e) => {
+                            const next = {
+                              ...(workingEntry ?? live),
+                              lines: (workingEntry ?? live).lines.map((l, idx) =>
+                                idx === i ? { ...l, debit: e.target.value } : l,
+                              ),
+                            };
+                            setWorkingEntry(next);
+                          }}
+                          style={{
+                            width: 90,
+                            background: "var(--bg-surface)",
+                            border: "1px solid var(--border-strong)",
+                            color: "var(--semantic-danger)",
+                            fontFamily: "'DM Mono', monospace",
+                            fontSize: 13,
+                            padding: "4px 6px",
+                            borderRadius: 4,
+                            textAlign: "end",
+                          }}
+                          aria-label={`Line ${i + 1} debit amount`}
+                        />
+                      ) : (
+                        <span style={{ color: "var(--text-tertiary)" }}>—</span>
+                      )}
+                    </div>
+                    <div style={{ textAlign: "end" }}>
+                      {line.credit != null ? (
+                        <input
+                          type="number"
+                          step="0.001"
+                          min="0"
+                          value={line.credit}
+                          onChange={(e) => {
+                            const next = {
+                              ...(workingEntry ?? live),
+                              lines: (workingEntry ?? live).lines.map((l, idx) =>
+                                idx === i ? { ...l, credit: e.target.value } : l,
+                              ),
+                            };
+                            setWorkingEntry(next);
+                          }}
+                          style={{
+                            width: 90,
+                            background: "var(--bg-surface)",
+                            border: "1px solid var(--border-strong)",
+                            color: "var(--accent-primary)",
+                            fontFamily: "'DM Mono', monospace",
+                            fontSize: 13,
+                            padding: "4px 6px",
+                            borderRadius: 4,
+                            textAlign: "end",
+                          }}
+                          aria-label={`Line ${i + 1} credit amount`}
+                        />
+                      ) : (
+                        <span style={{ color: "var(--text-tertiary)" }}>—</span>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div
+                      style={{
+                        textAlign: "end",
+                        fontFamily: "'DM Mono', monospace",
+                        fontSize: 13,
+                        color: line.debit != null ? "var(--semantic-danger)" : "var(--text-tertiary)",
+                        opacity: line.debit != null ? 0.85 : 1,
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      {line.debit != null ? Number(line.debit).toFixed(3) : "—"}
+                    </div>
+                    <div
+                      style={{
+                        textAlign: "end",
+                        fontFamily: "'DM Mono', monospace",
+                        fontSize: 13,
+                        color: line.credit != null ? "var(--accent-primary)" : "var(--text-tertiary)",
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      {line.credit != null ? Number(line.credit).toFixed(3) : "—"}
+                    </div>
+                  </>
+                )}
               </div>
               {pickerLineIdx === i && (
                 <div style={{ padding: "8px 0 12px" }}>
@@ -556,10 +640,88 @@ export default function JournalEntryCard({
                 {t("je_card.ask_aminah_btn")}
               </button>
             </>
+          ) : isEditing ? (
+            <>
+              {/* HASEEB-307 edit mode — Save + Cancel replace Edit + Discard. */}
+              <button
+                onClick={() => {
+                  // Working entry serialised back to wire shape that
+                  // the backend amend endpoint accepts. debit/credit
+                  // arrive as numbers via input; convert to KWD 3-dp
+                  // strings before send so the server validator sees
+                  // the canonical shape.
+                  const payload = {
+                    date: live.createdAt
+                      ? new Date(live.createdAt).toISOString().slice(0, 10)
+                      : undefined,
+                    description: live.description,
+                    lines: (live.lines || []).map((l) => ({
+                      accountCode: l.code,
+                      accountName: l.account,
+                      debit:
+                        l.debit != null && l.debit !== ''
+                          ? Number(l.debit).toFixed(3)
+                          : '0.000',
+                      credit:
+                        l.credit != null && l.credit !== ''
+                          ? Number(l.credit).toFixed(3)
+                          : '0.000',
+                      label: l.memo || undefined,
+                    })),
+                  };
+                  if (onSaveEdit) onSaveEdit(payload);
+                  setIsEditing(false);
+                }}
+                style={{
+                  background: "var(--accent-primary)",
+                  color: "#fff",
+                  border: "none",
+                  padding: "8px 16px",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  fontFamily: "inherit",
+                }}
+              >
+                {t("je_card.save_edit_btn") || "Save changes"}
+              </button>
+              <button
+                onClick={() => {
+                  setWorkingEntry(null);
+                  setIsEditing(false);
+                }}
+                style={{
+                  background: "transparent",
+                  color: "var(--text-secondary)",
+                  border: "1px solid var(--border-strong)",
+                  padding: "8px 14px",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontFamily: "inherit",
+                }}
+              >
+                {t("je_card.cancel_edit_btn") || "Cancel"}
+              </button>
+            </>
           ) : (
             <>
               <button
-                onClick={onEdit}
+                onClick={() => {
+                  // HASEEB-307 — if onSaveEdit is provided, enter
+                  // inline-edit mode; otherwise fall back to the
+                  // legacy onEdit navigation (manual-JE composer).
+                  if (onSaveEdit) {
+                    setWorkingEntry({
+                      ...live,
+                      lines: live.lines.map((l) => ({ ...l })),
+                    });
+                    setIsEditing(true);
+                  } else if (onEdit) {
+                    onEdit();
+                  }
+                }}
                 style={{
                   background: "transparent",
                   color: "var(--text-secondary)",

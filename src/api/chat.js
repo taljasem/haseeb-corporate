@@ -168,8 +168,14 @@ export async function confirmPendingAction(optionsOrConversationId, legacyAction
       confirmationId,
       action = 'confirm',
       agent = 'haseeb',
+      newData,
     } = optionsOrConversationId || {};
     payload = { action, confirmationId, agent };
+    // HASEEB-307 (V2 bugfix Failure 2a) — amend action carries the
+    // edited JE body. Backend validates + updates
+    // conversation.pendingAction.data without posting to the ledger;
+    // returns a fresh confirmationId + updated pendingJournalEntry.
+    if (action === 'amend' && newData) payload.newData = newData;
   }
 
   const r = await client.post('/api/ai/confirm', payload, {
@@ -182,6 +188,12 @@ export async function confirmPendingAction(optionsOrConversationId, legacyAction
     success: data?.success !== false,
     journalEntry: data?.journalEntry || null,
     ruleSuggestion: data?.ruleSuggestion || null,
+    // Passthrough amend-response fields so screens can rehydrate
+    // the pending-action state with the new confirmationId.
+    confirmationId: data?.confirmationId,
+    pendingJournalEntry: data?.pendingJournalEntry,
+    action: data?.action,
+    buildStatus: data?.buildStatus,
     raw: data,
   };
 }

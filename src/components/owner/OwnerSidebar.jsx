@@ -1,4 +1,4 @@
-import { Home, Inbox, Activity, Building2, FileText, BarChart3, Calendar, Shield, Users, Settings, User, Upload, Contact, Wallet, Landmark, ScrollText } from "lucide-react";
+import { Home, Inbox, Activity, Building2, FileText, BarChart3, Calendar, Shield, Users, Settings, User, Upload, Contact, Wallet, Landmark, ScrollText, Briefcase } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import SidebarGroup from "../shared/SidebarGroup";
 import LtrText from "../shared/LtrText";
@@ -89,6 +89,7 @@ export default function OwnerSidebar({ active, setActive, taskboxOpen = 0, pendi
         <NavItem icon={Activity}  label={t("items.overview")}             active={is("overview")}   onClick={() => setActive("overview")} />
         <NavItem icon={Building2} label={t("items.bank_accounts")}        active={is("bank-accounts")} onClick={() => setActive("bank-accounts")} />
         <NavItem icon={FileText}  label={t("items.financial_statements")} active={is("financial-statements")} onClick={() => setActive("financial-statements")} />
+        <NavItem icon={Briefcase} label={t("items.board_pack")}           active={is("board-pack")} onClick={() => setActive("board-pack")} />
       </SidebarGroup>
 
       <SidebarGroup label={t("groups.planning")}>

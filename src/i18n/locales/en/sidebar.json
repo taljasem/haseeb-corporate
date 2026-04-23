@@ -53,6 +53,7 @@
     "payment_vouchers": "Payment Vouchers",
     "bank_mandates": "Bank Mandates",
     "pifss_reconciliation": "PIFSS Reconciliation (Annual)",
-    "cit_assessment": "CIT Assessments (Annual)"
+    "cit_assessment": "CIT Assessments (Annual)",
+    "board_pack": "Board Pack"
   }
 }

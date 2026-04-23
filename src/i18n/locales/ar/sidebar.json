@@ -53,6 +53,7 @@
     "payment_vouchers": "سندات الصرف",
     "bank_mandates": "التفويضات المصرفية",
     "pifss_reconciliation": "تسوية التأمينات (سنوية)",
-    "cit_assessment": "قضايا ضريبة دخل الشركات (سنوية)"
+    "cit_assessment": "قضايا ضريبة دخل الشركات (سنوية)",
+    "board_pack": "ملف مجلس الإدارة"
   }
 }

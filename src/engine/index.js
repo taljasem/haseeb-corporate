@@ -2165,17 +2165,150 @@ function buildMockExtras() {
       }));
     },
 
-    // Board pack (FN-258) MOCK stub — empty pack in MOCK mode.
-    getBoardPack: async (q = {}) => ({
-      fiscalYear: q.fiscalYear || new Date().getFullYear() - 1,
-      priorFiscalYear: (q.fiscalYear || new Date().getFullYear() - 1) - 1,
-      generatedAt: new Date().toISOString(),
-      currentReportVersions: [],
-      priorReportVersions: [],
-      yoyComparisons: [],
-      disclosureSummaries: [],
-      warnings: ['mock: no published report versions in MOCK mode'],
-    }),
+    // Board pack (FN-258) MOCK fixture — populated sample so the
+    // BoardPackScreen (AUDIT-ACC-056, 2026-04-23) renders realistic
+    // content in MOCK mode for dev + screenshot harness. Strings only
+    // for numeric fields per Decimal-preservation rule (HASEEB-140).
+    getBoardPack: async (q = {}) => {
+      const fy = q.fiscalYear || new Date().getFullYear() - 1;
+      const prior = fy - 1;
+      const pubStamp = (ym) => `${ym}T09:15:00.000Z`;
+      const mkRef = (type, key, version, published, by, period, asOf) => ({
+        reportType: type,
+        reportKey: key,
+        version,
+        publishedAt: pubStamp(published),
+        publishedBy: by,
+        notes: null,
+        asOfDate: asOf,
+        periodFrom: period?.[0] ?? null,
+        periodTo: period?.[1] ?? null,
+      });
+      return {
+        fiscalYear: fy,
+        priorFiscalYear: prior,
+        generatedAt: new Date().toISOString(),
+        currentReportVersions: [
+          mkRef(
+            'BALANCE_SHEET',
+            `BS_${fy}`,
+            3,
+            `${fy + 1}-03-18`,
+            'owner@haseeb.kw',
+            null,
+            `${fy}-12-31`,
+          ),
+          mkRef(
+            'INCOME_STATEMENT',
+            `IS_${fy}`,
+            2,
+            `${fy + 1}-03-18`,
+            'owner@haseeb.kw',
+            [`${fy}-01-01`, `${fy}-12-31`],
+            null,
+          ),
+          mkRef(
+            'CASH_FLOW',
+            `CF_${fy}`,
+            1,
+            `${fy + 1}-03-19`,
+            'owner@haseeb.kw',
+            [`${fy}-01-01`, `${fy}-12-31`],
+            null,
+          ),
+        ],
+        priorReportVersions: [
+          mkRef(
+            'BALANCE_SHEET',
+            `BS_${prior}`,
+            2,
+            `${prior + 1}-03-10`,
+            'owner@haseeb.kw',
+            null,
+            `${prior}-12-31`,
+          ),
+          mkRef(
+            'INCOME_STATEMENT',
+            `IS_${prior}`,
+            1,
+            `${prior + 1}-03-10`,
+            'owner@haseeb.kw',
+            [`${prior}-01-01`, `${prior}-12-31`],
+            null,
+          ),
+        ],
+        yoyComparisons: [
+          {
+            reportType: 'BALANCE_SHEET',
+            reportKey: `BS_${fy}`,
+            metrics: [
+              {
+                metricName: 'totalAssets',
+                priorValue: '8125400.000',
+                currentValue: '9340200.000',
+                deltaAbsolute: '1214800.000',
+                deltaPercent: '14.95',
+              },
+              {
+                metricName: 'totalLiabilities',
+                priorValue: '3215000.000',
+                currentValue: '3618450.000',
+                deltaAbsolute: '403450.000',
+                deltaPercent: '12.55',
+              },
+              {
+                metricName: 'totalEquity',
+                priorValue: '4910400.000',
+                currentValue: '5721750.000',
+                deltaAbsolute: '811350.000',
+                deltaPercent: '16.52',
+              },
+            ],
+            priorVersion: null,
+            currentVersion: null,
+          },
+          {
+            reportType: 'INCOME_STATEMENT',
+            reportKey: `IS_${fy}`,
+            metrics: [
+              {
+                metricName: 'revenue',
+                priorValue: '4218450.750',
+                currentValue: '4752100.000',
+                deltaAbsolute: '533649.250',
+                deltaPercent: '12.65',
+              },
+              {
+                metricName: 'netIncome',
+                priorValue: '1034230.625',
+                currentValue: '1241249.500',
+                deltaAbsolute: '207018.875',
+                deltaPercent: '20.02',
+              },
+            ],
+            priorVersion: null,
+            currentVersion: null,
+          },
+        ],
+        disclosureSummaries: [
+          {
+            runId: `drun-${fy}-en`,
+            fiscalYear: fy,
+            language: 'en',
+            approvedAt: pubStamp(`${fy + 1}-03-20`),
+            materialNoteCount: 8,
+          },
+          {
+            runId: `drun-${fy}-ar`,
+            fiscalYear: fy,
+            language: 'ar',
+            approvedAt: pubStamp(`${fy + 1}-03-20`),
+            materialNoteCount: 8,
+          },
+        ],
+        warnings: [],
+      };
+    },
 
     // Migration Import — Track 1 Migration Wizard (2026-04-20). MOCK stubs
     // so dev can navigate the wizard without a live backend. Ingest

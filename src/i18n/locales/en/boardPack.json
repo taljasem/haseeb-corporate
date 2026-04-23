@@ -1,0 +1,57 @@
+{
+  "title": "Board Pack",
+  "subtitle": "Annual board-pack aggregator (FN-258)",
+  "description": "Composite annual snapshot composed from published report versions, YoY comparisons, and disclosure-note summaries. Owner and Auditor roles only.",
+  "fiscal_year_label": "Fiscal year",
+  "prior_year_label": "Prior year",
+  "generated_at_label": "Generated",
+  "reload": "Reload",
+  "loading": "Loading board pack...",
+  "role_gate": {
+    "title": "Access restricted",
+    "description": "The board pack is available to Owner and Auditor roles only. Contact your Owner if you need access."
+  },
+  "empty": {
+    "title": "No published reports for this fiscal year",
+    "description": "Publish at least one report version for the selected fiscal year to populate the board pack."
+  },
+  "warnings": {
+    "label": "Warnings",
+    "none": "No warnings."
+  },
+  "sections": {
+    "current_reports": "Current year report versions",
+    "prior_reports": "Prior year report versions",
+    "yoy": "Year-over-year comparisons",
+    "disclosures": "Disclosure notes"
+  },
+  "table": {
+    "report_type": "Report",
+    "report_key": "Key",
+    "version": "Version",
+    "published_at": "Published",
+    "published_by": "By",
+    "period": "Period",
+    "as_of": "As of",
+    "notes": "Notes",
+    "metric": "Metric",
+    "prior_value": "Prior",
+    "current_value": "Current",
+    "delta": "Δ",
+    "delta_pct": "Δ %",
+    "run_id": "Run",
+    "language": "Language",
+    "approved_at": "Approved",
+    "material_note_count": "Material notes"
+  },
+  "empty_section": {
+    "current_reports": "No current-year report versions published.",
+    "prior_reports": "No prior-year report versions published.",
+    "yoy": "No comparable metrics across the two fiscal years.",
+    "disclosures": "No disclosure-note runs published this fiscal year."
+  },
+  "errors": {
+    "load_failed": "Failed to load board pack. {{message}}",
+    "invalid_year": "Fiscal year must be an integer between 2000 and 2100."
+  }
+}

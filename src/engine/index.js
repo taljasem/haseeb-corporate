@@ -109,6 +109,7 @@ import * as profileApi from '../api/profile';
 import * as businessPulseApi from '../api/business-pulse';
 import * as monthlyClosePeriodApi from '../api/monthly-close-period';
 import * as juniorCompositesApi from '../api/junior-composites';
+import * as fsExportsApi from '../api/financialStatementExports';
 import {
   getCategorizationRules as rulesGetCategorization,
   muteCategorizationRule as rulesMuteCategorization,
@@ -595,8 +596,14 @@ const FUNCTION_ROUTING = {
   //     getAdjustingEntries, getLineNotes, exportStatement,
   //     sendAgingReminder, scheduleVendorPayment
   //     Reason: backend_not_shipped (no backend routes for
-  //     adjusting-entries list / line-notes / statement export /
-  //     email-service / AP payment scheduling today).
+  //     adjusting-entries list / line-notes / email-service /
+  //     AP payment scheduling today).
+  //     HASEEB-443 correction (2026-04-24): exportStatement is LIVE-
+  //     wired — HASEEB-223 (BS/IS/CF/SOCIE PDF+XLSX) + HASEEB-138
+  //     (disclosure-notes DOCX) shipped the backend exports 2026-04-22.
+  //     The engine dispatcher routes pdf/xlsx/docx to the real API
+  //     module and keeps csv/print on the legacy metadata-only path
+  //     for FinancialStatementsScreen's client-side compose.
   //
   // All writes include `{ success: false, error, errorAr }` extras so
   // consumer screens that branch on `result?.error` or
@@ -1545,12 +1552,25 @@ const REAL_IMPLS = {
   //   consumers use `.then(setX)` then iterate the result. Envelope
   //   will land in state; the subsequent `.map` over expected array
   //   will break — that is the intended LIVE breakage.
-  // - exportStatement: caller destructures `meta.filename` and builds
-  //   a blob from `current?.sections`; envelope has no filename so
-  //   the download no-ops gracefully (falsy branch in exportCSV/PDF).
   // - sendAgingReminder / scheduleVendorPayment: consumer modals
   //   don't inspect return — write envelope's success:false surfaces
   //   in a follow-up dispatch that adds the toast.
+  //
+  // HASEEB-443 (B5 wire, 2026-04-24) — exportStatement is now a live
+  // dispatcher:
+  //   - fmt ∈ {pdf, xlsx, docx} → real binary download via
+  //     src/api/financialStatementExports.js. Triggers the browser
+  //     download internally and returns { filename } so the existing
+  //     YearEndCloseScreen toast keeps working.
+  //   - fmt ∈ {csv, print} → legacy metadata-only path via mockEngine.
+  //     FinancialStatementsScreen composes the CSV client-side from
+  //     `current?.sections` and only needs meta.filename back; leaving
+  //     that consumer untouched preserves its working pipeline.
+  //   - tab='disclosure-notes' is the two-step by-year → :id/docx flow.
+  //     Bilingual structured error when no APPROVED run exists.
+  // Backend endpoints shipped HASEEB-223 (BS/IS/CF/SOCIE PDF+XLSX) +
+  // HASEEB-138 (disclosure-notes DOCX). See the api module for the
+  // shape adapter spec.
   getAdjustingEntries: async (_period, _statementType) =>
     notImplementedResponse('backend_not_shipped', {
       message: 'Adjusting entries are coming soon.',
@@ -1561,16 +1581,40 @@ const REAL_IMPLS = {
       message: 'Line notes are coming soon.',
       messageAr: 'ملاحظات البنود ستتوفر قريباً.',
     }),
-  exportStatement: async (_statementType, _period, _format) =>
-    notImplementedResponse('backend_not_shipped', {
-      message: 'Exporting financial statements is coming soon.',
-      messageAr: 'تصدير القوائم المالية سيتوفر قريباً.',
+  exportStatement: async (statementType, period, format) => {
+    const fmt = String(format || '').toLowerCase();
+    // Legacy metadata-only path for FinancialStatementsScreen's
+    // client-side CSV + print export pipeline.
+    if (fmt === 'csv' || fmt === 'print') {
+      return mockEngine.exportStatement(statementType, period, format);
+    }
+    // Real binary-download path for YearEndCloseScreen's APPROVED
+    // detail view (PDF/XLSX/DOCX).
+    if (fmt === 'docx' || statementType === 'disclosure-notes') {
+      const year = String(period || '').replace(/^FY/, '');
+      return fsExportsApi.exportDisclosureNotesDocx(year);
+    }
+    if (fmt === 'pdf' || fmt === 'xlsx') {
+      const year = String(period || '').replace(/^FY/, '');
+      return fsExportsApi.exportFinancialStatementBinary(
+        statementType,
+        year,
+        fmt,
+      );
+    }
+    // Unknown format — surface a bilingual coming-soon envelope so we
+    // don't silently succeed. This is defence-in-depth; all current
+    // callers pass pdf/xlsx/docx/csv/print.
+    return notImplementedResponse('backend_not_shipped', {
+      message: `Exporting statements in ${format} format is not supported.`,
+      messageAr: `تصدير القوائم بتنسيق ${format} غير مدعوم.`,
       extras: {
         success: false,
-        error: 'Exporting financial statements is coming soon.',
-        errorAr: 'تصدير القوائم المالية سيتوفر قريباً.',
+        error: `Exporting statements in ${format} format is not supported.`,
+        errorAr: `تصدير القوائم بتنسيق ${format} غير مدعوم.`,
       },
-    }),
+    });
+  },
   sendAgingReminder: async (_invoiceIds, _template, _body, _cc) =>
     notImplementedResponse('backend_not_shipped', {
       message: 'Sending aging reminders is coming soon.',
@@ -7712,11 +7756,12 @@ export const attachCloseCheckFile = surface.attachCloseCheckFile;
 export const getCloseCheckAttachments = surface.getCloseCheckAttachments;
 
 // FinancialStatementsScreen — residual mock surface (HASEEB-278).
-// getAdjustingEntries / getLineNotes / exportStatement have no backend
-// yet; they mock-fallback through the router. Earlier passes moved the
-// statement readers (IS/BS/CF/SOCIE/disclosures) + listReportVersions
-// to LIVE already; this closes the last three imports so the file no
-// longer pulls from mockEngine directly.
+// getAdjustingEntries / getLineNotes still mock-fallback (no backend).
+// exportStatement is now LIVE-wired via HASEEB-443: PDF/XLSX/DOCX go
+// through src/api/financialStatementExports.js (real binary downloads
+// via HASEEB-223 + HASEEB-138 backend endpoints); CSV/PRINT still
+// resolve to mockEngine's metadata stub for FinancialStatementsScreen's
+// client-side compose path.
 export const getAdjustingEntries = surface.getAdjustingEntries;
 export const getLineNotes = surface.getLineNotes;
 export const exportStatement = surface.exportStatement;

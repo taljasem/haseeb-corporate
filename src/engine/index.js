@@ -101,6 +101,7 @@ import * as paymentVouchersApi from '../api/paymentVouchers';
 import * as bankMandatesApi from '../api/bankMandates';
 import * as pifssReconciliationApi from '../api/pifssReconciliation';
 import * as yearEndCloseApi from '../api/yearEndClose';
+import * as bankTransactionsApi from '../api/bank-transactions';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -418,6 +419,25 @@ const FUNCTION_ROUTING = {
   approveYearEndClose: 'wired',
   reverseYearEndClose: 'wired',
   getYearEndClose: 'wired',
+
+  // Bank Transactions — HASEEB-396 B1 (2026-04-24). 8 engine entries
+  // backed by `src/modules/bank-transactions/`. Two of the eight
+  // (`bulkCategorizeTransactions`, `bulkAssignTransactions`) were on
+  // WRITE_THROW and crashed BankTransactionsScreen in LIVE mode — this
+  // batch removes them from WRITE_THROW and wires them to the live POST
+  // endpoints. `getBankTransactionsSorted` and
+  // `createRuleFromTransactions` derive client-side over the wired list
+  // (inventory memo Q8: client-side pattern). See
+  // src/api/bank-transactions.js per-function comments for shape-adapter
+  // rationale.
+  getBankTransactionsPending: 'wired',
+  getFilteredBankTransactions: 'wired',
+  getBankTransactionsSorted: 'wired',
+  bulkCategorizeTransactions: 'wired',
+  bulkAssignTransactions: 'wired',
+  bulkMarkTransactionsReviewed: 'wired',
+  exportBankTransactionsCSV: 'wired',
+  createRuleFromTransactions: 'wired',
 };
 
 /**
@@ -447,8 +467,12 @@ const WRITE_THROW = new Set([
   'createAccount',
   'updateAccount',
   'deactivateAccount',
-  'bulkCategorizeTransactions',
-  'bulkAssignTransactions',
+  // Note (HASEEB-396 B1, 2026-04-24): `bulkCategorizeTransactions` and
+  // `bulkAssignTransactions` were previously in this set and threw in
+  // LIVE mode, which crashed the BankTransactionsScreen bulk-action bar.
+  // They are now wired to POST /api/bank-transactions/bulk-{categorize,
+  // assign} via src/api/bank-transactions.js and routed 'wired' in
+  // FUNCTION_ROUTING above.
 ]);
 
 /**
@@ -882,6 +906,19 @@ const REAL_IMPLS = {
   approveYearEndClose: yearEndCloseApi.approveYearEndClose,
   reverseYearEndClose: yearEndCloseApi.reverseYearEndClose,
   getYearEndClose: yearEndCloseApi.getYearEndClose,
+
+  // Bank Transactions — HASEEB-396 B1 (2026-04-24). 6 backend HTTP routes
+  // wrap 8 engine entries (2 are client-side derivations over the wired
+  // list). Fixes P0 WRITE_THROW crashes on BankTransactionsScreen for
+  // bulkCategorize + bulkAssign.
+  getBankTransactionsPending: bankTransactionsApi.getBankTransactionsPending,
+  getFilteredBankTransactions: bankTransactionsApi.getFilteredBankTransactions,
+  getBankTransactionsSorted: bankTransactionsApi.getBankTransactionsSorted,
+  bulkCategorizeTransactions: bankTransactionsApi.bulkCategorizeTransactions,
+  bulkAssignTransactions: bankTransactionsApi.bulkAssignTransactions,
+  bulkMarkTransactionsReviewed: bankTransactionsApi.bulkMarkTransactionsReviewed,
+  exportBankTransactionsCSV: bankTransactionsApi.exportBankTransactionsCSV,
+  createRuleFromTransactions: bankTransactionsApi.createRuleFromTransactions,
 };
 
 // One-shot warning state so the console isn't spammed.

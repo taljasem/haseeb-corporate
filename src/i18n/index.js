@@ -49,6 +49,7 @@ import enYearEndClose from "./locales/en/yearEndClose.json";
 import enBankMandates from "./locales/en/bankMandates.json";
 import enBoardPack from "./locales/en/boardPack.json";
 import enQuarterlyKpi from "./locales/en/quarterlyKpi.json";
+import enEcl from "./locales/en/ecl.json";
 
 import arCommon from "./locales/ar/common.json";
 import arHeader from "./locales/ar/header.json";
@@ -97,6 +98,7 @@ import arYearEndClose from "./locales/ar/yearEndClose.json";
 import arBankMandates from "./locales/ar/bankMandates.json";
 import arBoardPack from "./locales/ar/boardPack.json";
 import arQuarterlyKpi from "./locales/ar/quarterlyKpi.json";
+import arEcl from "./locales/ar/ecl.json";
 
 const namespaces = [
   "common", "header", "sidebar", "hero", "taskbox",
@@ -110,6 +112,7 @@ const namespaces = [
   "inventory-nrv", "migration", "contacts", "payroll",
   "paymentVouchers", "pifssReconciliation", "citAssessment",
   "yearEndClose", "bankMandates", "boardPack", "quarterlyKpi",
+  "ecl",
 ];
 
 i18n
@@ -165,6 +168,7 @@ i18n
         bankMandates: enBankMandates,
         boardPack: enBoardPack,
         quarterlyKpi: enQuarterlyKpi,
+        ecl: enEcl,
       },
       ar: {
         common: arCommon,
@@ -214,6 +218,7 @@ i18n
         bankMandates: arBankMandates,
         boardPack: arBoardPack,
         quarterlyKpi: arQuarterlyKpi,
+        ecl: arEcl,
       },
     },
     fallbackLng: "en",

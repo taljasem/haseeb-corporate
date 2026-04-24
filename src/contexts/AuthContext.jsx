@@ -63,38 +63,6 @@ function persistToken(token, expiresAt) {
   }
 }
 
-/**
- * HASEEB-463 (2026-04-25) — retry profile hydration on transient errors.
- *
- * Before: `getMe` + `getTenantInfo` were awaited with `.catch(() => null)`
- * in login, and in a single try/catch in bootstrap. Any transient failure
- * (flaky network, cold start, brief 5xx, rate limit) landed the user on
- * LoginScreen with either a null `user` (isAuthenticated=false) or a
- * cleared session — both manifest as an unrecoverable login loop.
- *
- * After: 3 attempts with exponential backoff (300ms, 600ms). A 401
- * short-circuits — the token is genuinely bad and no amount of retry
- * will help, so we bubble up for the caller to clearSession(). Any
- * other status (network 0, 5xx, 429) is worth retrying.
- */
-async function hydrateProfileWithRetry() {
-  const MAX_ATTEMPTS = 3;
-  let lastErr;
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    try {
-      const [me, tInfo] = await Promise.all([authApi.getMe(), authApi.getTenantInfo()]);
-      return { me, tInfo };
-    } catch (err) {
-      lastErr = err;
-      if (err?.status === 401) throw err;
-      if (attempt < MAX_ATTEMPTS - 1) {
-        await new Promise((resolve) => setTimeout(resolve, 300 * Math.pow(2, attempt)));
-      }
-    }
-  }
-  throw lastErr;
-}
-
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [tenant, setTenant] = useState(null);
@@ -128,20 +96,14 @@ export function AuthProvider({ children }) {
 
     (async () => {
       try {
-        const { me, tInfo } = await hydrateProfileWithRetry();
+        const [me, tInfo] = await Promise.all([authApi.getMe(), authApi.getTenantInfo()]);
         if (cancelled) return;
         setUser(me?.user || me || null);
         setTenant(tInfo?.tenant || tInfo || null);
       } catch (err) {
         if (cancelled) return;
-        // HASEEB-463: only clear the session on a genuine 401 (token bad).
-        // Transient network / 5xx after 3 retries leaves the token alone —
-        // user sees LoginScreen (user is null), can re-login, and the
-        // next login's hydration will retry too. Better than silently
-        // nuking a valid token on a connection blip.
-        if (err?.status === 401) {
-          clearSession();
-        }
+        // 401 or network failure during bootstrap → drop the stale token.
+        clearSession();
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -175,24 +137,13 @@ export function AuthProvider({ children }) {
       setAuthToken(newToken);
       setToken(newToken);
 
-      // HASEEB-463: retry profile hydration 3x with backoff. On transient
-      // (non-401) failure, fall back to the minimal user+tenant shape
-      // embedded in the login response — token is valid, we just have
-      // less-rich profile data. On 401, roll the token back and surface
-      // the failure; repeat-login will just loop otherwise.
-      try {
-        const { me, tInfo } = await hydrateProfileWithRetry();
-        setUser(me?.user || me || result?.user || null);
-        setTenant(tInfo?.tenant || tInfo || result?.tenant || null);
-      } catch (hydrateErr) {
-        if (hydrateErr?.status === 401) {
-          throw hydrateErr;
-        }
-        // Transient: use the login response's minimal profile so
-        // isAuthenticated flips true and the shell renders.
-        setUser(result?.user || null);
-        setTenant(result?.tenant || null);
-      }
+      // Hydrate profile and tenant in parallel.
+      const [me, tInfo] = await Promise.all([
+        authApi.getMe().catch(() => null),
+        authApi.getTenantInfo().catch(() => null),
+      ]);
+      setUser(me?.user || me || result?.user || null);
+      setTenant(tInfo?.tenant || tInfo || result?.tenant || null);
       return { ok: true };
     } catch (err) {
       return {

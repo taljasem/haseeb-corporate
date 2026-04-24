@@ -14,8 +14,11 @@ import { Inbox } from "lucide-react";
 // GET /api/budgets/:id does NOT return the nested departments[] with
 // lineItems + totalAnnual that this modal relies on (flagged — see
 // src/api/budgets.js file header).
+// HASEEB-402 D7 FINAL PUSH (2026-04-24) — getBudgetById migrated to
+// consumer-side legacy adapter (backend DTO does not surface nested
+// departments[]/lineItems that this modal relies on; tracked HASEEB-403).
+import { getBudgetById } from "../../api/budgets-legacy";
 import {
-  getBudgetById,
   delegateBudgetLive,
   listTeamMembersLive,
 } from "../../engine";

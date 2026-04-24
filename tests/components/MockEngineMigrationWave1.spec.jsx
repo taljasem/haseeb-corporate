@@ -30,13 +30,16 @@ const repoRoot = resolve(__dirname, '../..');
 // the engine router). Derived from inspection of each screen's import
 // block as-of 2026-04-22 (HASEEB-278 feature commit).
 const SCREEN_IMPORTS = {
+  // HASEEB-402 D7 FINAL PUSH (2026-04-24): getBudgetVarianceByDepartment
+  // migrated from '../../engine' to '../../api/budgets-legacy' (consumer-
+  // side shape adapter, backend DTO flatter than mock; screen rewrite
+  // tracked HASEEB-403). Removed from this test's engine-surface list.
   'src/screens/owner/OwnerTodayScreen.jsx': [
     'getBusinessPulse',
     'getOpenApprovalCount',
     'getAuditChecks',
     'getCloseStatus',
     'getOwnerTopInsightDynamic',
-    'getBudgetVarianceByDepartment',
   ],
   'src/screens/junior/JuniorTodayScreen.jsx': [
     'getTaskbox',
@@ -45,6 +48,10 @@ const SCREEN_IMPORTS = {
     'getSaraAminahNotes',
     'getRoutingRules',
   ],
+  // HASEEB-402 D7 FINAL PUSH (2026-04-24): getTeamMembers migrated from
+  // '../../engine' to '../../api/budgets-legacy' (LIVE mode calls
+  // listTeamMembersLive + reshapes to mock-shape). Removed from this
+  // test's engine-surface list.
   'src/screens/cfo/BankTransactionsScreen.jsx': [
     'getBankTransactionsPending',
     'getFilteredBankTransactions',
@@ -56,7 +63,6 @@ const SCREEN_IMPORTS = {
     'exportBankTransactionsCSV',
     'createRuleFromTransactions',
     'getChartOfAccounts',
-    'getTeamMembers',
   ],
   // HASEEB-398 B11 (2026-04-24, path (b)): the legacy integrations
   // triplet (getIntegrations / addIntegration / removeIntegration) was

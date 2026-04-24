@@ -712,6 +712,19 @@ const FUNCTION_ROUTING = {
   getSaraActivityLog: 'wired',
   getSaraAminahNotes: 'wired',
   getJuniorDomainStats: 'wired',
+
+  // HASEEB-402 D7 FINAL PUSH (2026-04-24) — 9 residual mock_fallback
+  // entries cleared. Fix-A compose where possible; Fix-B coming-soon
+  // where no backend exists. Complete catalogue in REAL_IMPLS below.
+  getOwnerTopInsightDynamic: 'wired',  // Fix-A compose
+  searchChartOfAccounts: 'wired',      // Fix-A filter over wired getAccountsFlat
+  checkPeriodStatus: 'wired',          // Fix-A wrap over wired getFiscalPeriodStatus
+  updateExchangeRates: 'wired',        // Fix-A wrap over wired upsertCbkRate
+  attachJEFile: 'wired',               // Fix-B coming-soon (no /api/attachments client wrapper)
+  removeJEAttachment: 'wired',         // Fix-B coming-soon
+  getJEAttachments: 'wired',           // Fix-B coming-soon
+  shareJETemplate: 'wired',            // Fix-B coming-soon (HASEEB-202)
+  getFiscalYearConfig: 'wired',        // Fix-B coming-soon (no tenant-financial-config client wrapper)
 };
 
 /**
@@ -1705,6 +1718,163 @@ const REAL_IMPLS = {
   getSaraActivityLog: juniorCompositesApi.getSaraActivityLog,
   getSaraAminahNotes: juniorCompositesApi.getSaraAminahNotes,
   getJuniorDomainStats: juniorCompositesApi.getJuniorDomainStats,
+
+  // ──────────────────────────────────────────────────────────────────
+  // HASEEB-402 D7 FINAL PUSH (2026-04-24) — residual mock_fallback
+  // cleanup. 4 Fix-A compose/wrap + 5 Fix-B coming-soon.
+  // ──────────────────────────────────────────────────────────────────
+
+  // Fix-A compose: OwnerTodayScreen top-insight. Composed from wired
+  // getCFOAminahNotes (Aminah insights feed) + taskbox pending count.
+  // Returns { text, severity, source } shape for the insight card;
+  // degrades to a benign default when the feed is empty.
+  getOwnerTopInsightDynamic: async (role = 'Owner') => {
+    try {
+      const [notes, counts] = await Promise.all([
+        cfoTodayApi.getCFOAminahNotes().catch(() => []),
+        taskboxApi.getOpenApprovalCount().catch(() => 0),
+      ]);
+      const firstNote = Array.isArray(notes) && notes.length > 0 ? notes[0] : null;
+      if (firstNote) {
+        return {
+          text: firstNote.message || firstNote.text || firstNote.narration || '',
+          severity: firstNote.severity || 'info',
+          source: 'aminah',
+          role,
+        };
+      }
+      if (counts && counts > 0) {
+        return {
+          text: `${counts} approvals pending`,
+          severity: 'info',
+          source: 'taskbox',
+          role,
+        };
+      }
+      return { text: '', severity: 'info', source: 'empty', role };
+    } catch (_err) {
+      return { text: '', severity: 'info', source: 'error', role };
+    }
+  },
+
+  // Fix-A filter: search over wired getAccountsFlat result.
+  searchChartOfAccounts: async (query = '') => {
+    const q = String(query || '').trim().toLowerCase();
+    const accounts = await accountsApi.getAccountsFlat().catch(() => []);
+    const list = Array.isArray(accounts) ? accounts : [];
+    if (!q) return list;
+    return list.filter((a) => {
+      const code = String(a.code || a.accountCode || '').toLowerCase();
+      const name = String(a.name || a.accountName || '').toLowerCase();
+      return code.includes(q) || name.includes(q);
+    });
+  },
+
+  // Fix-A wrap: checkPeriodStatus derives open/closed from wired
+  // getFiscalPeriodStatus. Mock shape: { open, closed, periodLabel };
+  // live shape: fiscal-period status object. Thin mapping.
+  checkPeriodStatus: async (date) => {
+    try {
+      const d = date instanceof Date ? date : new Date(date);
+      const year = d.getFullYear();
+      const month = d.getMonth() + 1;
+      const status = await reconciliationApi
+        .getFiscalPeriodStatus(year, month)
+        .catch(() => null);
+      if (!status) {
+        return { open: true, closed: false, periodLabel: `${year}-${String(month).padStart(2, '0')}` };
+      }
+      const isClosed =
+        status.closed === true ||
+        status.status === 'CLOSED' ||
+        status.status === 'LOCKED' ||
+        status.state === 'closed';
+      return {
+        open: !isClosed,
+        closed: isClosed,
+        periodLabel: status.periodLabel || `${year}-${String(month).padStart(2, '0')}`,
+      };
+    } catch (_err) {
+      return { open: true, closed: false, periodLabel: null };
+    }
+  },
+
+  // Fix-A wrap: SetupScreen updateExchangeRates delegates to the
+  // cbk-rates upsert endpoint. Backend shape accepts a single rate
+  // per call; mock takes a { currency, rate } bag. Loop on multi-rate.
+  updateExchangeRates: async (rates) => {
+    const bag = rates && typeof rates === 'object' ? rates : {};
+    const entries = Array.isArray(bag.items)
+      ? bag.items
+      : Object.entries(bag).map(([currency, rate]) => ({
+          currency,
+          rateKwd: String(rate),
+        }));
+    const results = [];
+    const today = new Date().toISOString().slice(0, 10);
+    for (const entry of entries) {
+      try {
+        const saved = await cbkRatesApi.upsertCbkRate({
+          currency: entry.currency,
+          rateDate: entry.rateDate || today,
+          rateKwd: String(entry.rateKwd ?? entry.rate ?? 0),
+          source: entry.source || 'MANUAL',
+          notes: entry.notes || null,
+        });
+        results.push(saved);
+      } catch (err) {
+        results.push({ currency: entry.currency, error: err?.message || 'failed' });
+      }
+    }
+    return { updated: results, count: results.length };
+  },
+
+  // Fix-B coming-soon: JE file attachments. No /api/attachments client
+  // module ships today; backend route exists at /api/attachments but
+  // the client wrapper is a separate dispatch. Coming-soon envelope
+  // with `{ attachments: [] }` extras so ManualJEScreen's list render
+  // degrades to empty instead of crashing.
+  attachJEFile: async () =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'File attachments on journal entries are coming soon.',
+      messageAr: 'إرفاق الملفات بالقيود المحاسبية سيتوفر قريباً.',
+      extras: { success: false, attachment: null },
+    }),
+  removeJEAttachment: async () =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'File attachments on journal entries are coming soon.',
+      messageAr: 'إرفاق الملفات بالقيود المحاسبية سيتوفر قريباً.',
+      extras: { success: false },
+    }),
+  getJEAttachments: async () =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'File attachments on journal entries are coming soon.',
+      messageAr: 'إرفاق الملفات بالقيود المحاسبية سيتوفر قريباً.',
+      extras: { attachments: [] },
+    }),
+
+  // Fix-B coming-soon: JE template sharing (HASEEB-202).
+  shareJETemplate: async () =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'Sharing JE templates is coming soon.',
+      messageAr: 'مشاركة قوالب القيود ستتوفر قريباً.',
+      extras: { success: false, shareUrl: null },
+    }),
+
+  // Fix-B coming-soon: fiscal-year-config read. No tenant-financial-
+  // config client wrapper today; backend route exists. Coming-soon
+  // with `{ fiscalYearEnd: null, startMonth: null }` extras so
+  // SetupScreen renders an empty panel.
+  getFiscalYearConfig: async () =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'Fiscal year configuration is coming soon.',
+      messageAr: 'إعدادات السنة المالية ستتوفر قريباً.',
+      extras: {
+        fiscalYearEnd: null,
+        startMonth: null,
+        endMonth: null,
+      },
+    }),
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -7163,41 +7333,21 @@ export const parseStatementLive = surface.parseStatementLive;
 
 // Budgets — Track B Dispatch 6 wire 6 (2026-04-20).
 //
-// 16 canonical backend-aligned wrappers exposed with `*Live` suffix to
-// coexist with the legacy mockEngine functions of colliding names (which
-// remain in place because the existing BudgetScreen consumes a richer
-// DTO than the live backend surfaces — see src/api/budgets.js file
-// header for the flagged-shape-delta list). Screens that opt into the
-// live surface swap their imports explicitly to these `*Live` names.
+// 16 canonical backend-aligned wrappers exposed with `*Live` suffix.
 //
-// Legacy mock-shaped budget surface — these ARE on mockEngine's namespace,
-// picked up by the Object.keys(mockEngine) loop in buildLiveSurface +
-// routed via mock_fallback (LIVE mode warns once, then returns mock
-// data). They MUST be re-exported here so screens that import them from
-// `../../engine` get the router-wrapped function (MOCK-mode mockEngine
-// or LIVE-mode mock_fallback wrapper) rather than `undefined`. The
-// screen rewire keeps the same semantic shape; a future wire that
-// reshapes the screen to the live budgets DTO can swap these exports
-// one at a time.
-export const getActiveBudget = surface.getActiveBudget;
-export const getActiveBudgetSummary = surface.getActiveBudgetSummary;
-export const getBudgetVarianceByDepartment = surface.getBudgetVarianceByDepartment;
-export const getBudgetVarianceByLineItem = surface.getBudgetVarianceByLineItem;
-export const getBudgetById = surface.getBudgetById;
-export const getAllBudgets = surface.getAllBudgets;
-export const getTeamMembers = surface.getTeamMembers;
-export const approveBudget = surface.approveBudget;
-export const delegateBudget = surface.delegateBudget;
-export const getBudgetForYear = surface.getBudgetForYear;
-export const updateBudgetLine = surface.updateBudgetLine;
-export const deleteBudgetLine = surface.deleteBudgetLine;
-export const createBudgetLine = surface.createBudgetLine;
-export const addBudgetLineComment = surface.addBudgetLineComment;
-export const getBudgetLineComments = surface.getBudgetLineComments;
-export const deleteBudgetLineComment = surface.deleteBudgetLineComment;
-export const updateBudgetLineItemValue = surface.updateBudgetLineItemValue;
-export const submitDepartment = surface.submitDepartment;
-export const getBudgetWorkflowSummary = surface.getBudgetWorkflowSummary;
+// HASEEB-402 D7 FINAL PUSH (2026-04-24): the 18 legacy mock-shape
+// budget exports (getActiveBudget, getActiveBudgetSummary,
+// getBudgetVarianceByDepartment, getBudgetVarianceByLineItem,
+// getBudgetById, getAllBudgets, getTeamMembers, approveBudget,
+// delegateBudget, getBudgetForYear, updateBudgetLine, deleteBudgetLine,
+// createBudgetLine, addBudgetLineComment, getBudgetLineComments,
+// deleteBudgetLineComment, updateBudgetLineItemValue, submitDepartment,
+// getBudgetWorkflowSummary) were DELETED from this surface as part of
+// the zero-mock engine cleanup. They now live at
+// src/api/budgets-legacy.js as consumer-side shape adapters with a
+// documented surface-gap catalogue (backend DTO flatter than mock).
+// Follow-up screen rewrite + backend expansion tracked HASEEB-403.
+// The engine layer now carries ZERO budget mock-fallback entries.
 
 // Group A — reads:
 export const getBudgetSummaryLive = surface.getBudgetSummaryLive;

@@ -4,16 +4,14 @@ import { ChevronDown, ChevronRight, MessageCircle, ArrowUpRight, CheckCircle2, C
 import useEscapeKey from "../../hooks/useEscapeKey";
 // Track B Dispatch 6 wire 6 (2026-04-20) — imports swapped from
 // ../../engine/mockEngine to ../../engine so the screen rides the router.
-// MOCK mode preserves legacy behaviour; LIVE mode falls back to mockEngine
-// with a one-shot warn for every hook where the DTO shape delta would
-// require inventing backend fields (see src/api/budgets.js file header
-// for the flagged list). The 16 new Dispatch 6 endpoints are available
-// under the canonical `*Live` names (see src/engine/index.js) and are
-// called selectively below where the shape aligns without invention.
+// HASEEB-402 D7 FINAL PUSH (2026-04-24) — 15 legacy mock-shape names
+// migrated OUT of the engine to ../../api/budgets-legacy (consumer-side
+// shape-adapter module). The engine layer no longer carries any
+// budget mock-fallback entries; see budgets-legacy.js for the documented
+// surface-gap catalogue and the HASEEB-403 follow-up ticket covering
+// the BudgetScreen rewrite + backend DTO expansion.
 import {
-  // Legacy mock-shaped readers + writers (MOCK: real; LIVE: mock_fallback
-  // with one-shot warn because backend DTO is flatter and departments[]
-  // with lineItems are not surfaced).
+  // Legacy mock-shaped readers + writers — consumer-side adapters.
   getActiveBudget,
   getActiveBudgetSummary,
   getBudgetVarianceByDepartment,
@@ -29,6 +27,8 @@ import {
   addBudgetLineComment,
   getBudgetLineComments,
   deleteBudgetLineComment,
+} from "../../api/budgets-legacy";
+import {
   // Dispatch 6 canonical live wrappers — live-mode enabled, mock-mode
   // adapter in engine/index.js::buildMockExtras. The per-department
   // action endpoints (approveBudgetDepartmentLive,

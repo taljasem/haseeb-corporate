@@ -17,8 +17,11 @@ import {
   getAuditChecks,
   getCloseStatus,
   getOwnerTopInsightDynamic as getOwnerTopInsight,
-  getBudgetVarianceByDepartment,
 } from "../../engine";
+// HASEEB-402 D7 FINAL PUSH (2026-04-24) — getBudgetVarianceByDepartment
+// migrated to consumer-side legacy adapter (live variance shape differs
+// materially; screen rewrite tracked HASEEB-403).
+import { getBudgetVarianceByDepartment } from "../../api/budgets-legacy";
 
 function fmtN(n) {
   return Number(n || 0).toLocaleString("en-US", {

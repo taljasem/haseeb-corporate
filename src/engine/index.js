@@ -102,6 +102,19 @@ import * as bankMandatesApi from '../api/bankMandates';
 import * as pifssReconciliationApi from '../api/pifssReconciliation';
 import * as yearEndCloseApi from '../api/yearEndClose';
 import * as bankTransactionsApi from '../api/bank-transactions';
+import {
+  getCategorizationRules as rulesGetCategorization,
+  muteCategorizationRule as rulesMuteCategorization,
+  unmuteCategorizationRule as rulesUnmuteCategorization,
+  deleteCategorizationRule as rulesDeleteCategorization,
+  getRoutingRules as rulesGetRouting,
+  muteRoutingRule as rulesMuteRouting,
+  unmuteRoutingRule as rulesUnmuteRouting,
+  deleteRoutingRule as rulesDeleteRouting,
+  isSuggestionDismissed as rulesIsSuggestionDismissed,
+  markSuggestionDismissed as rulesMarkSuggestionDismissed,
+} from '../api/rules';
+import { notImplementedResponse, notImplementedAsync } from './not-implemented';
 import { runAminahSession as stubRunAminahSession } from './aminah/stubBackend';
 import {
   listAdvisorPendingMock,
@@ -438,6 +451,55 @@ const FUNCTION_ROUTING = {
   bulkMarkTransactionsReviewed: 'wired',
   exportBankTransactionsCSV: 'wired',
   createRuleFromTransactions: 'wired',
+
+  // Rules CRUD — HASEEB-397 B3 (2026-04-24). 8 engine entries backed by
+  // `src/modules/rules/` (categorization) + `src/modules/rules/routing-rules`
+  // (routing). Shape adapters + documented degradations in
+  // src/api/rules.js; see that file's header for per-field notes.
+  //
+  // `isSuggestionDismissed` is Fix-A client-side: the RulesScreen
+  // consumes it *synchronously* inside the list filter, so the engine
+  // routes it through the live surface regardless of mode. The dismiss
+  // state is module-local per session (see api/rules.js).
+  getCategorizationRules: 'wired',
+  muteCategorizationRule: 'wired',
+  unmuteCategorizationRule: 'wired',
+  deleteCategorizationRule: 'wired',
+  getRoutingRules: 'wired',
+  muteRoutingRule: 'wired',
+  unmuteRoutingRule: 'wired',
+  deleteRoutingRule: 'wired',
+  isSuggestionDismissed: 'wired',
+
+  // Fix-B coming-soon — HASEEB-397 B2+B3 (2026-04-24).
+  //
+  // Ten engine entries return a `_notImplemented` envelope instead of
+  // falling through to mockEngine. This is honest: the screens that
+  // consume these functions will either (a) check the flag and render
+  // a coming-soon state (follow-up dispatch) or (b) crash visibly,
+  // which is preferable to silently rendering fake data in LIVE mode.
+  //
+  // Reasons:
+  //   - Forecast 4:     shape_mismatch_requires_screen_rewrite
+  //                     (backend ships CRUD rows; UI is a what-if
+  //                     scenario calculator; requires a separate
+  //                     dispatch to rewrite the screen + add
+  //                     assumption-input enhancement on the backend).
+  //   - Variance 3:     shape_mismatch_requires_screen_rewrite
+  //                     (backend returns flat line-list; UI expects
+  //                     dept×category matrix).
+  //   - Suggestions 2:  backend_not_shipped
+  //                     (POST /api/rules/suggestions/:id/accept and
+  //                     /dismiss not in src/modules/rules/ today).
+  getForecast: 'wired',
+  recalculateForecast: 'wired',
+  getSavedForecastScenarios: 'wired',
+  getForecastNarration: 'wired',
+  getVarianceAnalysis: 'wired',
+  getVarianceNarration: 'wired',
+  exportVarianceReport: 'wired',
+  acceptSuggestedRule: 'wired',
+  dismissSuggestedRule: 'wired',
 };
 
 /**
@@ -919,6 +981,58 @@ const REAL_IMPLS = {
   bulkMarkTransactionsReviewed: bankTransactionsApi.bulkMarkTransactionsReviewed,
   exportBankTransactionsCSV: bankTransactionsApi.exportBankTransactionsCSV,
   createRuleFromTransactions: bankTransactionsApi.createRuleFromTransactions,
+
+  // Rules CRUD — HASEEB-397 B3 (2026-04-24). 8 wired entries + 1 sync
+  // client-side predicate (`isSuggestionDismissed`). The CRUD entries
+  // call live `/api/rules/*` and `/api/routing-rules/*` endpoints via
+  // src/api/rules.js with rich-field adapters (account lookup + user
+  // lookup) and documented degradations for fields the backend doesn't
+  // source today (auditTrail, appliedCount, conditions, etc.).
+  getCategorizationRules: rulesGetCategorization,
+  muteCategorizationRule: rulesMuteCategorization,
+  unmuteCategorizationRule: rulesUnmuteCategorization,
+  deleteCategorizationRule: rulesDeleteCategorization,
+  getRoutingRules: rulesGetRouting,
+  muteRoutingRule: rulesMuteRouting,
+  unmuteRoutingRule: rulesUnmuteRouting,
+  deleteRoutingRule: rulesDeleteRouting,
+  isSuggestionDismissed: rulesIsSuggestionDismissed,
+
+  // Fix-B coming-soon — HASEEB-397 B2+B3 (2026-04-24). Return
+  // `_notImplemented` envelopes instead of mockEngine data. Screens
+  // will either guard on the flag (follow-up dispatch) or crash
+  // visibly in LIVE mode — both are preferable to silently rendering
+  // fake data. The two suggestion writes `acceptSuggestedRule` and
+  // `dismissSuggestedRule` additionally record the suggestion id in
+  // the module-local dismissed-set so a follow-up list fetch drops
+  // the accepted/dismissed row client-side until the backend ships
+  // the real endpoints.
+  getForecast: () =>
+    notImplementedAsync('shape_mismatch_requires_screen_rewrite'),
+  recalculateForecast: () =>
+    notImplementedAsync('shape_mismatch_requires_screen_rewrite'),
+  getSavedForecastScenarios: () =>
+    notImplementedAsync('shape_mismatch_requires_screen_rewrite'),
+  getForecastNarration: () =>
+    notImplementedAsync('shape_mismatch_requires_screen_rewrite'),
+  getVarianceAnalysis: () =>
+    notImplementedAsync('shape_mismatch_requires_screen_rewrite'),
+  getVarianceNarration: () =>
+    notImplementedAsync('shape_mismatch_requires_screen_rewrite'),
+  exportVarianceReport: () =>
+    notImplementedAsync('shape_mismatch_requires_screen_rewrite'),
+  acceptSuggestedRule: async (suggestionId) => {
+    if (suggestionId) rulesMarkSuggestionDismissed(suggestionId);
+    return notImplementedResponse('backend_not_shipped', {
+      extras: { suggestionId: suggestionId || null, acceptedRule: null },
+    });
+  },
+  dismissSuggestedRule: async (suggestionId) => {
+    if (suggestionId) rulesMarkSuggestionDismissed(suggestionId);
+    return notImplementedResponse('backend_not_shipped', {
+      extras: { success: true, suggestionId: suggestionId || null },
+    });
+  },
 };
 
 // One-shot warning state so the console isn't spammed.

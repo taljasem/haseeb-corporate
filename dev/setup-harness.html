@@ -1,0 +1,27 @@
+<!doctype html>
+<!--
+  Dev-only harness for screenshotting SetupScreen (HASEEB-448 onboarding
+  polish). Not part of the production build surface. Visit at
+  /dev/setup-harness.html when `npm run dev` is running.
+
+  Query params:
+    ?section=company | chart | fiscal | ...  — initial section
+    ?role=CFO | Owner | Junior | Senior       — role prop passed to <SetupScreen>
+    ?lang=en | ar                             — initial language
+-->
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>SetupScreen harness — HASEEB-448</title>
+    <link rel="icon" href="data:," />
+    <style>
+      html, body, #root { height: 100%; margin: 0; padding: 0; }
+      body { background: #05070A; color: #E6EDF3; font-family: 'DM Sans', sans-serif; }
+      #root { display: flex; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/dev/setup-harness.jsx"></script>
+  </body>
+</html>

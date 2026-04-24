@@ -5,7 +5,7 @@ import {
   BookOpen, Calendar, Calculator, Coins, Plug, Cpu, Ban, Receipt,
   Plus, Search, Edit3, Trash2, RefreshCw, AlertTriangle, X as XIcon,
   Scale, Gavel, Clock, Percent, Split, Play, UserCheck, ShieldAlert, FileCode,
-  UserMinus, Banknote,
+  UserMinus, Banknote, Building2, FileText, Eye,
 } from "lucide-react";
 import LtrText from "../../components/shared/LtrText";
 import EmptyState from "../../components/shared/EmptyState";
@@ -55,6 +55,7 @@ import {
 // under HASEEB-279 follow-ups).
 import {
   getFiscalYearConfig,
+  updateFiscalYearConfig,
   getTaxConfiguration,
   updateTaxConfiguration,
   getCurrencyConfig,
@@ -64,6 +65,15 @@ import {
   forceSyncIntegration,
   getIntegrationSyncLogs,
   getEngineConfiguration,
+  // HASEEB-448 (FN-102/103/107/108/110/111): CoA templates + tenant
+  // company info editors. All mock-fallback today; flagged as follow-up
+  // until backend endpoints ship (POST /api/coa-tools/seed-template +
+  // PATCH /api/tenant/company).
+  listCoaTemplates,
+  resolveIndustryTemplate,
+  previewCoaTemplate,
+  getTenantCompanyInfo,
+  updateTenantCompanyInfo,
 } from "../../engine";
 import AccountModal from "../../components/setup/AccountModal";
 import DeactivateAccountModal from "../../components/setup/DeactivateAccountModal";
@@ -86,6 +96,10 @@ function fmtKWD(n) {
 }
 
 const ALL_SECTIONS = [
+  // HASEEB-448: Company (bilingual identity + document-language
+  // preference + invoice preview). Lives at the top of Setup so the
+  // onboarding flow leads with "who you are" before chart-of-accounts.
+  { id: "company",         icon: Building2,      foreignOnly: false },
   { id: "chart",           icon: BookOpen,       foreignOnly: false },
   { id: "fiscal",          icon: Calendar,       foreignOnly: false },
   { id: "tax",             icon: Calculator,     foreignOnly: false },
@@ -111,7 +125,7 @@ const ALL_SECTIONS = [
 export default function SetupScreen({ role: roleRaw = "CFO", onNavigate }) {
   const { t } = useTranslation("setup");
   const { tenant } = useTenant();
-  const [active, setActive] = useState("chart");
+  const [active, setActive] = useState("company");
   const [hasForeignActivity, setHasForeignActivity] = useState(false);
 
   // HASEEB-166: defense-in-depth role gating at the component level.
@@ -190,7 +204,7 @@ export default function SetupScreen({ role: roleRaw = "CFO", onNavigate }) {
                 onMouseLeave={(e) => { if (!on) e.currentTarget.style.background = "transparent"; }}
               >
                 <Icon size={14} strokeWidth={2} />
-                <span>{t(`sections.${s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id === "tax_lodgement" ? "tax_lodgement" : s.id === "cit_assessment" ? "cit_assessment" : s.id === "wht" ? "wht" : s.id === "cost_allocation" ? "cost_allocation" : s.id === "related_party" ? "related_party" : s.id === "warranty" ? "warranty" : s.id === "bank_formats" ? "bank_formats" : s.id === "leave" ? "leave" : s.id === "cbk_rates" ? "cbk_rates" : s.id}`)}</span>
+                <span>{t(`sections.${s.id === "company" ? "company" : s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id === "tax_lodgement" ? "tax_lodgement" : s.id === "cit_assessment" ? "cit_assessment" : s.id === "wht" ? "wht" : s.id === "cost_allocation" ? "cost_allocation" : s.id === "related_party" ? "related_party" : s.id === "warranty" ? "warranty" : s.id === "bank_formats" ? "bank_formats" : s.id === "leave" ? "leave" : s.id === "cbk_rates" ? "cbk_rates" : s.id}`)}</span>
               </button>
             );
           })}
@@ -219,6 +233,7 @@ export default function SetupScreen({ role: roleRaw = "CFO", onNavigate }) {
                 <span>{t("readonly_banner")}</span>
               </div>
             )}
+            {active === "company"       && <CompanySection readOnly={readOnly} />}
             {active === "chart"         && <ChartSection readOnly={readOnly} />}
             {active === "fiscal"        && <FiscalSection readOnly={readOnly} />}
             {active === "tax"           && <TaxSection readOnly={readOnly} />}
@@ -265,8 +280,280 @@ function Toast({ text, onClear }) {
 }
 
 // ── Chart of Accounts ─────────────────────────────────────────────
+// ── Company (HASEEB-448 FN-110/FN-111) ─────────────────────────────
+// Bilingual company identity: EN + AR company name, document-language
+// preference, and an invoice-layout preview. The preview renders a
+// hard-coded sample invoice so the user can see how their selected
+// document language (EN / AR / BILINGUAL) composes. When doc-language
+// is bilingual, both layouts are shown side-by-side.
+function CompanySection({ readOnly = false }) {
+  const { t, i18n: i18nInstance } = useTranslation("setup");
+  const [info, setInfo] = useState(null);
+  const [nameEn, setNameEn] = useState("");
+  const [nameAr, setNameAr] = useState("");
+  const [docLang, setDocLang] = useState("bilingual");
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [errors, setErrors] = useState({ nameEn: null, nameAr: null });
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getTenantCompanyInfo().then((d) => {
+      if (cancelled) return;
+      setInfo(d);
+      setNameEn(d?.nameEn || "");
+      setNameAr(d?.nameAr || "");
+      setDocLang(d?.documentLanguagePreference || "bilingual");
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const validate = () => {
+    const e = { nameEn: null, nameAr: null };
+    if (!nameEn.trim()) e.nameEn = t("company.validation_name_en_required");
+    if (!nameAr.trim()) e.nameAr = t("company.validation_name_ar_required");
+    setErrors(e);
+    return !e.nameEn && !e.nameAr;
+  };
+
+  const handleSave = async () => {
+    if (!validate()) return;
+    setSaving(true);
+    try {
+      await updateTenantCompanyInfo({
+        nameEn: nameEn.trim(),
+        nameAr: nameAr.trim(),
+        documentLanguagePreference: docLang,
+      });
+      setToast(t("company.saved_toast"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!info) return <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>…</div>;
+
+  return (
+    <Card
+      title={t("company.title")}
+      description={t("company.description")}
+      extra={
+        <button
+          type="button"
+          data-testid="company-preview-button"
+          onClick={() => setPreviewOpen(true)}
+          style={{
+            ...btnMini,
+            display: "inline-flex", alignItems: "center", gap: 6,
+            padding: "9px 14px", fontSize: 12,
+          }}
+        >
+          <FileText size={13} /> {t("company.preview_button")}
+        </button>
+      }
+    >
+      <Toast text={toast} onClear={() => setToast(null)} />
+      <FormRow label={t("company.field_name_en")}>
+        <input
+          data-testid="company-name-en"
+          value={nameEn}
+          onChange={(e) => setNameEn(e.target.value)}
+          disabled={readOnly}
+          dir="ltr"
+          style={{ ...inputStyle, opacity: readOnly ? 0.6 : 1 }}
+        />
+        {errors.nameEn && (
+          <div role="alert" data-testid="company-name-en-error" style={{ marginTop: 6, color: "var(--semantic-danger)", fontSize: 11 }}>
+            {errors.nameEn}
+          </div>
+        )}
+      </FormRow>
+      <FormRow label={t("company.field_name_ar")}>
+        <input
+          data-testid="company-name-ar"
+          value={nameAr}
+          onChange={(e) => setNameAr(e.target.value)}
+          disabled={readOnly}
+          // RTL text direction on the AR input regardless of UI language
+          // so Arabic renders right-to-left on both EN and AR UIs.
+          dir="rtl"
+          placeholder={t("company.field_name_ar_placeholder")}
+          style={{ ...inputStyle, textAlign: "start", opacity: readOnly ? 0.6 : 1 }}
+        />
+        {errors.nameAr && (
+          <div role="alert" data-testid="company-name-ar-error" style={{ marginTop: 6, color: "var(--semantic-danger)", fontSize: 11 }}>
+            {errors.nameAr}
+          </div>
+        )}
+      </FormRow>
+      <FormRow label={t("company.field_document_language")}>
+        <select
+          data-testid="company-doc-language"
+          value={docLang}
+          onChange={(e) => setDocLang(e.target.value)}
+          disabled={readOnly}
+          style={{ ...selectStyle, opacity: readOnly ? 0.6 : 1 }}
+        >
+          <option value="en">{t("company.document_language.en")}</option>
+          <option value="ar">{t("company.document_language.ar")}</option>
+          <option value="bilingual">{t("company.document_language.bilingual")}</option>
+        </select>
+      </FormRow>
+      <div style={{ marginTop: 16 }}>
+        <button
+          data-testid="company-save"
+          onClick={handleSave}
+          disabled={saving || readOnly}
+          style={{ ...btnPrimary(saving), opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnPrimary(saving).cursor }}
+        >
+          {saving ? <><Spinner size={13} />&nbsp;{t("company.saving")}</> : t("company.save")}
+        </button>
+      </div>
+      <InvoicePreviewModal
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        nameEn={nameEn}
+        nameAr={nameAr}
+        docLang={docLang}
+        uiLanguage={i18nInstance.language}
+      />
+    </Card>
+  );
+}
+
+function InvoicePreviewModal({ open, onClose, nameEn, nameAr, docLang, uiLanguage }) {
+  const { t } = useTranslation("setup");
+  useEscapeKey(onClose, open);
+  if (!open) return null;
+  // Effective layout rule: BILINGUAL renders both layouts side-by-side
+  // (EN on the start side, AR on the end side). "en" / "ar" render a
+  // single layout in that direction. If docLang is unset, fall back to
+  // the UI language so the preview is meaningful regardless of setup.
+  const effective = docLang === "bilingual" ? "bilingual" : (docLang || uiLanguage || "en");
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
+      <div
+        data-testid="invoice-preview-modal"
+        style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: effective === "bilingual" ? 820 : 520, maxHeight: "85vh", background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)", display: "flex", flexDirection: "column" }}
+      >
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>
+              {t("company.preview_sample_label")}
+            </div>
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: "var(--text-primary)", marginTop: 2 }}>
+              {t("company.preview_title")}
+            </div>
+            <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 4 }}>
+              {t("company.preview_subtitle")}
+            </div>
+          </div>
+          <button onClick={onClose} aria-label={t("company.preview_close")} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}>
+            <XIcon size={18} />
+          </button>
+        </div>
+        <div style={{ flex: 1, overflowY: "auto", padding: "18px 22px" }}>
+          {effective === "bilingual" ? (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <InvoiceFacsimile dir="ltr" name={nameEn || "Your Company"} localeTag="en" />
+              <InvoiceFacsimile dir="rtl" name={nameAr || "شركتك"} localeTag="ar" />
+            </div>
+          ) : effective === "ar" ? (
+            <InvoiceFacsimile dir="rtl" name={nameAr || "شركتك"} localeTag="ar" />
+          ) : (
+            <InvoiceFacsimile dir="ltr" name={nameEn || "Your Company"} localeTag="en" />
+          )}
+          {effective === "bilingual" && (
+            <div style={{ marginTop: 12, fontSize: 11, color: "var(--text-tertiary)", fontStyle: "italic" }}>
+              {t("company.preview_bilingual_note")}
+            </div>
+          )}
+        </div>
+        <div style={{ padding: "12px 22px", borderTop: "1px solid var(--border-subtle)", display: "flex", justifyContent: "flex-end" }}>
+          <button onClick={onClose} style={{ ...btnMini, padding: "7px 14px", fontSize: 12 }}>
+            {t("company.preview_close")}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function InvoiceFacsimile({ dir, name, localeTag }) {
+  const { t } = useTranslation("setup");
+  // A hardcoded sample invoice. Not a real fetch — per spec FN-111 the
+  // preview's job is to show layout + direction flip, not real data.
+  // Labels + values come from i18n; when dir="rtl" the Arabic labels
+  // are rendered from the ar/setup.json tree via the t() calls (which
+  // in a bilingual preview will still respect current i18n locale —
+  // but we override the visible copy with locale-specific strings so
+  // each side of the bilingual layout is self-consistent regardless
+  // of the UI language).
+  const labels = localeTag === "ar"
+    ? {
+        invNo: "رقم الفاتورة",
+        customer: "العميل",
+        customerValue: "شركة ABC التجارية",
+        total: "الإجمالي",
+        totalValue: "100.000 د.ك",
+        date: "التاريخ",
+        dateValue: new Date().toLocaleDateString("ar-KW", { year: "numeric", month: "short", day: "numeric" }),
+      }
+    : {
+        invNo: t("company.preview_sample_label") + " #",
+        customer: t("company.preview_customer_label"),
+        customerValue: t("company.preview_customer_value"),
+        total: t("company.preview_total_label"),
+        totalValue: t("company.preview_total_value"),
+        date: t("company.preview_date_label"),
+        dateValue: new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
+      };
+  return (
+    <div
+      data-testid={`invoice-facsimile-${localeTag}`}
+      dir={dir}
+      style={{
+        border: "1px solid var(--border-default)",
+        borderRadius: 10,
+        background: "var(--bg-surface-sunken)",
+        padding: "18px 20px",
+        fontSize: 12,
+        color: "var(--text-primary)",
+        direction: dir,
+        textAlign: dir === "rtl" ? "right" : "left",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14, flexDirection: dir === "rtl" ? "row-reverse" : "row" }}>
+        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: "var(--accent-primary)" }}>
+          {name}
+        </div>
+        <div style={{ fontSize: 10, letterSpacing: "0.12em", color: "var(--text-tertiary)" }}>
+          {labels.invNo} {t("company.preview_invoice_number")}
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", rowGap: 10, columnGap: 10, marginBottom: 14 }}>
+        <div>
+          <div style={{ fontSize: 9, letterSpacing: "0.12em", color: "var(--text-tertiary)", textTransform: "uppercase" }}>{labels.customer}</div>
+          <div style={{ marginTop: 3 }}>{labels.customerValue}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: 9, letterSpacing: "0.12em", color: "var(--text-tertiary)", textTransform: "uppercase" }}>{labels.date}</div>
+          <div style={{ marginTop: 3 }}>{labels.dateValue}</div>
+        </div>
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid var(--border-subtle)", paddingTop: 10, fontWeight: 700, flexDirection: dir === "rtl" ? "row-reverse" : "row" }}>
+        <div>{labels.total}</div>
+        <div style={{ fontFamily: "'DM Mono', monospace", color: "var(--accent-primary)" }}>{labels.totalValue}</div>
+      </div>
+    </div>
+  );
+}
+
 function ChartSection({ readOnly = false }) {
   const { t } = useTranslation("setup");
+  const { tenant } = useTenant();
   const [accounts, setAccounts] = useState([]);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -275,6 +562,17 @@ function ChartSection({ readOnly = false }) {
   const [deactivateOpen, setDeactivateOpen] = useState(false);
   const [toast, setToast] = useState(null);
   const [menuOpenCode, setMenuOpenCode] = useState(null);
+
+  // HASEEB-448 FN-102/103/107/108: Industry dropdown + CoA template
+  // picker + preview modal. Auto-selects template from tenant.industry
+  // on first load via resolveIndustryTemplate().
+  const [templates, setTemplates] = useState([]);
+  const [templateId, setTemplateId] = useState("general");
+  const [industryKey, setIndustryKey] = useState(tenant?.company?.industry || "");
+  const [industryMatched, setIndustryMatched] = useState(true);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   // Wave 2: explicit loading/error state for the COA fetch.
   const [coaLoading, setCoaLoading] = useState(true);
@@ -298,6 +596,60 @@ function ChartSection({ readOnly = false }) {
       });
   };
   useEffect(() => { reload(); }, []);
+
+  // Load the 12-template catalog + resolve the tenant's industry to
+  // the best-match template id. If no match, falls back to "general"
+  // (General Business) per FN-108 — the user sees a "no match" note
+  // inline and can change the industry manually.
+  useEffect(() => {
+    let cancelled = false;
+    listCoaTemplates()
+      .then((list) => {
+        if (cancelled) return;
+        const arr = Array.isArray(list) ? list : [];
+        setTemplates(arr);
+      })
+      .catch(() => {});
+    const rawIndustry = tenant?.company?.industry || "";
+    resolveIndustryTemplate(rawIndustry)
+      .then((res) => {
+        if (cancelled) return;
+        setTemplateId(res?.templateId || "general");
+        setIndustryMatched(!!res?.matched);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setTemplateId("general");
+          setIndustryMatched(false);
+        }
+      });
+    return () => { cancelled = true; };
+  }, [tenant]);
+
+  const handleIndustryChange = (value) => {
+    setIndustryKey(value);
+    // Auto-select the matching template when the industry changes.
+    resolveIndustryTemplate(value)
+      .then((res) => {
+        setTemplateId(res?.templateId || "general");
+        setIndustryMatched(!!res?.matched);
+      })
+      .catch(() => {
+        setTemplateId("general");
+        setIndustryMatched(false);
+      });
+  };
+
+  const openPreview = async () => {
+    setPreviewOpen(true);
+    setPreviewLoading(true);
+    try {
+      const res = await previewCoaTemplate(templateId);
+      setPreviewData(res);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     let list = accounts;
@@ -338,6 +690,117 @@ function ChartSection({ readOnly = false }) {
       }
     >
       <Toast text={toast} onClear={() => setToast(null)} />
+      {/* HASEEB-448 FN-102/103/107/108: Industry + CoA template picker.
+          Industry dropdown auto-selects the matching template. If the
+          tenant's industry has no dedicated template, "General Business"
+          is picked and a banner explains the fallback. Apply is a
+          follow-up (no backend seeding endpoint today — see
+          chart.templates.followup_note). */}
+      <div
+        data-testid="coa-templates-block"
+        style={{
+          border: "1px solid var(--border-subtle)",
+          borderRadius: 8,
+          background: "var(--bg-surface-sunken)",
+          padding: "14px 16px",
+          marginBottom: 14,
+        }}
+      >
+        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
+          {t("chart.templates.title")}
+        </div>
+        <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginBottom: 12 }}>
+          {t("chart.templates.description")}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 10, alignItems: "end" }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 6 }}>
+              {t("chart.templates.industry_label")}
+            </div>
+            <select
+              aria-label={t("chart.templates.industry_label")}
+              data-testid="coa-industry-select"
+              value={industryKey}
+              onChange={(e) => handleIndustryChange(e.target.value)}
+              disabled={readOnly}
+              style={{ ...selectStyle, padding: "9px 12px", fontSize: 12, opacity: readOnly ? 0.6 : 1 }}
+            >
+              {/* Options mirror the 12-template catalog ids — using the
+                  English template name as the visible label keeps the
+                  dropdown copy aligned with the template picker below. */}
+              {templates.map((tpl) => (
+                <option key={tpl.id} value={tpl.id}>{tpl.nameEn}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 6 }}>
+              {t("chart.templates.template_label")}
+            </div>
+            <select
+              aria-label={t("chart.templates.template_label")}
+              data-testid="coa-template-select"
+              value={templateId}
+              onChange={(e) => setTemplateId(e.target.value)}
+              disabled={readOnly}
+              style={{ ...selectStyle, padding: "9px 12px", fontSize: 12, opacity: readOnly ? 0.6 : 1 }}
+            >
+              {templates.map((tpl) => (
+                <option key={tpl.id} value={tpl.id}>
+                  {tpl.nameEn} ({tpl.accountCount})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              type="button"
+              data-testid="coa-preview-button"
+              onClick={openPreview}
+              style={{
+                ...btnMini,
+                display: "inline-flex", alignItems: "center", gap: 6,
+                padding: "9px 14px", fontSize: 12,
+              }}
+            >
+              <Eye size={13} /> {t("chart.templates.preview_button")}
+            </button>
+            <button
+              type="button"
+              data-testid="coa-apply-button"
+              disabled
+              title={t("chart.templates.followup_note")}
+              style={{
+                ...btnPrimary(true),
+                opacity: 0.45,
+                cursor: "not-allowed",
+              }}
+            >
+              {t("chart.templates.apply_button")}
+            </button>
+          </div>
+        </div>
+        {!industryMatched && (
+          <div
+            data-testid="coa-no-match-note"
+            role="status"
+            style={{
+              marginTop: 10,
+              padding: "8px 10px",
+              background: "var(--semantic-warning-subtle)",
+              border: "1px solid var(--semantic-warning)",
+              borderRadius: 6,
+              color: "var(--semantic-warning)",
+              fontSize: 11,
+            }}
+          >
+            {t("chart.templates.no_match_note")}
+          </div>
+        )}
+        <div style={{ marginTop: 10, fontSize: 10, color: "var(--text-tertiary)", fontStyle: "italic" }}>
+          {t("chart.templates.followup_note")}
+        </div>
+      </div>
       <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
         <div style={{ position: "relative", flex: 1 }}>
           <Search size={13} color="var(--text-tertiary)" style={{ position: "absolute", insetInlineStart: 10, top: "50%", transform: "translateY(-50%)" }} />
@@ -425,7 +888,80 @@ function ChartSection({ readOnly = false }) {
         onClose={() => setDeactivateOpen(false)}
         onSaved={() => { reload(); setToast(t("account_modal.saved_toast")); }}
       />
+      <CoaTemplatePreviewModal
+        open={previewOpen}
+        loading={previewLoading}
+        data={previewData}
+        templateId={templateId}
+        templates={templates}
+        onClose={() => setPreviewOpen(false)}
+      />
     </Card>
+  );
+}
+
+function CoaTemplatePreviewModal({ open, loading, data, templateId, templates, onClose }) {
+  const { t } = useTranslation("setup");
+  useEscapeKey(onClose, open);
+  if (!open) return null;
+  const tpl = templates.find((x) => x.id === templateId);
+  const count = data?.count ?? tpl?.accountCount ?? 0;
+  const rows = Array.isArray(data?.accounts) ? data.accounts : [];
+  return (
+    <>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", zIndex: 300 }} />
+      <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 640, maxHeight: "80vh", background: "var(--panel-bg)", border: "1px solid var(--border-default)", borderRadius: 12, zIndex: 301, boxShadow: "0 24px 60px rgba(0,0,0,0.7)", display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid var(--border-subtle)" }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.15em", color: "var(--text-tertiary)" }}>
+              {tpl?.nameEn || templateId}
+            </div>
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: "var(--text-primary)", marginTop: 2 }}>
+              {t("chart.templates.preview_title")}
+            </div>
+            <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 4 }}>
+              {t("chart.templates.preview_subtitle", { count })}
+            </div>
+          </div>
+          <button onClick={onClose} aria-label={t("chart.templates.close")} style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", padding: 4 }}>
+            <XIcon size={18} />
+          </button>
+        </div>
+        <div style={{ flex: 1, overflowY: "auto", padding: "14px 22px" }}>
+          {loading && (
+            <div role="status" aria-live="polite" style={{ padding: "18px 0", color: "var(--text-tertiary)", fontSize: 12 }}>
+              <Spinner size={13} />
+            </div>
+          )}
+          {!loading && rows.length === 0 && (
+            <div style={{ padding: "18px 0", color: "var(--text-tertiary)", fontSize: 12 }}>—</div>
+          )}
+          {!loading && rows.length > 0 && (
+            <>
+              <div style={{ fontSize: 11, color: "var(--text-tertiary)", fontStyle: "italic", marginBottom: 8 }}>
+                {t("chart.templates.preview_representative_note")}
+              </div>
+              {rows.map((r) => (
+                <div key={r.code} style={{ display: "grid", gridTemplateColumns: "80px 1fr 110px", gap: 10, padding: "8px 0", borderBottom: "1px solid var(--border-subtle)", fontSize: 12 }}>
+                  <div style={{ fontFamily: "'DM Mono', monospace", color: "var(--accent-primary)" }}>
+                    <LtrText>{r.code}</LtrText>
+                  </div>
+                  <div style={{ color: "var(--text-primary)" }}>{r.nameEn}</div>
+                  <div style={{ color: "var(--text-tertiary)", fontSize: 10, letterSpacing: "0.1em", textAlign: "end" }}>
+                    {r.type}
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+        <div style={{ padding: "12px 22px", borderTop: "1px solid var(--border-subtle)", display: "flex", justifyContent: "flex-end" }}>
+          <button onClick={onClose} style={{ ...btnMini, padding: "7px 14px", fontSize: 12 }}>
+            {t("chart.templates.close")}
+          </button>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -442,17 +978,131 @@ function FiscalSection({ readOnly = false }) {
   const { t } = useTranslation("setup");
   const [data, setData] = useState(null);
   const [periodAction, setPeriodAction] = useState(null);
-  const reload = () => getFiscalYearConfig().then(setData);
+  // HASEEB-448 FN-105: editable fiscal-position fields (start month,
+  // functional currency, accounting standard). Loaded from the same
+  // FiscalYearConfig object that returns periods + milestones — the
+  // mock has been extended to carry these three fields (defaults:
+  // January / KWD / IFRS).
+  const [saving, setSaving] = useState(false);
+  const [fpToast, setFpToast] = useState(null);
+  const [startMonth, setStartMonth] = useState(1);
+  const [functionalCurrency, setFunctionalCurrency] = useState("KWD");
+  const [accountingStandard, setAccountingStandard] = useState("IFRS");
+  const reload = () =>
+    getFiscalYearConfig().then((d) => {
+      setData(d);
+      if (d && typeof d === "object") {
+        setStartMonth(Number(d.startMonth) || 1);
+        setFunctionalCurrency(d.functionalCurrency || "KWD");
+        setAccountingStandard(d.accountingStandard || "IFRS");
+      }
+    });
   useEffect(() => { reload(); }, []);
   if (!data) return <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>…</div>;
+
+  const handleSaveFiscalPosition = async () => {
+    setSaving(true);
+    try {
+      await updateFiscalYearConfig({
+        startMonth: Number(startMonth),
+        functionalCurrency,
+        accountingStandard,
+      });
+      setFpToast(t("fiscal.saved_toast"));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <>
       <Card title={t("fiscal.title")} description={t("fiscal.description")}>
+        <Toast text={fpToast} onClear={() => setFpToast(null)} />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 18 }}>
           <Meta label={t("fiscal.current_fy")} value={data.currentFY} />
           <Meta label={t("fiscal.start_date")} value={data.startDate} />
           <Meta label={t("fiscal.end_date")} value={data.endDate} />
+        </div>
+        {/* HASEEB-448 FN-105: fiscal-position editable fields */}
+        <div
+          data-testid="fiscal-position-block"
+          style={{
+            border: "1px solid var(--border-subtle)",
+            borderRadius: 8,
+            background: "var(--bg-surface-sunken)",
+            padding: "14px 16px",
+            marginBottom: 18,
+          }}
+        >
+          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
+            {t("fiscal.editable_heading")}
+          </div>
+          <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginBottom: 12 }}>
+            {t("fiscal.editable_description")}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 6 }}>
+                {t("fiscal.field_start_month")}
+              </div>
+              <select
+                aria-label={t("fiscal.field_start_month")}
+                data-testid="fiscal-start-month"
+                value={startMonth}
+                onChange={(e) => setStartMonth(Number(e.target.value))}
+                disabled={readOnly}
+                style={{ ...selectStyle, padding: "9px 12px", fontSize: 12, opacity: readOnly ? 0.6 : 1 }}
+              >
+                {[1,2,3,4,5,6,7,8,9,10,11,12].map((m) => (
+                  <option key={m} value={m}>{t(`fiscal.months.${m}`)}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 6 }}>
+                {t("fiscal.field_functional_currency")}
+              </div>
+              <select
+                aria-label={t("fiscal.field_functional_currency")}
+                data-testid="fiscal-functional-currency"
+                value={functionalCurrency}
+                onChange={(e) => setFunctionalCurrency(e.target.value)}
+                disabled={readOnly}
+                style={{ ...selectStyle, padding: "9px 12px", fontSize: 12, opacity: readOnly ? 0.6 : 1 }}
+              >
+                {["KWD","USD","EUR","SAR","AED"].map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: 6 }}>
+                {t("fiscal.field_accounting_standard")}
+              </div>
+              <select
+                aria-label={t("fiscal.field_accounting_standard")}
+                data-testid="fiscal-accounting-standard"
+                value={accountingStandard}
+                onChange={(e) => setAccountingStandard(e.target.value)}
+                disabled={readOnly}
+                style={{ ...selectStyle, padding: "9px 12px", fontSize: 12, opacity: readOnly ? 0.6 : 1 }}
+              >
+                {["IFRS","IFRS-SME"].map((s) => (
+                  <option key={s} value={s}>{t(`fiscal.standards.${s}`)}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end" }}>
+            <button
+              data-testid="fiscal-position-save"
+              onClick={handleSaveFiscalPosition}
+              disabled={saving || readOnly}
+              style={{ ...btnPrimary(saving), opacity: readOnly ? 0.5 : 1, cursor: readOnly ? "not-allowed" : btnPrimary(saving).cursor }}
+            >
+              {saving ? <><Spinner size={13} />&nbsp;{t("fiscal.saving")}</> : t("fiscal.save")}
+            </button>
+          </div>
         </div>
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", color: "var(--text-tertiary)", marginBottom: 10 }}>{t("fiscal.periods_heading")}</div>
         <div style={{ display: "flex", flexDirection: "column" }}>

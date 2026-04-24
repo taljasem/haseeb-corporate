@@ -4,6 +4,7 @@
   "view_label": "عرض المدير المالي",
   "hero_subtitle": "الإعدادات · {{tenant}}",
   "sections": {
+    "company": "الشركة",
     "chart_of_accounts": "دليل الحسابات",
     "fiscal_year": "السنة المالية",
     "tax": "النسب النظامية",
@@ -51,7 +52,54 @@
       "edit": "تعديل",
       "deactivate": "إلغاء التفعيل",
       "view_transactions": "عرض الحركات"
+    },
+    "templates": {
+      "title": "النشاط والقالب",
+      "description": "اختر نشاطاً ليتم اختيار قالب دليل الحسابات المتوافق مع معايير IFRS الكويتية تلقائياً. يمكنك تخصيص الحسابات بعد الإعداد.",
+      "industry_label": "النشاط",
+      "template_label": "قالب دليل الحسابات",
+      "preview_button": "معاينة الحسابات",
+      "preview_title": "معاينة القالب",
+      "preview_subtitle": "سيتم إنشاء {{count}} حساباً",
+      "preview_representative_note": "عينة تمثيلية. يتم إنشاء الدليل الكامل عند التطبيق.",
+      "close": "إغلاق",
+      "apply_button": "تطبيق القالب",
+      "applying": "جارٍ التطبيق…",
+      "applied_toast": "تم تطبيق القالب",
+      "apply_disabled_role": "تطبيق القوالب متاح فقط للمالك أو المحاسب.",
+      "no_match_note": "لا يوجد قالب مخصص لنشاطك — سيتم استخدام قالب الأعمال العامة. يمكنك تخصيص الحسابات بعد الإعداد.",
+      "followup_note": "المعاينة متاحة فقط حتى يصل إعداد الإنشاء على الخادم. زر التطبيق معطّل في هذا الإصدار."
     }
+  },
+  "company": {
+    "title": "الشركة",
+    "description": "الهوية الثنائية اللغة لشركتك. تظهر هذه الأسماء على الفواتير والبيانات المالية وتقارير التدقيق.",
+    "field_name_en": "اسم الشركة (بالإنجليزية)",
+    "field_name_ar": "اسم الشركة (بالعربية)",
+    "field_name_ar_placeholder": "اسم الشركة بالعربية",
+    "field_document_language": "لغة المستندات",
+    "document_language": {
+      "en": "الإنجليزية",
+      "ar": "العربية",
+      "bilingual": "ثنائية (إنجليزي + عربي)"
+    },
+    "save": "حفظ",
+    "saving": "جارٍ الحفظ…",
+    "saved_toast": "تم حفظ بيانات الشركة",
+    "validation_name_en_required": "اسم الشركة بالإنجليزية مطلوب.",
+    "validation_name_ar_required": "اسم الشركة بالعربية مطلوب.",
+    "preview_button": "معاينة الفاتورة",
+    "preview_title": "معاينة الفاتورة",
+    "preview_subtitle": "كيف ستظهر فواتيرك للعملاء",
+    "preview_close": "إغلاق",
+    "preview_sample_label": "فاتورة نموذجية",
+    "preview_invoice_number": "INV-0001",
+    "preview_customer_label": "العميل",
+    "preview_customer_value": "ABC Trading",
+    "preview_total_label": "الإجمالي",
+    "preview_total_value": "100.000 د.ك",
+    "preview_date_label": "التاريخ",
+    "preview_bilingual_note": "المعاينة معروضة جنباً إلى جنب لأن لغة المستندات ثنائية."
   },
   "account_modal": {
     "add_label": "إضافة حساب",
@@ -100,7 +148,33 @@
     "close_period": "إغلاق الفترة",
     "change_fy": "تغيير بداية السنة المالية",
     "change_fy_warning": "تغيير بداية السنة المالية يؤثر على كل البيانات التاريخية. يتطلب اعتماد المالك.",
-    "milestones_heading": "مواعيد قادمة"
+    "milestones_heading": "مواعيد قادمة",
+    "editable_heading": "الوضع المالي",
+    "editable_description": "شهر بداية السنة المالية والعملة الوظيفية ومعيار المحاسبة. التغييرات تتطلب اعتماد المالك.",
+    "field_start_month": "شهر بداية السنة المالية",
+    "field_functional_currency": "العملة الوظيفية",
+    "field_accounting_standard": "معيار المحاسبة",
+    "months": {
+      "1": "يناير",
+      "2": "فبراير",
+      "3": "مارس",
+      "4": "أبريل",
+      "5": "مايو",
+      "6": "يونيو",
+      "7": "يوليو",
+      "8": "أغسطس",
+      "9": "سبتمبر",
+      "10": "أكتوبر",
+      "11": "نوفمبر",
+      "12": "ديسمبر"
+    },
+    "standards": {
+      "IFRS": "IFRS (كامل)",
+      "IFRS-SME": "IFRS للشركات الصغيرة والمتوسطة"
+    },
+    "save": "حفظ",
+    "saving": "جارٍ الحفظ…",
+    "saved_toast": "تم حفظ الوضع المالي"
   },
   "period_modal": {
     "label": "الفترة",

@@ -58,6 +58,12 @@ const SCREEN_IMPORTS = {
     'getChartOfAccounts',
     'getTeamMembers',
   ],
+  // HASEEB-398 B11 (2026-04-24, path (b)): the legacy integrations
+  // triplet (getIntegrations / addIntegration / removeIntegration) was
+  // removed from SettingsScreen along with the dead-code
+  // IntegrationsSection. AdministrationScreen is the sole consumer of
+  // the integrations surface going forward via the already-wired
+  // listAdminIntegrations / addAdminIntegration / removeAdminIntegration.
   'src/screens/shared/SettingsScreen.jsx': [
     'getUserProfile',
     'getNotificationPreferences',
@@ -68,9 +74,6 @@ const SCREEN_IMPORTS = {
     'getTwoFactorStatus',
     'disableTwoFactor',
     'getMyActivity',
-    'getIntegrations',
-    'removeIntegration',
-    'addIntegration',
   ],
   'src/screens/cfo/ManualJEScreen.jsx': [
     'getManualJEs',

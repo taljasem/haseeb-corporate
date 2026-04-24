@@ -104,6 +104,7 @@ import * as yearEndCloseApi from '../api/yearEndClose';
 import * as bankTransactionsApi from '../api/bank-transactions';
 import * as taskboxApi from '../api/taskbox';
 import * as teamApi from '../api/team';
+import * as profileApi from '../api/profile';
 import {
   getCategorizationRules as rulesGetCategorization,
   muteCategorizationRule as rulesMuteCategorization,
@@ -523,6 +524,23 @@ const FUNCTION_ROUTING = {
   getTeamActivityLog: 'wired',
   addTeamMember: 'wired',
   removeTeamMember: 'wired',
+
+  // Profile — HASEEB-400 B13 (2026-04-24). 5 Fix-A entries backed by
+  // `/api/user-profile/*` routes mounted via the team-admin module.
+  // All 5 are self-user reads/write; ProfileScreen never issues
+  // cross-user reads so the `/:userId/*` OWNER-only variants are not
+  // exercised. Shape adapters live in `src/api/profile.js` (backend
+  // ships per-user stats/responsibilities/recent-activity/notes with
+  // a different shape than the mock; the wrapper reshapes per-call).
+  //
+  // Reclassification note: original inventory marked these as Fix-B
+  // (no backend). Backend verification during HASEEB-399 D4 found the
+  // routes; the 5 entries were deferred to HASEEB-400 standalone.
+  getUserStats: 'wired',
+  getUserResponsibilities: 'wired',
+  getUserRecentActivity: 'wired',
+  getUserNotes: 'wired',
+  updateUserNotes: 'wired',
 
   // Integrations (legacy triplet consolidation) — HASEEB-398 B11 path
   // (b) per architect Q4 on the 2026-04-24 inventory memo. The legacy
@@ -1167,6 +1185,21 @@ const REAL_IMPLS = {
   getTeamActivityLog: teamApi.getTeamActivityLog,
   addTeamMember: teamApi.addTeamMember,
   removeTeamMember: teamApi.removeTeamMember,
+
+  // Profile — HASEEB-400 B13 (2026-04-24). 5 Fix-A entries backed by
+  // /api/user-profile/* (team-admin module mount). All are self-user
+  // reads / a single self-user write. Shape adapters per-call in
+  // src/api/profile.js (stats/responsibilities/recent-activity/notes
+  // all ship with different backend shapes than the mock). The
+  // ProfileScreen's role argument is threaded to getUserStats /
+  // getUserResponsibilities only to select the i18n label for the
+  // primary-KPI card; all backend queries use req.auth.userId for
+  // identity.
+  getUserStats: profileApi.getUserStats,
+  getUserResponsibilities: profileApi.getUserResponsibilities,
+  getUserRecentActivity: profileApi.getUserRecentActivity,
+  getUserNotes: profileApi.getUserNotes,
+  updateUserNotes: profileApi.updateUserNotes,
 
   // Integrations status/sync sub-routes — HASEEB-398 B11 INVENTORY
   // CORRECTION (2026-04-24). The 2026-04-24 inventory memo classified

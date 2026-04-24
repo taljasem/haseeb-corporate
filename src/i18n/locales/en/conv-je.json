@@ -22,6 +22,26 @@
     "retry": "Retry",
     "edit_in_composer": "Edit in Manual JE →"
   },
+  "pending": {
+    "heading": "Pending entries",
+    "empty": "No pending entries",
+    "confirm": "Confirm",
+    "edit": "Edit",
+    "cancel": "Cancel",
+    "edit_coming_soon": "Editing is coming soon",
+    "expires_in_hours": "Expires in {{count}} hour",
+    "expires_in_hours_plural": "Expires in {{count}} hours",
+    "expires_in_minutes": "Expires in {{count}} minute",
+    "expires_in_minutes_plural": "Expires in {{count}} minutes",
+    "expires_soon": "Expires soon",
+    "expired": "Expired",
+    "cancelled": "Cancelled. The pending entry was removed.",
+    "cancel_error": "Couldn't cancel this entry. Please refresh.",
+    "already_confirmed": "Already confirmed",
+    "already_processed": "This entry was already handled. Refreshing.",
+    "entry_expired": "Entry expired. Please re-enter.",
+    "not_found": "Pending entry not found. Refreshing."
+  },
   "labels": {
     "expense_account": "EXPENSE ACCOUNT",
     "cash_account": "CASH ACCOUNT",

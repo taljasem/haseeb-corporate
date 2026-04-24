@@ -43,7 +43,13 @@ import { useTranslation } from "react-i18next";
 import { Loader2, AlertCircle } from "lucide-react";
 import DirArrow from "../../components/shared/DirArrow";
 import JournalEntryCard from "../../components/cfo/JournalEntryCard";
-import { sendChatMessage, confirmPendingAction, getConversationMessages } from "../../engine";
+import {
+  sendChatMessage,
+  confirmPendingAction,
+  getConversationMessages,
+  getPendingEntries,
+  cancelPendingEntry,
+} from "../../engine";
 
 // ─────────────────────────────────────────
 // Visual primitives (preserved from the Wave 2 scripted screen).
@@ -222,7 +228,49 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
   // is the unified shape; buildError is the legacy V1 stopgap).
   const [activeBuildStatus, setActiveBuildStatus] = useState(null);
 
+  // HASEEB-406 — multi-pending list (companion to backend HASEEB-405).
+  // After each /chat response or user action we re-fetch
+  // GET /api/ai/pending-entries and render one card per row. Deduped
+  // against activePendingAction's confirmationId so the in-turn
+  // proposal card isn't duplicated when the same pending also appears
+  // in the persistent list.
+  const [pendingList, setPendingList] = useState([]);
+  // Per-card action state so Confirm/Cancel spinners are scoped to the
+  // specific card the user clicked, not the whole screen.
+  // Shape: { [confirmationId]: 'confirming' | 'cancelling' }
+  const [pendingActionState, setPendingActionState] = useState({});
+
   const scrollRef = useRef(null);
+
+  // ─── HASEEB-406 — Refresh the user's pending-entries list ─────────
+  // Fires after every assistant response and after Confirm/Cancel so
+  // the persistent list reflects the current server-side state. Best-
+  // effort; on error we leave the prior list alone (the UI can still
+  // operate on the immediate chat proposal).
+  const refreshPendingList = async () => {
+    try {
+      const rows = await getPendingEntries();
+      setPendingList(Array.isArray(rows) ? rows : []);
+    } catch {
+      /* swallow: best-effort refresh */
+    }
+  };
+
+  // ─── Initial load of the pending-entries list ────────────────────
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const rows = await getPendingEntries();
+        if (!cancelled) setPendingList(Array.isArray(rows) ? rows : []);
+      } catch {
+        /* swallow */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // ─── Hydrate from ?conversation=<id> ──────────────────────────────
   useEffect(() => {
@@ -342,6 +390,11 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
         setActiveBuildError(null);
         setActiveBuildStatus(null);
       }
+
+      // HASEEB-406 — after every assistant turn, refresh the
+      // pending-entries list so newly-staged proposals appear as
+      // persistent cards and stale rows drop out.
+      refreshPendingList();
     } catch (err) {
       setMessages((prev) => [
         ...prev,
@@ -422,6 +475,152 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
       // Keep the activePendingAction so the user can retry.
     } finally {
       setIsConfirming(false);
+    }
+  };
+
+  // ─── HASEEB-406 — Confirm a specific pending card from the list ──
+  // Per-card action: uses the card's own confirmationId rather than the
+  // screen-level activeConfirmationId. On success the row is removed
+  // from the list (server-side it becomes CONFIRMED) and the refresh
+  // fires to pick up any cross-device changes. On 409/410/404 we show
+  // a bilingual inline message and drop the stale card from the list.
+  const handleConfirmPending = async (pending) => {
+    const id = pending?.confirmationId;
+    if (!id || pendingActionState[id]) return;
+    setPendingActionState((prev) => ({ ...prev, [id]: "confirming" }));
+    try {
+      const response = await confirmPendingAction({
+        conversationId: pending?.conversationId || conversationId,
+        confirmationId: id,
+        action: "confirm",
+        agent: "haseeb",
+      });
+      const created = response.journalEntry;
+      const idLabel = created?.entryNumber
+        ? `JE-${String(created.entryNumber).padStart(4, "0")}`
+        : created?.id || null;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `sys-${Date.now()}`,
+          role: "system",
+          text: idLabel
+            ? t("live.posted_as", { id: idLabel })
+            : response.message || t("live.posted_generic"),
+          ts: new Date().toISOString(),
+        },
+      ]);
+      // Drop this card from the in-memory list optimistically; refresh
+      // to reconcile with the server.
+      setPendingList((prev) => prev.filter((p) => p.confirmationId !== id));
+      if (activeConfirmationId === id) {
+        setActivePendingAction(null);
+        setActiveConfirmationId(null);
+        setActiveBuildError(null);
+        setActiveBuildStatus(null);
+      }
+      if (typeof window !== "undefined") {
+        try {
+          window.dispatchEvent(
+            new CustomEvent("haseeb:journal-entry-posted", {
+              detail: { entry: created, source: "conversational-je" },
+            }),
+          );
+        } catch {
+          /* ignore */
+        }
+      }
+      refreshPendingList();
+    } catch (err) {
+      // Map the backend's 409/410/404 onto bilingual inline messages.
+      const status = err?.status;
+      const msg =
+        status === 410
+          ? t("pending.entry_expired")
+          : status === 409
+          ? t("pending.already_processed")
+          : status === 404
+          ? t("pending.not_found")
+          : err?.message || t("live.error_generic");
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `err-${Date.now()}`,
+          role: "error",
+          text: msg,
+          ts: new Date().toISOString(),
+        },
+      ]);
+      // Drop the stale card on stale/expired/not-found — re-fetch will
+      // reconcile. On plain network errors we keep the card for retry.
+      if (status === 409 || status === 410 || status === 404) {
+        setPendingList((prev) => prev.filter((p) => p.confirmationId !== id));
+        refreshPendingList();
+      }
+    } finally {
+      setPendingActionState((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+    }
+  };
+
+  // ─── HASEEB-406 — Cancel a specific pending card from the list ───
+  // POST /api/ai/pending-entries/:confirmationId/cancel. Transitions
+  // server-side row to CANCELLED and removes it from the list.
+  const handleCancelPending = async (pending) => {
+    const id = pending?.confirmationId;
+    if (!id || pendingActionState[id]) return;
+    setPendingActionState((prev) => ({ ...prev, [id]: "cancelling" }));
+    try {
+      await cancelPendingEntry(id);
+      setPendingList((prev) => prev.filter((p) => p.confirmationId !== id));
+      if (activeConfirmationId === id) {
+        setActivePendingAction(null);
+        setActiveConfirmationId(null);
+        setActiveBuildError(null);
+        setActiveBuildStatus(null);
+      }
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `sys-${Date.now()}`,
+          role: "system",
+          text: t("pending.cancelled"),
+          ts: new Date().toISOString(),
+        },
+      ]);
+      refreshPendingList();
+    } catch (err) {
+      const status = err?.status;
+      const msg =
+        status === 410
+          ? t("pending.entry_expired")
+          : status === 409
+          ? t("pending.already_processed")
+          : status === 404
+          ? t("pending.not_found")
+          : err?.message || t("pending.cancel_error");
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `err-${Date.now()}`,
+          role: "error",
+          text: msg,
+          ts: new Date().toISOString(),
+        },
+      ]);
+      if (status === 409 || status === 410 || status === 404) {
+        setPendingList((prev) => prev.filter((p) => p.confirmationId !== id));
+        refreshPendingList();
+      }
+    } finally {
+      setPendingActionState((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
     }
   };
 
@@ -536,6 +735,7 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
         /* ignore */
       }
     }
+    const discardedId = activeConfirmationId;
     setActivePendingAction(null);
     setActiveConfirmationId(null);
     setActiveBuildError(null);
@@ -549,6 +749,12 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
         ts: new Date().toISOString(),
       },
     ]);
+    // HASEEB-406 — remove the discarded pending from the list and
+    // refresh against the server so other devices reconcile.
+    if (discardedId) {
+      setPendingList((prev) => prev.filter((p) => p.confirmationId !== discardedId));
+    }
+    refreshPendingList();
   };
 
   // ─── Retry a failed send ─────────────────────────────────────────
@@ -570,7 +776,11 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
     [activePendingAction]
   );
 
-  const isEmpty = messages.length === 0 && !isThinking && !activePendingAction;
+  const isEmpty =
+    messages.length === 0 &&
+    !isThinking &&
+    !activePendingAction &&
+    pendingList.length === 0;
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -683,6 +893,45 @@ export default function ConversationalJEScreen({ role = "CFO", onNavigate }) {
                   <AminahBubble>{t("live.review_and_confirm")}</AminahBubble>
                 )}
               {isConfirming && <ThinkingBubble label={t("live.thinking")} />}
+            </div>
+          )}
+
+          {/* HASEEB-406 — Persistent multi-pending list. Renders any
+              pending JEs the user has staged but not yet confirmed or
+              cancelled (including from prior sessions / other tabs).
+              Deduped against the in-turn active card so the same
+              pending isn't rendered twice. */}
+          {pendingList.length > 0 && (
+            <div style={{ marginTop: 18 }}>
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: "0.15em",
+                  color: "var(--text-tertiary)",
+                  marginBottom: 10,
+                  textTransform: "uppercase",
+                }}
+              >
+                {t("pending.heading")}
+              </div>
+              {pendingList
+                .filter(
+                  (p) =>
+                    p &&
+                    p.confirmationId &&
+                    p.confirmationId !== activeConfirmationId,
+                )
+                .map((pending) => (
+                  <PendingListCard
+                    key={pending.confirmationId}
+                    pending={pending}
+                    t={t}
+                    busy={pendingActionState[pending.confirmationId]}
+                    onConfirm={() => handleConfirmPending(pending)}
+                    onCancel={() => handleCancelPending(pending)}
+                  />
+                ))}
             </div>
           )}
         </div>
@@ -816,6 +1065,232 @@ function EmptyState({ onPick, t }) {
             {ex}
           </button>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// HASEEB-406 — Persistent pending-entry card
+// ─────────────────────────────────────────
+//
+// A lightweight visual for rows returned by GET /api/ai/pending-entries.
+// Stacks below the in-turn JournalEntryCard. Exposes Confirm / Edit /
+// Cancel. Edit is a tooltip placeholder ("coming soon") — the design
+// anticipates it but the inline-edit flow here is scoped to the in-turn
+// card per HASEEB-307; wiring edit for persistent rows is out of scope
+// for this dispatch.
+//
+// The card unwraps pending.entryData which holds the full
+// `{ confirmationId, type, data, createdAt }` wrapper. `entryData.data`
+// is the `pendingJournalEntry` shape pendingToCardEntry already knows.
+//
+function formatExpiry(expiresAt, t) {
+  if (!expiresAt) return null;
+  const ms = new Date(expiresAt).getTime() - Date.now();
+  if (!Number.isFinite(ms)) return null;
+  if (ms <= 0) return t("pending.expired");
+  const mins = Math.floor(ms / 60000);
+  if (mins < 60) {
+    if (mins < 5) return t("pending.expires_soon");
+    // i18n plural suffix — react-i18next picks _plural based on `count`.
+    return t("pending.expires_in_minutes", { count: mins });
+  }
+  const hours = Math.floor(mins / 60);
+  return t("pending.expires_in_hours", { count: hours });
+}
+
+function PendingListCard({ pending, t, busy, onConfirm, onCancel }) {
+  // entryData wraps the proposal: { confirmationId, type, data, createdAt }
+  // `data` is the JE shape with description + lines.
+  const entryData = pending?.entryData || {};
+  const proposal = entryData?.data || entryData || {};
+  const description = proposal?.description || pending?.userMessage || "";
+  const userMessage = pending?.userMessage || "";
+  const lines = Array.isArray(proposal?.lines) ? proposal.lines : [];
+  const expiryLabel = formatExpiry(pending?.expiresAt, t);
+
+  const totalDebit = lines.reduce((s, l) => s + Number(l?.debit || 0), 0);
+  const totalCredit = lines.reduce((s, l) => s + Number(l?.credit || 0), 0);
+
+  const confirming = busy === "confirming";
+  const cancelling = busy === "cancelling";
+
+  return (
+    <div
+      data-testid={`pending-card-${pending.confirmationId}`}
+      style={{
+        background: "var(--bg-surface)",
+        border: "1px solid var(--border-default)",
+        borderInlineStart: "3px solid var(--accent-primary)",
+        borderRadius: 10,
+        padding: "14px 16px",
+        marginBottom: 12,
+      }}
+    >
+      {userMessage && (
+        <div
+          style={{
+            fontSize: 12,
+            color: "var(--text-tertiary)",
+            fontStyle: "italic",
+            marginBottom: 8,
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          “{userMessage}”
+        </div>
+      )}
+
+      {description && (
+        <div
+          style={{
+            fontSize: 13,
+            color: "var(--text-primary)",
+            fontWeight: 500,
+            marginBottom: 10,
+          }}
+        >
+          {description}
+        </div>
+      )}
+
+      {lines.length > 0 && (
+        <div
+          style={{
+            fontFamily: "'DM Mono', monospace",
+            fontSize: 12,
+            color: "var(--text-secondary)",
+            background: "var(--bg-surface-sunken)",
+            border: "1px solid var(--border-subtle)",
+            borderRadius: 6,
+            padding: "8px 10px",
+            marginBottom: 10,
+          }}
+        >
+          {lines.map((l, i) => {
+            const debit = Number(l?.debit || 0);
+            const credit = Number(l?.credit || 0);
+            const code = l?.accountCode || l?.code || "";
+            const name = l?.accountName || l?.account || "";
+            const amountLabel =
+              debit > 0
+                ? `Dr ${debit.toFixed(3)}`
+                : credit > 0
+                ? `Cr ${credit.toFixed(3)}`
+                : "—";
+            return (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 8,
+                  padding: "2px 0",
+                }}
+              >
+                <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {code ? `${code} · ` : ""}
+                  {name || "—"}
+                </span>
+                <span style={{ flexShrink: 0 }}>{amountLabel}</span>
+              </div>
+            );
+          })}
+          {(totalDebit > 0 || totalCredit > 0) && (
+            <div
+              style={{
+                borderTop: "1px dashed var(--border-subtle)",
+                marginTop: 6,
+                paddingTop: 4,
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: 11,
+                color: "var(--text-tertiary)",
+              }}
+            >
+              <span>Σ Dr {totalDebit.toFixed(3)}</span>
+              <span>Σ Cr {totalCredit.toFixed(3)}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {expiryLabel && (
+        <div
+          style={{
+            fontSize: 11,
+            color: "var(--text-tertiary)",
+            marginBottom: 10,
+          }}
+        >
+          {expiryLabel}
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <button
+          type="button"
+          onClick={onConfirm}
+          disabled={confirming || cancelling}
+          aria-label={t("pending.confirm")}
+          style={{
+            background: "var(--accent-primary)",
+            color: "#fff",
+            border: "none",
+            borderRadius: 6,
+            padding: "6px 14px",
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: confirming || cancelling ? "not-allowed" : "pointer",
+            opacity: confirming || cancelling ? 0.6 : 1,
+            fontFamily: "inherit",
+          }}
+        >
+          {confirming ? "…" : t("pending.confirm")}
+        </button>
+
+        <button
+          type="button"
+          disabled
+          title={t("pending.edit_coming_soon")}
+          aria-label={t("pending.edit")}
+          style={{
+            background: "transparent",
+            color: "var(--text-tertiary)",
+            border: "1px solid var(--border-default)",
+            borderRadius: 6,
+            padding: "6px 14px",
+            fontSize: 12,
+            fontWeight: 500,
+            cursor: "not-allowed",
+            opacity: 0.55,
+            fontFamily: "inherit",
+          }}
+        >
+          {t("pending.edit")}
+        </button>
+
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={confirming || cancelling}
+          aria-label={t("pending.cancel")}
+          style={{
+            background: "transparent",
+            color: "var(--semantic-danger)",
+            border: "1px solid rgba(255,90,95,0.40)",
+            borderRadius: 6,
+            padding: "6px 14px",
+            fontSize: 12,
+            fontWeight: 500,
+            cursor: confirming || cancelling ? "not-allowed" : "pointer",
+            opacity: confirming || cancelling ? 0.6 : 1,
+            fontFamily: "inherit",
+          }}
+        >
+          {cancelling ? "…" : t("pending.cancel")}
+        </button>
       </div>
     </div>
   );

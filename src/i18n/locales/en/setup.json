@@ -4,6 +4,7 @@
   "view_label": "CFO VIEW",
   "hero_subtitle": "Configuration · {{tenant}}",
   "sections": {
+    "company": "Company",
     "chart_of_accounts": "Chart of Accounts",
     "fiscal_year": "Fiscal Year",
     "tax": "Statutory Rates",
@@ -51,7 +52,54 @@
       "edit": "Edit",
       "deactivate": "Deactivate",
       "view_transactions": "View transactions"
+    },
+    "templates": {
+      "title": "Industry & Template",
+      "description": "Choose an industry to auto-select a Kuwait IFRS-compliant chart of accounts template. You can customize accounts after setup.",
+      "industry_label": "Industry",
+      "template_label": "CoA template",
+      "preview_button": "Preview accounts",
+      "preview_title": "Template preview",
+      "preview_subtitle": "{{count}} accounts will be seeded",
+      "preview_representative_note": "Representative sample shown. Full chart is seeded on apply.",
+      "close": "Close",
+      "apply_button": "Apply template",
+      "applying": "Applying…",
+      "applied_toast": "Template applied",
+      "apply_disabled_role": "Only the Owner or Accountant can apply a template.",
+      "no_match_note": "No specific template for your industry — using General Business default. You can customize accounts after setup.",
+      "followup_note": "Preview-only until the backend seeding endpoint ships. Apply is disabled in this release."
     }
+  },
+  "company": {
+    "title": "Company",
+    "description": "Your company's bilingual identity. These names appear on invoices, statements, and audit reports.",
+    "field_name_en": "Company name (English)",
+    "field_name_ar": "Company name (Arabic)",
+    "field_name_ar_placeholder": "اسم الشركة بالعربية",
+    "field_document_language": "Document language",
+    "document_language": {
+      "en": "English",
+      "ar": "Arabic",
+      "bilingual": "Bilingual (English + Arabic)"
+    },
+    "save": "Save",
+    "saving": "Saving…",
+    "saved_toast": "Company details saved",
+    "validation_name_en_required": "English company name is required.",
+    "validation_name_ar_required": "Arabic company name is required.",
+    "preview_button": "Preview invoice layout",
+    "preview_title": "Invoice preview",
+    "preview_subtitle": "How your invoices will appear to clients",
+    "preview_close": "Close",
+    "preview_sample_label": "Sample Invoice",
+    "preview_invoice_number": "INV-0001",
+    "preview_customer_label": "Customer",
+    "preview_customer_value": "ABC Trading",
+    "preview_total_label": "Total",
+    "preview_total_value": "100.000 KWD",
+    "preview_date_label": "Date",
+    "preview_bilingual_note": "Shown side-by-side because document language is set to Bilingual."
   },
   "account_modal": {
     "add_label": "ADD ACCOUNT",
@@ -100,7 +148,33 @@
     "close_period": "Close period",
     "change_fy": "Change fiscal year start",
     "change_fy_warning": "Changing the fiscal year start affects all historical data. Owner approval required.",
-    "milestones_heading": "Upcoming milestones"
+    "milestones_heading": "Upcoming milestones",
+    "editable_heading": "Fiscal position",
+    "editable_description": "Fiscal year start month, functional currency, and accounting standard. Changes require Owner approval.",
+    "field_start_month": "Fiscal year start month",
+    "field_functional_currency": "Functional currency",
+    "field_accounting_standard": "Accounting standard",
+    "months": {
+      "1": "January",
+      "2": "February",
+      "3": "March",
+      "4": "April",
+      "5": "May",
+      "6": "June",
+      "7": "July",
+      "8": "August",
+      "9": "September",
+      "10": "October",
+      "11": "November",
+      "12": "December"
+    },
+    "standards": {
+      "IFRS": "IFRS (Full)",
+      "IFRS-SME": "IFRS for SMEs"
+    },
+    "save": "Save",
+    "saving": "Saving…",
+    "saved_toast": "Fiscal position saved"
   },
   "period_modal": {
     "label": "PERIOD",

@@ -7980,6 +7980,7 @@ export const updateUserNotes = surface.updateUserNotes;
 // renders an empty panel. A future backend dispatch (tracked as
 // HASEEB-NNN) can ship monitoring sub-routes.
 export const getFiscalYearConfig = surface.getFiscalYearConfig;
+export const updateFiscalYearConfig = surface.updateFiscalYearConfig;
 export const getTaxConfiguration = surface.getTaxConfiguration;
 export const updateTaxConfiguration = surface.updateTaxConfiguration;
 export const getCurrencyConfig = surface.getCurrencyConfig;
@@ -7989,6 +7990,15 @@ export const getIntegrationStatus = surface.getIntegrationStatus;
 export const forceSyncIntegration = surface.forceSyncIntegration;
 export const getIntegrationSyncLogs = surface.getIntegrationSyncLogs;
 export const getEngineConfiguration = surface.getEngineConfiguration;
+
+// HASEEB-448 — SetupScreen onboarding polish (FN-102/103/107/108/110).
+// CoA template picker + tenant company-info editors. All mock_fallback
+// in LIVE (no backend endpoints today — flagged as follow-up).
+export const listCoaTemplates = surface.listCoaTemplates;
+export const resolveIndustryTemplate = surface.resolveIndustryTemplate;
+export const previewCoaTemplate = surface.previewCoaTemplate;
+export const getTenantCompanyInfo = surface.getTenantCompanyInfo;
+export const updateTenantCompanyInfo = surface.updateTenantCompanyInfo;
 
 // Dispatcher screens (CFOView, OwnerView, JuniorView). Taskbox and
 // approval counters are LIVE-wired as of HASEEB-398 B4 (2026-04-24) —

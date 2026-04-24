@@ -7495,12 +7495,213 @@ export async function deactivateAccount(code) {
   return _brandObj({ ...a, requiresApproval: needsApproval });
 }
 
+// ── CoA Templates (HASEEB-448 / FN-102/103/107/108) ─────────────────
+// 12 industry templates mirroring the Standalone accounts.json catalog
+// (see Hasseb_Standalone_Api/prisma/COA_Datasource/accounts.json).
+// Shape is preview-only: real seeding happens backend-side in
+// Standalone's tenant-provisioning flow. Corporate does not currently
+// have a `POST /api/coa-tools/seed-template` endpoint, so this UI is
+// read-only-with-preview and flagged as follow-up (HASEEB-448 notes).
+const _coaTemplateCatalog = [
+  { id: "general",                   nameEn: "General Business",              nameAr: "أعمال عامة",               accountCount: 70 },
+  { id: "it_software",               nameEn: "IT / Software Company",         nameAr: "شركة تقنية معلومات / برمجيات", accountCount: 82 },
+  { id: "construction",              nameEn: "Construction Company",          nameAr: "شركة مقاولات",              accountCount: 94 },
+  { id: "real_estate",               nameEn: "Real Estate Company",           nameAr: "شركة عقارات",               accountCount: 76 },
+  { id: "healthcare_medical",        nameEn: "Healthcare / Medical",          nameAr: "الرعاية الصحية / طبية",       accountCount: 90 },
+  { id: "manufacturing",             nameEn: "Manufacturing",                 nameAr: "صناعة وتصنيع",              accountCount: 88 },
+  { id: "retail_trading",            nameEn: "Retail / Trading",              nameAr: "تجزئة / تجارة",             accountCount: 68 },
+  { id: "restaurant_food_beverage",  nameEn: "Restaurant / Food & Beverage",  nameAr: "مطعم / أغذية ومشروبات",      accountCount: 62 },
+  { id: "education",                 nameEn: "Education",                     nameAr: "تعليم",                    accountCount: 58 },
+  { id: "law_firm_professional",     nameEn: "Law Firm / Professional Services", nameAr: "مكتب محاماة / خدمات مهنية", accountCount: 60 },
+  { id: "transportation_logistics",  nameEn: "Transportation / Logistics",    nameAr: "نقل ولوجستيات",             accountCount: 64 },
+  { id: "salon",                     nameEn: "Salon / Beauty",                nameAr: "صالون / تجميل",             accountCount: 52 },
+];
+
+// Heuristic industry → template mapping. Tenant profiles hold a free-
+// form `industry` string (e.g. "Trading", "Corporate") — we map common
+// values to the closest template id. Unmatched industries fall back
+// to "general" (General Business, 4-digit Kuwait IFRS generic).
+const _industryToTemplateId = {
+  trading: "retail_trading",
+  retail: "retail_trading",
+  "retail/trading": "retail_trading",
+  commerce: "retail_trading",
+  corporate: "general",
+  general: "general",
+  business: "general",
+  it: "it_software",
+  software: "it_software",
+  tech: "it_software",
+  technology: "it_software",
+  construction: "construction",
+  contracting: "construction",
+  realestate: "real_estate",
+  "real estate": "real_estate",
+  property: "real_estate",
+  healthcare: "healthcare_medical",
+  medical: "healthcare_medical",
+  manufacturing: "manufacturing",
+  factory: "manufacturing",
+  restaurant: "restaurant_food_beverage",
+  "food & beverage": "restaurant_food_beverage",
+  fnb: "restaurant_food_beverage",
+  education: "education",
+  school: "education",
+  law: "law_firm_professional",
+  legal: "law_firm_professional",
+  professional: "law_firm_professional",
+  transportation: "transportation_logistics",
+  logistics: "transportation_logistics",
+  salon: "salon",
+  beauty: "salon",
+};
+
+export async function listCoaTemplates() {
+  await delay();
+  return _brandObj(_coaTemplateCatalog.map((t) => ({ ...t })));
+}
+
+export async function resolveIndustryTemplate(industry) {
+  await delay();
+  const key = (industry || "").toString().trim().toLowerCase();
+  const matched = _industryToTemplateId[key];
+  return _brandObj({
+    industry: industry || null,
+    templateId: matched || "general",
+    matched: !!matched,
+  });
+}
+
+export async function previewCoaTemplate(templateId) {
+  await delay();
+  const tpl = _coaTemplateCatalog.find((t) => t.id === templateId);
+  if (!tpl) return _brandObj({ templateId, accounts: [], count: 0 });
+  // Representative preview rows — NOT the full seed (full seed lives
+  // backend-side in Standalone's COA_Datasource). We show a representative
+  // 10-12 rows so the user knows what they're applying.
+  const preview = _coaTemplatePreviewRows(templateId);
+  return _brandObj({ templateId, accounts: preview, count: tpl.accountCount });
+}
+
+function _coaTemplatePreviewRows(templateId) {
+  // A small illustrative sample per template. In a real wire-up the
+  // backend would return the actual 50-100 account rows.
+  const base = [
+    { code: "1000", nameEn: "Assets",                  nameAr: "الأصول",                type: "ASSET" },
+    { code: "1100", nameEn: "Current Assets",          nameAr: "الأصول المتداولة",        type: "ASSET" },
+    { code: "1110", nameEn: "Cash on Hand",            nameAr: "النقد في الصندوق",       type: "ASSET" },
+    { code: "1120", nameEn: "Bank Account - KWD",      nameAr: "الحساب البنكي - د.ك",     type: "ASSET" },
+    { code: "1130", nameEn: "Accounts Receivable",     nameAr: "الذمم المدينة",           type: "ASSET" },
+    { code: "2000", nameEn: "Liabilities",             nameAr: "الخصوم",                type: "LIABILITY" },
+    { code: "2100", nameEn: "Accounts Payable",        nameAr: "الذمم الدائنة",           type: "LIABILITY" },
+    { code: "3000", nameEn: "Equity",                  nameAr: "حقوق الملكية",            type: "EQUITY" },
+    { code: "4000", nameEn: "Revenue",                 nameAr: "الإيرادات",              type: "REVENUE" },
+    { code: "5000", nameEn: "Cost of Revenue",         nameAr: "تكلفة الإيرادات",         type: "EXPENSE" },
+    { code: "6000", nameEn: "Operating Expenses",      nameAr: "المصاريف التشغيلية",      type: "EXPENSE" },
+  ];
+  const industrySpecific = {
+    it_software: [
+      { code: "4100", nameEn: "SaaS Subscription Revenue", nameAr: "إيرادات اشتراكات البرمجيات", type: "REVENUE" },
+      { code: "5110", nameEn: "Cloud Hosting Costs",       nameAr: "تكاليف الاستضافة السحابية",   type: "EXPENSE" },
+    ],
+    construction: [
+      { code: "1170", nameEn: "Contract Retention Receivable", nameAr: "ضمان الدفعات المحتجزة", type: "ASSET" },
+      { code: "4110", nameEn: "Contract Revenue",              nameAr: "إيرادات العقود",        type: "REVENUE" },
+    ],
+    real_estate: [
+      { code: "1500", nameEn: "Investment Property",    nameAr: "العقارات الاستثمارية",    type: "ASSET" },
+      { code: "4120", nameEn: "Rental Income",          nameAr: "إيرادات الإيجار",         type: "REVENUE" },
+    ],
+    healthcare_medical: [
+      { code: "4130", nameEn: "Patient Service Revenue", nameAr: "إيرادات خدمات المرضى",   type: "REVENUE" },
+      { code: "5120", nameEn: "Medical Supplies",        nameAr: "المستلزمات الطبية",       type: "EXPENSE" },
+    ],
+    manufacturing: [
+      { code: "1155", nameEn: "Raw Materials Inventory", nameAr: "مخزون المواد الخام",     type: "ASSET" },
+      { code: "1156", nameEn: "Finished Goods Inventory",nameAr: "مخزون المنتج النهائي",   type: "ASSET" },
+    ],
+    retail_trading: [
+      { code: "1158", nameEn: "Merchandise Inventory",   nameAr: "مخزون البضائع",          type: "ASSET" },
+      { code: "5130", nameEn: "Cost of Goods Sold",      nameAr: "تكلفة البضائع المباعة",   type: "EXPENSE" },
+    ],
+    restaurant_food_beverage: [
+      { code: "1159", nameEn: "Food & Beverage Inventory", nameAr: "مخزون الأغذية والمشروبات", type: "ASSET" },
+      { code: "5140", nameEn: "Food Costs",                nameAr: "تكاليف الطعام",          type: "EXPENSE" },
+    ],
+    education: [
+      { code: "4140", nameEn: "Tuition Revenue",        nameAr: "إيرادات الرسوم الدراسية",  type: "REVENUE" },
+      { code: "6150", nameEn: "Curriculum Expenses",    nameAr: "مصاريف المناهج",         type: "EXPENSE" },
+    ],
+    law_firm_professional: [
+      { code: "1180", nameEn: "Client Trust Account",   nameAr: "حساب أمانة العميل",       type: "ASSET" },
+      { code: "4150", nameEn: "Professional Fees",      nameAr: "الأتعاب المهنية",         type: "REVENUE" },
+    ],
+    transportation_logistics: [
+      { code: "1510", nameEn: "Fleet Vehicles",         nameAr: "المركبات",                type: "ASSET" },
+      { code: "5150", nameEn: "Fuel Costs",             nameAr: "تكاليف الوقود",           type: "EXPENSE" },
+    ],
+    salon: [
+      { code: "1157", nameEn: "Beauty Product Inventory", nameAr: "مخزون مستحضرات التجميل", type: "ASSET" },
+      { code: "4160", nameEn: "Service Revenue",          nameAr: "إيرادات الخدمات",        type: "REVENUE" },
+    ],
+  };
+  return [...base, ...(industrySpecific[templateId] || [])];
+}
+
+// ── Tenant company info (HASEEB-448 / FN-110) ──────────────────────
+// SetupScreen renders editable EN + AR company names, and the preview
+// widget (FN-111) reads the same data. No backend write endpoint today
+// beyond /api/auth/tenant-info (read-only) — this is mock-only; wiring
+// to a /api/tenant/company PATCH endpoint is a follow-up.
+const _tenantCompanyInfoByTenant = {};
+function _initTenantCompanyInfo(tenantId) {
+  if (!_tenantCompanyInfoByTenant[tenantId]) {
+    _tenantCompanyInfoByTenant[tenantId] = {
+      nameEn: tenantId === "almanara" ? "Al Manara Trading"
+            : tenantId === "boubyan_demo" ? "Al Mawred Corporation"
+            : "Demo Corporate",
+      nameAr: tenantId === "almanara" ? "المنارة للتجارة"
+            : tenantId === "boubyan_demo" ? "شركة المورد"
+            : "شركة تجريبية",
+      industry: tenantId === "generic" ? "Corporate" : "Trading",
+      documentLanguagePreference: "bilingual", // "en" | "ar" | "bilingual"
+    };
+  }
+  return _tenantCompanyInfoByTenant[tenantId];
+}
+
+export async function getTenantCompanyInfo() {
+  await delay();
+  return _brandObj(JSON.parse(JSON.stringify(_initTenantCompanyInfo(_currentTenantId))));
+}
+
+export async function updateTenantCompanyInfo(updates) {
+  await delay();
+  const info = _initTenantCompanyInfo(_currentTenantId);
+  if (!updates || typeof updates !== "object") {
+    return _brandObj({ success: false, error: "Invalid payload" });
+  }
+  // Validation: both EN + AR required (non-empty) when provided.
+  if (updates.nameEn !== undefined && !String(updates.nameEn).trim()) {
+    return _brandObj({ success: false, error: "nameEn is required" });
+  }
+  if (updates.nameAr !== undefined && !String(updates.nameAr).trim()) {
+    return _brandObj({ success: false, error: "nameAr is required" });
+  }
+  Object.assign(info, updates);
+  return _brandObj({ success: true, ...JSON.parse(JSON.stringify(info)) });
+}
+
 // Fiscal year + periods
 const _fiscalYearByTenant = {};
 function _initFY(tenantId) {
   if (!_fiscalYearByTenant[tenantId]) {
     _fiscalYearByTenant[tenantId] = {
       currentFY: 2026,
+      // HASEEB-448 FN-105: fiscal-position editable fields
+      startMonth: 1,               // 1 = January ... 12 = December
+      functionalCurrency: "KWD",   // KWD | USD | EUR | SAR | AED
+      accountingStandard: "IFRS",  // IFRS | IFRS-SME
       startDate: "2026-01-01",
       endDate: "2026-12-31",
       periods: [

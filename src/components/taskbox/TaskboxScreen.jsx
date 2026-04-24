@@ -2,12 +2,15 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Search, Plus, Inbox, Filter, X as XIcon, MoreVertical, FileText as FileTextIcon } from "lucide-react";
 import EmptyState from "../shared/EmptyState";
+// HASEEB-402 D7 FINAL PUSH (2026-04-24) — approveBudget migrated to
+// consumer-side legacy adapter (Owner-finalise endpoint has no active
+// backend wrapper on budgetsApi; HASEEB-403 follow-up).
+import { approveBudget as engineApproveBudget } from "../../api/budgets-legacy";
 import {
   getTaskbox,
   getTaskboxCounts,
   completeTask as engineCompleteTask,
   replyToTask as engineReplyToTask,
-  approveBudget as engineApproveBudget,
   requestBudgetChanges as engineRequestBudgetChanges,
   cancelTask as engineCancelTask,
   approveCloseAndSyncTask,

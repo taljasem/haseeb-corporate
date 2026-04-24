@@ -27,8 +27,12 @@ import {
   exportBankTransactionsCSV,
   createRuleFromTransactions,
   getChartOfAccounts,
-  getTeamMembers,
 } from "../../engine";
+// HASEEB-402 D7 FINAL PUSH (2026-04-24) — getTeamMembers migrated to
+// consumer-side legacy adapter. LIVE mode calls listTeamMembersLive and
+// reshapes to the mock-shape { id, name, role, initials, color } this
+// screen consumes.
+import { getTeamMembers } from "../../api/budgets-legacy";
 
 const FILTERS = [
   { id: "All", key: "all" },

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getTeamMembers } from "../../engine/mockEngine";
+// HASEEB-402 D7 FINAL PUSH (2026-04-24) — direct mockEngine import moved
+// to consumer-side legacy adapter. LIVE mode calls listTeamMembersLive.
+import { getTeamMembers } from "../../api/budgets-legacy";
 
 function PersonPlusIcon() {
   return (

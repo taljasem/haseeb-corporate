@@ -11,10 +11,16 @@ import BudgetVarianceBar from "./BudgetVarianceBar";
 // submitDepartment remain on the legacy mock surface (the per-line-item
 // variance / per-department Junior submit path is not in Dispatch 6
 // scope — only budget-level line CRUD + budget-level approval).
+// HASEEB-402 D7 FINAL PUSH (2026-04-24) — getBudgetVarianceByLineItem,
+// updateBudgetLineItemValue, and submitDepartment migrated to the
+// consumer-side legacy adapter module. No matching backend endpoints today
+// (see budgets-legacy.js surface-gap catalogue, HASEEB-403).
 import {
   getBudgetVarianceByLineItem,
   updateBudgetLineItemValue,
   submitDepartment,
+} from "../../api/budgets-legacy";
+import {
   approveBudgetDepartmentLive,
   requestDepartmentRevisionLive,
 } from "../../engine";

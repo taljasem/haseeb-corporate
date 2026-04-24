@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import SectionCard from "./SectionCard";
-import { getBudgetVarianceByDepartment } from "../../engine/mockEngine";
+// HASEEB-402 D7 FINAL PUSH (2026-04-24) — direct mockEngine import moved
+// to consumer-side legacy adapter (live shape differs; screen rewrite
+// tracked HASEEB-403).
+import { getBudgetVarianceByDepartment } from "../../api/budgets-legacy";
 
 const STATUS_COLOR = {
   under:      "var(--accent-primary)",

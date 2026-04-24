@@ -748,6 +748,35 @@ const FUNCTION_ROUTING = {
   getEclMatrix: 'wired',
   updateEclMatrixRow: 'wired',
   computeEcl: 'wired',
+
+  // General Ledger + Invoice Email — HASEEB-447 (2026-04-24, Dispatch
+  // Item 2). Two features:
+  //
+  //   - GL JSON + XLSX export (backend HASEEB-424, FN-188):
+  //       GET /api/reports/general-ledger?from=&to=&format=json|xlsx
+  //                                      &accountIds=csv&language=...
+  //       Role-gated OWNER / ACCOUNTANT / VIEWER / AUDITOR. POSTED-only
+  //       per playbook RULE_10_3_1. `exportGeneralLedger` returns
+  //       `{ blob, filename }` (backend sends raw XLSX bytes, not a
+  //       JSON-wrapped base64 envelope).
+  //
+  //   - Invoice email send (backend HASEEB-420, FN-063):
+  //       POST /api/invoices/:id/email (OWNER / ACCOUNTANT)
+  //       GET  /api/invoices/:id/send-logs (authenticated)
+  //       `/email` is the NOTIFY path, distinct from `/send` (which
+  //       is the GL-posting DRAFT → SENT transition). No JE from
+  //       `/email`; it appends an InvoiceSendLog row and returns it.
+  //
+  // All four names are NEW and NOT on mockEngine's namespace; assigned
+  // as extras via buildLiveSurface / buildMockExtras. Routing-table
+  // entries are documentation — the surface assignments are what route
+  // the calls. No UI surfaced in this dispatch (no TrialBalance / GL
+  // screen and no standalone InvoiceDetailScreen exist yet); follow-up
+  // dispatches add the UI once those screens land.
+  getGeneralLedger: 'wired',
+  exportGeneralLedger: 'wired',
+  emailInvoice: 'wired',
+  getInvoiceSendLogs: 'wired',
 };
 
 /**
@@ -2549,6 +2578,19 @@ function buildLiveSurface() {
   surface.updateEclMatrixRow = eclApi.updateEclMatrixRow;
   surface.computeEcl = eclApi.computeEcl;
 
+  // General Ledger + Invoice Email — HASEEB-447 (2026-04-24).
+  // GL: 2 wrappers on /api/reports/general-ledger (HASEEB-424, FN-188).
+  //     `exportGeneralLedger` returns `{ blob, filename }`; caller
+  //     triggers the browser download (see triggerBrowserDownload in
+  //     src/api/financialStatementExports.js).
+  // Invoice email: 2 wrappers on /api/invoices/:id/email + /send-logs
+  //     (HASEEB-420, FN-063). `/email` is notify-only (no JE).
+  // All four are NEW engine surface names NOT on mockEngine's namespace.
+  surface.getGeneralLedger = reportsApi.getGeneralLedger;
+  surface.exportGeneralLedger = reportsApi.exportGeneralLedger;
+  surface.emailInvoice = invoicesApi.emailInvoice;
+  surface.getInvoiceSendLogs = invoicesApi.getInvoiceSendLogs;
+
   return surface;
 }
 
@@ -3700,6 +3742,61 @@ function buildMockExtras() {
     getEclMatrix: mockGetEclMatrix,
     updateEclMatrixRow: mockUpdateEclMatrixRow,
     computeEcl: mockComputeEcl,
+
+    // General Ledger + Invoice Email — HASEEB-447 (2026-04-24, Dispatch
+    // Item 2). MOCK stubs keep the surface symmetric with LIVE so screens
+    // render their own empty / toast states without a backend. No live
+    // UI is surfaced in this dispatch, so the stubs are deliberately
+    // minimal (shape contract, not data fidelity).
+    getGeneralLedger: async (opts = {}) => {
+      await new Promise((r) => setTimeout(r, 60));
+      return {
+        from: opts?.from || new Date().toISOString().slice(0, 10),
+        to: opts?.to || new Date().toISOString().slice(0, 10),
+        rows: [],
+        totals: {
+          openingBalance: '0.000',
+          periodDebits: '0.000',
+          periodCredits: '0.000',
+          closingBalance: '0.000',
+        },
+        _mock: true,
+      };
+    },
+    exportGeneralLedger: async (opts = {}) => {
+      await new Promise((r) => setTimeout(r, 80));
+      const from = opts?.from || new Date().toISOString().slice(0, 10);
+      const to = opts?.to || new Date().toISOString().slice(0, 10);
+      // MOCK returns a CSV-ish placeholder Blob so the download dance
+      // exercises end-to-end. Real XLSX bytes only in LIVE mode.
+      const text = `Date,Account,Debit,Credit\n${from},MOCK,0.000,0.000\n`;
+      const blob =
+        typeof Blob !== 'undefined'
+          ? new Blob([text], { type: 'text/csv' })
+          : { _mock: true, size: text.length };
+      return {
+        blob,
+        filename: `general-ledger_${from}_${to}.mock.csv`,
+      };
+    },
+    emailInvoice: async (invoiceId, payload = {}) => {
+      await new Promise((r) => setTimeout(r, 100));
+      return {
+        id: `SL-${Math.floor(Math.random() * 900 + 100)}`,
+        invoiceId,
+        recipientEmail: payload?.recipientEmail || 'mock@example.com',
+        cc: Array.isArray(payload?.cc) ? payload.cc : [],
+        subject: payload?.subject || null,
+        language: payload?.language || 'bilingual',
+        sentAt: new Date().toISOString(),
+        status: 'SENT',
+        _mock: true,
+      };
+    },
+    getInvoiceSendLogs: async (/* invoiceId */) => {
+      await new Promise((r) => setTimeout(r, 40));
+      return [];
+    },
   };
 }
 
@@ -7652,6 +7749,23 @@ export const getYearEndClose = surface.getYearEndClose;
 export const getEclMatrix = surface.getEclMatrix;
 export const updateEclMatrixRow = surface.updateEclMatrixRow;
 export const computeEcl = surface.computeEcl;
+
+// General Ledger + Invoice Email — HASEEB-447 (2026-04-24, Dispatch
+// Item 2). Four wrappers, all NEW engine-surface names NOT on
+// mockEngine's namespace.
+//   getGeneralLedger     — GET /api/reports/general-ledger?format=json
+//                           (OWNER / ACCOUNTANT / VIEWER / AUDITOR)
+//   exportGeneralLedger  — GET /api/reports/general-ledger?format=xlsx
+//                           Returns { blob, filename }; caller triggers
+//                           the browser download.
+//   emailInvoice         — POST /api/invoices/:id/email
+//                           (OWNER / ACCOUNTANT; no JE — notify-only)
+//   getInvoiceSendLogs   — GET  /api/invoices/:id/send-logs
+//                           (authenticated)
+export const getGeneralLedger = surface.getGeneralLedger;
+export const exportGeneralLedger = surface.exportGeneralLedger;
+export const emailInvoice = surface.emailInvoice;
+export const getInvoiceSendLogs = surface.getInvoiceSendLogs;
 
 // ──────────────────────────────────────────────────────────────────────
 // HASEEB-278 — mockEngine migration Wave 1 (2026-04-22).

@@ -153,6 +153,11 @@ const FUNCTION_ROUTING = {
   getConversation: 'wired',
   getConversationMessages: 'wired',
   runAminahSession: 'wired',
+  // HASEEB-406 multi-pending surface (companion to backend HASEEB-405).
+  // Replaces the single-pending-per-conversation model. See src/api/chat.js
+  // for endpoint shape + error-code mapping.
+  getPendingEntries: 'wired',
+  cancelPendingEntry: 'wired',
 
   // Journal entries — Wave 2 reads + Wave 3 writes
   listJournalEntries: 'wired',
@@ -776,6 +781,9 @@ const REAL_IMPLS = {
   getConversation: chatApi.getConversation,
   getConversationMessages: chatApi.getConversationMessages,
   runAminahSession: runLiveChatSession,
+  // HASEEB-406 multi-pending.
+  getPendingEntries: chatApi.getPendingEntries,
+  cancelPendingEntry: chatApi.cancelPendingEntry,
 
   // Journal entries — Wave 2 reads
   listJournalEntries: journalEntriesApi.listJournalEntries,
@@ -1971,6 +1979,10 @@ function buildLiveSurface() {
   surface.listConversations = chatApi.listConversations;
   surface.getConversation = chatApi.getConversation;
   surface.getConversationMessages = chatApi.getConversationMessages;
+  // HASEEB-406 multi-pending helpers — not on mockEngine's namespace;
+  // assign explicitly so MOCK mode falls through to buildMockExtras.
+  surface.getPendingEntries = chatApi.getPendingEntries;
+  surface.cancelPendingEntry = chatApi.cancelPendingEntry;
   surface.createJournalEntry = journalEntriesWriteApi.createJournalEntry;
   surface.updateJournalEntryDraft = journalEntriesWriteApi.updateJournalEntryDraft;
   surface.postJournalEntry = journalEntriesWriteApi.postJournalEntry;
@@ -2550,6 +2562,17 @@ function buildMockExtras() {
       raw: { confirmationId },
     };
   };
+  // HASEEB-406 — MOCK stubs for multi-pending surface. Empty list in
+  // MOCK mode so ConversationalJEScreen renders its existing empty /
+  // active-pending state without crashing. LIVE mode hits the real
+  // endpoints via chatApi.
+  const mockListPendingEntries = async () => [];
+  const mockCancelPendingEntry = async (confirmationId) => ({
+    id: `mock-${confirmationId}`,
+    confirmationId,
+    status: 'CANCELLED',
+    _mock: true,
+  });
   return {
     runAminahSession: stubRunAminahSession,
     sendChatMessage: mockSendChat,
@@ -2557,6 +2580,8 @@ function buildMockExtras() {
     listConversations: async () => [],
     getConversation: async () => null,
     getConversationMessages: async () => [],
+    getPendingEntries: mockListPendingEntries,
+    cancelPendingEntry: mockCancelPendingEntry,
     createJournalEntry: mockCreate,
     updateJournalEntryDraft: mockUpdate,
     postJournalEntry: mockPost,
@@ -6931,6 +6956,9 @@ export const listConversations = surface.listConversations;
 export const getConversation = surface.getConversation;
 export const getConversationMessages = surface.getConversationMessages;
 export const runAminahSession = surface.runAminahSession;
+// HASEEB-406 multi-pending.
+export const getPendingEntries = surface.getPendingEntries;
+export const cancelPendingEntry = surface.cancelPendingEntry;
 
 // Journal entries — reads
 export const listJournalEntries = surface.listJournalEntries;

@@ -198,6 +198,64 @@ export async function confirmPendingAction(optionsOrConversationId, legacyAction
   };
 }
 
+/**
+ * GET /api/ai/pending-entries — HASEEB-406 (companion to backend HASEEB-405).
+ *
+ * Returns the current user's active (status=PENDING, expires_at > now)
+ * pending journal entries. Used by ConversationalJEScreen to render one
+ * card per pending, replacing the old single-pending-per-conversation
+ * model that forced a 409-ALREADY_PENDING Retry flow.
+ *
+ * Each row has the shape emitted by `pending-je.service.ts`:
+ *   {
+ *     id, confirmationId, conversationId, status, transactionType,
+ *     userMessage, entryData: { confirmationId, type, data, createdAt },
+ *     createdAt, expiresAt
+ *   }
+ *
+ * `entryData.data` is the `pendingJournalEntry` shape the card already
+ * knows how to render (lines, description, date, etc.).
+ *
+ * Returns an array on success. On error, throws the normalised
+ * `{ ok: false, status, code, message }` object from src/api/client.js.
+ *
+ * @returns {Promise<Array>} pending entries (empty array when none)
+ */
+export async function getPendingEntries() {
+  const r = await client.get('/api/ai/pending-entries');
+  const data = unwrap(r);
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.pending)) return data.pending;
+  return [];
+}
+
+/**
+ * POST /api/ai/pending-entries/:confirmationId/cancel — HASEEB-406.
+ *
+ * Transitions a pending row to CANCELLED. The backend returns:
+ *   - 200 { pending: {...CANCELLED row} } on success
+ *   - 404 { code: 'PENDING_NOT_FOUND' } for unknown confirmationId OR
+ *         wrong owner (existence is not leaked)
+ *   - 409 { code: 'STALE_CONFIRMATION' } for already CANCELLED/CONFIRMED
+ *   - 410 { code: 'PENDING_EXPIRED' } for expired rows
+ *
+ * Errors are thrown as the normalised `{ ok: false, status, code, message }`
+ * object from src/api/client.js so callers can branch on `err.status`.
+ *
+ * @param {string} confirmationId
+ * @returns {Promise<Object>} the updated (CANCELLED) pending row
+ */
+export async function cancelPendingEntry(confirmationId) {
+  if (!confirmationId) {
+    throw { ok: false, status: 0, code: 'CLIENT_ERROR', message: 'confirmationId is required' };
+  }
+  const r = await client.post(
+    `/api/ai/pending-entries/${encodeURIComponent(confirmationId)}/cancel`,
+  );
+  const data = unwrap(r);
+  return data?.pending || data || null;
+}
+
 export async function listConversations() {
   const r = await client.get('/api/conversations');
   const data = unwrap(r);

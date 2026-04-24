@@ -22,6 +22,26 @@
     "retry": "إعادة المحاولة",
     "edit_in_composer": "تعديل في القيد اليدوي ←"
   },
+  "pending": {
+    "heading": "القيود المعلقة",
+    "empty": "لا توجد قيود معلقة",
+    "confirm": "تأكيد",
+    "edit": "تعديل",
+    "cancel": "إلغاء",
+    "edit_coming_soon": "التعديل قيد الإطلاق قريباً",
+    "expires_in_hours": "تنتهي الصلاحية خلال {{count}} ساعة",
+    "expires_in_hours_plural": "تنتهي الصلاحية خلال {{count}} ساعات",
+    "expires_in_minutes": "تنتهي الصلاحية خلال {{count}} دقيقة",
+    "expires_in_minutes_plural": "تنتهي الصلاحية خلال {{count}} دقائق",
+    "expires_soon": "تنتهي الصلاحية قريباً",
+    "expired": "منتهية الصلاحية",
+    "cancelled": "تم الإلغاء. حُذف القيد المعلق.",
+    "cancel_error": "تعذّر إلغاء هذا القيد. يرجى التحديث.",
+    "already_confirmed": "تم التأكيد بالفعل",
+    "already_processed": "تمت معالجة هذا القيد بالفعل. جارٍ التحديث.",
+    "entry_expired": "انتهت صلاحية القيد. يرجى إعادة الإدخال.",
+    "not_found": "القيد المعلق غير موجود. جارٍ التحديث."
+  },
   "labels": {
     "expense_account": "حساب المصروف",
     "cash_account": "حساب النقدية",

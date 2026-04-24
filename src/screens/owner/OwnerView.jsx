@@ -25,6 +25,7 @@ import PIFSSReconciliationScreen from "../cfo/PIFSSReconciliationScreen";
 import CITAssessmentScreen from "../cfo/CITAssessmentScreen";
 import YearEndCloseScreen from "../cfo/YearEndCloseScreen";
 import BoardPackScreen from "./BoardPackScreen";
+import EclScreen from "../cfo/EclScreen";
 // HASEEB-280 — Wave 2 migration. Both taskbox/approval counters are
 // mock-fallback via the engine router (no backend yet — HASEEB-279).
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine";
@@ -188,6 +189,8 @@ export default function OwnerView({ registerNav }) {
         return <YearEndCloseScreen role="Owner" />;
       case "board-pack":
         return <BoardPackScreen role="Owner" />;
+      case "ecl":
+        return <EclScreen role="Owner" />;
       default:
         return <Placeholder label={activeScreen.toUpperCase()} />;
     }

@@ -1,0 +1,99 @@
+{
+  "title": "Expected Credit Loss (IFRS 9)",
+  "description": "Provision matrix by customer class and aging bucket, expected-credit-loss computation, and adjustment to the allowance for doubtful debts. Owners can edit forward-looking adjusted rates; CFOs and Accountants read and run computations.",
+  "reload": "Reload",
+  "loading": "Loading ECL matrix…",
+  "role_gate": {
+    "title": "Access restricted",
+    "description": "The IFRS 9 ECL surface is available to Owner, CFO, and Senior roles. Ask your Owner or CFO if you need access."
+  },
+  "owner_only_hint": "Only Owner can adjust loss rates. Your role has read-only access to the provision matrix.",
+  "matrix": {
+    "title": "Provision Matrix",
+    "subtitle": "Historical and forward-looking loss rates by customer class × aging bucket. Click a cell (Owner only) to adjust the rate for a specific pair.",
+    "legend_historical": "Historical",
+    "legend_adjusted": "Adjusted (forward-looking)",
+    "column_class": "Customer Class",
+    "class": {
+      "GOVERNMENT": "Government",
+      "PRIVATE_CORPORATE": "Private Corporate",
+      "PRIVATE_SME": "Private SME",
+      "AFFILIATE": "Affiliate",
+      "RELATED_PARTY": "Related Party",
+      "INDIVIDUAL": "Individual"
+    },
+    "bucket": {
+      "CURRENT": "Current",
+      "D1_30": "1–30",
+      "D31_60": "31–60",
+      "D61_90": "61–90",
+      "D91_180": "91–180",
+      "D181_365": "181–365",
+      "OVER_365": "Over 365"
+    },
+    "bucket_header_unit": "days past due",
+    "edit": {
+      "aria_label": "Edit loss rate for {{cls}} / {{bucket}}",
+      "input_aria": "New adjusted loss rate, percent, between 0 and 100",
+      "input_placeholder": "e.g. 2.5",
+      "hint": "Enter a percent between 0 and 100. Leave empty and save to clear the adjustment and fall back to the historical rate.",
+      "save": "Save",
+      "cancel": "Cancel",
+      "saving": "Saving…",
+      "error_invalid": "Adjusted rate must be between 0 and 100.",
+      "error_save_failed": "Could not save the adjusted rate: {{message}}",
+      "cleared": "Adjustment cleared. Falls back to the historical rate."
+    },
+    "read_only_note": "Read-only: rate adjustments are Owner-only.",
+    "empty": {
+      "title": "No matrix rows yet",
+      "description": "Once the ECL provision matrix is seeded for this tenant, the 42 rows (6 customer classes × 7 aging buckets) will populate here."
+    }
+  },
+  "compute": {
+    "title": "ECL Computation",
+    "subtitle": "Run the compute engine to produce a fresh per-bucket ECL breakdown and the proposed adjustment to the allowance for doubtful debts.",
+    "run_button": "Run ECL Computation",
+    "running": "Running computation…",
+    "as_of_label": "As of date",
+    "as_of_hint": "Leave empty to use today's date.",
+    "persist_label": "Persist as quarterly review",
+    "persist_hint": "When Fiscal Year + Quarter are provided, the result is persisted as the quarterly audit-trail entry and a DRAFT adjustment journal entry is created when the adjustment is non-zero.",
+    "fiscal_year_label": "Fiscal year",
+    "fiscal_quarter_label": "Fiscal quarter",
+    "dry_run_note": "Dry-run: no data persisted. Totals and adjustment preview only.",
+    "result": {
+      "title": "Latest Computation",
+      "as_of": "As of {{asOf}}",
+      "total_exposure": "Total Exposure",
+      "total_computed_ecl": "Total Computed ECL",
+      "current_allowance": "Current Allowance",
+      "adjustment": "Adjustment",
+      "direction_INCREASE": "Increase (provision +)",
+      "direction_DECREASE": "Decrease (release -)",
+      "direction_NONE": "No adjustment required",
+      "buckets_title": "Per-Bucket Breakdown",
+      "column_class": "Class",
+      "column_bucket": "Aging",
+      "column_exposure": "Exposure (KWD)",
+      "column_rate": "Loss Rate",
+      "column_rate_source": "Source",
+      "column_ecl": "ECL (KWD)",
+      "rate_source_HISTORICAL": "Historical",
+      "rate_source_ADJUSTED": "Adjusted",
+      "only_non_zero": "Showing non-zero ECL rows only.",
+      "empty_placeholder": "Run computation to see the latest breakdown.",
+      "persisted_row": "Persisted as quarterly review: {{id}}",
+      "draft_je_created": "DRAFT adjustment JE created: {{jeId}}",
+      "draft_je_not_needed": "No adjustment needed — computed ECL matches current allowance.",
+      "create_adjustment_entry": "Create Adjustment Entry",
+      "create_adjustment_hint": "Persists the computation as the quarterly review and drafts the adjustment JE (Owner review required before posting)."
+    },
+    "errors": {
+      "invalid_fy": "Fiscal year must be a 4-digit year.",
+      "invalid_fq": "Fiscal quarter must be 1, 2, 3, or 4.",
+      "missing_pair": "Both Fiscal Year and Quarter must be provided to persist, or neither (dry-run).",
+      "run_failed": "Could not run ECL computation: {{message}}"
+    }
+  }
+}

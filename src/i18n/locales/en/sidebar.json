@@ -55,6 +55,7 @@
     "bank_mandates": "Bank Mandates",
     "pifss_reconciliation": "PIFSS Reconciliation (Annual)",
     "cit_assessment": "CIT Assessments (Annual)",
-    "board_pack": "Board Pack"
+    "board_pack": "Board Pack",
+    "ecl": "ECL (IFRS 9)"
   }
 }

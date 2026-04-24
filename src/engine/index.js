@@ -101,6 +101,7 @@ import * as paymentVouchersApi from '../api/paymentVouchers';
 import * as bankMandatesApi from '../api/bankMandates';
 import * as pifssReconciliationApi from '../api/pifssReconciliation';
 import * as yearEndCloseApi from '../api/yearEndClose';
+import * as eclApi from '../api/ecl';
 import * as bankTransactionsApi from '../api/bank-transactions';
 import * as taskboxApi from '../api/taskbox';
 import * as teamApi from '../api/team';
@@ -730,6 +731,16 @@ const FUNCTION_ROUTING = {
   getJEAttachments: 'wired',           // Fix-B coming-soon
   shareJETemplate: 'wired',            // Fix-B coming-soon (HASEEB-202)
   getFiscalYearConfig: 'wired',        // Fix-B coming-soon (no tenant-financial-config client wrapper)
+
+  // IFRS 9 Expected Credit Loss — HASEEB-409 frontend (companion to
+  // backend HASEEB-408, FN-265). Three wrappers on /api/ecl/*. All
+  // names NEW and NOT on mockEngine's namespace; assigned as extras
+  // via buildLiveSurface / buildMockExtras. Routing-table entries are
+  // documentation — the surface assignments below are what route the
+  // calls.
+  getEclMatrix: 'wired',
+  updateEclMatrixRow: 'wired',
+  computeEcl: 'wired',
 };
 
 /**
@@ -1883,6 +1894,13 @@ const REAL_IMPLS = {
         endMonth: null,
       },
     }),
+
+  // IFRS 9 Expected Credit Loss — HASEEB-409 frontend wire (companion
+  // to backend HASEEB-408, FN-265). OWNER/ACCOUNTANT read the matrix
+  // + run compute; OWNER-only edits the matrix via supersession.
+  getEclMatrix: eclApi.getEclMatrix,
+  updateEclMatrixRow: eclApi.updateEclMatrixRow,
+  computeEcl: eclApi.computeEcl,
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -2476,6 +2494,16 @@ function buildLiveSurface() {
   surface.approveYearEndClose = yearEndCloseApi.approveYearEndClose;
   surface.reverseYearEndClose = yearEndCloseApi.reverseYearEndClose;
   surface.getYearEndClose = yearEndCloseApi.getYearEndClose;
+
+  // IFRS 9 Expected Credit Loss — HASEEB-409 frontend (companion to
+  // backend HASEEB-408, FN-265). Three wrappers on /api/ecl/* — all
+  // new engine surface names NOT on mockEngine's namespace. See
+  // FUNCTION_ROUTING + REAL_IMPLS blocks above for routing-table
+  // entries and buildMockExtras() below for MOCK parity stubs that let
+  // the EclScreen demo the full flow without a live backend.
+  surface.getEclMatrix = eclApi.getEclMatrix;
+  surface.updateEclMatrixRow = eclApi.updateEclMatrixRow;
+  surface.computeEcl = eclApi.computeEcl;
 
   return surface;
 }
@@ -3617,6 +3645,17 @@ function buildMockExtras() {
     approveYearEndClose: mockApproveYearEndClose,
     reverseYearEndClose: mockReverseYearEndClose,
     getYearEndClose: mockGetYearEndClose,
+
+    // IFRS 9 Expected Credit Loss — HASEEB-409 frontend (companion to
+    // backend HASEEB-408, FN-265). MOCK parity stubs mirror the LIVE
+    // response envelopes after unwrap. Seed: 42 matrix rows (6
+    // customer-class × 7 aging-bucket); a handful have non-null
+    // `adjustedLossRate` so the UI's "adjusted vs historical" indicator
+    // exercises. Compute returns a plausible breakdown using the seeded
+    // rates so the Run Compute button round-trips without a backend.
+    getEclMatrix: mockGetEclMatrix,
+    updateEclMatrixRow: mockUpdateEclMatrixRow,
+    computeEcl: mockComputeEcl,
   };
 }
 
@@ -7558,6 +7597,18 @@ export const approveYearEndClose = surface.approveYearEndClose;
 export const reverseYearEndClose = surface.reverseYearEndClose;
 export const getYearEndClose = surface.getYearEndClose;
 
+// IFRS 9 Expected Credit Loss — HASEEB-409 frontend (companion to
+// backend HASEEB-408, FN-265). Three wrappers on /api/ecl/*:
+//   getEclMatrix        — GET  /api/ecl/matrix  (OWNER + ACCOUNTANT)
+//   updateEclMatrixRow  — PATCH /api/ecl/matrix/:id (OWNER only; the
+//                         supersede pattern inserts a new active row)
+//   computeEcl          — POST /api/ecl/compute (OWNER + ACCOUNTANT;
+//                         persisted when { fiscalYear, fiscalQuarter }
+//                         are both supplied, dry-run otherwise)
+export const getEclMatrix = surface.getEclMatrix;
+export const updateEclMatrixRow = surface.updateEclMatrixRow;
+export const computeEcl = surface.computeEcl;
+
 // ──────────────────────────────────────────────────────────────────────
 // HASEEB-278 — mockEngine migration Wave 1 (2026-04-22).
 //
@@ -9421,4 +9472,189 @@ async function mockReverseYearEndClose(recordId, body) {
     return { ...reversed };
   }
   throw new Error(`Year-end close record ${recordId} not found (mock)`);
+}
+
+// ── IFRS 9 ECL MOCK stubs (HASEEB-409 frontend, FN-265) ──────────────
+//
+// Seed 42 active matrix rows, one per (customerClass × agingBucket)
+// pair. Rates follow a plausible IFRS-9 staging ramp: CURRENT ~ 0.1%,
+// rising through the aging windows to ~15%+ at OVER_365. Lower-risk
+// segments (GOVERNMENT, AFFILIATE) use shallower curves; higher-risk
+// (INDIVIDUAL, PRIVATE_SME) use steeper ones. A handful of rows carry
+// a non-null `adjustedLossRate` so the UI's "adjusted vs historical"
+// indicator exercises.
+
+const _mockEclCustomerClasses = [
+  'GOVERNMENT',
+  'PRIVATE_CORPORATE',
+  'PRIVATE_SME',
+  'AFFILIATE',
+  'RELATED_PARTY',
+  'INDIVIDUAL',
+];
+
+const _mockEclAgingBuckets = [
+  'CURRENT',
+  'D1_30',
+  'D31_60',
+  'D61_90',
+  'D91_180',
+  'D181_365',
+  'OVER_365',
+];
+
+/** Base historical loss rates by (class, bucket). Monotone non-decreasing
+ *  per class so the aging ramp reads realistic. */
+const _mockEclBaseRates = {
+  GOVERNMENT:        [0.0001, 0.0005, 0.0015, 0.0030, 0.0080, 0.0200, 0.0500],
+  PRIVATE_CORPORATE: [0.0010, 0.0050, 0.0150, 0.0300, 0.0700, 0.1500, 0.3000],
+  PRIVATE_SME:       [0.0020, 0.0100, 0.0250, 0.0500, 0.1000, 0.2000, 0.4000],
+  AFFILIATE:         [0.0005, 0.0030, 0.0100, 0.0200, 0.0500, 0.1000, 0.2500],
+  RELATED_PARTY:     [0.0005, 0.0030, 0.0100, 0.0200, 0.0500, 0.1000, 0.2500],
+  INDIVIDUAL:        [0.0030, 0.0150, 0.0350, 0.0700, 0.1500, 0.2500, 0.5000],
+};
+
+/** Adjusted-rate overrides — applied to a small subset so the UI shows
+ *  the "adjusted ≠ historical" indicator without overwhelming the grid. */
+const _mockEclAdjustedOverrides = new Map([
+  ['PRIVATE_SME|D91_180', '0.120000'],
+  ['INDIVIDUAL|OVER_365', '0.550000'],
+  ['PRIVATE_CORPORATE|D1_30', '0.003000'],
+]);
+
+const _mockEclMatrix = (() => {
+  const rows = [];
+  let counter = 0;
+  for (const cls of _mockEclCustomerClasses) {
+    for (let i = 0; i < _mockEclAgingBuckets.length; i++) {
+      const bucket = _mockEclAgingBuckets[i];
+      const historical = _mockEclBaseRates[cls][i];
+      const key = `${cls}|${bucket}`;
+      const adjusted = _mockEclAdjustedOverrides.get(key) ?? null;
+      rows.push({
+        id: `mock-ecl-matrix-${++counter}`,
+        customerClass: cls,
+        agingBucket: bucket,
+        historicalLossRate: historical.toFixed(6),
+        adjustedLossRate: adjusted,
+        effectiveFrom: '2026-01-01T00:00:00.000Z',
+      });
+    }
+  }
+  return rows;
+})();
+
+async function mockGetEclMatrix() {
+  await new Promise((r) => setTimeout(r, 40));
+  return _mockEclMatrix.map((r) => ({ ...r }));
+}
+
+async function mockUpdateEclMatrixRow(id, body = {}) {
+  await new Promise((r) => setTimeout(r, 80));
+  const idx = _mockEclMatrix.findIndex((r) => r.id === id);
+  if (idx < 0) {
+    throw new Error(`mockUpdateEclMatrixRow: matrix row ${id} not found`);
+  }
+  const rate = body.adjustedLossRate;
+  if (rate !== null && rate !== undefined) {
+    const n = Number(rate);
+    if (Number.isNaN(n) || n < 0 || n > 1) {
+      throw new Error(
+        `mockUpdateEclMatrixRow: adjustedLossRate must be in [0, 1]; got ${rate}.`,
+      );
+    }
+  }
+  const prev = _mockEclMatrix[idx];
+  const now = new Date().toISOString();
+  // Supersede the old row + synth a new id (mirrors backend behaviour).
+  const next = {
+    id: `${prev.id}-v${Math.floor(Math.random() * 9000 + 1000)}`,
+    customerClass: prev.customerClass,
+    agingBucket: prev.agingBucket,
+    historicalLossRate: prev.historicalLossRate,
+    adjustedLossRate:
+      rate === null || rate === undefined ? null : String(rate),
+    effectiveFrom: now,
+  };
+  _mockEclMatrix[idx] = next;
+  return { ...next };
+}
+
+/** Plausible exposure distribution — synthesized to match the shape of
+ *  a live compute response so UI totals + per-bucket tables exercise. */
+function _mockExposureByClassBucket(cls, bucket) {
+  const clsWeight = {
+    GOVERNMENT: 1.5,
+    PRIVATE_CORPORATE: 2.0,
+    PRIVATE_SME: 1.2,
+    AFFILIATE: 0.6,
+    RELATED_PARTY: 0.4,
+    INDIVIDUAL: 0.8,
+  }[cls] || 1.0;
+  const bucketWeight = {
+    CURRENT: 4.0,
+    D1_30: 2.0,
+    D31_60: 1.2,
+    D61_90: 0.8,
+    D91_180: 0.5,
+    D181_365: 0.3,
+    OVER_365: 0.15,
+  }[bucket] || 1.0;
+  return Math.round(12000 * clsWeight * bucketWeight * 1000) / 1000;
+}
+
+async function mockComputeEcl(input = {}) {
+  await new Promise((r) => setTimeout(r, 150));
+  const buckets = [];
+  let totalExposure = 0;
+  let totalEcl = 0;
+  for (const row of _mockEclMatrix) {
+    const exposure = _mockExposureByClassBucket(row.customerClass, row.agingBucket);
+    const rateStr = row.adjustedLossRate ?? row.historicalLossRate;
+    const rate = Number(rateStr);
+    const ecl = Math.round(exposure * rate * 1000) / 1000;
+    buckets.push({
+      customerClass: row.customerClass,
+      agingBucket: row.agingBucket,
+      exposureKwd: exposure.toFixed(3),
+      lossRate: rateStr,
+      rateSource: row.adjustedLossRate != null ? 'ADJUSTED' : 'HISTORICAL',
+      eclKwd: ecl.toFixed(3),
+    });
+    totalExposure += exposure;
+    totalEcl += ecl;
+  }
+  // Pretend the current on-book allowance is 80% of computed ECL, so
+  // the adjustment is always +ve (INCREASE) — lets the demo exercise
+  // the "Create Adjustment Entry" affordance by default.
+  const currentAllowance = Math.round(totalEcl * 0.8 * 1000) / 1000;
+  const adjustment = Math.round((totalEcl - currentAllowance) * 1000) / 1000;
+  const direction =
+    adjustment > 0 ? 'INCREASE' : adjustment < 0 ? 'DECREASE' : 'NONE';
+
+  const asOf = input?.asOf
+    ? new Date(input.asOf + 'T00:00:00.000Z').toISOString()
+    : new Date().toISOString();
+
+  const computation = {
+    asOf,
+    buckets,
+    totalExposureKwd: totalExposure.toFixed(3),
+    totalComputedEclKwd: totalEcl.toFixed(3),
+    currentAllowanceKwd: currentAllowance.toFixed(3),
+    adjustmentKwd: adjustment.toFixed(3),
+    direction,
+  };
+
+  if (input?.fiscalYear != null && input?.fiscalQuarter != null) {
+    return {
+      computation,
+      persistedRowId: `mock-ecl-qr-${input.fiscalYear}-Q${input.fiscalQuarter}`,
+      jeId:
+        adjustment !== 0
+          ? `mock-je-ecl-${input.fiscalYear}-Q${input.fiscalQuarter}`
+          : null,
+    };
+  }
+  return { computation };
 }

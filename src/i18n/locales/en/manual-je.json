@@ -80,10 +80,8 @@
     "source": "SOURCE"
   },
   "source_options": {
-    "manual": "Manual",
-    "adjustment": "Adjustment",
-    "reversal": "Reversal",
-    "recurring": "Recurring"
+    "MANUAL": "Manual",
+    "RECURRING": "Recurring"
   },
   "lines": {
     "col_account": "ACCOUNT",

@@ -80,10 +80,8 @@
     "source": "المصدر"
   },
   "source_options": {
-    "manual": "يدوي",
-    "adjustment": "تسوية",
-    "reversal": "عكس قيد",
-    "recurring": "متكرر"
+    "MANUAL": "يدوي",
+    "RECURRING": "متكرر"
   },
   "lines": {
     "col_account": "الحساب",

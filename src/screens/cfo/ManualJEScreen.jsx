@@ -98,7 +98,10 @@ function blankDraft() {
   return {
     id: `NEW-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
     status: "draft",
-    source: "manual",
+    // HASEEB-466: backend EntrySource enum is uppercase. Internal draft
+    // shape now mirrors the wire enum so the dropdown's stored value
+    // round-trips through createJournalEntry without a case translation.
+    source: "MANUAL",
     date: new Date().toISOString(),
     reference: "",
     description: "",
@@ -133,7 +136,7 @@ function normaliseInitialJE(je) {
   return {
     id: je.id || `NEW-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
     status: je.status || "draft",
-    source: je.source || "manual",
+    source: je.source || "MANUAL",
     date: je.date || new Date().toISOString(),
     reference: je.reference || "",
     description: je.description || "",
@@ -176,7 +179,7 @@ function adaptRecurringEntryToTemplate(entry) {
     id: entry.id,
     name: primary,
     description: entry.description || primary,
-    source: "manual",
+    source: "MANUAL",
     defaultReference: primary,
     createdAt: entry.createdAt || new Date().toISOString(),
     updatedAt: entry.updatedAt || entry.createdAt || null,
@@ -355,7 +358,7 @@ export default function ManualJEScreen({ onOpenAminah }) {
       const prefilled = normaliseInitialJE({
         ...payload.draft,
         description: payload.draft.description || "",
-        source: "manual",
+        source: "MANUAL",
       });
       setNewDraft(prefilled);
       setActiveTab("drafts");
@@ -405,7 +408,7 @@ export default function ManualJEScreen({ onOpenAminah }) {
     const draft = normaliseInitialJE({
       id: `NEW-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
       status: "draft",
-      source: "recurring",
+      source: "RECURRING",
       date: new Date().toISOString(),
       reference: adapted.defaultReference || adapted.name || "",
       description: adapted.description || "",
@@ -638,7 +641,7 @@ export default function ManualJEScreen({ onOpenAminah }) {
                 description: draft.description,
                 reference: draft.reference || undefined,
                 currency: "KWD",
-                source: draft.source || "manual",
+                source: draft.source || "MANUAL",
                 lines: draft.lines
                   .filter((l) => l.accountCode && (Number(l.debit) > 0 || Number(l.credit) > 0))
                   .map((l) => ({
@@ -1103,7 +1106,7 @@ function ManualJEComposer({ je, onDelete, onPost, onReverse, onSchedule, onPostN
               )}
             </div>
             <div style={{ fontSize: 11, color: COLORS.textFaint, marginTop: 6, fontFamily: "'DM Mono', monospace" }}>
-              <LtrText>{isNew ? "NEW" : draft.id}</LtrText> · {(draft.source || "manual").toUpperCase()}
+              <LtrText>{isNew ? "NEW" : draft.id}</LtrText> · {(draft.source || "MANUAL").toUpperCase()}
               {draft.templateId && <> · {t("composer.from_template", { id: draft.templateId })}</>}
             </div>
           </div>
@@ -1191,13 +1194,27 @@ function ManualJEComposer({ je, onDelete, onPost, onReverse, onSchedule, onPostN
               style={inputStyle(readOnly)} />
           </Field>
           <Field label={t("fields.source")}>
-            <select disabled={readOnly} value={draft.source || "manual"}
+            {/*
+              HASEEB-466 — option values match the backend EntrySource
+              Prisma enum exactly (uppercase). The previous lowercase
+              values caused createJournalEntry to 400 with an enum
+              validation error and blocked manual JE save.
+
+              The legacy `adjustment` and `reversal` options were
+              dropped from this dropdown because EntrySource has no
+              matching values — `RESTATEMENT` exists for prior-period
+              adjustments but is reserved for the audit-sample retrieval
+              flow (FN-241), and reversals are produced via the
+              dedicated /api/journal-entries/:id/reverse endpoint
+              rather than via the source field. Reintroducing those
+              options requires a design decision on which EntrySource
+              members they should map to.
+            */}
+            <select disabled={readOnly} value={draft.source || "MANUAL"}
               onChange={(e) => updateField("source", e.target.value)}
               style={inputStyle(readOnly)}>
-              <option value="manual">{t("source_options.manual")}</option>
-              <option value="adjustment">{t("source_options.adjustment")}</option>
-              <option value="reversal">{t("source_options.reversal")}</option>
-              <option value="recurring">{t("source_options.recurring")}</option>
+              <option value="MANUAL">{t("source_options.MANUAL")}</option>
+              <option value="RECURRING">{t("source_options.RECURRING")}</option>
             </select>
           </Field>
         </div>

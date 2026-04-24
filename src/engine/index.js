@@ -538,6 +538,72 @@ const FUNCTION_ROUTING = {
   getIntegrationStatus: 'wired',
   getIntegrationSyncLogs: 'wired',
   forceSyncIntegration: 'wired',
+
+  // Fix-B bulk coming-soon — HASEEB-399 D4 (2026-04-24).
+  //
+  // 19 engine entries across four batches that return the canonical
+  // `_notImplemented` envelope via `notImplementedResponse` instead of
+  // falling through to mockEngine. Stops silent mock data from shipping
+  // in LIVE mode for surfaces the backend doesn't support yet.
+  //
+  // Batches:
+  //   - B8 monthly-close Fix-B (6): runPreCloseValidations,
+  //     exportClosePackage, recalculateCloseChecks, overrideCloseCheck,
+  //     addCloseCheckNote, getCloseCheckNotes
+  //     Reason: backend_not_shipped (no routes on /api/monthly-close-
+  //     checklist for validations / export / recalc / override / notes).
+  //   - B10 audit-bridge Fix-B (3): listClarifications,
+  //     addClarificationMessage, resolveClarification
+  //     Reason: backend_not_shipped (no /api/audit-bridge/clarifications
+  //     surface today).
+  //   - B12 setup (5): getCurrencyConfig, updateCurrencyConfig,
+  //     getEngineConfiguration → backend_not_shipped;
+  //     getTaxConfiguration, updateTaxConfiguration →
+  //     shape_mismatch_requires_screen_rewrite (backend has
+  //     /api/tenant-tax-config via the four-levy module, but that
+  //     shape is four-levy-only; SetupScreen expects regime enum +
+  //     zakatRate/corporateTaxRate/pifssRate + filingFrequency +
+  //     exemptions[] — needs screen + backend reshape).
+  //   - B16 financial statements + aging residuals (5):
+  //     getAdjustingEntries, getLineNotes, exportStatement,
+  //     sendAgingReminder, scheduleVendorPayment
+  //     Reason: backend_not_shipped (no backend routes for
+  //     adjusting-entries list / line-notes / statement export /
+  //     email-service / AP payment scheduling today).
+  //
+  // All writes include `{ success: false, error, errorAr }` extras so
+  // consumer screens that branch on `result?.error` or
+  // `result?.success === false` light up the coming-soon toast without
+  // a try/catch rewrite. Reads degrade visibly: envelope is truthy but
+  // lacks the expected fields (e.g. `result?.csvText` on
+  // exportClosePackage) — the consumer renders its loading/empty
+  // branch, which is the honest "this surface is stubbed" state.
+  //
+  // Inventory corrections surfaced during backend verification (memo
+  // 2026-04-24): B13 profile surface (5 entries) is ACTUALLY Fix-A —
+  // backend exists at /api/user-profile/* via the team-admin module —
+  // deferred to HASEEB-400 standalone wire-up. B12 tax-config (2
+  // entries) has a backend route but incompatible shape; classified
+  // as shape_mismatch_requires_screen_rewrite.
+  runPreCloseValidations: 'wired',
+  exportClosePackage: 'wired',
+  recalculateCloseChecks: 'wired',
+  overrideCloseCheck: 'wired',
+  addCloseCheckNote: 'wired',
+  getCloseCheckNotes: 'wired',
+  listClarifications: 'wired',
+  addClarificationMessage: 'wired',
+  resolveClarification: 'wired',
+  getCurrencyConfig: 'wired',
+  updateCurrencyConfig: 'wired',
+  getEngineConfiguration: 'wired',
+  getTaxConfiguration: 'wired',
+  updateTaxConfiguration: 'wired',
+  getAdjustingEntries: 'wired',
+  getLineNotes: 'wired',
+  exportStatement: 'wired',
+  sendAgingReminder: 'wired',
+  scheduleVendorPayment: 'wired',
 };
 
 /**
@@ -1150,6 +1216,232 @@ const REAL_IMPLS = {
       message: 'Forcing an integration sync is coming soon.',
       messageAr: 'فرض مزامنة التكامل سيتوفر قريباً.',
       extras: { success: false, id: id || null },
+    }),
+
+  // ──────────────────────────────────────────────────────────────────
+  // Fix-B bulk coming-soon — HASEEB-399 D4 (2026-04-24).
+  //
+  // 19 returners across four batches. All use `notImplementedResponse`
+  // with bilingual EN/AR copy. Writes carry a `{ success: false,
+  // error, errorAr }` extras block so consumer screens that branch on
+  // `result?.error` or `result?.success === false` surface the
+  // coming-soon toast without a try/catch rewrite. Reads resolve to
+  // the envelope as-is; consumers that destructure expected fields
+  // (e.g. `result?.csvText` on exportClosePackage) hit the falsy
+  // branch and render their loading/empty state, which is the honest
+  // "this surface is stubbed" degradation.
+  //
+  // Reason codes follow `src/engine/not-implemented.js`:
+  //   - backend_not_shipped: no matching HTTP route exists.
+  //   - shape_mismatch_requires_screen_rewrite: route exists but the
+  //     contract is materially different; fix is a UX-level rewrite.
+  // ──────────────────────────────────────────────────────────────────
+
+  // B8 monthly-close Fix-B (6) — backend_not_shipped.
+  // /api/monthly-close-checklist exposes template + instance + status
+  // CRUD but no validations / export / recalc / override / note
+  // sub-routes today. MonthEndCloseScreen consumers handle falsy
+  // returns: exportClosePackage caller checks `result?.csvText` before
+  // blob-download; the others ignore return.
+  runPreCloseValidations: async (_period) =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'Pre-close validations are coming soon.',
+      messageAr: 'عمليات التحقق قبل الإقفال ستتوفر قريباً.',
+      extras: {
+        success: false,
+        error: 'Pre-close validations are coming soon.',
+        errorAr: 'عمليات التحقق قبل الإقفال ستتوفر قريباً.',
+      },
+    }),
+  exportClosePackage: async (_periodKey, _format = 'csv') =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'Exporting the close package is coming soon.',
+      messageAr: 'تصدير حزمة الإقفال سيتوفر قريباً.',
+      extras: {
+        success: false,
+        error: 'Exporting the close package is coming soon.',
+        errorAr: 'تصدير حزمة الإقفال سيتوفر قريباً.',
+      },
+    }),
+  recalculateCloseChecks: async (_periodKey) =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'Recalculating close checks is coming soon.',
+      messageAr: 'إعادة حساب فحوصات الإقفال ستتوفر قريباً.',
+      extras: {
+        success: false,
+        error: 'Recalculating close checks is coming soon.',
+        errorAr: 'إعادة حساب فحوصات الإقفال ستتوفر قريباً.',
+      },
+    }),
+  overrideCloseCheck: async (_periodKey, _checkId, _reason, _user) =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'Overriding close checks is coming soon.',
+      messageAr: 'تجاوز فحوصات الإقفال سيتوفر قريباً.',
+      extras: {
+        success: false,
+        error: 'Overriding close checks is coming soon.',
+        errorAr: 'تجاوز فحوصات الإقفال سيتوفر قريباً.',
+      },
+    }),
+  addCloseCheckNote: async (_periodKey, _checkId, _note, _user) =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'Adding close-check notes is coming soon.',
+      messageAr: 'إضافة ملاحظات فحص الإقفال ستتوفر قريباً.',
+      extras: {
+        success: false,
+        error: 'Adding close-check notes is coming soon.',
+        errorAr: 'إضافة ملاحظات فحص الإقفال ستتوفر قريباً.',
+      },
+    }),
+  getCloseCheckNotes: async (_periodKey, _checkId) =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'Close-check notes are coming soon.',
+      messageAr: 'ملاحظات فحص الإقفال ستتوفر قريباً.',
+    }),
+
+  // B10 audit-bridge clarifications Fix-B (3) — backend_not_shipped.
+  // No /api/audit-bridge/clarifications surface. AuditBridgeScreen's
+  // ClarificationsTab uses `clars || []` so a truthy envelope causes
+  // a visible degradation (tab renders no rows) — honest for LIVE.
+  listClarifications: async (_engagementId) =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'Audit clarifications are coming soon.',
+      messageAr: 'توضيحات التدقيق ستتوفر قريباً.',
+    }),
+  addClarificationMessage: async (_clarificationId, _message) =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'Sending a clarification message is coming soon.',
+      messageAr: 'إرسال رسالة توضيح سيتوفر قريباً.',
+      extras: {
+        success: false,
+        error: 'Sending a clarification message is coming soon.',
+        errorAr: 'إرسال رسالة توضيح سيتوفر قريباً.',
+      },
+    }),
+  resolveClarification: async (_clarificationId, _resolution, _user) =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'Resolving clarifications is coming soon.',
+      messageAr: 'حل التوضيحات سيتوفر قريباً.',
+      extras: {
+        success: false,
+        error: 'Resolving clarifications is coming soon.',
+        errorAr: 'حل التوضيحات سيتوفر قريباً.',
+      },
+    }),
+
+  // B12 setup (5 total — 3 backend_not_shipped + 2
+  // shape_mismatch_requires_screen_rewrite).
+  //
+  // getCurrencyConfig / updateCurrencyConfig / getEngineConfiguration —
+  // no backend routes today.
+  // getTaxConfiguration / updateTaxConfiguration — backend route exists
+  // at /api/tenant-tax-config via the four-levy module, but the shape
+  // is four-levy-only (zakat/CIT/NLST/PIFSS line items); SetupScreen's
+  // TaxConfigSection expects a regime enum + zakatRate /
+  // corporateTaxRate / pifssRate scalars + filingFrequency + an
+  // exemptions[] list. Requires a screen rewrite and a backend reshape
+  // tracked separately.
+  //
+  // Consumer pattern on SetupScreen: `getTaxConfiguration().then(setCfg)`
+  // then `if (!cfg) return <loading>`. A _notImplemented envelope is
+  // truthy, so cfg will be populated and the screen attempts to render
+  // fields that don't exist on the envelope (zakatRate etc.). This is
+  // the intended LIVE-mode degradation — visible breakage better than
+  // silent fake writes.
+  getCurrencyConfig: async () =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'Currency configuration is coming soon.',
+      messageAr: 'إعداد العملات سيتوفر قريباً.',
+    }),
+  updateCurrencyConfig: async (_config) =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'Updating currency configuration is coming soon.',
+      messageAr: 'تحديث إعداد العملات سيتوفر قريباً.',
+      extras: {
+        success: false,
+        error: 'Updating currency configuration is coming soon.',
+        errorAr: 'تحديث إعداد العملات سيتوفر قريباً.',
+      },
+    }),
+  getEngineConfiguration: async () =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'Engine configuration is coming soon.',
+      messageAr: 'إعداد المحرك سيتوفر قريباً.',
+    }),
+  getTaxConfiguration: async () =>
+    notImplementedResponse('shape_mismatch_requires_screen_rewrite', {
+      message: 'Tax configuration is coming soon.',
+      messageAr: 'إعداد الضرائب سيتوفر قريباً.',
+    }),
+  updateTaxConfiguration: async (_config) =>
+    notImplementedResponse('shape_mismatch_requires_screen_rewrite', {
+      message: 'Updating tax configuration is coming soon.',
+      messageAr: 'تحديث إعداد الضرائب سيتوفر قريباً.',
+      extras: {
+        success: false,
+        error: 'Updating tax configuration is coming soon.',
+        errorAr: 'تحديث إعداد الضرائب سيتوفر قريباً.',
+      },
+    }),
+
+  // B16 financial statements + aging residuals (5) — backend_not_shipped.
+  //
+  // - getAdjustingEntries / getLineNotes: FinancialStatementsScreen
+  //   consumers use `.then(setX)` then iterate the result. Envelope
+  //   will land in state; the subsequent `.map` over expected array
+  //   will break — that is the intended LIVE breakage.
+  // - exportStatement: caller destructures `meta.filename` and builds
+  //   a blob from `current?.sections`; envelope has no filename so
+  //   the download no-ops gracefully (falsy branch in exportCSV/PDF).
+  // - sendAgingReminder / scheduleVendorPayment: consumer modals
+  //   don't inspect return — write envelope's success:false surfaces
+  //   in a follow-up dispatch that adds the toast.
+  getAdjustingEntries: async (_period, _statementType) =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'Adjusting entries are coming soon.',
+      messageAr: 'قيود التسوية ستتوفر قريباً.',
+    }),
+  getLineNotes: async (_period) =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'Line notes are coming soon.',
+      messageAr: 'ملاحظات البنود ستتوفر قريباً.',
+    }),
+  exportStatement: async (_statementType, _period, _format) =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'Exporting financial statements is coming soon.',
+      messageAr: 'تصدير القوائم المالية سيتوفر قريباً.',
+      extras: {
+        success: false,
+        error: 'Exporting financial statements is coming soon.',
+        errorAr: 'تصدير القوائم المالية سيتوفر قريباً.',
+      },
+    }),
+  sendAgingReminder: async (_invoiceIds, _template, _body, _cc) =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'Sending aging reminders is coming soon.',
+      messageAr: 'إرسال تذكيرات الأعمار سيتوفر قريباً.',
+      extras: {
+        success: false,
+        error: 'Sending aging reminders is coming soon.',
+        errorAr: 'إرسال تذكيرات الأعمار سيتوفر قريباً.',
+      },
+    }),
+  scheduleVendorPayment: async (
+    _invoiceId,
+    _amount,
+    _date,
+    _method,
+    _fromAccount,
+    _notes
+  ) =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'Scheduling vendor payments is coming soon.',
+      messageAr: 'جدولة مدفوعات الموردين ستتوفر قريباً.',
+      extras: {
+        success: false,
+        error: 'Scheduling vendor payments is coming soon.',
+        errorAr: 'جدولة مدفوعات الموردين ستتوفر قريباً.',
+      },
     }),
 };
 

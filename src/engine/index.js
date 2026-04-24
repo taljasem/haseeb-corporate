@@ -105,6 +105,9 @@ import * as bankTransactionsApi from '../api/bank-transactions';
 import * as taskboxApi from '../api/taskbox';
 import * as teamApi from '../api/team';
 import * as profileApi from '../api/profile';
+import * as businessPulseApi from '../api/business-pulse';
+import * as monthlyClosePeriodApi from '../api/monthly-close-period';
+import * as juniorCompositesApi from '../api/junior-composites';
 import {
   getCategorizationRules as rulesGetCategorization,
   muteCategorizationRule as rulesMuteCategorization,
@@ -622,6 +625,93 @@ const FUNCTION_ROUTING = {
   exportStatement: 'wired',
   sendAgingReminder: 'wired',
   scheduleVendorPayment: 'wired',
+
+  // ──────────────────────────────────────────────────────────────────
+  // HASEEB-401 D6 (2026-04-24) — composites + month-end partial +
+  // audit-bridge coming-soon + junior composites.
+  //
+  // 22 entries across four batches:
+  //   - B5 cash-position composite (2 Fix-A compose via src/api/
+  //     business-pulse.js — getBusinessPulse composes from getIncome
+  //     Statement + listBankAccounts; getCashPosition composes from
+  //     listBankAccounts with KWD total + per-account compact shape).
+  //   - B7 month-end close partial (5 Fix-A + 3 Fix-B).
+  //       Fix-A compose via src/api/monthly-close-period.js (adapters
+  //       that translate the legacy period-string-keyed surface onto
+  //       the structured /api/monthly-close-checklist instance+items
+  //       API): getMonthEndCloseTasks, getCloseStatusDetail,
+  //       markCloseItemComplete, approveCloseAndSyncTask,
+  //       reopenPeriodClose.
+  //       Fix-B coming-soon: getCloseSummary (close module returns an
+  //       Aminah narrative payload, not a period-summary), plus
+  //       attachCloseCheckFile + getCloseCheckAttachments (attachments
+  //       backend has a closed entityType enum ['journal_entry',
+  //       'invoice', 'bill', 'payment'] — 'close-check' is not an
+  //       allowed entityType, so the UI's per-check attachment sub-
+  //       surface cannot wire today).
+  //   - B9 audit-bridge (8 Fix-B shape_mismatch_requires_screen_rewrite).
+  //     The AuditBridgeScreen models an Engagement (fiscalPeriod +
+  //     engagementType + auditorFirm + checks list); the backend ships
+  //     two materially different domains — audit-samples (auditor
+  //     evidence requests) and audit-chain (tamper-evident ledger
+  //     chain). Neither matches the Engagement shape. The fix is a
+  //     screen rewrite tracked as a separate dispatch; until then all
+  //     8 entries return the _notImplemented envelope.
+  //   - B15 junior composites (4 Fix-A compose via src/api/junior-
+  //     composites.js): getSaraWorkQueue (bank-tx count + taskbox
+  //     aggregates), getSaraActivityLog (reshape of getMyActivity feed),
+  //     getSaraAminahNotes (reshape of getAminahInsights feed),
+  //     getJuniorDomainStats (audit-log completions + taskbox pending).
+  //
+  // Inventory-correction notes surfaced during the D6 backend re-
+  // verification:
+  //   - The 3 B7 "clean Fix-A" entries from the HASEEB-400 handoff
+  //     (markCloseItemComplete, approveCloseAndSyncTask, reopenPeriod
+  //     Close) are NOT actually clean Fix-A — they all take `period`
+  //     strings / mock-UUID `itemId` values the screen carries, while
+  //     the backend speaks (fiscalYear, fiscalMonth) or instance UUIDs.
+  //     We ship them as Fix-A composed via monthly-close-period.js
+  //     which resolves the period → instance → UUID chain. This is a
+  //     recount vs the handoff: 2 compose + 3 adapter-wrap = 5 Fix-A
+  //     on B7 (plus 3 Fix-B for summary/attachments). Reported to the
+  //     Architect in the completion summary.
+  //   - getCashPositionSummary (mentioned as a "likely" B5 entry in
+  //     the dispatch brief) does NOT exist in mockEngine; the brief
+  //     was guessing. The real B5 entries are getBusinessPulse +
+  //     getCashPosition, per the inventory memo.
+  // ──────────────────────────────────────────────────────────────────
+
+  // B5 (2 Fix-A compose)
+  getBusinessPulse: 'wired',
+  getCashPosition: 'wired',
+
+  // B7 Fix-A compose via monthly-close-period adapter (5)
+  getMonthEndCloseTasks: 'wired',
+  getCloseStatusDetail: 'wired',
+  markCloseItemComplete: 'wired',
+  approveCloseAndSyncTask: 'wired',
+  reopenPeriodClose: 'wired',
+
+  // B7 Fix-B coming-soon (3)
+  getCloseSummary: 'wired',
+  attachCloseCheckFile: 'wired',
+  getCloseCheckAttachments: 'wired',
+
+  // B9 audit-bridge Fix-B shape_mismatch (8)
+  listAuditEngagements: 'wired',
+  getAuditEngagement: 'wired',
+  createAuditEngagement: 'wired',
+  createSnapshot: 'wired',
+  runAuditCheck: 'wired',
+  runAllAuditChecks: 'wired',
+  generateAuditPackage: 'wired',
+  getAuditChecks: 'wired',
+
+  // B15 junior composites (4 Fix-A compose)
+  getSaraWorkQueue: 'wired',
+  getSaraActivityLog: 'wired',
+  getSaraAminahNotes: 'wired',
+  getJuniorDomainStats: 'wired',
 };
 
 /**
@@ -1476,6 +1566,145 @@ const REAL_IMPLS = {
         errorAr: 'جدولة مدفوعات الموردين ستتوفر قريباً.',
       },
     }),
+
+  // ──────────────────────────────────────────────────────────────────
+  // HASEEB-401 D6 (2026-04-24) — composites + month-end partial +
+  // audit-bridge Fix-B + junior composites. See FUNCTION_ROUTING block
+  // above for the dispatch-level rationale + inventory-correction
+  // notes.
+  // ──────────────────────────────────────────────────────────────────
+
+  // B5 cash-position composite (Fix-A, client-side compose)
+  getBusinessPulse: businessPulseApi.getBusinessPulse,
+  getCashPosition: businessPulseApi.getCashPosition,
+
+  // B7 month-end close Fix-A compose (5)
+  getMonthEndCloseTasks: monthlyClosePeriodApi.getMonthEndCloseTasks,
+  getCloseStatusDetail: monthlyClosePeriodApi.getCloseStatusDetail,
+  markCloseItemComplete: monthlyClosePeriodApi.markCloseItemComplete,
+  approveCloseAndSyncTask: monthlyClosePeriodApi.approveCloseAndSyncTask,
+  reopenPeriodClose: monthlyClosePeriodApi.reopenPeriodClose,
+
+  // B7 month-end close Fix-B coming-soon (3)
+  // getCloseSummary: /api/close/monthly-insights exists but returns an
+  // Aminah-narrative payload keyed on revenue/expense/cash trends, NOT
+  // the period-summary shape the legacy mock produces ({period, status,
+  // closedAt, closedBy, checks[], forcedItems[], auditHash}). Shape
+  // mismatch at the consumer level — the export-close-package consumer
+  // reads `summary.checks.map(...)` which would crash against the
+  // narrative payload. Classified shape_mismatch_requires_screen_rewrite.
+  getCloseSummary: async (_periodKey) =>
+    notImplementedResponse('shape_mismatch_requires_screen_rewrite', {
+      message: 'Period-end close summary is coming soon.',
+      messageAr: 'ملخص إقفال الفترة سيتوفر قريباً.',
+    }),
+  // attachCloseCheckFile / getCloseCheckAttachments — backend attachment
+  // module exists (/api/attachments) but its entityType enum is closed
+  // to ['journal_entry', 'invoice', 'bill', 'payment']; 'close-check'
+  // is not an allowed entityType. Fix requires a backend schema change
+  // tracked as a separate dispatch; until then we surface coming-soon.
+  attachCloseCheckFile: async (_period, _checkId, _file, _user) =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'Attaching files to close checks is coming soon.',
+      messageAr: 'إرفاق ملفات بفحوصات الإقفال سيتوفر قريباً.',
+      extras: {
+        success: false,
+        error: 'Attaching files to close checks is coming soon.',
+        errorAr: 'إرفاق ملفات بفحوصات الإقفال سيتوفر قريباً.',
+      },
+    }),
+  getCloseCheckAttachments: async (_period, _checkId) =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'Close-check attachments are coming soon.',
+      messageAr: 'مرفقات فحص الإقفال ستتوفر قريباً.',
+    }),
+
+  // B9 audit-bridge Fix-B shape_mismatch (8). The screen models an
+  // Engagement (single auditor firm, quarter scope, live check runs);
+  // backend ships audit-samples (auditor evidence requests) and
+  // audit-chain (tamper-evident ledger chain). Neither matches.
+  listAuditEngagements: async () =>
+    notImplementedResponse('shape_mismatch_requires_screen_rewrite', {
+      message: 'Audit engagements are coming soon.',
+      messageAr: 'مهام التدقيق ستتوفر قريباً.',
+    }),
+  getAuditEngagement: async (_id) =>
+    notImplementedResponse('shape_mismatch_requires_screen_rewrite', {
+      message: 'Audit engagement details are coming soon.',
+      messageAr: 'تفاصيل مهمة التدقيق ستتوفر قريباً.',
+    }),
+  createAuditEngagement: async (_payload) =>
+    notImplementedResponse('shape_mismatch_requires_screen_rewrite', {
+      message: 'Creating audit engagements is coming soon.',
+      messageAr: 'إنشاء مهام التدقيق سيتوفر قريباً.',
+      extras: {
+        success: false,
+        error: 'Creating audit engagements is coming soon.',
+        errorAr: 'إنشاء مهام التدقيق سيتوفر قريباً.',
+      },
+    }),
+  createSnapshot: async (_engagementId) =>
+    notImplementedResponse('shape_mismatch_requires_screen_rewrite', {
+      message: 'Engagement snapshots are coming soon.',
+      messageAr: 'لقطات مهام التدقيق ستتوفر قريباً.',
+      extras: {
+        success: false,
+        error: 'Engagement snapshots are coming soon.',
+        errorAr: 'لقطات مهام التدقيق ستتوفر قريباً.',
+      },
+    }),
+  runAuditCheck: async (_engagementId, _checkId) =>
+    notImplementedResponse('shape_mismatch_requires_screen_rewrite', {
+      message: 'Running an audit check is coming soon.',
+      messageAr: 'تشغيل فحص التدقيق سيتوفر قريباً.',
+      extras: {
+        success: false,
+        error: 'Running an audit check is coming soon.',
+        errorAr: 'تشغيل فحص التدقيق سيتوفر قريباً.',
+      },
+    }),
+  runAllAuditChecks: async (_engagementId) =>
+    notImplementedResponse('shape_mismatch_requires_screen_rewrite', {
+      message: 'Running audit checks is coming soon.',
+      messageAr: 'تشغيل فحوصات التدقيق سيتوفر قريباً.',
+      extras: {
+        success: false,
+        error: 'Running audit checks is coming soon.',
+        errorAr: 'تشغيل فحوصات التدقيق سيتوفر قريباً.',
+      },
+    }),
+  generateAuditPackage: async (_engagementId) =>
+    notImplementedResponse('shape_mismatch_requires_screen_rewrite', {
+      message: 'Generating the audit package is coming soon.',
+      messageAr: 'إنشاء حزمة التدقيق سيتوفر قريباً.',
+      extras: {
+        success: false,
+        error: 'Generating the audit package is coming soon.',
+        errorAr: 'إنشاء حزمة التدقيق سيتوفر قريباً.',
+      },
+    }),
+  // getAuditChecks reads a per-check list the OwnerTodayScreen
+  // summarises as `audit.failing`. Neither audit-samples nor audit-chain
+  // exposes that shape. Coming-soon with a minimal `failing: 0` extras
+  // so the landing-screen attention card silently hides instead of
+  // rendering a crash when the envelope is awaited.
+  getAuditChecks: async () =>
+    notImplementedResponse('shape_mismatch_requires_screen_rewrite', {
+      message: 'Audit checks dashboard is coming soon.',
+      messageAr: 'لوحة فحوصات التدقيق ستتوفر قريباً.',
+      extras: {
+        total: 0,
+        passing: 0,
+        failing: 0,
+        checks: [],
+      },
+    }),
+
+  // B15 junior composites (4 Fix-A compose)
+  getSaraWorkQueue: juniorCompositesApi.getSaraWorkQueue,
+  getSaraActivityLog: juniorCompositesApi.getSaraActivityLog,
+  getSaraAminahNotes: juniorCompositesApi.getSaraAminahNotes,
+  getJuniorDomainStats: juniorCompositesApi.getJuniorDomainStats,
 };
 
 // One-shot warning state so the console isn't spammed.

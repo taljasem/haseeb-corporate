@@ -102,6 +102,8 @@ import * as bankMandatesApi from '../api/bankMandates';
 import * as pifssReconciliationApi from '../api/pifssReconciliation';
 import * as yearEndCloseApi from '../api/yearEndClose';
 import * as bankTransactionsApi from '../api/bank-transactions';
+import * as taskboxApi from '../api/taskbox';
+import * as teamApi from '../api/team';
 import {
   getCategorizationRules as rulesGetCategorization,
   muteCategorizationRule as rulesMuteCategorization,
@@ -500,6 +502,42 @@ const FUNCTION_ROUTING = {
   exportVarianceReport: 'wired',
   acceptSuggestedRule: 'wired',
   dismissSuggestedRule: 'wired',
+
+  // Taskbox + counters — HASEEB-398 B4 (2026-04-24). 1 live list endpoint
+  // (`/api/taskbox`) wraps 4 engine entries; three are client-side
+  // aggregates over the live list payload per architect Q3 on the
+  // 2026-04-24 inventory memo (per-count backend endpoints rejected).
+  // See `src/api/taskbox.js` header for the shape-adapter rationale.
+  getTaskbox: 'wired',
+  getOpenApprovalCount: 'wired',
+  getOpenTaskCount: 'wired',
+  getSaraTaskStats: 'wired',
+
+  // Team — HASEEB-398 B14 (2026-04-24). 2 Fix-A composed reads against
+  // existing live surfaces (`/api/team/members` + `/api/auth/members`
+  // for the roster; `/api/cfo/team-activity` for the per-member log)
+  // + 2 Fix-B coming-soon writes (no backend route for add/remove).
+  // See `src/api/team.js` header for the shape-adapter rationale and
+  // the list of defaulted fields (accessLevel, responsibilities, etc.).
+  getTeamMembersWithResponsibilities: 'wired',
+  getTeamActivityLog: 'wired',
+  addTeamMember: 'wired',
+  removeTeamMember: 'wired',
+
+  // Integrations (legacy triplet consolidation) — HASEEB-398 B11 path
+  // (b) per architect Q4 on the 2026-04-24 inventory memo. The legacy
+  // `getIntegrations` / `addIntegration` / `removeIntegration` names
+  // are DELETED from the public export surface (see exports block at
+  // file bottom); consumers migrate to the already-wired
+  // `listAdminIntegrations` / `addAdminIntegration` /
+  // `removeAdminIntegration`. Three sub-routes that the setup-screen
+  // integrations-status panel previously called (getIntegrationStatus,
+  // getIntegrationSyncLogs, forceSyncIntegration) are re-classified as
+  // Fix-B because the admin-integrations backend doesn't ship those
+  // sub-routes today — see INVENTORY CORRECTION note below.
+  getIntegrationStatus: 'wired',
+  getIntegrationSyncLogs: 'wired',
+  forceSyncIntegration: 'wired',
 };
 
 /**
@@ -1033,6 +1071,86 @@ const REAL_IMPLS = {
       extras: { success: true, suggestionId: suggestionId || null },
     });
   },
+
+  // Taskbox + counters — HASEEB-398 B4 (2026-04-24). 1 live endpoint
+  // wraps 4 engine entries; 3 derive client-side over a single cached
+  // list (800ms TTL) so Owner/CFO/Junior dashboards don't triple-fetch
+  // on first render.
+  getTaskbox: taskboxApi.getTaskbox,
+  getOpenApprovalCount: taskboxApi.getOpenApprovalCount,
+  getOpenTaskCount: taskboxApi.getOpenTaskCount,
+  getSaraTaskStats: taskboxApi.getSaraTaskStats,
+
+  // Team — HASEEB-398 B14 (2026-04-24).
+  // Fix-A:
+  //   - getTeamMembersWithResponsibilities → composed read over
+  //     /api/team/members + /api/auth/members. Defaulted fields
+  //     (accessLevel / responsibilities / isOnline) documented in
+  //     src/api/team.js. Non-OWNER callers fail-soft on the enrichment
+  //     step — the screen still renders with null lastActive.
+  //   - getTeamActivityLog → /api/cfo/team-activity. The backend feed
+  //     carries actorName/actorInitials but no actorUserId today, so
+  //     per-member filtering returns an empty list (honest "no
+  //     activity") rather than a cross-member blend.
+  // Fix-B:
+  //   - addTeamMember / removeTeamMember → _notImplemented envelope.
+  //     The envelope includes `{ success: false, error: <bilingual> }`
+  //     so TeamScreen's existing result?.error check surfaces the
+  //     coming-soon toast without a try/catch rewrite.
+  getTeamMembersWithResponsibilities: teamApi.getTeamMembersWithResponsibilities,
+  getTeamActivityLog: teamApi.getTeamActivityLog,
+  addTeamMember: teamApi.addTeamMember,
+  removeTeamMember: teamApi.removeTeamMember,
+
+  // Integrations status/sync sub-routes — HASEEB-398 B11 INVENTORY
+  // CORRECTION (2026-04-24). The 2026-04-24 inventory memo classified
+  // getIntegrationStatus / getIntegrationSyncLogs as Fix-A with
+  // "sub-route on same module — confirm shape"; verification against
+  // `src/modules/integrations/integrations.routes.ts` shows the
+  // backend exposes ONLY GET/POST/DELETE on the admin-integrations
+  // surface — no /:id/status, /:id/sync-logs, or /:id/force-sync
+  // endpoints exist. The three below re-classify to Fix-B
+  // coming-soon. A future backend dispatch (tracked as HASEEB-NNN)
+  // can ship monitoring sub-routes; until then SetupScreen's
+  // IntegrationsSection renders an empty list (no entries) in LIVE
+  // mode. That is the intended degradation — better than fabricating
+  // monitoring data for connections that may not exist on a live
+  // tenant.
+  // SetupScreen.IntegrationsSection iterates `items.map(...)` so the
+  // getIntegrationStatus + getIntegrationSyncLogs returners must
+  // resolve to an array (envelope-as-object would crash .map). The
+  // envelope's message is surfaced via _warnMockFallback-style
+  // console breadcrumb inside the async thunk so LIVE-mode operators
+  // still see the coming-soon reason. Array-empty is the honest
+  // degradation: "we have no monitoring data for this tenant".
+  getIntegrationStatus: async () => {
+    const env = notImplementedResponse('backend_not_shipped', {
+      message: 'Integration monitoring is coming soon.',
+      messageAr: 'مراقبة التكامل ستتوفر قريباً.',
+    });
+    // Breadcrumb for LIVE-mode operators so the honest-empty-list is
+    // traceable to backend gap, not screen-logic bug.
+    if (!useMocks) {
+      console.info('[engine] getIntegrationStatus() _notImplemented:', env.message);
+    }
+    return [];
+  },
+  getIntegrationSyncLogs: async () => {
+    const env = notImplementedResponse('backend_not_shipped', {
+      message: 'Integration sync logs are coming soon.',
+      messageAr: 'سجلات مزامنة التكامل ستتوفر قريباً.',
+    });
+    if (!useMocks) {
+      console.info('[engine] getIntegrationSyncLogs() _notImplemented:', env.message);
+    }
+    return [];
+  },
+  forceSyncIntegration: async (id) =>
+    notImplementedResponse('backend_not_shipped', {
+      message: 'Forcing an integration sync is coming soon.',
+      messageAr: 'فرض مزامنة التكامل سيتوفر قريباً.',
+      extras: { success: false, id: id || null },
+    }),
 };
 
 // One-shot warning state so the console isn't spammed.
@@ -6774,19 +6892,17 @@ export const exportBankTransactionsCSV = surface.exportBankTransactionsCSV;
 export const createRuleFromTransactions = surface.createRuleFromTransactions;
 
 // SettingsScreen — integrations sub-surface.
-// The three legacy mockEngine names (getIntegrations / addIntegration /
-// removeIntegration) are mock-fallback-routed for now; the LIVE
-// endpoint `/api/admin/integrations` is already wrapped under the
-// `listAdminIntegrations / addAdminIntegration / removeAdminIntegration`
-// names (Track B Dispatch 1). A future dispatch can consolidate onto
-// the admin-integrations path and drop these legacy names. For this
-// wave, we preserve the screen's call shape so the dev-mode render
-// exercises the full Settings surface against mock data while the
-// LIVE wiring (getNotificationPreferences / getActiveSessions / 2FA /
-// getMyActivity — already imported from engine) stays untouched.
-export const getIntegrations = surface.getIntegrations;
-export const addIntegration = surface.addIntegration;
-export const removeIntegration = surface.removeIntegration;
+// HASEEB-398 B11 (2026-04-24, path (b) per architect Q4):
+// The three legacy mockEngine names (`getIntegrations`,
+// `addIntegration`, `removeIntegration`) have been REMOVED from the
+// public export surface. SettingsScreen's dead-code IntegrationsSection
+// (never rendered — see file-level comment in SettingsScreen.jsx line
+// 19-29: "IntegrationsSection component remains in this file for
+// historical reference but is not rendered") has been deleted in the
+// same dispatch, so no live consumer remains. The AdministrationScreen
+// already consumes `listAdminIntegrations` / `addAdminIntegration` /
+// `removeAdminIntegration` from the wired Track B Dispatch 1 surface —
+// that is the canonical path going forward.
 
 // ManualJEScreen
 export const searchChartOfAccounts = surface.searchChartOfAccounts;
@@ -6823,14 +6939,23 @@ export const getLineNotes = surface.getLineNotes;
 export const exportStatement = surface.exportStatement;
 
 // TeamScreen — team-roster admin surface.
-// `getTeamMembersWithResponsibilities` is mock-only today; the closest
-// backend surfaces are `/api/team/members` (light roster, OWNER+ACCOUNTANT)
-// and `/api/auth/members` (richer, OWNER-only). Neither currently
-// includes the per-member responsibilities + KPIs the screen renders
-// (HASEEB-NNN follow-up). Mock-fallback preserves the dev-mode
-// fixture while the backend gap is tracked. addTeamMember /
-// removeTeamMember / getTeamActivityLog are similarly mock-only and
-// stay mock-fallback via the router.
+// HASEEB-398 B14 (2026-04-24): 2 Fix-A composed reads + 2 Fix-B
+// coming-soon writes. See FUNCTION_ROUTING + REAL_IMPLS blocks above
+// and src/api/team.js for the shape-adapter rationale.
+//   Fix-A (live-wired):
+//     - getTeamMembersWithResponsibilities → /api/team/members +
+//       /api/auth/members (OWNER-only enrichment, fail-soft).
+//       responsibilities default to [] — a follow-up dispatch can
+//       wire the routing-rules compose.
+//     - getTeamActivityLog → /api/cfo/team-activity. Backend feed
+//       carries no actorUserId so per-member filter returns the
+//       honest empty list (no activity match by id). A backend
+//       enhancement to add actorUserId will light up the filter.
+//   Fix-B (coming-soon returners):
+//     - addTeamMember / removeTeamMember → _notImplemented envelope
+//       with bilingual EN/AR copy. Envelope includes
+//       `{ success: false, error: <msg> }` so TeamScreen's existing
+//       `result?.error` branch surfaces the coming-soon toast.
 export const getTeamMembersWithResponsibilities =
   surface.getTeamMembersWithResponsibilities;
 export const addTeamMember = surface.addTeamMember;
@@ -6902,7 +7027,16 @@ export const getUserNotes = surface.getUserNotes;
 export const updateUserNotes = surface.updateUserNotes;
 
 // Setup (residual config/integration helpers that SetupScreen still
-// imports — all mock-fallback; no backend wrappers yet)
+// imports — all mock-fallback; no backend wrappers yet).
+// HASEEB-398 B11 (2026-04-24): getIntegrationStatus /
+// getIntegrationSyncLogs / forceSyncIntegration are now `wired` to
+// Fix-B coming-soon returners (see REAL_IMPLS). The inventory memo
+// classified them as Fix-A but backend verification showed the
+// admin-integrations module exposes ONLY GET/POST/DELETE — no
+// /:id/status, /:id/sync-logs, or /:id/force-sync sub-routes. Honest
+// empty-list degradation in LIVE mode; SetupScreen's IntegrationsSection
+// renders an empty panel. A future backend dispatch (tracked as
+// HASEEB-NNN) can ship monitoring sub-routes.
 export const getFiscalYearConfig = surface.getFiscalYearConfig;
 export const getTaxConfiguration = surface.getTaxConfiguration;
 export const updateTaxConfiguration = surface.updateTaxConfiguration;
@@ -6915,8 +7049,11 @@ export const getIntegrationSyncLogs = surface.getIntegrationSyncLogs;
 export const getEngineConfiguration = surface.getEngineConfiguration;
 
 // Dispatcher screens (CFOView, OwnerView, JuniorView). Taskbox and
-// approval counters are mock-only today (no backend endpoint); mock-
-// fallback is the correct LIVE-mode behavior.
+// approval counters are LIVE-wired as of HASEEB-398 B4 (2026-04-24) —
+// see FUNCTION_ROUTING + REAL_IMPLS blocks above and
+// src/api/taskbox.js. All three derive client-side over a single
+// cached GET /api/taskbox call so the Owner/CFO/Junior landing
+// screens don't triple-fetch on first render.
 export const getOpenTaskCount = surface.getOpenTaskCount;
 export const getSaraTaskStats = surface.getSaraTaskStats;
 // getOpenApprovalCount was already exported at the top of this block.

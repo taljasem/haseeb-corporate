@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  User, Palette, Globe, Bell, Shield, Plug, ClipboardList,
-  Check, AlertTriangle, LogOut, Monitor, Smartphone, Tablet,
+  User, Palette, Globe, Bell, Shield, ClipboardList,
+  LogOut, Monitor, Smartphone, Tablet,
 } from "lucide-react";
 import LtrText from "../../components/shared/LtrText";
 import EmptyState from "../../components/shared/EmptyState";
@@ -16,17 +16,17 @@ import { formatDate } from "../../utils/format";
 // and personal activity are now live against corporate-api. Profile comes
 // from GET /api/auth/me adapted in src/api/settings.js. Integrations are
 // owned by the Administration surface (moved there in the three-surface
-// restructure) and no longer appear on this screen — the legacy
-// IntegrationsSection component remains in this file for historical
-// reference but is not rendered.
-// HASEEB-278 (2026-04-22): integrations sub-surface merged into the
-// primary engine import. The integrations triplet (getIntegrations /
-// addIntegration / removeIntegration) remains mock-fallback-routed
-// until a future dispatch consolidates onto the existing
-// /api/admin/integrations wrappers (listAdminIntegrations /
-// addAdminIntegration / removeAdminIntegration). This closes the
-// direct mockEngine import on this file — all of Settings's data
-// reads now flow through the engine router.
+// restructure) and no longer appear on this screen.
+// HASEEB-398 B11 (2026-04-24, path (b) per architect Q4): the legacy
+// IntegrationsSection component (dead code — never rendered since the
+// three-surface restructure) and the three engine imports it consumed
+// (getIntegrations / addIntegration / removeIntegration) have been
+// removed. AdministrationScreen.jsx is the sole consumer of the
+// integrations surface going forward, via the wired
+// listAdminIntegrations / addAdminIntegration / removeAdminIntegration
+// (Track B Dispatch 1, /api/admin/integrations). The dead
+// ConfigureIntegrationModal + AddIntegrationModal imports are also
+// dropped.
 import {
   getUserProfile,
   getNotificationPreferences,
@@ -37,16 +37,11 @@ import {
   getTwoFactorStatus,
   disableTwoFactor,
   getMyActivity,
-  getIntegrations,
-  removeIntegration,
-  addIntegration,
 } from "../../engine";
 import { useAuth } from "../../contexts/AuthContext";
 import ChangePasswordModal from "../../components/settings/ChangePasswordModal";
 import EnableTwoFactorModal from "../../components/settings/EnableTwoFactorModal";
 import DisableTwoFactorModal from "../../components/settings/DisableTwoFactorModal";
-import ConfigureIntegrationModal from "../../components/settings/ConfigureIntegrationModal";
-import AddIntegrationModal from "../../components/settings/AddIntegrationModal";
 import { normalizeRole, roleLabel } from "../../utils/role";
 
 // HASEEB-155: Senior shares the CFO accent (midsize role model — Senior
@@ -693,87 +688,12 @@ function SessionRow({ s, onSignOut }) {
   );
 }
 
-function IntegrationsSection() {
-  const { t } = useTranslation("settings");
-  const [items, setItems] = useState(null);
-  const [configuring, setConfiguring] = useState(null);
-  const [addOpen, setAddOpen] = useState(false);
-
-  const reload = () => { getIntegrations().then(setItems); };
-  useEffect(() => { reload(); }, []);
-
-  return (
-    <>
-      <Card title={t("integrations.title")} description={t("integrations.description")}>
-        {!items ? (
-          <div style={{ color: "var(--text-tertiary)", fontSize: 12 }}>{t("loading")}</div>
-        ) : items.length === 0 ? (
-          <EmptyState icon={Plug} title={t("empty_integrations")} description="" />
-        ) : (
-          items.map((i) => <IntegrationRow key={i.id} i={i} onConfigure={() => setConfiguring(i)} onDisconnect={async () => { await removeIntegration(i.id); reload(); }} />)
-        )}
-        <div style={{ marginTop: 16 }}>
-          <button onClick={() => setAddOpen(true)} style={btnPrimary(false)}>
-            {t("integrations.add_integration")}
-          </button>
-        </div>
-      </Card>
-      <ConfigureIntegrationModal
-        open={!!configuring}
-        integration={configuring}
-        onClose={() => setConfiguring(null)}
-        onSaved={reload}
-      />
-      <AddIntegrationModal
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        onAdd={async (id) => { await addIntegration(id); reload(); }}
-      />
-    </>
-  );
-}
-
-function IntegrationRow({ i, onConfigure, onDisconnect }) {
-  const { t } = useTranslation("settings");
-  const statusColor = {
-    connected:    "var(--accent-primary)",
-    disconnected: "var(--text-tertiary)",
-    error:        "var(--semantic-danger)",
-  }[i.status];
-  const statusLabel = {
-    connected:    t("integrations.status_connected"),
-    disconnected: t("integrations.status_disconnected"),
-    error:        t("integrations.status_error"),
-  }[i.status];
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 0", borderBottom: "1px solid var(--border-subtle)" }}>
-      <div style={{ width: 32, height: 32, borderRadius: 8, background: "var(--bg-surface-sunken)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Plug size={14} color="var(--text-tertiary)" />
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, color: "var(--text-primary)", fontWeight: 500 }}>{i.name}</div>
-        <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2, display: "flex", gap: 8 }}>
-          <span style={{ color: statusColor, fontWeight: 600 }}>
-            {i.status === "error" ? <AlertTriangle size={10} style={{ verticalAlign: "middle", marginInlineEnd: 3 }} /> : i.status === "connected" ? <Check size={10} style={{ verticalAlign: "middle", marginInlineEnd: 3 }} /> : null}
-            {statusLabel}
-          </span>
-          <span>·</span>
-          <span>{i.category}</span>
-          <span>·</span>
-          <span>{i.lastSync ? t("integrations.last_sync", { time: formatRelativeTime(i.lastSync) }) : t("integrations.never_synced")}</span>
-        </div>
-      </div>
-      {i.status === "connected" ? (
-        <>
-          <button onClick={onConfigure} style={btnSecondary}>{t("integrations.configure")}</button>
-          <button onClick={onDisconnect} style={btnDanger}>{t("integrations.disconnect")}</button>
-        </>
-      ) : (
-        <button onClick={onConfigure} style={btnPrimary(false)}>{t("integrations.connect")}</button>
-      )}
-    </div>
-  );
-}
+// HASEEB-398 B11 (2026-04-24): `IntegrationsSection` + `IntegrationRow`
+// helper components were dead code since the three-surface restructure
+// (integrations moved to AdministrationScreen). Deleted in this
+// dispatch along with the three legacy engine imports they consumed
+// (getIntegrations / addIntegration / removeIntegration) — see
+// imports block at top of file.
 
 function AuditLogSection() {
   const { t } = useTranslation("settings");

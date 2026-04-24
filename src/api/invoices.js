@@ -215,3 +215,75 @@ export async function scheduleInvoicePaymentPlan(invoiceId, { installments } = {
   return unwrap(response);
 }
 
+/**
+ * POST /api/invoices/:id/email — HASEEB-420 (2026-04-24, FN-063).
+ *
+ * Emails a posted invoice to the customer and appends an InvoiceSendLog
+ * row. Separate from POST /:id/send (the GL-posting path that transitions
+ * DRAFT → SENT with a revenue JE) — this endpoint does NOT post a JE.
+ *
+ * Backend schema (emailInvoiceSchema, .strict):
+ *   {
+ *     recipientEmail?: string (email),        // defaults to customer.email server-side
+ *     cc?: string[] (email, max 5),
+ *     subject?: string (max 300),
+ *     message?: string (max 2000),
+ *     language?: 'en' | 'ar' | 'bilingual',   // default 'bilingual'
+ *   }
+ *
+ * Role gate: OWNER, ACCOUNTANT. 201 on success → returns the created
+ * InvoiceSendLog row.
+ *
+ * `cc` accepts either an array of emails or a single string (splits on
+ * comma+whitespace — common UI pattern where the user types a free-form
+ * "a@x, b@y" field). Empty-string / null / undefined fields are stripped
+ * from the body so `.strict()` does not reject them.
+ *
+ * @param {string} invoiceId
+ * @param {{recipientEmail?: string, cc?: string|string[], subject?: string,
+ *          message?: string, language?: 'en'|'ar'|'bilingual'}} payload
+ * @returns {Promise<object>} InvoiceSendLog row (id, recipientEmail,
+ *          cc[], subject, language, sentAt, status, …).
+ */
+export async function emailInvoice(invoiceId, payload = {}) {
+  if (!invoiceId) throw new Error('emailInvoice: invoiceId is required');
+  const body = {};
+  if (payload.recipientEmail) body.recipientEmail = payload.recipientEmail;
+  if (payload.cc !== undefined && payload.cc !== null && payload.cc !== '') {
+    const ccList = Array.isArray(payload.cc)
+      ? payload.cc
+      : String(payload.cc)
+          .split(/[,\s]+/)
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0);
+    if (ccList.length > 0) body.cc = ccList;
+  }
+  if (payload.subject) body.subject = payload.subject;
+  if (payload.message) body.message = payload.message;
+  if (payload.language) body.language = payload.language;
+  const response = await client.post(
+    `/api/invoices/${encodeURIComponent(invoiceId)}/email`,
+    body,
+  );
+  return unwrap(response);
+}
+
+/**
+ * GET /api/invoices/:id/send-logs — HASEEB-420 (2026-04-24, FN-063).
+ *
+ * Returns all send-log rows for an invoice, descending by sentAt. Read-
+ * only; no role gate beyond authentication (same posture as invoice
+ * list / detail).
+ *
+ * @param {string} invoiceId
+ * @returns {Promise<Array<object>>} Send-log rows (may be empty array).
+ */
+export async function getInvoiceSendLogs(invoiceId) {
+  if (!invoiceId) throw new Error('getInvoiceSendLogs: invoiceId is required');
+  const response = await client.get(
+    `/api/invoices/${encodeURIComponent(invoiceId)}/send-logs`,
+  );
+  const rows = unwrap(response);
+  return Array.isArray(rows) ? rows : [];
+}
+

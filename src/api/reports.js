@@ -305,3 +305,131 @@ export async function getDisclosureNotes(period) {
   const mock = await import('../engine/mockEngine');
   return mock.getDisclosureNotes(period);
 }
+
+// ──────────────────────────────────────────────────────────────────
+// General Ledger — HASEEB-424 (2026-04-24, FN-188)
+// ──────────────────────────────────────────────────────────────────
+//
+// GET /api/reports/general-ledger?from=&to=&format=json|xlsx
+//                                 &accountIds=csv&language=en|ar|bilingual
+//
+// Role-gated: OWNER | ACCOUNTANT | VIEWER | AUDITOR. POSTED-only per
+// playbook RULE_10_3_1 (no `includeDrafts` opt-in; report excludes
+// DRAFT entries absolutely).
+//
+// Two entry points:
+//   - `getGeneralLedger({ from, to, accountIds?, language? })`
+//       Returns the serialized GL payload (JSON). Decimal monetary
+//       fields are narrowed to strings at the wire boundary per
+//       HASEEB-019 / HASEEB-024 — callers MUST NOT parseFloat.
+//   - `exportGeneralLedger({ from, to, accountIds?, language? })`
+//       Returns `{ blob: Blob, filename: string }` for XLSX download.
+//       Uses axios `responseType: 'blob'` so the binary body is
+//       surfaced directly (backend returns the XLSX bytes, not a
+//       JSON-wrapped base64 envelope).
+//
+// The engine dispatcher wires both to FUNCTION_ROUTING + buildLiveSurface.
+// MOCK mode (buildMockExtras) returns a minimal shape so screens do not
+// crash when there is no live backend.
+
+/**
+ * Comma-join an array of ids into the backend's accountIds query format,
+ * filtering empties. Exported for the engine dispatcher + tests.
+ *
+ * @param {string[]|string|null|undefined} ids
+ * @returns {string|undefined} csv string or undefined when empty.
+ */
+export function joinAccountIds(ids) {
+  if (!ids) return undefined;
+  if (typeof ids === 'string') {
+    const trimmed = ids.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+  if (!Array.isArray(ids)) return undefined;
+  const filtered = ids
+    .map((id) => (typeof id === 'string' ? id.trim() : ''))
+    .filter((id) => id.length > 0);
+  return filtered.length > 0 ? filtered.join(',') : undefined;
+}
+
+/**
+ * GET /api/reports/general-ledger?format=json
+ *
+ * @param {{from: string, to: string, accountIds?: string[]|string,
+ *          language?: 'en'|'ar'|'bilingual'}} opts
+ * @returns {Promise<object>} Serialized GL payload (rows, totals, etc.).
+ */
+export async function getGeneralLedger(opts = {}) {
+  const { from, to, accountIds, language } = opts;
+  if (!from || !to) {
+    throw new Error('getGeneralLedger: from and to are required (YYYY-MM-DD)');
+  }
+  const params = { from, to, format: 'json' };
+  const idsParam = joinAccountIds(accountIds);
+  if (idsParam) params.accountIds = idsParam;
+  if (language) params.language = language;
+  const r = await client.get('/api/reports/general-ledger', { params });
+  return unwrap(r);
+}
+
+/**
+ * Parse a Content-Disposition header for the filename. Handles the
+ * three common shapes: RFC 5987 `filename*=`, quoted `filename="…"`,
+ * and plain `filename=…`.
+ *
+ * @param {string|null|undefined} header
+ * @returns {string|null}
+ */
+function parseContentDispositionFilename(header) {
+  if (!header) return null;
+  const ext = /filename\*\s*=\s*[^']*'[^']*'([^;]+)/i.exec(header);
+  if (ext && ext[1]) {
+    try {
+      return decodeURIComponent(ext[1].trim());
+    } catch {
+      // fall through
+    }
+  }
+  const quoted = /filename\s*=\s*"([^"]+)"/i.exec(header);
+  if (quoted && quoted[1]) return quoted[1];
+  const plain = /filename\s*=\s*([^;]+)/i.exec(header);
+  if (plain && plain[1]) return plain[1].trim();
+  return null;
+}
+
+/**
+ * GET /api/reports/general-ledger?format=xlsx
+ *
+ * Returns the raw Blob + a server-suggested filename (from
+ * Content-Disposition). The caller is responsible for triggering the
+ * browser download — see `triggerBrowserDownload` in
+ * `src/api/financialStatementExports.js` for the anchor-click helper.
+ *
+ * Uses axios `responseType: 'blob'` so the binary body is surfaced
+ * directly. Backend emits the XLSX bytes (not a JSON-wrapped base64
+ * envelope) for this endpoint — different contract than
+ * `/api/banking/accounts/:id/export`, which DOES base64-wrap.
+ *
+ * @param {{from: string, to: string, accountIds?: string[]|string,
+ *          language?: 'en'|'ar'|'bilingual'}} opts
+ * @returns {Promise<{blob: Blob, filename: string}>}
+ */
+export async function exportGeneralLedger(opts = {}) {
+  const { from, to, accountIds, language } = opts;
+  if (!from || !to) {
+    throw new Error('exportGeneralLedger: from and to are required (YYYY-MM-DD)');
+  }
+  const params = { from, to, format: 'xlsx' };
+  const idsParam = joinAccountIds(accountIds);
+  if (idsParam) params.accountIds = idsParam;
+  if (language) params.language = language;
+  const response = await client.get('/api/reports/general-ledger', {
+    params,
+    responseType: 'blob',
+  });
+  const blob = response.data;
+  const disposition = response.headers?.['content-disposition'] || '';
+  const serverFilename = parseContentDispositionFilename(disposition);
+  const fallback = `general-ledger_${from}_${to}.xlsx`;
+  return { blob, filename: serverFilename || fallback };
+}

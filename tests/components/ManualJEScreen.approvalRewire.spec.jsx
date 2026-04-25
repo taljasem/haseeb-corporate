@@ -10,9 +10,19 @@
  *      postJournalEntry (engine wrapper for /approvals/:id/approve).
  *   3. SoD self-approval: when the current user matches the proposer,
  *      the Post button is disabled with the bilingual SoD message.
- *   4. New blank draft path: Save+Post calls createJournalEntry with
- *      status: "POSTED" (atomic create+post — unchanged from prior
- *      behaviour, but verified against the rewired engine surface).
+ *   4. New blank draft path (HASEEB-504, 2026-04-25 — REVISED): Save+
+ *      Post calls createJournalEntry with status: "DRAFT" (NOT POSTED).
+ *      The HASEEB-420 backend gateway guard rejects direct status:POSTED
+ *      for any source other than MANUAL_MIGRATION, so the prior
+ *      "atomic create+post with status:POSTED" assertion was encoding
+ *      a broken-server-side behaviour. New flow:
+ *        Step 1: createJournalEntry({ ...payload, status: "DRAFT" })
+ *        Step 2: if backend routing didn't auto-post (i.e. created
+ *                came back !== POSTED), call postJournalEntry(id) to
+ *                hit /approvals/:id/approve.
+ *      Per HASEEB-490 governance ("tests are verification, not spec"):
+ *      this test now asserts the playbook-correct shape, not the prior
+ *      defect-as-spec.
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -247,7 +257,27 @@ describe('HASEEB-482 — ManualJEScreen Post button rewire', () => {
     expect(postJournalEntrySpy).not.toHaveBeenCalled();
   });
 
-  it('new blank draft: Save+Post calls createJournalEntry with status POSTED', async () => {
+  it('new blank draft: Save+Post creates as DRAFT then approves (HASEEB-504 two-step)', async () => {
+    // HASEEB-504 (2026-04-25) — REVISED. Per HASEEB-420 backend gateway
+    // guard, direct `status: POSTED` is forbidden for source=MANUAL.
+    // The screen now always sends `status: "DRAFT"` and (when the user
+    // hit Post) calls postJournalEntry(id) — the engine wrapper for
+    // /api/journal-entries/approvals/:id/approve.
+    //
+    // Default-mock for createJournalEntry returns `{ status: "DRAFT" }`
+    // so the screen's auto-post-skip branch (created.status === POSTED)
+    // does NOT fire and postJournalEntry is invoked.
+    createJournalEntrySpy.mockResolvedValue({
+      id: 'JE-NEW-1',
+      entryNumber: 'JE-NEW-1',
+      status: 'DRAFT',
+    });
+    postJournalEntrySpy.mockResolvedValue({
+      id: 'JE-NEW-1',
+      entryNumber: 'JE-NEW-1',
+      status: 'POSTED',
+    });
+
     renderWithAuth('user_other_999');
 
     const newBlankButtons = await screen.findAllByText(/Blank entry/i);
@@ -275,10 +305,56 @@ describe('HASEEB-482 — ManualJEScreen Post button rewire', () => {
       expect(createJournalEntrySpy).toHaveBeenCalled();
     });
     const payload = createJournalEntrySpy.mock.calls[0][0];
-    // Atomic create+post — status POSTED. The backend approvals
-    // routing now runs at create time so this single call covers both
-    // tier resolution + posting.
-    expect(payload.status).toBe('POSTED');
+    // Step 1: must create as DRAFT, never POSTED. The backend
+    // gateway guard (HASEEB-420) rejects direct POSTED creation.
+    expect(payload.status).toBe('DRAFT');
+
+    // Step 2: must call postJournalEntry to promote DRAFT → POSTED via
+    // the approval engine (since the mock returned DRAFT, not POSTED).
+    await waitFor(() => {
+      expect(postJournalEntrySpy).toHaveBeenCalledWith('JE-NEW-1');
+    });
+  });
+
+  it('new blank draft: Save+Post skips approve call when backend auto-posted (TIER_AUTO)', async () => {
+    // HASEEB-504 (2026-04-25) — when sub-ceiling MANUAL routes to
+    // TIER_AUTO inside `journal-entry.service.ts:create()`, the server
+    // returns the row already at status: POSTED. The screen then
+    // skips the approve call (no point promoting an already-POSTED
+    // entry; would 400 INVALID_APPROVAL_STATE).
+    createJournalEntrySpy.mockResolvedValue({
+      id: 'JE-NEW-2',
+      entryNumber: 'JE-NEW-2',
+      status: 'POSTED',
+    });
+
+    renderWithAuth('user_other_999');
+
+    const newBlankButtons = await screen.findAllByText(/Blank entry/i);
+    fireEvent.click(newBlankButtons[0]);
+
+    const accountInputs = await screen.findAllByPlaceholderText(/account/i);
+    fireEvent.change(accountInputs[0], { target: { value: '6200' } });
+    fireEvent.change(accountInputs[1], { target: { value: '1120' } });
+
+    const numericInputs = screen
+      .getAllByRole('spinbutton')
+      .filter((el) => el.tagName === 'INPUT');
+    if (numericInputs.length >= 4) {
+      fireEvent.change(numericInputs[0], { target: { value: '500' } });
+      fireEvent.change(numericInputs[3], { target: { value: '500' } });
+    }
+
+    const postBtn = await screen.findByText(/Post Entry/i);
+    fireEvent.click(postBtn);
+
+    await waitFor(() => {
+      expect(createJournalEntrySpy).toHaveBeenCalled();
+    });
+    const payload = createJournalEntrySpy.mock.calls[0][0];
+    expect(payload.status).toBe('DRAFT');
+    // postJournalEntry MUST NOT fire — the row is already POSTED.
+    expect(postJournalEntrySpy).not.toHaveBeenCalled();
   });
 
   it('Arabic locale: SoD warning renders in Arabic for self-proposed entries', async () => {

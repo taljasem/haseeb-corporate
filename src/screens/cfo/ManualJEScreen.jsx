@@ -112,9 +112,14 @@ function blankDraft() {
     date: new Date().toISOString(),
     reference: "",
     description: "",
+    // HASEEB-504 (2026-04-25) — bilingual description support (AC-14).
+    // The backend stores `description_ar` on every JournalEntry header
+    // and every line (HASEEB-326). Optional — empty string persists as
+    // NULL via the API serializer.
+    descriptionAr: "",
     lines: [
-      { id: "L1", accountCode: "", accountName: "", debit: 0, credit: 0, memo: "" },
-      { id: "L2", accountCode: "", accountName: "", debit: 0, credit: 0, memo: "" },
+      { id: "L1", accountCode: "", accountName: "", debit: 0, credit: 0, memo: "", memoAr: "" },
+      { id: "L2", accountCode: "", accountName: "", debit: 0, credit: 0, memo: "", memoAr: "" },
     ],
     createdAt: new Date().toISOString(),
   };
@@ -138,6 +143,11 @@ function normaliseInitialJE(je) {
         debit: Number(l.debit || 0),
         credit: Number(l.credit || 0),
         memo: l.memo || l.description || l.label || "",
+        // HASEEB-504 (2026-04-25) — Arabic per-line memo. Maps from
+        // backend `description_ar` (HASEEB-326) to the `memoAr` UI
+        // field; legacy entries without this column round-trip as
+        // empty string.
+        memoAr: l.memoAr || l.descriptionAr || l.description_ar || "",
       }))
     : blankDraft().lines;
   return {
@@ -147,6 +157,9 @@ function normaliseInitialJE(je) {
     date: je.date || new Date().toISOString(),
     reference: je.reference || "",
     description: je.description || "",
+    // HASEEB-504 (2026-04-25) — Arabic header description, mirrors the
+    // backend `description_ar` column on the JournalEntry header.
+    descriptionAr: je.descriptionAr || je.description_ar || "",
     lines,
     createdAt: je.createdAt || new Date().toISOString(),
     reversedBy: je.reversedBy,
@@ -646,6 +659,12 @@ export default function ManualJEScreen({ onOpenAminah }) {
               const payload = {
                 date: draft.date,
                 description: draft.description,
+                // HASEEB-504 (2026-04-25) — bilingual narrative pass-through.
+                // The backend serializer maps `descriptionAr` → the
+                // `description_ar` column on the header and per-line
+                // (HASEEB-326). Empty string is sent as undefined so the
+                // column persists as NULL.
+                descriptionAr: draft.descriptionAr || undefined,
                 reference: draft.reference || undefined,
                 currency: "KWD",
                 source: draft.source || "MANUAL",
@@ -656,16 +675,47 @@ export default function ManualJEScreen({ onOpenAminah }) {
                     debit: Number(l.debit) || 0,
                     credit: Number(l.credit) || 0,
                     description: l.memo || "",
+                    descriptionAr: l.memoAr || undefined,
                   })),
               };
 
               if (selected?.kind === "new") {
-                // New path: create directly with the target status.
+                // HASEEB-504 (2026-04-25) — two-step Save+Post path.
+                //
+                // Step 1: ALWAYS create as DRAFT. The HASEEB-420 backend
+                // gateway guard rejects direct `status: POSTED` for any
+                // source other than MANUAL_MIGRATION, so the prior
+                // `status: post ? "POSTED" : "DRAFT"` shape was failing
+                // server-side for Save+Post. Sending `status: "DRAFT"`
+                // (or omitting it) is the only client-side shape the
+                // gateway accepts.
+                //
+                // Step 2: if `post` is true AND the routing engine did
+                // not already auto-post the entry (TIER_AUTO sub-ceiling
+                // MANUAL routes through to POSTED in `journal-entry.
+                // service.ts:create()`), call the approval endpoint
+                // (POST /api/journal-entries/approvals/:id/approve) via
+                // the `postJournalEntry` helper. Defense-in-depth: SoD
+                // is enforced symmetrically by the approval engine —
+                // proposer ≠ approver, raised as 403 SELF_APPROVAL_
+                // FORBIDDEN if the same user tries to approve their
+                // own draft. The pre-Post SoD gate (line ~1063 below)
+                // hides the Post button entirely for the proposer, so
+                // this branch is reachable only when SoD is satisfied.
                 const created = await createJournalEntry({
                   ...payload,
-                  status: post ? "POSTED" : "DRAFT",
+                  status: "DRAFT",
                 });
                 const createdId = created?.id || created?.entryNumber;
+
+                // If the routing engine auto-posted (TIER_AUTO), the
+                // server returns `status: "POSTED"` already — skip the
+                // approve call. Otherwise call the approve endpoint.
+                let finalEntry = created;
+                if (post && created?.status !== "POSTED" && createdId) {
+                  finalEntry = await postJournalEntry(createdId);
+                }
+
                 setNewDraft(null);
                 setActiveTab(post ? "recent" : "drafts");
                 if (createdId) {
@@ -676,7 +726,9 @@ export default function ManualJEScreen({ onOpenAminah }) {
                 refresh();
                 showToast(
                   post
-                    ? t("toast.posted", { id: created?.entryNumber || createdId || "" })
+                    ? t("toast.posted", {
+                        id: finalEntry?.entryNumber || created?.entryNumber || createdId || "",
+                      })
                     : t("toast.draft_saved", { defaultValue: "Draft saved" })
                 );
                 return;
@@ -1261,6 +1313,20 @@ function ManualJEComposer({ je, onDelete, onPost, onReverse, onSchedule, onPostN
               onChange={(e) => updateField("description", e.target.value)}
               style={inputStyle(readOnly)} />
           </Field>
+          {/*
+            HASEEB-504 (2026-04-25) — Arabic header description (AC-14).
+            `dir="rtl"` so Arabic text renders right-to-left even on the
+            English UI. `lang="ar"` lets screen readers / spell-check
+            switch dictionaries. Optional field; empty value persists as
+            NULL via the API serializer.
+          */}
+          <Field label={t("fields.description_ar")}>
+            <input type="text" dir="rtl" lang="ar" disabled={readOnly}
+              value={draft.descriptionAr || ""}
+              onChange={(e) => updateField("descriptionAr", e.target.value)}
+              placeholder="الوصف بالعربية"
+              style={inputStyle(readOnly)} />
+          </Field>
           <Field label={t("fields.source")}>
             {/*
               HASEEB-466 — option values match the backend EntrySource
@@ -1294,11 +1360,17 @@ function ManualJEComposer({ je, onDelete, onPost, onReverse, onSchedule, onPostN
 
         {/* Lines */}
         <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 8, overflow: "hidden" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 130px 130px 1fr 32px", gap: 8, padding: "10px 14px", borderBottom: `1px solid ${COLORS.border}`, fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: COLORS.textFaint }}>
+          {/*
+            HASEEB-504 (2026-04-25) — line grid extended from 5 to 6
+            columns: per-line memo (EN) + per-line memo (AR). Grid:
+              account | debit | credit | memo-EN | memo-AR | trash
+          */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 130px 130px 1fr 1fr 32px", gap: 8, padding: "10px 14px", borderBottom: `1px solid ${COLORS.border}`, fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: COLORS.textFaint }}>
             <div>{t("lines.col_account")}</div>
             <div style={{ textAlign: "end" }}>{t("lines.col_debit")}</div>
             <div style={{ textAlign: "end" }}>{t("lines.col_credit")}</div>
             <div>{t("lines.col_memo")}</div>
+            <div>{t("lines.col_memo_ar")}</div>
             <div></div>
           </div>
           {draft.lines.map((line, idx) => (
@@ -1417,16 +1489,39 @@ function LineRow({ line, idx, readOnly, onUpdate, onRemove, canRemove }) {
   const { t } = useTranslation("manual-je");
   return (
     <div style={{
-      display: "grid", gridTemplateColumns: "1fr 130px 130px 1fr 32px", gap: 8,
+      // HASEEB-504 (2026-04-25) — 6-column grid; matches header at line ~1373.
+      display: "grid", gridTemplateColumns: "1fr 130px 130px 1fr 1fr 32px", gap: 8,
       padding: "10px 14px", alignItems: "center",
       background: idx % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)",
       borderBottom: `1px solid var(--border-subtle)`,
     }}>
       <CompactAccountPicker
-        value={line.accountCode ? { code: line.accountCode, name: line.accountName } : null}
+        value={line.accountCode ? {
+          code: line.accountCode,
+          name: line.accountName,
+          // Pass through the role + nameAr + normalBalance signals
+          // (HASEEB-504 AC-13) for the picker's display row + chip.
+          // Empty/undefined values are tolerated; the picker treats
+          // them as "no hint available" and falls back to code+name.
+          nameAr: line.accountNameAr,
+          role: line.accountRole,
+          normalBalance: line.accountNormalBalance,
+        } : null}
         readOnly={readOnly}
-        onSelect={(acc) => onUpdate({ accountCode: acc.code, accountName: acc.name })}
-        onClear={() => onUpdate({ accountCode: "", accountName: "" })}
+        onSelect={(acc) => onUpdate({
+          accountCode: acc.code,
+          accountName: acc.name,
+          accountNameAr: acc.nameAr || "",
+          accountRole: acc.role || "",
+          accountNormalBalance: acc.normalBalance || "",
+        })}
+        onClear={() => onUpdate({
+          accountCode: "",
+          accountName: "",
+          accountNameAr: "",
+          accountRole: "",
+          accountNormalBalance: "",
+        })}
       />
       <input
         type="number" step="0.001" disabled={readOnly}
@@ -1444,6 +1539,19 @@ function LineRow({ line, idx, readOnly, onUpdate, onRemove, canRemove }) {
         type="text" disabled={readOnly}
         defaultValue={line.memo} placeholder={t("lines.memo_placeholder")}
         onBlur={(e) => onUpdate({ memo: e.target.value })}
+        style={inputStyle(readOnly)}
+      />
+      {/*
+        HASEEB-504 (2026-04-25) — Arabic per-line memo input (AC-14).
+        `dir="rtl"` so Arabic text renders right-to-left. `lang="ar"`
+        switches the spellcheck dictionary. Optional; empty value
+        sends as undefined → backend stores NULL.
+      */}
+      <input
+        type="text" dir="rtl" lang="ar" disabled={readOnly}
+        defaultValue={line.memoAr || ""}
+        placeholder={t("lines.memo_ar_placeholder")}
+        onBlur={(e) => onUpdate({ memoAr: e.target.value })}
         style={inputStyle(readOnly)}
       />
       {!readOnly && canRemove ? (
@@ -1482,19 +1590,71 @@ function CompactAccountPicker({ value, readOnly, onSelect, onClear }) {
     .filter((a) => {
       if (!query) return true;
       const q = query.toLowerCase();
-      return a.code.includes(query) || a.name.toLowerCase().includes(q) || (a.subtype || "").toLowerCase().includes(q) || (a.type || "").toLowerCase().includes(q);
+      // HASEEB-504 (2026-04-25) — match against EN name, AR name, role,
+      // type, and subtype so an Arabic search term ("نقد") finds Cash,
+      // and a role term ("BANK") finds bank accounts.
+      return (
+        a.code.includes(query) ||
+        a.name.toLowerCase().includes(q) ||
+        (a.nameAr || "").includes(query) ||
+        (a.role || "").toLowerCase().includes(q) ||
+        (a.subtype || "").toLowerCase().includes(q) ||
+        (a.type || "").toLowerCase().includes(q)
+      );
     })
     .slice(0, 12);
 
   if (value && !open) {
+    // HASEEB-504 (2026-04-25) — selected-account pill shows code + EN
+    // name + AR name (RTL inline) + role badge + Dr/Cr hint chip (AC-13).
+    // The chip color follows the role's normal-balance side: debit-normal
+    // (assets, expenses) → blue Dr; credit-normal (liabilities, equity,
+    // revenue) → amber Cr. Empty/missing fields render gracefully —
+    // legacy accounts without `role` or `normalBalance` get a code+name
+    // pill identical to the pre-HASEEB-504 shape.
+    const isDebitNormal = (value.normalBalance || "").toUpperCase() === "DEBIT";
+    const isCreditNormal = (value.normalBalance || "").toUpperCase() === "CREDIT";
     return (
       <div style={{
         display: "flex", alignItems: "center", gap: 6,
         background: "var(--bg-selected)", border: `1px solid var(--accent-primary-border)`,
         borderRadius: 5, padding: "7px 10px", fontSize: 12, color: COLORS.text,
+        minWidth: 0,
       }}>
         <span style={{ fontFamily: "'DM Mono', monospace", color: COLORS.textDim }}>{value.code}</span>
-        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>· {value.name}</span>
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
+          · {value.name}
+          {value.nameAr ? (
+            <span dir="rtl" lang="ar" style={{ color: COLORS.textDim, marginInlineStart: 6 }}>/ {value.nameAr}</span>
+          ) : null}
+        </span>
+        {value.role ? (
+          <span
+            aria-label={t("account_picker.role_label") + ": " + value.role}
+            style={{
+              fontSize: 9, fontWeight: 700, letterSpacing: "0.08em",
+              color: COLORS.textDim, background: "var(--bg-surface-sunken)",
+              border: `1px solid ${COLORS.border}`,
+              padding: "2px 6px", borderRadius: 3, fontFamily: "'DM Mono', monospace",
+            }}
+          >
+            {value.role}
+          </span>
+        ) : null}
+        {(isDebitNormal || isCreditNormal) ? (
+          <span
+            aria-label={isDebitNormal ? "Normal balance Dr" : "Normal balance Cr"}
+            style={{
+              fontSize: 9, fontWeight: 700,
+              color: isDebitNormal ? "var(--accent-info)" : "var(--semantic-warning)",
+              background: isDebitNormal ? "var(--accent-info-subtle)" : "var(--semantic-warning-subtle)",
+              border: `1px solid ${isDebitNormal ? "var(--accent-info-border)" : "var(--semantic-warning-border)"}`,
+              padding: "2px 5px", borderRadius: 3,
+            }}
+          >
+            {isDebitNormal ? t("account_picker.normal_balance_dr") : t("account_picker.normal_balance_cr")}
+          </span>
+        ) : null}
         {!readOnly && (
           <button type="button" onClick={onClear} aria-label="Clear" style={{ background: "transparent", border: "none", color: COLORS.textFaint, cursor: "pointer", padding: 0, display: "flex" }}>
             <X size={12} />
@@ -1525,26 +1685,66 @@ function CompactAccountPicker({ value, readOnly, onSelect, onClear }) {
           background: "var(--bg-surface-raised)", border: `1px solid ${COLORS.border}`, borderRadius: 6,
           boxShadow: "var(--panel-shadow)", zIndex: 100, maxHeight: 280, overflowY: "auto",
         }}>
-          {filtered.map((a, i) => (
-            <div
-              key={a.code}
-              onMouseDown={() => { onSelect(a); setOpen(false); setQuery(""); }}
-              onMouseEnter={() => setHighlight(i)}
-              style={{
-                padding: "8px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
-                background: i === highlight ? "var(--accent-primary-subtle)" : "transparent",
-                borderBottom: `1px solid var(--border-subtle)`,
-              }}
-            >
-              <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: COLORS.textFaint, minWidth: 40 }}>{a.code}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.name}</div>
-                {(a.type || a.subtype) && <div style={{ fontSize: 9, color: COLORS.textFaint, marginTop: 1 }}>{a.type}{a.subtype ? ` · ${a.subtype}` : ""}</div>}
+          {filtered.map((a, i) => {
+            // HASEEB-504 (2026-04-25) — dropdown row shows
+            //   code  ·  EN name  /  AR name      [role badge]  [Dr/Cr chip]
+            // Per AC-13. Dr/Cr chip color follows the account's normal-
+            // balance side; absent/empty `normalBalance` hides the chip.
+            const isDebitNormal = (a.normalBalance || "").toUpperCase() === "DEBIT";
+            const isCreditNormal = (a.normalBalance || "").toUpperCase() === "CREDIT";
+            return (
+              <div
+                key={a.code}
+                onMouseDown={() => { onSelect(a); setOpen(false); setQuery(""); }}
+                onMouseEnter={() => setHighlight(i)}
+                style={{
+                  padding: "8px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
+                  background: i === highlight ? "var(--accent-primary-subtle)" : "transparent",
+                  borderBottom: `1px solid var(--border-subtle)`,
+                }}
+              >
+                <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: COLORS.textFaint, minWidth: 40 }}>{a.code}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {a.name}
+                    {a.nameAr ? (
+                      <span dir="rtl" lang="ar" style={{ color: COLORS.textDim, marginInlineStart: 6 }}>/ {a.nameAr}</span>
+                    ) : null}
+                  </div>
+                  {(a.type || a.subtype) && <div style={{ fontSize: 9, color: COLORS.textFaint, marginTop: 1 }}>{a.type}{a.subtype ? ` · ${a.subtype}` : ""}</div>}
+                </div>
+                {a.role ? (
+                  <span
+                    aria-label={t("account_picker.role_label") + ": " + a.role}
+                    style={{
+                      fontSize: 9, fontWeight: 700, letterSpacing: "0.08em",
+                      color: COLORS.textDim, background: "var(--bg-surface-sunken)",
+                      border: `1px solid ${COLORS.border}`,
+                      padding: "2px 6px", borderRadius: 3, fontFamily: "'DM Mono', monospace",
+                    }}
+                  >
+                    {a.role}
+                  </span>
+                ) : null}
+                {(isDebitNormal || isCreditNormal) ? (
+                  <span
+                    aria-label={isDebitNormal ? "Normal balance Dr" : "Normal balance Cr"}
+                    style={{
+                      fontSize: 9, fontWeight: 700,
+                      color: isDebitNormal ? "var(--accent-info)" : "var(--semantic-warning)",
+                      background: isDebitNormal ? "var(--accent-info-subtle)" : "var(--semantic-warning-subtle)",
+                      border: `1px solid ${isDebitNormal ? "var(--accent-info-border)" : "var(--semantic-warning-border)"}`,
+                      padding: "2px 5px", borderRadius: 3,
+                    }}
+                  >
+                    {isDebitNormal ? t("account_picker.normal_balance_dr") : t("account_picker.normal_balance_cr")}
+                  </span>
+                ) : null}
+                {a.balance != null && <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: COLORS.textDim }}>{Number(a.balance).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>}
+                {!a.balance && a.category && <span style={{ fontSize: 9, color: COLORS.textFaint }}>{(a.category || "").split(" ")[0]}</span>}
               </div>
-              {a.balance != null && <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: COLORS.textDim }}>{Number(a.balance).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>}
-              {!a.balance && a.category && <span style={{ fontSize: 9, color: COLORS.textFaint }}>{(a.category || "").split(" ")[0]}</span>}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

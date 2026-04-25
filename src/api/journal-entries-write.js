@@ -75,6 +75,13 @@ function normaliseLine(line) {
   if (line.description || line.memo) {
     out.description = line.description || line.memo;
   }
+  // HASEEB-509: pass per-line Arabic memo through to the backend.
+  // The backend column `descriptionAr` exists; the live verification
+  // harness caught this adapter stripping it before the POST body left
+  // the browser, leaving the persisted entry with descriptionAr=null.
+  if (line.descriptionAr || line.memoAr) {
+    out.descriptionAr = line.descriptionAr || line.memoAr;
+  }
   if (line.accountId) {
     out.accountId = line.accountId;
   } else if (line.accountCode || line.code) {
@@ -104,6 +111,10 @@ export async function createJournalEntry(payload) {
   const body = {
     date: payload.date,
     description: payload.description || '',
+    // HASEEB-509: header Arabic narrative was being stripped by this
+    // adapter even though the composer accepts it and the backend
+    // `descriptionAr` column exists. Pass it through when present.
+    ...(payload.descriptionAr ? { descriptionAr: payload.descriptionAr } : {}),
     ...(payload.reference ? { reference: payload.reference } : {}),
     ...(payload.currency ? { currency: payload.currency } : {}),
     ...(payload.status ? { status: payload.status } : {}),
@@ -124,6 +135,9 @@ export async function updateJournalEntryDraft(id, payload) {
   const body = {
     ...(payload.date ? { date: payload.date } : {}),
     ...(payload.description != null ? { description: payload.description } : {}),
+    // HASEEB-509: PATCH path needs the same Arabic-narrative passthrough
+    // as POST so a Draft edit doesn't silently null out the field.
+    ...(payload.descriptionAr != null ? { descriptionAr: payload.descriptionAr } : {}),
     ...(payload.reference != null ? { reference: payload.reference } : {}),
     ...(payload.currency ? { currency: payload.currency } : {}),
     ...(payload.notes != null ? { notes: payload.notes } : {}),

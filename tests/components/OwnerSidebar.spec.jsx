@@ -13,8 +13,8 @@
  *      locales (no hard-coded English label in the sidebar data).
  */
 
-import { describe, it, expect, afterEach } from 'vitest';
-import { render, screen, cleanup, act } from '@testing-library/react';
+import { describe, it, expect, afterEach, vi } from 'vitest';
+import { render, screen, cleanup, act, fireEvent } from '@testing-library/react';
 import React from 'react';
 
 import i18n from '../../src/i18n';
@@ -104,5 +104,32 @@ describe('OwnerSidebar — HASEEB-446 accounting-operations removal', () => {
         `Owner sidebar must still expose "${label}" (key: ${key})`,
       ).toBeTruthy();
     }
+  });
+});
+
+/**
+ * HASEEB-490 amendment (2026-04-25) — OwnerSidebar must expose Setup as
+ * a navigable nav item, not just leave it reachable through programmatic
+ * setActiveScreen("setup"). Sarah Phase 5 verification needs sidebar
+ * access like a real Owner user. Mirrors CFOSidebar's Setup item which
+ * lives in the operations group between ECL and Contacts.
+ */
+describe('OwnerSidebar — HASEEB-490 amendment Setup nav item', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('renders the Setup nav item and routes clicks to setActive("setup")', async () => {
+    await setLang('en');
+    const setActive = vi.fn();
+    render(<OwnerSidebar active="today" setActive={setActive} />);
+
+    const setupButton = screen.getByRole('button', {
+      name: new RegExp(`^${escapeRegExp(enSidebar.items.setup)}$`, 'i'),
+    });
+    expect(setupButton, 'Owner sidebar must expose Setup as a button').toBeTruthy();
+
+    fireEvent.click(setupButton);
+    expect(setActive).toHaveBeenCalledWith('setup');
   });
 });

@@ -45,8 +45,22 @@ import EclScreen from "./EclScreen";
 // mock-fallback via the engine router (no backend yet — HASEEB-279).
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
+import { normalizeRole, ROLES } from "../../utils/role";
 
-export default function CFOView({ registerNav }) {
+export default function CFOView({ registerNav, role: roleRaw = ROLES.CFO }) {
+  // HASEEB-490 (DECISION-026 P0-2) — Setup mount previously hardcoded
+  // role="CFO" inside this dispatcher. That was architecturally wrong
+  // even though the visible behaviour was correct for the CFO user —
+  // ApprovalPolicySection gates on `normalizedRole === ROLES.OWNER`,
+  // so a hardcoded "CFO" still produced the Owner-only banner +
+  // disabled inputs (correct for CFO viewing, but ALSO wrong for the
+  // Owner who happens to mount CFOView in test fixtures or via deep
+  // link). Forwarding the actual normalized user role makes this
+  // dispatcher symmetric with OwnerView and lets every consumer
+  // gate on the real role. CFO role still normalizes to ROLES.CFO
+  // (≠ ROLES.OWNER), so the disabled-inputs+banner behaviour is
+  // preserved for the production CFO user.
+  const normalizedRole = normalizeRole(roleRaw);
   const { t } = useTranslation("common");
   const [activeScreen, setActiveScreen] = useState("today");
   const [aminahOpen, setAminahOpen] = useState(false);
@@ -149,7 +163,10 @@ export default function CFOView({ registerNav }) {
       case "aging-reports":
         return <AgingReportsScreen onOpenAminah={openAminah} />;
       case "setup":
-        return <SetupScreen role="CFO" onNavigate={setActive} />;
+        // HASEEB-490 — DECISION-026 P0-2. Pass the actual normalized
+        // user role (was hardcoded role="CFO"). See header comment
+        // for why this is symmetric, not behaviour-changing for CFO.
+        return <SetupScreen role={normalizedRole} onNavigate={setActive} />;
       case "contacts":
         return <ContactsScreen role="CFO" />;
       case "audit-bridge":

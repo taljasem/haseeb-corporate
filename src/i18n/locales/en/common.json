@@ -311,7 +311,14 @@
     "cancel_edit_btn": "Cancel",
     "discard_btn": "Discard",
     "cancel_picker": "← Cancel",
-    "posted_by_cfo": "You (CFO)"
+    "posted_by_cfo": "You (CFO)",
+    "add_line": "+ Add line",
+    "remove_line": "Remove line",
+    "swap_dr_cr": "Swap DR/CR",
+    "balance_mismatch": "Debit and credit totals must match.",
+    "select_account_for_line": "Select an account for line {{line}}.",
+    "all_amounts_zero": "At least one line must have a non-zero amount.",
+    "edit_choose_account": "Change account"
   },
   "account_picker": {
     "selected": "SELECTED",

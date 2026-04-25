@@ -4755,7 +4755,8 @@ _MANUAL_JE_TEMPLATES_DB["TPL-MONTHLY-RENT"] = {
   id: "TPL-MONTHLY-RENT",
   name: "Monthly Rent Allocation",
   description: "Monthly office rent payment, allocated to Admin",
-  source: "manual",
+  // HASEEB-466: align with backend EntrySource enum (uppercase).
+  source: "MANUAL",
   defaultReference: "Rent — {month} {year}",
   createdAt: _daysAgo(120),
   usageCount: 6,
@@ -4768,7 +4769,7 @@ _MANUAL_JE_TEMPLATES_DB["TPL-PAYROLL"] = {
   id: "TPL-PAYROLL",
   name: "Payroll Run",
   description: "Monthly payroll posting",
-  source: "manual",
+  source: "MANUAL",
   defaultReference: "Payroll — {month} {year}",
   createdAt: _daysAgo(120),
   usageCount: 6,
@@ -4784,7 +4785,7 @@ _MANUAL_JE_TEMPLATES_DB["TPL-DEPRECIATION"] = {
   id: "TPL-DEPRECIATION",
   name: "Monthly Depreciation",
   description: "Monthly depreciation of fixed assets",
-  source: "manual",
+  source: "MANUAL",
   defaultReference: "Depreciation — {month} {year}",
   createdAt: _daysAgo(120),
   usageCount: 6,
@@ -4797,7 +4798,7 @@ _MANUAL_JE_TEMPLATES_DB["TPL-PIFSS-ACCRUAL"] = {
   id: "TPL-PIFSS-ACCRUAL",
   name: "PIFSS Accrual",
   description: "Monthly PIFSS accrual",
-  source: "manual",
+  source: "MANUAL",
   defaultReference: "PIFSS Accrual — {month} {year}",
   createdAt: _daysAgo(90),
   usageCount: 3,
@@ -4811,7 +4812,7 @@ _MANUAL_JE_TEMPLATES_DB["TPL-PIFSS-ACCRUAL"] = {
 (function seedManualJEs() {
   const list = [
     _mkManualJE({
-      id: "JE-MAN-0501", source: "manual", status: "posted", reference: "Rent — March 2026",
+      id: "JE-MAN-0501", source: "MANUAL", status: "posted", reference: "Rent — March 2026",
       description: "Monthly office rent allocation", date: _daysAgo(38), templateId: "TPL-MONTHLY-RENT",
       lines: [
         _mkLine("L1", "6200", "Office Rent",          4200, 0),
@@ -4820,7 +4821,7 @@ _MANUAL_JE_TEMPLATES_DB["TPL-PIFSS-ACCRUAL"] = {
       postedAt: _daysAgo(38), postedBy: "cfo", hashChain: "h:a1b2c3",
     }),
     _mkManualJE({
-      id: "JE-MAN-0502", source: "manual", status: "posted", reference: "Depreciation — March 2026",
+      id: "JE-MAN-0502", source: "MANUAL", status: "posted", reference: "Depreciation — March 2026",
       description: "Monthly depreciation of equipment & furniture", date: _daysAgo(38), templateId: "TPL-DEPRECIATION",
       lines: [
         _mkLine("L1", "6420", "Depreciation Expense",     1800, 0),
@@ -4829,7 +4830,7 @@ _MANUAL_JE_TEMPLATES_DB["TPL-PIFSS-ACCRUAL"] = {
       postedAt: _daysAgo(38), postedBy: "cfo", hashChain: "h:b2c3d4",
     }),
     _mkManualJE({
-      id: "JE-MAN-0503", source: "adjustment", status: "posted", reference: "REF-ADJ-001",
+      id: "JE-MAN-0503", source: "MANUAL", status: "posted", reference: "REF-ADJ-001",
       description: "Insurance prepayment adjustment", date: _daysAgo(34),
       lines: [
         _mkLine("L1", "1400", "Prepaid Expenses", 850, 0),
@@ -4838,7 +4839,7 @@ _MANUAL_JE_TEMPLATES_DB["TPL-PIFSS-ACCRUAL"] = {
       postedAt: _daysAgo(34), postedBy: "cfo", hashChain: "h:c3d4e5",
     }),
     _mkManualJE({
-      id: "JE-MAN-0504", source: "manual", status: "posted", reference: "Payroll — March 2026",
+      id: "JE-MAN-0504", source: "MANUAL", status: "posted", reference: "Payroll — March 2026",
       description: "Monthly payroll posting", date: _daysAgo(24), templateId: "TPL-PAYROLL",
       lines: [
         _mkLine("L1", "6100", "Salaries & Wages",      15800, 0),
@@ -4850,7 +4851,7 @@ _MANUAL_JE_TEMPLATES_DB["TPL-PIFSS-ACCRUAL"] = {
       postedAt: _daysAgo(24), postedBy: "cfo", hashChain: "h:d4e5f6",
     }),
     _mkManualJE({
-      id: "JE-MAN-0505", source: "manual", status: "posted", reference: "PIFSS Accrual — March 2026",
+      id: "JE-MAN-0505", source: "MANUAL", status: "posted", reference: "PIFSS Accrual — March 2026",
       description: "Monthly PIFSS accrual", date: _daysAgo(14), templateId: "TPL-PIFSS-ACCRUAL",
       lines: [
         _mkLine("L1", "6110", "PIFSS Contributions", 1640, 0),
@@ -4859,7 +4860,7 @@ _MANUAL_JE_TEMPLATES_DB["TPL-PIFSS-ACCRUAL"] = {
       postedAt: _daysAgo(14), postedBy: "cfo", hashChain: "h:e5f6a7",
     }),
     _mkManualJE({
-      id: "JE-MAN-0506", source: "reversal", status: "posted", reference: "REV-JE-MAN-0490",
+      id: "JE-MAN-0506", source: "MANUAL", status: "posted", reference: "REV-JE-MAN-0490",
       description: "Reversal of prior year-end accrual", date: _daysAgo(38), reversalOf: "JE-MAN-0490",
       lines: [
         _mkLine("L1", "2400", "Accrued Expenses",        3200, 0),
@@ -4868,7 +4869,7 @@ _MANUAL_JE_TEMPLATES_DB["TPL-PIFSS-ACCRUAL"] = {
       postedAt: _daysAgo(38), postedBy: "cfo", hashChain: "h:f6a7b8",
     }),
     _mkManualJE({
-      id: "JE-MAN-0507", source: "adjustment", status: "posted", reference: "REF-ADJ-002",
+      id: "JE-MAN-0507", source: "MANUAL", status: "posted", reference: "REF-ADJ-002",
       description: "Bank fee miscategorization fix", date: _daysAgo(21),
       lines: [
         _mkLine("L1", "6800", "Bank Charges",           75, 0),
@@ -4877,7 +4878,7 @@ _MANUAL_JE_TEMPLATES_DB["TPL-PIFSS-ACCRUAL"] = {
       postedAt: _daysAgo(21), postedBy: "cfo", hashChain: "h:a7b8c9",
     }),
     _mkManualJE({
-      id: "JE-MAN-0508", source: "adjustment", status: "posted", reference: "REF-ADJ-003",
+      id: "JE-MAN-0508", source: "MANUAL", status: "posted", reference: "REF-ADJ-003",
       description: "Inventory adjustment for damaged stock", date: _daysAgo(11),
       lines: [
         _mkLine("L1", "5100", "Cost of Goods Sold", 1200, 0),
@@ -4887,7 +4888,7 @@ _MANUAL_JE_TEMPLATES_DB["TPL-PIFSS-ACCRUAL"] = {
     }),
     // Drafts
     _mkManualJE({
-      id: "JE-MAN-DRAFT-001", source: "manual", status: "draft", reference: "Marketing Accrual",
+      id: "JE-MAN-DRAFT-001", source: "MANUAL", status: "draft", reference: "Marketing Accrual",
       description: "March marketing services accrual (incomplete)", date: _hoursAgo(8),
       lines: [
         _mkLine("L1", "6300", "Marketing & Advertising", 3200, 0),
@@ -4896,7 +4897,7 @@ _MANUAL_JE_TEMPLATES_DB["TPL-PIFSS-ACCRUAL"] = {
       createdAt: _hoursAgo(8),
     }),
     _mkManualJE({
-      id: "JE-MAN-DRAFT-002", source: "manual", status: "draft", reference: "Q1 Bonus Accrual",
+      id: "JE-MAN-DRAFT-002", source: "MANUAL", status: "draft", reference: "Q1 Bonus Accrual",
       description: "Quarterly bonus accrual — ready to post", date: _hoursAgo(3),
       lines: [
         _mkLine("L1", "6120", "Bonuses",         8500, 0),
@@ -4905,7 +4906,7 @@ _MANUAL_JE_TEMPLATES_DB["TPL-PIFSS-ACCRUAL"] = {
       createdAt: _hoursAgo(3),
     }),
     _mkManualJE({
-      id: "JE-MAN-DRAFT-003", source: "adjustment", status: "draft", reference: "Equipment Write-off",
+      id: "JE-MAN-DRAFT-003", source: "MANUAL", status: "draft", reference: "Equipment Write-off",
       description: "Equipment write-off (in progress)", date: _hoursAgo(20),
       lines: [
         _mkLine("L1", "1500", "Fixed Assets — Equipment", 0, 2400),
@@ -4915,7 +4916,7 @@ _MANUAL_JE_TEMPLATES_DB["TPL-PIFSS-ACCRUAL"] = {
     }),
     // Scheduled
     _mkManualJE({
-      id: "JE-MAN-SCHED-001", source: "recurring", status: "scheduled", reference: "Rent — April 2026",
+      id: "JE-MAN-SCHED-001", source: "RECURRING", status: "scheduled", reference: "Rent — April 2026",
       description: "Monthly rent allocation (scheduled)", date: _daysFromNow(7), templateId: "TPL-MONTHLY-RENT",
       scheduledFor: _daysFromNow(7),
       recurringRule: { frequency: "monthly", nextRun: _daysFromNow(7) },
@@ -4925,7 +4926,7 @@ _MANUAL_JE_TEMPLATES_DB["TPL-PIFSS-ACCRUAL"] = {
       ],
     }),
     _mkManualJE({
-      id: "JE-MAN-SCHED-002", source: "recurring", status: "scheduled", reference: "Depreciation — April 2026",
+      id: "JE-MAN-SCHED-002", source: "RECURRING", status: "scheduled", reference: "Depreciation — April 2026",
       description: "Monthly depreciation (scheduled)", date: _daysFromNow(7), templateId: "TPL-DEPRECIATION",
       scheduledFor: _daysFromNow(7),
       recurringRule: { frequency: "monthly", nextRun: _daysFromNow(7) },
@@ -4935,7 +4936,7 @@ _MANUAL_JE_TEMPLATES_DB["TPL-PIFSS-ACCRUAL"] = {
       ],
     }),
     _mkManualJE({
-      id: "JE-MAN-SCHED-003", source: "recurring", status: "scheduled", reference: "Payroll — April 2026",
+      id: "JE-MAN-SCHED-003", source: "RECURRING", status: "scheduled", reference: "Payroll — April 2026",
       description: "Monthly payroll (scheduled)", date: _daysFromNow(21), templateId: "TPL-PAYROLL",
       scheduledFor: _daysFromNow(21),
       recurringRule: { frequency: "monthly", nextRun: _daysFromNow(21) },
@@ -5128,7 +5129,8 @@ export async function saveAsTemplate(jeId, templateName, description) {
   const id = `TPL-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
   const t = {
     id, name: templateName, description: description || "",
-    source: j.source || "manual",
+    // HASEEB-466: align mock fallback with backend EntrySource enum.
+    source: j.source || "MANUAL",
     defaultReference: j.reference,
     createdAt: new Date().toISOString(),
     usageCount: 0,
@@ -5148,7 +5150,11 @@ export async function reverseManualJE(originalJeId, reason = "") {
     debit: l.credit, credit: l.debit, memo: l.memo,
   }));
   const j = _mkManualJE({
-    id, status: "draft", source: "reversal",
+    // HASEEB-466: backend EntrySource has no REVERSAL value (reversals
+    // are produced via /api/journal-entries/:id/reverse). Use MANUAL
+    // for the legacy mock path so any persisted draft round-trips
+    // cleanly through the dropdown.
+    id, status: "draft", source: "MANUAL",
     reference: `REV-${orig.id}`,
     description: `Reversal of ${orig.id}${reason ? ` — ${reason}` : ""}`,
     reversalOf: originalJeId,

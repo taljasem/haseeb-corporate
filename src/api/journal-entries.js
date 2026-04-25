@@ -43,7 +43,11 @@ function adaptEntry(entry) {
     postedAt: entry.postedAt || entry.date || entry.createdAt || null,
     createdAt: entry.createdAt || entry.date || null,
     scheduledFor: entry.scheduledFor || null,
-    source: entry.source || entry.origin || 'manual',
+    // HASEEB-466: backend EntrySource enum is uppercase. The API
+    // already returns uppercase values; the fallback is now uppercase
+    // too so the round-trip stays consistent through ManualJEScreen's
+    // dropdown (which writes the same casing back to the wire).
+    source: entry.source || entry.origin || 'MANUAL',
     reference: entry.reference || '',
     lines: lines.map((l, i) => ({
       id: l.id || `L${i + 1}`,

@@ -26,10 +26,12 @@ import CITAssessmentScreen from "../cfo/CITAssessmentScreen";
 import YearEndCloseScreen from "../cfo/YearEndCloseScreen";
 import BoardPackScreen from "./BoardPackScreen";
 import EclScreen from "../cfo/EclScreen";
+import SetupScreen from "../cfo/SetupScreen";
 // HASEEB-280 — Wave 2 migration. Both taskbox/approval counters are
 // mock-fallback via the engine router (no backend yet — HASEEB-279).
 import { getOpenTaskCount, getOpenApprovalCount } from "../../engine";
 import { subscribeTaskbox } from "../../utils/taskboxBus";
+import { normalizeRole, ROLES } from "../../utils/role";
 
 function Placeholder({ label }) {
   const { t } = useTranslation("common");
@@ -70,7 +72,14 @@ function Placeholder({ label }) {
   );
 }
 
-export default function OwnerView({ registerNav }) {
+export default function OwnerView({ registerNav, role: roleRaw = ROLES.OWNER }) {
+  // HASEEB-490 (DECISION-026 P0-2) — the actual normalized role flows
+  // through to any role-aware child screen (notably SetupScreen, which
+  // hosts ApprovalPolicySection where the OWNER-only edit gate lives).
+  // Default to OWNER since OwnerView is only mounted from App.jsx when
+  // role === "Owner"; the prop hand-through is what makes this explicit
+  // (and lets tests inject an alternate role for verification).
+  const normalizedRole = normalizeRole(roleRaw);
   const { t: tc } = useTranslation("common");
   const [activeScreen, setActiveScreen] = useState("today");
   const [aminahOpen, setAminahOpen] = useState(false);
@@ -191,6 +200,14 @@ export default function OwnerView({ registerNav }) {
         return <BoardPackScreen role="Owner" />;
       case "ecl":
         return <EclScreen role="Owner" />;
+      case "setup":
+        // HASEEB-490 — DECISION-026 P0-2. SetupScreen was previously
+        // mounted only from CFOView with a hardcoded role="CFO", which
+        // meant the actual Owner user could never reach the threshold
+        // editor (ApprovalPolicySection gates editing on
+        // normalizedRole === ROLES.OWNER). We pass the actual normalized
+        // user role through so the OWNER-only edit gate fires correctly.
+        return <SetupScreen role={normalizedRole} onNavigate={setActive} />;
       default:
         return <Placeholder label={activeScreen.toUpperCase()} />;
     }

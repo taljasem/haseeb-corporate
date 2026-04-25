@@ -40,8 +40,8 @@ function AppInner() {
       <ModeIndicator />
       <Header role={role} setRole={setRole} />
       <Suspense fallback={<ViewFallback />}>
-        {role === "Owner" && <OwnerView key={viewKey} registerNav={registerNav} />}
-        {role === "CFO" && <CFOView key={viewKey} registerNav={registerNav} />}
+        {role === "Owner" && <OwnerView key={viewKey} registerNav={registerNav} role={role} />}
+        {role === "CFO" && <CFOView key={viewKey} registerNav={registerNav} role={role} />}
         {role === "Junior" && <JuniorView key={viewKey} registerNav={registerNav} />}
       </Suspense>
     </NavContext.Provider>

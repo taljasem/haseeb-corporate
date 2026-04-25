@@ -27,7 +27,12 @@ import { setAuthToken, clearAuthToken } from '../api/client';
 const TOKEN_KEY = 'haseeb_corp_token';
 const TOKEN_EXP_KEY = 'haseeb_corp_token_exp';
 
-const AuthContext = createContext(null);
+// HASEEB-482 (2026-04-24) — exported so consumers can read auth state
+// safely with `useContext(AuthContext)` (returns null when no provider
+// is mounted, e.g. component tests without AuthProvider). Existing
+// callers continue to use `useAuth()` which adds the missing-provider
+// guard for the standard app path.
+export const AuthContext = createContext(null);
 
 function readStoredToken() {
   try {

@@ -1,6 +1,13 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo, useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Trash2, Search, Lock, X, FileText, Clock, CheckCircle2, AlertCircle, RotateCcw, Save, Calendar, Sparkles, AlertTriangle, MoreVertical } from "lucide-react";
+// HASEEB-482 (DECISION-026 Phase 2 frontend, 2026-04-24) — read the
+// current user's id so the Post button can SoD-gate before the
+// /approvals/:id/approve call hits the backend (which also enforces
+// SoD via SoDViolationError → 403 SELF_APPROVAL_FORBIDDEN). Use the
+// raw context (not the useAuth hook) so component-tests that don't
+// wrap in <AuthProvider> get a clean null instead of throwing.
+import { AuthContext } from "../../contexts/AuthContext";
 import FileAttachment from "../../components/shared/FileAttachment";
 import LtrText from "../../components/shared/LtrText";
 import useEscapeKey from "../../hooks/useEscapeKey";
@@ -915,6 +922,13 @@ function ListItem({ item, tab, selected, onClick, onRefresh, onFireNow, onToggle
 function ManualJEComposer({ je, onDelete, onPost, onReverse, onSchedule, onPostNow, onSaveTemplate, onAskAminah, isNew }) {
   const { t } = useTranslation("manual-je");
   const { t: tc } = useTranslation("common");
+  // HASEEB-482 — current-user id for SoD self-approval gating. The
+  // backend always re-checks this via SoDViolationError (the route
+  // layer returns 403 SELF_APPROVAL_FORBIDDEN); surfacing it client-
+  // side gives the user an immediate disabled-state message instead
+  // of a click → toast round-trip.
+  const auth = useContext(AuthContext);
+  const currentUserId = auth?.user?.id || null;
 
   // ─── Wave 3: local draft state ───────────────────────────────────
   //
@@ -1046,7 +1060,31 @@ function ManualJEComposer({ je, onDelete, onPost, onReverse, onSchedule, onPostN
     };
   })();
 
-  const canPost = validation.isBalanced && !isHardClosed;
+  // HASEEB-482 — approval-engine state for the Post button.
+  //
+  // The Post button visibility / state derives from the JE's
+  // `approvalState`:
+  //   - AUTO_APPROVED → already posted by the routing engine (TIER_AUTO);
+  //                     do not render the Post button (the entry is
+  //                     POSTED and the existing isPosted branch covers
+  //                     the reverse-button rendering instead).
+  //   - PENDING_REVIEW / PENDING_APPROVAL / PENDING_BOARD → show the
+  //                     Post button. Click → /approvals/:id/approve.
+  //                     If the current user is the proposer (createdBy
+  //                     match) we disable client-side with the
+  //                     bilingual SoD message instead of letting the
+  //                     server return SoDViolationError (403). Backend
+  //                     still re-checks; defence in depth.
+  //   - missing approvalState (legacy entries pre-HASEEB-481, or new
+  //                     local drafts before they hit the server) → the
+  //                     existing isDraft path stays unchanged.
+  const proposerId = draft.createdBy || je?.createdBy || null;
+  const isSelfProposed =
+    !!currentUserId && !!proposerId && currentUserId === proposerId;
+  const approvalState = draft.approvalState || je?.approvalState || null;
+  const isAutoApproved = approvalState === "AUTO_APPROVED";
+  const sodBlocked = isSelfProposed && isDraft && !isNew && !!proposerId;
+  const canPost = validation.isBalanced && !isHardClosed && !sodBlocked && !isAutoApproved;
   const postLabel = isSoftClosed ? t("period_lock.post_for_approval") : t("composer.post_entry");
 
   // ─── Save / post wrapper (atomic) ────────────────────────────────
@@ -1060,7 +1098,14 @@ function ManualJEComposer({ je, onDelete, onPost, onReverse, onSchedule, onPostN
       // existing server-fetched one.
       await onPost({ draft, post });
     } catch (err) {
-      setSaveError(err?.message || "Save failed");
+      // HASEEB-482 — 403 SELF_APPROVAL_FORBIDDEN means the proposer is
+      // trying to approve their own JE. Surface the bilingual SoD
+      // message instead of the raw English-only message.
+      if (err?.status === 403) {
+        setSaveError(t("composer.sod_blocked"));
+      } else {
+        setSaveError(err?.message || "Save failed");
+      }
     } finally {
       setSaving(false);
     }
@@ -1129,14 +1174,37 @@ function ManualJEComposer({ je, onDelete, onPost, onReverse, onSchedule, onPostN
                   style={{ background: "transparent", color: COLORS.text, border: `1px solid ${COLORS.border}`, padding: "7px 12px", borderRadius: 5, fontSize: 11, cursor: saving ? "not-allowed" : "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 4 }}>
                   <Save size={11} /> {saving ? t("composer.saving") : t("composer.save_draft")}
                 </button>
-                <button
-                  onClick={() => handleSave({ post: true })}
-                  disabled={!canPost || saving}
-                  title={isHardClosed ? t("period_lock.post_blocked") : undefined}
-                  style={{ background: canPost && !saving ? COLORS.teal : "var(--border-subtle)", color: canPost && !saving ? "#fff" : COLORS.textFaint, border: "none", padding: "8px 16px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: canPost && !saving ? "pointer" : "not-allowed", fontFamily: "inherit" }}
-                >
-                  {saving ? t("composer.posting") : postLabel}
-                </button>
+                {/* HASEEB-482 — Post button hidden when the routing
+                    engine has already auto-posted the entry; otherwise
+                    rendered with SoD-aware disabled state. The button
+                    fires handleSave({post:true}) which calls the
+                    engine's postJournalEntry, now wired to
+                    /api/journal-entries/approvals/:id/approve. */}
+                {!isAutoApproved && (
+                  <button
+                    onClick={() => handleSave({ post: true })}
+                    disabled={!canPost || saving}
+                    aria-disabled={!canPost || saving}
+                    title={
+                      sodBlocked
+                        ? t("composer.sod_blocked")
+                        : isHardClosed
+                          ? t("period_lock.post_blocked")
+                          : undefined
+                    }
+                    style={{ background: canPost && !saving ? COLORS.teal : "var(--border-subtle)", color: canPost && !saving ? "#fff" : COLORS.textFaint, border: "none", padding: "8px 16px", borderRadius: 5, fontSize: 11, fontWeight: 600, cursor: canPost && !saving ? "pointer" : "not-allowed", fontFamily: "inherit" }}
+                  >
+                    {saving ? t("composer.posting") : postLabel}
+                  </button>
+                )}
+                {sodBlocked && (
+                  <span
+                    role="status"
+                    style={{ fontSize: 10, color: COLORS.amber, marginInlineStart: 6, maxWidth: 240 }}
+                  >
+                    {t("composer.sod_blocked")}
+                  </span>
+                )}
               </>
             )}
             {isPosted && !draft.reversedBy && (

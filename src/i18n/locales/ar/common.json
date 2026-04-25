@@ -311,7 +311,14 @@
     "cancel_edit_btn": "إلغاء",
     "discard_btn": "تجاهل",
     "cancel_picker": "← إلغاء",
-    "posted_by_cfo": "أنت (المدير المالي)"
+    "posted_by_cfo": "أنت (المدير المالي)",
+    "add_line": "+ إضافة سطر",
+    "remove_line": "حذف السطر",
+    "swap_dr_cr": "تبديل مدين/دائن",
+    "balance_mismatch": "يجب أن يتطابق مجموع المدين والدائن.",
+    "select_account_for_line": "اختر حساباً للسطر {{line}}.",
+    "all_amounts_zero": "يجب أن يحتوي سطر واحد على الأقل على مبلغ غير صفري.",
+    "edit_choose_account": "تغيير الحساب"
   },
   "account_picker": {
     "selected": "تم الاختيار",

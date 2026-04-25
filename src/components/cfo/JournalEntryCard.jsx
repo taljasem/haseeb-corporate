@@ -231,6 +231,75 @@ export default function JournalEntryCard({
     setPickerLineIdx(null);
   };
 
+  // HASEEB-471 — edit-mode helpers (swap DR/CR, add line, remove line).
+  // All mutate `workingEntry` via setWorkingEntry; they never touch the
+  // original `entry` prop (revert-on-cancel stays correct).
+  const updateLines = (mapper) => {
+    const base = workingEntry ?? live;
+    const nextLines = mapper(base.lines);
+    const next = { ...base, lines: nextLines };
+    next.balanced = nextLines.every((l) => l.account != null);
+    setWorkingEntry(next);
+  };
+
+  const handleSwapSide = (i) => {
+    updateLines((lines) =>
+      lines.map((l, idx) => {
+        if (idx !== i) return l;
+        // Swap debit ↔ credit. Whichever side is non-null becomes the
+        // other; the prior side becomes null. Preserves the one-sided
+        // invariant the backend wall enforces.
+        return { ...l, debit: l.credit, credit: l.debit };
+      })
+    );
+  };
+
+  const handleAddLine = () => {
+    updateLines((lines) => [
+      ...lines,
+      {
+        account: null,
+        code: null,
+        debit: "0.000",
+        credit: null,
+        label: "",
+        placeholder: true,
+      },
+    ]);
+  };
+
+  const handleRemoveLine = (i) => {
+    const base = workingEntry ?? live;
+    if (base.lines.length <= 2) return; // min-2 guard
+    updateLines((lines) => lines.filter((_, idx) => idx !== i));
+  };
+
+  // HASEEB-471 — save-validation + inline message.
+  // Compute per the three guards from the spec:
+  //   1. Any line still a placeholder (no account).
+  //   2. Debit total ≠ credit total (±0.001 KWD tolerance).
+  //   3. All amounts zero.
+  const toNum = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const editLines = live.lines;
+  const editTotalDebit = editLines.reduce((s, l) => s + toNum(l.debit), 0);
+  const editTotalCredit = editLines.reduce((s, l) => s + toNum(l.credit), 0);
+  const placeholderIdx = editLines.findIndex((l) => !l.account || l.placeholder);
+  const hasPlaceholder = placeholderIdx !== -1;
+  const balanceDelta = Math.abs(editTotalDebit - editTotalCredit);
+  const balanceOk = balanceDelta < 0.001;
+  const allZero = editTotalDebit === 0 && editTotalCredit === 0;
+  const saveValidationError = hasPlaceholder
+    ? t("je_card.select_account_for_line", { line: placeholderIdx + 1 })
+    : !balanceOk
+      ? t("je_card.balance_mismatch")
+      : allZero
+        ? t("je_card.all_amounts_zero")
+        : null;
+  const canSaveEdit = !saveValidationError;
+
   const canConfirm = balanced;
 
   return (
@@ -357,6 +426,41 @@ export default function JournalEntryCard({
                     >
                       {t("je_card.select_account")}
                     </button>
+                  ) : isEditing ? (
+                    // HASEEB-471 — account area is clickable in edit
+                    // mode; opens the same AccountPicker used for
+                    // placeholder lines. On pick, handlePicked updates
+                    // both `account` + `code` on the targeted line.
+                    <button
+                      type="button"
+                      onClick={() => openPickerForLine(i)}
+                      aria-label={t("je_card.edit_choose_account")}
+                      style={{
+                        display: "block",
+                        width: "100%",
+                        textAlign: "start",
+                        background: "transparent",
+                        border: "1px dashed var(--border-strong)",
+                        borderRadius: 4,
+                        padding: "4px 8px",
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-surface)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    >
+                      <div style={{ fontSize: 13, color: "var(--text-primary)" }}>{line.account}</div>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: "var(--text-tertiary)",
+                          fontFamily: "'DM Mono', monospace",
+                          marginTop: 2,
+                        }}
+                      >
+                        <LtrText>({line.code})</LtrText>
+                      </div>
+                    </button>
                   ) : (
                     <>
                       <div style={{ fontSize: 13, color: "var(--text-primary)" }}>{line.account}</div>
@@ -473,6 +577,60 @@ export default function JournalEntryCard({
                   </>
                 )}
               </div>
+              {/* HASEEB-471 — edit-mode line controls (swap + remove). */}
+              {isEditing && (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    justifyContent: "flex-end",
+                    paddingBottom: 6,
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleSwapSide(i)}
+                    aria-label={t("je_card.swap_dr_cr")}
+                    title={t("je_card.swap_dr_cr")}
+                    style={{
+                      background: "transparent",
+                      border: "1px solid var(--border-strong)",
+                      color: "var(--text-secondary)",
+                      fontSize: 10,
+                      letterSpacing: "0.10em",
+                      fontWeight: 600,
+                      padding: "2px 8px",
+                      borderRadius: 4,
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    DR ⇄ CR
+                  </button>
+                  {live.lines.length > 2 && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveLine(i)}
+                      aria-label={t("je_card.remove_line")}
+                      title={t("je_card.remove_line")}
+                      style={{
+                        background: "transparent",
+                        border: "1px solid var(--border-strong)",
+                        color: "var(--semantic-danger)",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        lineHeight: 1,
+                        padding: "2px 8px",
+                        borderRadius: 4,
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              )}
               {pickerLineIdx === i && (
                 <div style={{ padding: "8px 0 12px" }}>
                   <AccountPicker onSelect={handlePicked} />
@@ -489,6 +647,30 @@ export default function JournalEntryCard({
             </div>
           );
         })}
+
+        {/* HASEEB-471 — Add line button in edit mode. */}
+        {isEditing && (
+          <div style={{ paddingTop: 10 }}>
+            <button
+              type="button"
+              onClick={handleAddLine}
+              aria-label={t("je_card.add_line")}
+              style={{
+                background: "transparent",
+                border: "1px dashed var(--border-strong)",
+                color: "var(--accent-primary)",
+                fontSize: 12,
+                fontWeight: 600,
+                padding: "6px 12px",
+                borderRadius: 4,
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              {t("je_card.add_line")}
+            </button>
+          </div>
+        )}
 
         {/* Total */}
         <div
@@ -642,68 +824,90 @@ export default function JournalEntryCard({
             </>
           ) : isEditing ? (
             <>
-              {/* HASEEB-307 edit mode — Save + Cancel replace Edit + Discard. */}
-              <button
-                onClick={() => {
-                  // Working entry serialised back to wire shape that
-                  // the backend amend endpoint accepts. debit/credit
-                  // arrive as numbers via input; convert to KWD 3-dp
-                  // strings before send so the server validator sees
-                  // the canonical shape.
-                  const payload = {
-                    date: live.createdAt
-                      ? new Date(live.createdAt).toISOString().slice(0, 10)
-                      : undefined,
-                    description: live.description,
-                    lines: (live.lines || []).map((l) => ({
-                      accountCode: l.code,
-                      accountName: l.account,
-                      debit:
-                        l.debit != null && l.debit !== ''
-                          ? Number(l.debit).toFixed(3)
-                          : '0.000',
-                      credit:
-                        l.credit != null && l.credit !== ''
-                          ? Number(l.credit).toFixed(3)
-                          : '0.000',
-                      label: l.memo || undefined,
-                    })),
-                  };
-                  if (onSaveEdit) onSaveEdit(payload);
-                  setIsEditing(false);
-                }}
-                style={{
-                  background: "var(--accent-primary)",
-                  color: "#fff",
-                  border: "none",
-                  padding: "8px 16px",
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  fontFamily: "inherit",
-                }}
-              >
-                {t("je_card.save_edit_btn") || "Save changes"}
-              </button>
-              <button
-                onClick={() => {
-                  setWorkingEntry(null);
-                  setIsEditing(false);
-                }}
-                style={{
-                  background: "transparent",
-                  color: "var(--text-secondary)",
-                  border: "1px solid var(--border-strong)",
-                  padding: "8px 14px",
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  fontSize: 12,
-                  fontFamily: "inherit",
-                }}
-              >
-                {t("je_card.cancel_edit_btn") || "Cancel"}
-              </button>
+              {/* HASEEB-307 / HASEEB-471 — edit mode Save/Cancel with
+                  validation guard + inline error message. */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%" }}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button
+                    onClick={() => {
+                      if (!canSaveEdit) return;
+                      // Working entry serialised back to wire shape that
+                      // the backend amend endpoint accepts. debit/credit
+                      // arrive as numbers via input; convert to KWD 3-dp
+                      // strings before send so the server validator sees
+                      // the canonical shape.
+                      const payload = {
+                        date: live.createdAt
+                          ? new Date(live.createdAt).toISOString().slice(0, 10)
+                          : undefined,
+                        description: live.description,
+                        lines: (live.lines || []).map((l) => ({
+                          accountCode: l.code,
+                          accountName: l.account,
+                          debit:
+                            l.debit != null && l.debit !== ''
+                              ? Number(l.debit).toFixed(3)
+                              : '0.000',
+                          credit:
+                            l.credit != null && l.credit !== ''
+                              ? Number(l.credit).toFixed(3)
+                              : '0.000',
+                          label: l.memo || l.label || undefined,
+                        })),
+                      };
+                      if (onSaveEdit) onSaveEdit(payload);
+                      setIsEditing(false);
+                    }}
+                    disabled={!canSaveEdit}
+                    aria-disabled={!canSaveEdit}
+                    style={{
+                      background: canSaveEdit
+                        ? "var(--accent-primary)"
+                        : "rgba(0,196,140,0.25)",
+                      color: "#fff",
+                      border: "none",
+                      padding: "8px 16px",
+                      borderRadius: 6,
+                      cursor: canSaveEdit ? "pointer" : "not-allowed",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    {t("je_card.save_edit_btn") || "Save changes"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setWorkingEntry(null);
+                      setIsEditing(false);
+                    }}
+                    style={{
+                      background: "transparent",
+                      color: "var(--text-secondary)",
+                      border: "1px solid var(--border-strong)",
+                      padding: "8px 14px",
+                      borderRadius: 6,
+                      cursor: "pointer",
+                      fontSize: 12,
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    {t("je_card.cancel_edit_btn") || "Cancel"}
+                  </button>
+                </div>
+                {saveValidationError && (
+                  <div
+                    role="status"
+                    style={{
+                      fontSize: 11,
+                      color: "var(--semantic-danger)",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {saveValidationError}
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <>

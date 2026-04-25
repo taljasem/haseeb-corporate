@@ -139,13 +139,59 @@ export async function updateJournalEntryDraft(id, payload) {
 }
 
 /**
- * POST /api/journal-entries/:id/validate — promote DRAFT → POSTED.
- * See wave-3-write-contract.md §3 for error states (INVALID_STATUS,
- * closed period, UNBALANCED_ENTRY).
+ * HASEEB-482 (DECISION-026 Phase 2 frontend, 2026-04-24) — promote
+ * DRAFT → POSTED via the JE approval engine.
+ *
+ *   POST /api/journal-entries/approvals/:id/approve  body: { notes? }
+ *
+ * The legacy `/validate` route still exists in the backend (HASEEB-481
+ * intentionally preserved it; HASEEB-483 Phase 3 retires it after this
+ * frontend rewire ships). We point ALL frontend post-paths through the
+ * approval engine so SoD enforcement and source-based auto-post tier
+ * routing apply uniformly.
+ *
+ * Error contract:
+ *   - 403 SoDViolationError  → caller (UI) catches and disables the
+ *                              Post button with the bilingual
+ *                              "different reviewer must approve"
+ *                              message.
+ *   - 400 INVALID_STATUS     → entry already POSTED or in a non-
+ *                              approvable state; UI re-fetches.
+ *   - 400 UNBALANCED_ENTRY   → debit / credit mismatch; UI surfaces.
+ *   - 422 ValidationError    → policy or amount edge cases (e.g. above
+ *                              the active-policy ceiling); UI shows
+ *                              the bilingual error.message.
  */
-export async function postJournalEntry(id) {
+export async function postJournalEntry(id, opts = {}) {
+  const body = opts.notes ? { notes: String(opts.notes) } : {};
   const r = await client.post(
-    `/api/journal-entries/${encodeURIComponent(id)}/validate`
+    `/api/journal-entries/approvals/${encodeURIComponent(id)}/approve`,
+    body,
+  );
+  return unwrap(r);
+}
+
+/**
+ * Alias of postJournalEntry kept for callers that prefer the explicit
+ * "approve" verb over the legacy "post" one. They hit the same
+ * endpoint; the route layer accepts both flow names because the
+ * approval engine is now the single source of truth for promoting a
+ * DRAFT to POSTED.
+ */
+export async function approveJournalEntry(id, opts = {}) {
+  return postJournalEntry(id, opts);
+}
+
+/**
+ * POST /api/journal-entries/approvals/:id/reject  body: { notes? }
+ * Mirrors approveJournalEntry. Used by the approvals queue surface;
+ * not currently called from ManualJEScreen but exported for parity.
+ */
+export async function rejectJournalEntry(id, opts = {}) {
+  const body = opts.notes ? { notes: String(opts.notes) } : {};
+  const r = await client.post(
+    `/api/journal-entries/approvals/${encodeURIComponent(id)}/reject`,
+    body,
   );
   return unwrap(r);
 }

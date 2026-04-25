@@ -66,7 +66,8 @@
     "reversal_of": "REVERSAL OF {{id}}",
     "save_draft": "Save Draft",
     "saving": "Saving...",
-    "posting": "Posting..."
+    "posting": "Posting...",
+    "sod_blocked": "You created this entry. A different reviewer must approve it."
   },
   "status": {
     "posted": "POSTED",

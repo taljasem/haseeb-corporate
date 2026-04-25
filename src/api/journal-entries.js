@@ -60,6 +60,16 @@ function adaptEntry(entry) {
     // Aggregate totals used by the list view.
     totalDebit: lines.reduce((s, l) => s + Number(l.debit || l.debitAmount || 0), 0),
     totalCredit: lines.reduce((s, l) => s + Number(l.credit || l.creditAmount || 0), 0),
+    // HASEEB-482 (DECISION-026 Phase 2, 2026-04-24): surface the
+    // approval-engine state + proposer id so the ManualJEScreen Post
+    // button can decide visibility (AUTO_APPROVED hides it; PENDING_*
+    // shows it; SoD self-approval is gated client-side as well as
+    // server-side). Backend uppercase enum (AUTO_APPROVED |
+    // PENDING_REVIEW | PENDING_APPROVAL | PENDING_BOARD | APPROVED |
+    // REJECTED) is preserved verbatim — the UI compares against the
+    // enum strings directly.
+    approvalState: entry.approvalState || null,
+    createdBy: entry.createdBy || entry.createdById || null,
     raw: entry,
   };
 }

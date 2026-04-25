@@ -169,6 +169,12 @@ const FUNCTION_ROUTING = {
   createJournalEntry: 'wired',
   updateJournalEntryDraft: 'wired',
   postJournalEntry: 'wired',
+  // HASEEB-482 (DECISION-026 Phase 2, 2026-04-24) — approve / reject
+  // flow through the JE approval engine. postJournalEntry above also
+  // hits the same endpoint; these aliases give explicit verb forms for
+  // the approvals queue surface to use.
+  approveJournalEntry: 'wired',
+  rejectJournalEntry: 'wired',
   reverseJournalEntry: 'wired',
   voidJournalEntry: 'wired',
 
@@ -841,6 +847,9 @@ const REAL_IMPLS = {
   createJournalEntry: journalEntriesWriteApi.createJournalEntry,
   updateJournalEntryDraft: journalEntriesWriteApi.updateJournalEntryDraft,
   postJournalEntry: journalEntriesWriteApi.postJournalEntry,
+  // HASEEB-482 — explicit approve / reject (same endpoint as postJE).
+  approveJournalEntry: journalEntriesWriteApi.approveJournalEntry,
+  rejectJournalEntry: journalEntriesWriteApi.rejectJournalEntry,
   reverseJournalEntry: journalEntriesWriteApi.reverseJournalEntry,
   voidJournalEntry: journalEntriesWriteApi.voidJournalEntry,
 
@@ -2077,6 +2086,11 @@ function buildLiveSurface() {
   surface.createJournalEntry = journalEntriesWriteApi.createJournalEntry;
   surface.updateJournalEntryDraft = journalEntriesWriteApi.updateJournalEntryDraft;
   surface.postJournalEntry = journalEntriesWriteApi.postJournalEntry;
+  // HASEEB-482 — approve / reject flow through the same endpoint as
+  // postJournalEntry, which is now wired to the approval-engine
+  // approve route. Exported here so MOCK mode falls through cleanly.
+  surface.approveJournalEntry = journalEntriesWriteApi.approveJournalEntry;
+  surface.rejectJournalEntry = journalEntriesWriteApi.rejectJournalEntry;
   surface.reverseJournalEntry = journalEntriesWriteApi.reverseJournalEntry;
   surface.voidJournalEntry = journalEntriesWriteApi.voidJournalEntry;
 
@@ -2636,6 +2650,17 @@ function buildMockExtras() {
     await new Promise((r) => setTimeout(r, 80));
     return { id, entryNumber: id, status: 'POSTED', _mock: true };
   };
+  // HASEEB-482 — approve / reject mocks. Approve resolves to POSTED so
+  // the UI flips state the same way the legacy mockPost did; reject
+  // resolves to a rejected sentinel so callers see a non-POSTED status.
+  const mockApprove = async (id) => {
+    await new Promise((r) => setTimeout(r, 80));
+    return { id, entryNumber: id, status: 'POSTED', approvalState: 'APPROVED', _mock: true };
+  };
+  const mockReject = async (id, reason) => {
+    await new Promise((r) => setTimeout(r, 80));
+    return { id, entryNumber: id, status: 'DRAFT', approvalState: 'REJECTED', reason, _mock: true };
+  };
   const mockReverse = async (id, reason) => {
     await new Promise((r) => setTimeout(r, 80));
     return { id: `REV-${id}`, reversalOf: id, reason, _mock: true };
@@ -2699,6 +2724,11 @@ function buildMockExtras() {
     createJournalEntry: mockCreate,
     updateJournalEntryDraft: mockUpdate,
     postJournalEntry: mockPost,
+    // HASEEB-482 — mock approve / reject. Same behaviour as mockPost in
+    // MOCK mode (no real approval engine to consult); returns the
+    // approval-state surface the UI is now ready to read.
+    approveJournalEntry: mockApprove,
+    rejectJournalEntry: mockReject,
     reverseJournalEntry: mockReverse,
     voidJournalEntry: mockVoid,
     // Aminah advisor-pending — Wave 6B.3 Layer 3 MOCK stubs. Mutations
@@ -7149,6 +7179,9 @@ export const getManualJEById = surface.getManualJEById;
 export const createJournalEntry = surface.createJournalEntry;
 export const updateJournalEntryDraft = surface.updateJournalEntryDraft;
 export const postJournalEntry = surface.postJournalEntry;
+// HASEEB-482 — explicit approve / reject (same endpoint as postJournalEntry).
+export const approveJournalEntry = surface.approveJournalEntry;
+export const rejectJournalEntry = surface.rejectJournalEntry;
 export const reverseJournalEntry = surface.reverseJournalEntry;
 export const voidJournalEntry = surface.voidJournalEntry;
 

@@ -5,7 +5,7 @@ import {
   BookOpen, Calendar, Calculator, Coins, Plug, Cpu, Ban, Receipt,
   Plus, Search, Edit3, Trash2, RefreshCw, AlertTriangle, X as XIcon,
   Scale, Gavel, Clock, Percent, Split, Play, UserCheck, ShieldAlert, FileCode,
-  UserMinus, Banknote, Building2, FileText, Eye,
+  UserMinus, Banknote, Building2, FileText, Eye, ShieldCheck,
 } from "lucide-react";
 import LtrText from "../../components/shared/LtrText";
 import EmptyState from "../../components/shared/EmptyState";
@@ -89,6 +89,10 @@ import WarrantyPolicyModal from "../../components/setup/WarrantyPolicyModal";
 import BankFormatModal from "../../components/setup/BankFormatModal";
 import LeavePolicyModal from "../../components/setup/LeavePolicyModal";
 import CbkRateModal from "../../components/setup/CbkRateModal";
+// HASEEB-482 (DECISION-026 Phase 2 frontend, 2026-04-24) — approval-policy
+// section. Editable monetary thresholds for the JE approval engine; OWNER-
+// only edit (defence in depth — backend PATCH is also OWNER-only).
+import ApprovalPolicySection from "../../components/setup/ApprovalPolicySection";
 
 function fmtKWD(n) {
   if (n == null) return "—";
@@ -120,6 +124,8 @@ const ALL_SECTIONS = [
   { id: "currencies",      icon: Coins,          foreignOnly: false },
   { id: "integrations",    icon: Plug,           foreignOnly: false },
   { id: "engine_rules",    icon: Cpu,            foreignOnly: false },
+  // HASEEB-482 — JE approval-policy thresholds. Owner-only edit.
+  { id: "approval_policy", icon: ShieldCheck,    foreignOnly: false },
 ];
 
 export default function SetupScreen({ role: roleRaw = "CFO", onNavigate }) {
@@ -204,7 +210,7 @@ export default function SetupScreen({ role: roleRaw = "CFO", onNavigate }) {
                 onMouseLeave={(e) => { if (!on) e.currentTarget.style.background = "transparent"; }}
               >
                 <Icon size={14} strokeWidth={2} />
-                <span>{t(`sections.${s.id === "company" ? "company" : s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id === "tax_lodgement" ? "tax_lodgement" : s.id === "cit_assessment" ? "cit_assessment" : s.id === "wht" ? "wht" : s.id === "cost_allocation" ? "cost_allocation" : s.id === "related_party" ? "related_party" : s.id === "warranty" ? "warranty" : s.id === "bank_formats" ? "bank_formats" : s.id === "leave" ? "leave" : s.id === "cbk_rates" ? "cbk_rates" : s.id}`)}</span>
+                <span>{t(`sections.${s.id === "company" ? "company" : s.id === "chart" ? "chart_of_accounts" : s.id === "fiscal" ? "fiscal_year" : s.id === "currencies" ? "currencies" : s.id === "integrations" ? "integrations" : s.id === "team_access" ? "team_access" : s.id === "engine_rules" ? "engine_rules" : s.id === "disallowance" ? "disallowance" : s.id === "tax_lodgement" ? "tax_lodgement" : s.id === "cit_assessment" ? "cit_assessment" : s.id === "wht" ? "wht" : s.id === "cost_allocation" ? "cost_allocation" : s.id === "related_party" ? "related_party" : s.id === "warranty" ? "warranty" : s.id === "bank_formats" ? "bank_formats" : s.id === "leave" ? "leave" : s.id === "cbk_rates" ? "cbk_rates" : s.id === "approval_policy" ? "approval_policy" : s.id}`)}</span>
               </button>
             );
           })}
@@ -250,6 +256,16 @@ export default function SetupScreen({ role: roleRaw = "CFO", onNavigate }) {
             {active === "currencies"    && <CurrenciesSection readOnly={readOnly} />}
             {active === "integrations"  && <IntegrationsSection readOnly={readOnly} />}
             {active === "engine_rules"  && <EngineRulesSection readOnly={readOnly} />}
+            {active === "approval_policy" && (
+              <ApprovalPolicySection
+                role={role}
+                Card={Card}
+                Toast={Toast}
+                FormRow={FormRow}
+                inputStyle={inputStyle}
+                btnPrimary={btnPrimary}
+              />
+            )}
           </div>
         </div>
       </div>

@@ -60,6 +60,13 @@ function adaptAccount(account) {
     status: account.isActive === false ? 'inactive' : 'active',
     parent: account.parentCode || account.parent || null,
     description: account.description || '',
+    // HASEEB-504 (2026-04-25) — surface AccountRole + normalBalance on
+    // the adapted shape so the Manual JE account picker (AC-13) can
+    // display the role badge and Dr/Cr hint chip without a re-fetch.
+    // Both fields come from the backend Account row directly; legacy
+    // entries without `role` round-trip as empty string.
+    role: account.role || '',
+    normalBalance: account.normalBalance || '',
     raw: account,
   };
 }

@@ -78,6 +78,7 @@
     "date": "DATE",
     "reference": "REFERENCE",
     "description": "DESCRIPTION",
+    "description_ar": "DESCRIPTION (AR)",
     "source": "SOURCE"
   },
   "source_options": {
@@ -89,8 +90,10 @@
     "col_debit": "DEBIT",
     "col_credit": "CREDIT",
     "col_memo": "MEMO",
+    "col_memo_ar": "MEMO (AR)",
     "add_line": "Add line",
     "memo_placeholder": "Optional memo",
+    "memo_ar_placeholder": "ملاحظة اختيارية بالعربية",
     "line_account_not_selected": "Line {{n}}: account not selected",
     "line_both": "Line {{n}}: cannot have both debit and credit"
   },
@@ -102,7 +105,10 @@
     "out_of_balance": "OUT OF BALANCE"
   },
   "account_picker": {
-    "search_placeholder": "Search account..."
+    "search_placeholder": "Search account...",
+    "normal_balance_dr": "Dr",
+    "normal_balance_cr": "Cr",
+    "role_label": "Role"
   },
   "template_detail": {
     "template_label": "TEMPLATE",

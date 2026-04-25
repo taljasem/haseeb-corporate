@@ -77,7 +77,8 @@
   "fields": {
     "date": "التاريخ",
     "reference": "المرجع",
-    "description": "الوصف",
+    "description": "الوصف (إنجليزي)",
+    "description_ar": "الوصف (عربي)",
     "source": "المصدر"
   },
   "source_options": {
@@ -88,9 +89,11 @@
     "col_account": "الحساب",
     "col_debit": "مدين",
     "col_credit": "دائن",
-    "col_memo": "ملاحظة",
+    "col_memo": "ملاحظة (إنجليزي)",
+    "col_memo_ar": "ملاحظة (عربي)",
     "add_line": "إضافة بند",
-    "memo_placeholder": "ملاحظة اختيارية",
+    "memo_placeholder": "ملاحظة اختيارية بالإنجليزية",
+    "memo_ar_placeholder": "ملاحظة اختيارية بالعربية",
     "line_account_not_selected": "البند {{n}}: لم يتم اختيار الحساب",
     "line_both": "البند {{n}}: لا يمكن أن يحوي مديناً ودائناً معاً"
   },
@@ -102,7 +105,10 @@
     "out_of_balance": "غير متوازن"
   },
   "account_picker": {
-    "search_placeholder": "بحث عن حساب..."
+    "search_placeholder": "بحث عن حساب...",
+    "normal_balance_dr": "مدين",
+    "normal_balance_cr": "دائن",
+    "role_label": "الدور"
   },
   "template_detail": {
     "template_label": "قالب",
